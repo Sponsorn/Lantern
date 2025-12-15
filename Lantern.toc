@@ -1,0 +1,24 @@
+## Interface: 110207
+## Title: Lantern
+## Notes: Core QoL framework with pluggable modules.
+## Author: Dede
+## Version: 0.2.0
+## SavedVariables: LanternDB
+## DefaultState: enabled
+
+Libs\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\AceEvent-3.0\AceEvent-3.0.xml
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+Libs\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0.lua
+
+Date\Date.lua
+Region\Region.lua
+core.lua
+ui.lua
+AutoQuest\AutoQuest.lua
+AutoQueue\AutoQueue.lua
+DeleteConfirm\DeleteConfirm.lua
+DisableAutoAddSpells\DisableAutoAddSpells.lua
