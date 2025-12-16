@@ -186,6 +186,13 @@ function Lantern:BuildOptions()
         end
         return values;
     end
+    local function formatSkipLabel(id, name, zone)
+        local base = name and name ~= "" and name or string.format("NPC %d", id);
+        if (zone and zone ~= "") then
+            return string.format("%s - %s", base, zone);
+        end
+        return base;
+    end
     local function autoQueueModule()
         return Lantern.modules and Lantern.modules.AutoQueue;
     end
@@ -343,8 +350,7 @@ function Lantern:BuildOptions()
                             local id, name, zone = m:GetCurrentNPCInfo();
                             if (id) then
                                 m:AddSkippedNPC(id, name, zone);
-                                local zoneText = zone and (" - " .. zone) or "";
-                                Lantern:Print(string.format("Added skip NPC: %s (%d)%s", name or "NPC", id, zoneText));
+                                Lantern:Print(string.format("Added %s to skip list", formatSkipLabel(id, name, zone)));
                             end
                         end,
                     },
@@ -361,7 +367,7 @@ function Lantern:BuildOptions()
                             local m = autoQuestModule();
                             if (m and id) then
                                 m:AddSkippedNPC(id);
-                                Lantern:Print(string.format("Added skip NPC ID: %d", id));
+                                Lantern:Print(string.format("Added %s to skip list", formatSkipLabel(id, nil, nil)));
                             end
                         end,
                     },
@@ -381,8 +387,14 @@ function Lantern:BuildOptions()
                             local id = tonumber(key);
                             local m = autoQuestModule();
                             if (m and id) then
+                                local entry = m.db and m.db.skipNPCs and m.db.skipNPCs[id];
                                 m:RemoveSkippedNPC(id);
-                                Lantern:Print(string.format("Removed skip NPC: %s", key));
+                                local name, zone = entry, nil;
+                                if (type(entry) == "table") then
+                                    name = entry.name;
+                                    zone = entry.zone;
+                                end
+                                Lantern:Print(string.format("Removed %s from skip list", formatSkipLabel(id, name, zone)));
                             end
                         end,
                     },
