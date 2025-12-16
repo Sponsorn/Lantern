@@ -168,23 +168,43 @@ function Lantern:BuildOptions()
     local function autoQuestSkipValues()
         local db = autoQuestDB();
         local values = {};
-        for id, name in pairs(db.skipNPCs or {}) do
-            local label = tostring(id);
-            local n = name;
+        local sorting = {};
+        local grouped = {};
+        for id, info in pairs(db.skipNPCs or {}) do
+            local n = info;
             local zone;
-            if (type(name) == "table") then
-                n = name.name;
-                zone = name.zone;
+            if (type(info) == "table") then
+                n = info.name;
+                zone = info.zone;
             end
-            if (n and n ~= true) then
-                label = string.format("%s (%s)", n, id);
-            end
-            if (zone and zone ~= "") then
-                label = string.format("%s - %s", label, zone);
-            end
-            values[tostring(id)] = label;
+            zone = zone or "Unknown";
+            grouped[zone] = grouped[zone] or {};
+            table.insert(grouped[zone], { id = id, name = n });
         end
-        return values;
+        local zones = {};
+        for z in pairs(grouped) do
+            table.insert(zones, z);
+        end
+        table.sort(zones, function(a, b) return a < b; end);
+        for _, zone in ipairs(zones) do
+            local zoneKey = "zone:" .. zone;
+            values[zoneKey] = zone;
+            table.insert(sorting, zoneKey);
+            table.sort(grouped[zone], function(a, b)
+                local an = (a.name and tostring(a.name)) or tostring(a.id);
+                local bn = (b.name and tostring(b.name)) or tostring(b.id);
+                if (an == bn) then
+                    return a.id < b.id;
+                end
+                return an < bn;
+            end);
+            for _, entry in ipairs(grouped[zone]) do
+                local key = string.format("npc:%s:%s", zone, entry.id);
+                values[key] = formatSkipLabel(entry.id, entry.name, zone);
+                table.insert(sorting, key);
+            end
+        end
+        return values, sorting;
     end
     local function formatSkipLabel(id, name, zone)
         local base = name and name ~= "" and name or string.format("NPC %d", id);
@@ -378,13 +398,17 @@ function Lantern:BuildOptions()
                         desc = "Click to remove an NPC from the skip list.",
                         width = "full",
                         values = function()
-                            return autoQuestSkipValues();
+                            local vals, sorting = autoQuestSkipValues();
+                            return vals, sorting;
                         end,
                         get = function(_, key)
-                            return true;
+                            return key and key:sub(1, 4) == "npc:" and true or false;
                         end,
                         set = function(_, key)
-                            local id = tonumber(key);
+                            if (not key or key:sub(1, 4) ~= "npc:") then
+                                return;
+                            end
+                            local id = tonumber(select(3, key:find("npc:[^:]*:(.+)$")));
                             local m = autoQuestModule();
                             if (m and id) then
                                 local entry = m.db and m.db.skipNPCs and m.db.skipNPCs[id];
