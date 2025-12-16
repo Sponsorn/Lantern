@@ -40,6 +40,20 @@ local function parseNPCIDFromGUID(guid)
     end
 end
 
+local function getNPCZone(unit)
+    if (not unit) then return; end
+    if (C_Map and C_Map.GetBestMapForUnit) then
+        local mapID = C_Map.GetBestMapForUnit(unit);
+        if (mapID) then
+            local mapInfo = C_Map.GetMapInfo(mapID);
+            if (mapInfo and mapInfo.name) then
+                return mapInfo.name;
+            end
+        end
+    end
+    return GetZoneText and GetZoneText() or nil;
+end
+
 function module:GetCurrentNPCInfo()
     local unit = (UnitExists("npc") and "npc") or (UnitExists("target") and "target") or nil;
     if (not unit or UnitIsPlayer(unit)) then
@@ -49,18 +63,24 @@ function module:GetCurrentNPCInfo()
     local npcID = parseNPCIDFromGUID(guid);
     if (not npcID) then return; end
     local name = UnitName(unit);
-    return npcID, name;
+    local zone = getNPCZone(unit);
+    return npcID, name, zone;
 end
 
 function module:IsNPCSkipped(npcID)
     return npcID and self.db.skipNPCs and self.db.skipNPCs[npcID] or false;
 end
 
-function module:AddSkippedNPC(npcID, name)
+function module:AddSkippedNPC(npcID, name, zone)
     npcID = tonumber(npcID);
     if (not npcID) then return; end
     self.db.skipNPCs = self.db.skipNPCs or {};
-    self.db.skipNPCs[npcID] = name or true;
+    if (type(self.db.skipNPCs[npcID]) == "table") then
+        self.db.skipNPCs[npcID].name = name or self.db.skipNPCs[npcID].name;
+        self.db.skipNPCs[npcID].zone = zone or self.db.skipNPCs[npcID].zone;
+    else
+        self.db.skipNPCs[npcID] = { name = name, zone = zone };
+    end
 end
 
 function module:RemoveSkippedNPC(npcID)

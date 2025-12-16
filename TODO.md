@@ -5,3 +5,5 @@ TODO
 - add custom lootframe
 - fix crafting orders, maybe its possible to still trigger on read chat, otherwise CRAFTINGORDER_PERSONAL
 - add links and checks for modules on splash screen
+- tidy up UI so it looks cleaner
+- add localization for other versions

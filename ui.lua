@@ -170,8 +170,17 @@ function Lantern:BuildOptions()
         local values = {};
         for id, name in pairs(db.skipNPCs or {}) do
             local label = tostring(id);
-            if (name and name ~= true) then
-                label = string.format("%s (%s)", name, id);
+            local n = name;
+            local zone;
+            if (type(name) == "table") then
+                n = name.name;
+                zone = name.zone;
+            end
+            if (n and n ~= true) then
+                label = string.format("%s (%s)", n, id);
+            end
+            if (zone and zone ~= "") then
+                label = string.format("%s - %s", label, zone);
             end
             values[tostring(id)] = label;
         end
@@ -311,14 +320,14 @@ function Lantern:BuildOptions()
                         type = "execute",
                         name = function()
                             local m = autoQuestModule();
-                            if (not m) then return "Add target NPC"; end
+                            if (not m) then return "Add target NPC to skip list"; end
                             local id, name = m:GetCurrentNPCInfo();
                             if (id and name) then
                                 return string.format("Add target: %s (%d)", name, id);
                             elseif (id) then
                                 return string.format("Add target (%d)", id);
                             end
-                            return "Add target NPC";
+                            return "Add target NPC to skip list";
                         end,
                         desc = "Add the currently targeted NPC to the skip list.",
                         width = "full",
@@ -331,10 +340,11 @@ function Lantern:BuildOptions()
                         func = function()
                             local m = autoQuestModule();
                             if (not m) then return; end
-                            local id, name = m:GetCurrentNPCInfo();
+                            local id, name, zone = m:GetCurrentNPCInfo();
                             if (id) then
-                                m:AddSkippedNPC(id, name);
-                                Lantern:Print(string.format("Added skip NPC: %s (%d)", name or "NPC", id));
+                                m:AddSkippedNPC(id, name, zone);
+                                local zoneText = zone and (" - " .. zone) or "";
+                                Lantern:Print(string.format("Added skip NPC: %s (%d)%s", name or "NPC", id, zoneText));
                             end
                         end,
                     },
