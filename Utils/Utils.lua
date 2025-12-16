@@ -1,0 +1,110 @@
+local ADDON_NAME, addon = ...;
+
+addon.utils = addon.utils or {};
+addon.converters = addon.converters or {};
+
+local utils = addon.utils;
+local converters = addon.converters;
+
+local function log(msg)
+    print("|cffe6c619Lantern:|r " .. tostring(msg or ""));
+end
+
+utils.log = log;
+addon.Print = log;
+
+local CET_OFFSET_SECONDS = 3600; -- CET is UTC+1 (ignores CEST for simplicity)
+local REGION_BY_ID = { "US", "KR", "EU", "TW", "CN" };
+
+local function normalizeRegionCode(region)
+    if (region == "public-test") then
+        return "US"; -- PTR uses US resets
+    end
+    if (type(region) == "string" and #region == 2) then
+        return region:upper();
+    end
+end
+
+function addon:GetRegion()
+    local portal = GetCVar and GetCVar("portal");
+    local normalized = normalizeRegionCode(portal);
+    if (not normalized and GetCurrentRegion) then
+        local regionID = GetCurrentRegion();
+        normalized = regionID and REGION_BY_ID[regionID];
+    end
+    return normalized;
+end
+
+local function GetDailyResetHourCET(region)
+    region = region or addon:GetRegion();
+    if (region == "US") then
+        return 16; -- 16:00 CET for US region reset
+    end
+    return 5; -- 05:00 CET for EU and default
+end
+
+function addon:GetLastDailyResetEpoch(now)
+    local nowSec = now or GetServerTime();
+    local resetSeconds = GetQuestResetTime and GetQuestResetTime();
+    if (resetSeconds and resetSeconds > 0 and resetSeconds <= (24 * 60 * 60 + 30)) then
+        local nextReset = nowSec + resetSeconds;
+        return nextReset - 24 * 60 * 60;
+    end
+
+    local resetHourCET = GetDailyResetHourCET();
+    local nowCET = nowSec + CET_OFFSET_SECONDS;
+    local days = math.floor(nowCET / 86400);
+    local todaysResetCET = days * 86400 + resetHourCET * 3600;
+    local lastResetCET = todaysResetCET;
+    if (nowCET < todaysResetCET) then
+        lastResetCET = todaysResetCET - 86400;
+    end
+    return lastResetCET - CET_OFFSET_SECONDS;
+end
+
+addon.GetDailyResetHourCET = GetDailyResetHourCET;
+
+-- Converter registry
+function addon:RegisterConverter(name, fn)
+    if (type(name) ~= "string" or name == "" or type(fn) ~= "function") then
+        return;
+    end
+    converters[name] = fn;
+end
+
+function addon:Convert(name, ...)
+    local fn = converters[name];
+    if (type(fn) == "function") then
+        return fn(...);
+    end
+end
+
+-- Built-in converters
+addon:RegisterConverter("region:normalize", normalizeRegionCode);
+
+addon:RegisterConverter("time:to_iso8601", function(epoch)
+    if (not epoch) then return; end
+    return date("!%Y-%m-%dT%H:%M:%SZ", epoch);
+end);
+
+addon:RegisterConverter("time:seconds_to_clock", function(seconds)
+    seconds = tonumber(seconds);
+    if (not seconds or seconds < 0) then
+        return "0:00";
+    end
+    local hours = math.floor(seconds / 3600);
+    local minutes = math.floor((seconds % 3600) / 60);
+    local secs = math.floor(seconds % 60);
+    if (hours > 0) then
+        return string.format("%d:%02d:%02d", hours, minutes, secs);
+    end
+    return string.format("%d:%02d", minutes, secs);
+end);
+
+addon:RegisterConverter("time:next_reset_epoch", function(now)
+    local last = addon:GetLastDailyResetEpoch(now);
+    return last and (last + 24 * 60 * 60) or nil;
+end);
+
+utils.normalizeRegionCode = normalizeRegionCode;
+utils.GetDailyResetHourCET = GetDailyResetHourCET;

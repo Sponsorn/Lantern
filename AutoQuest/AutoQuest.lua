@@ -11,6 +11,7 @@ local DEFAULTS = {
     autoAccept = true,
     autoTurnIn = true,
     autoSelectSingleReward = true,
+    skipNPCs = {},
 };
 
 local function shouldPause()
@@ -22,9 +23,50 @@ local function ensureDB(self)
     self.addon.db.autoQuest = self.db;
     for k, v in pairs(DEFAULTS) do
         if (self.db[k] == nil) then
-            self.db[k] = v;
+            self.db[k] = (type(v) == "table") and {} or v;
         end
     end
+end
+
+local function parseNPCIDFromGUID(guid)
+    if (not guid) then return; end
+    local typeBits, _, _, _, _, npcID = strsplit("-", guid);
+    if (typeBits ~= "Creature" and typeBits ~= "Vehicle" and typeBits ~= "Vignette") then
+        return;
+    end
+    npcID = tonumber(npcID);
+    if (npcID and npcID > 0) then
+        return npcID;
+    end
+end
+
+function module:GetCurrentNPCInfo()
+    local unit = (UnitExists("npc") and "npc") or (UnitExists("target") and "target") or nil;
+    if (not unit or UnitIsPlayer(unit)) then
+        return;
+    end
+    local guid = UnitGUID(unit);
+    local npcID = parseNPCIDFromGUID(guid);
+    if (not npcID) then return; end
+    local name = UnitName(unit);
+    return npcID, name;
+end
+
+function module:IsNPCSkipped(npcID)
+    return npcID and self.db.skipNPCs and self.db.skipNPCs[npcID] or false;
+end
+
+function module:AddSkippedNPC(npcID, name)
+    npcID = tonumber(npcID);
+    if (not npcID) then return; end
+    self.db.skipNPCs = self.db.skipNPCs or {};
+    self.db.skipNPCs[npcID] = name or true;
+end
+
+function module:RemoveSkippedNPC(npcID)
+    npcID = tonumber(npcID);
+    if (not npcID or not self.db.skipNPCs) then return; end
+    self.db.skipNPCs[npcID] = nil;
 end
 
 function module:GetOptions()
@@ -69,6 +111,8 @@ function module:OnEnable()
 end
 
 local function handleAvailableQuests(self)
+    local npcID = self:GetCurrentNPCInfo();
+    if (self:IsNPCSkipped(npcID)) then return; end
     if (not self.db.autoAccept or shouldPause()) then return; end
     if (C_GossipInfo and C_GossipInfo.GetAvailableQuests) then
         local quests = C_GossipInfo.GetAvailableQuests();
@@ -81,6 +125,8 @@ local function handleAvailableQuests(self)
 end
 
 local function handleActiveQuests(self)
+    local npcID = self:GetCurrentNPCInfo();
+    if (self:IsNPCSkipped(npcID)) then return; end
     if (not self.db.autoTurnIn or shouldPause()) then return; end
     if (C_GossipInfo and C_GossipInfo.GetActiveQuests) then
         local quests = C_GossipInfo.GetActiveQuests();
@@ -98,6 +144,8 @@ function module:OnGossipShow()
 end
 
 function module:OnQuestDetail()
+    local npcID = self:GetCurrentNPCInfo();
+    if (self:IsNPCSkipped(npcID)) then return; end
     if (shouldPause() or not self.db.autoAccept) then return; end
     if (QuestGetAutoAccept() or QuestIsFromAreaTrigger()) then
         AcknowledgeAutoAcceptQuest();
@@ -107,6 +155,8 @@ function module:OnQuestDetail()
 end
 
 function module:OnQuestProgress()
+    local npcID = self:GetCurrentNPCInfo();
+    if (self:IsNPCSkipped(npcID)) then return; end
     if (shouldPause() or not self.db.autoTurnIn) then return; end
     if (IsQuestCompletable()) then
         CompleteQuest();
@@ -114,6 +164,8 @@ function module:OnQuestProgress()
 end
 
 function module:OnQuestComplete()
+    local npcID = self:GetCurrentNPCInfo();
+    if (self:IsNPCSkipped(npcID)) then return; end
     if (shouldPause() or not self.db.autoTurnIn) then return; end
     local numChoices = GetNumQuestChoices() or 0;
     if (numChoices == 0) then

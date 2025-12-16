@@ -153,10 +153,10 @@ function Lantern:BuildOptions()
     end
     local function autoQuestDB()
         Lantern.db.autoQuest = Lantern.db.autoQuest or {};
-        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true };
+        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true, skipNPCs = {} };
         for k, v in pairs(defaults) do
             if (Lantern.db.autoQuest[k] == nil) then
-                Lantern.db.autoQuest[k] = v;
+                Lantern.db.autoQuest[k] = (type(v) == "table") and {} or v;
             end
         end
         return Lantern.db.autoQuest;
@@ -164,6 +164,18 @@ function Lantern:BuildOptions()
     local function autoQuestDisabled()
         local m = autoQuestModule();
         return not (m and m.enabled);
+    end
+    local function autoQuestSkipValues()
+        local db = autoQuestDB();
+        local values = {};
+        for id, name in pairs(db.skipNPCs or {}) do
+            local label = tostring(id);
+            if (name and name ~= true) then
+                label = string.format("%s (%s)", name, id);
+            end
+            values[tostring(id)] = label;
+        end
+        return values;
     end
     local function autoQueueModule()
         return Lantern.modules and Lantern.modules.AutoQueue;
@@ -286,6 +298,82 @@ function Lantern:BuildOptions()
                         set = function(_, val)
                             local db = autoQuestDB();
                             db.autoSelectSingleReward = val and true or false;
+                        end,
+                    },
+                    skipHeader = {
+                        order = 5,
+                        type = "description",
+                        name = "Skip specific NPCs (no auto accept/turn-in).",
+                        fontSize = "medium",
+                    },
+                    addTargetNPC = {
+                        order = 6,
+                        type = "execute",
+                        name = function()
+                            local m = autoQuestModule();
+                            if (not m) then return "Add target NPC"; end
+                            local id, name = m:GetCurrentNPCInfo();
+                            if (id and name) then
+                                return string.format("Add target: %s (%d)", name, id);
+                            elseif (id) then
+                                return string.format("Add target (%d)", id);
+                            end
+                            return "Add target NPC";
+                        end,
+                        desc = "Add the currently targeted NPC to the skip list.",
+                        width = "full",
+                        disabled = function()
+                            local m = autoQuestModule();
+                            if (not m) then return true; end
+                            local id = m:GetCurrentNPCInfo();
+                            return not id;
+                        end,
+                        func = function()
+                            local m = autoQuestModule();
+                            if (not m) then return; end
+                            local id, name = m:GetCurrentNPCInfo();
+                            if (id) then
+                                m:AddSkippedNPC(id, name);
+                                Lantern:Print(string.format("Added skip NPC: %s (%d)", name or "NPC", id));
+                            end
+                        end,
+                    },
+                    addNPCID = {
+                        order = 7,
+                        type = "input",
+                        name = "Add NPC ID",
+                        desc = "Enter an NPC ID to skip. Auto Quest will ignore this NPC.",
+                        width = "full",
+                        pattern = "^%d+$",
+                        get = function() return ""; end,
+                        set = function(_, val)
+                            local id = tonumber(val);
+                            local m = autoQuestModule();
+                            if (m and id) then
+                                m:AddSkippedNPC(id);
+                                Lantern:Print(string.format("Added skip NPC ID: %d", id));
+                            end
+                        end,
+                    },
+                    skipList = {
+                        order = 8,
+                        type = "multiselect",
+                        name = "Skipped NPCs",
+                        desc = "Click to remove an NPC from the skip list.",
+                        width = "full",
+                        values = function()
+                            return autoQuestSkipValues();
+                        end,
+                        get = function(_, key)
+                            return true;
+                        end,
+                        set = function(_, key)
+                            local id = tonumber(key);
+                            local m = autoQuestModule();
+                            if (m and id) then
+                                m:RemoveSkippedNPC(id);
+                                Lantern:Print(string.format("Removed skip NPC: %s", key));
+                            end
                         end,
                     },
                 },

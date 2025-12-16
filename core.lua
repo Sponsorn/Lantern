@@ -7,17 +7,7 @@ Lantern._pendingModules = Lantern._pendingModules or {};
 Lantern.eventHandlers = Lantern.eventHandlers or {};
 Lantern.messageHandlers = Lantern.messageHandlers or {};
 
-local function shallowCopy(tbl)
-    local out = {};
-    for k, v in pairs(tbl) do
-        out[k] = v;
-    end
-    return out;
-end
-
-function Lantern:Print(msg)
-    print("|cffe6c619Lantern:|r " .. tostring(msg or ""));
-end
+local tinsert = table.insert;
 
 function Lantern:SetupDB()
     if (not _G.LanternDB) then
@@ -95,14 +85,14 @@ function Lantern:RegisterEvent(event, handler)
         self.eventFrame:SetScript("OnEvent", function(_, ev, ...)
             local listeners = Lantern.eventHandlers[ev];
             if (listeners) then
-                for _, fn in ipairs(listeners) do
-                    fn(ev, ...);
+                for i = 1, #listeners do
+                    listeners[i](ev, ...);
                 end
             end
         end);
     end
     self.eventHandlers[event] = self.eventHandlers[event] or {};
-    table.insert(self.eventHandlers[event], handler);
+    tinsert(self.eventHandlers[event], handler);
     self.eventFrame:RegisterEvent(event);
 end
 
@@ -113,14 +103,14 @@ end
 
 function Lantern:RegisterMessage(message, handler)
     self.messageHandlers[message] = self.messageHandlers[message] or {};
-    table.insert(self.messageHandlers[message], handler);
+    tinsert(self.messageHandlers[message], handler);
 end
 
 function Lantern:SendMessage(message, ...)
     local handlers = self.messageHandlers[message];
     if (handlers) then
-        for _, fn in ipairs(shallowCopy(handlers)) do
-            fn(message, ...);
+        for i = 1, #handlers do
+            handlers[i](message, ...);
         end
     end
 end

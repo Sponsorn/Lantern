@@ -2,7 +2,7 @@
 ## Title: Lantern
 ## Notes: Core QoL framework with pluggable modules.
 ## Author: Dede
-## Version: 0.2.2
+## Version: 0.2.3
 ## SavedVariables: LanternDB
 ## DefaultState: enabled
 
@@ -14,8 +14,7 @@ Libs\AceConfig-3.0\AceConfig-3.0.xml
 Libs\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0.lua
 
-Date\Date.lua
-Region\Region.lua
+Utils\Utils.lua
 core.lua
 ui.lua
 AutoQuest\AutoQuest.lua
