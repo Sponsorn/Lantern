@@ -1,7 +1,7 @@
 ## Interface: 110207
 ## Title: Lantern
 ## Notes: Core QoL framework with pluggable modules.
-## Author: Dede
+## Author: Dede in-game / Sponsorn on curseforge & github
 ## Version: 0.2.3
 ## SavedVariables: LanternDB
 ## DefaultState: enabled

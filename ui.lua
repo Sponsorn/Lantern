@@ -458,7 +458,7 @@ local function decorateSplash(panel)
 
     local authorLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
     authorLabel:SetPoint("TOPLEFT", versionLabel, "BOTTOMLEFT", 0, -8);
-    authorLabel:SetText("Author: Dede");
+    authorLabel:SetText("Author: Dede in-game / Sponsorn on curseforge & github");
 
     local thanks = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
     thanks:SetPoint("TOPLEFT", authorLabel, "BOTTOMLEFT", 0, -8);
