@@ -19,7 +19,7 @@ Open the game’s Interface → AddOns → Lantern → General Options. Each mod
 
 ## Versioning
 
-Current version: 0.2.0
+Current version: 0.2.2
 
 ## License
 

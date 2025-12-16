@@ -2,7 +2,7 @@
 ## Title: Lantern
 ## Notes: Core QoL framework with pluggable modules.
 ## Author: Dede
-## Version: 0.2.0
+## Version: 0.2.2
 ## SavedVariables: LanternDB
 ## DefaultState: enabled
 

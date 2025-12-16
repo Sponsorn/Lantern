@@ -484,10 +484,10 @@ function Lantern:SetupOptions()
     AceConfigDialog:AddToBlizOptions(ADDON_NAME .. "_General", "General Options", "Lantern");
 
     -- Settings API (Dragonflight+)
-    if (Settings and Settings.RegisterCanvasLayoutCategory) then
-        local category = Settings.RegisterCanvasLayoutCategory(rootPanel, "Lantern");
-        self.splashCategory = Settings.RegisterAddOnCategory(category);
-        self.splashCategoryID = (category.GetCategoryID and category:GetCategoryID()) or nil;
+    -- AddToBlizOptions already surfaces categories in the modern Settings UI, so
+    -- just capture the category ID if it's available instead of registering a duplicate root.
+    if (Settings and Settings.OpenToCategory and rootPanel and rootPanel.GetCategoryID) then
+        self.splashCategoryID = rootPanel:GetCategoryID();
     end
 
     self.optionsInitialized = true;
