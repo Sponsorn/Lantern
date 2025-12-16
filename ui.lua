@@ -4,6 +4,7 @@ local LDB = LibStub and LibStub("LibDataBroker-1.1", true);
 local LDBIcon = LibStub and LibStub("LibDBIcon-1.0", true);
 local AceConfig = LibStub and LibStub("AceConfig-3.0", true);
 local AceConfigDialog = LibStub and LibStub("AceConfigDialog-3.0", true);
+local AceConfigRegistry = LibStub and LibStub("AceConfigRegistry-3.0", true);
 
 local MINIMAP_OBJECT_NAME = "Lantern";
 local DEFAULT_ICON = "Interface\\Icons\\INV_Misc_Lantern_01";
@@ -116,17 +117,17 @@ function Lantern:RegisterModuleOptions(module)
         extraArgs = module.opts.options;
     end
     if (type(extraArgs) == "table") then
-        for k, v in pairs(extraArgs) do
-            group.args[k] = v;
+            for k, v in pairs(extraArgs) do
+                group.args[k] = v;
+            end
+        end
+
+        if (AceConfig and AceConfigDialog) then
+            AceConfig:RegisterOptionsTable(key, group);
+            AceConfigDialog:AddToBlizOptions(key, label, ADDON_NAME);
+            self._registeredOptionKeys[key] = true;
         end
     end
-
-    if (AceConfig and AceConfigDialog) then
-        AceConfig:RegisterOptionsTable(key, group);
-        AceConfigDialog:AddToBlizOptions(key, label, ADDON_NAME);
-        self._registeredOptionKeys[key] = true;
-    end
-end
 
 function Lantern:RegisterAllModuleOptions()
     if (not self.options) then return; end
@@ -148,15 +149,16 @@ end
 
 function Lantern:BuildOptions()
     if (self.options) then return self.options; end
+    local function notifyOptionsChange() end
     local function autoQuestModule()
         return Lantern.modules and Lantern.modules.AutoQuest;
     end
     local function autoQuestDB()
         Lantern.db.autoQuest = Lantern.db.autoQuest or {};
-        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true, skipNPCs = {} };
+        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true };
         for k, v in pairs(defaults) do
             if (Lantern.db.autoQuest[k] == nil) then
-                Lantern.db.autoQuest[k] = (type(v) == "table") and {} or v;
+                Lantern.db.autoQuest[k] = v;
             end
         end
         return Lantern.db.autoQuest;
@@ -164,54 +166,6 @@ function Lantern:BuildOptions()
     local function autoQuestDisabled()
         local m = autoQuestModule();
         return not (m and m.enabled);
-    end
-    local function autoQuestSkipValues()
-        local db = autoQuestDB();
-        local values = {};
-        local sorting = {};
-        local grouped = {};
-        for id, info in pairs(db.skipNPCs or {}) do
-            local n = info;
-            local zone;
-            if (type(info) == "table") then
-                n = info.name;
-                zone = info.zone;
-            end
-            zone = zone or "Unknown";
-            grouped[zone] = grouped[zone] or {};
-            table.insert(grouped[zone], { id = id, name = n });
-        end
-        local zones = {};
-        for z in pairs(grouped) do
-            table.insert(zones, z);
-        end
-        table.sort(zones, function(a, b) return a < b; end);
-        for _, zone in ipairs(zones) do
-            local zoneKey = "zone:" .. zone;
-            values[zoneKey] = zone;
-            table.insert(sorting, zoneKey);
-            table.sort(grouped[zone], function(a, b)
-                local an = (a.name and tostring(a.name)) or tostring(a.id);
-                local bn = (b.name and tostring(b.name)) or tostring(b.id);
-                if (an == bn) then
-                    return a.id < b.id;
-                end
-                return an < bn;
-            end);
-            for _, entry in ipairs(grouped[zone]) do
-                local key = string.format("npc:%s:%s", zone, entry.id);
-                values[key] = formatSkipLabel(entry.id, entry.name, zone);
-                table.insert(sorting, key);
-            end
-        end
-        return values, sorting;
-    end
-    local function formatSkipLabel(id, name, zone)
-        local base = name and name ~= "" and name or string.format("NPC %d", id);
-        if (zone and zone ~= "") then
-            return string.format("%s - %s", base, zone);
-        end
-        return base;
     end
     local function autoQueueModule()
         return Lantern.modules and Lantern.modules.AutoQueue;
@@ -334,92 +288,6 @@ function Lantern:BuildOptions()
                         set = function(_, val)
                             local db = autoQuestDB();
                             db.autoSelectSingleReward = val and true or false;
-                        end,
-                    },
-                    skipHeader = {
-                        order = 5,
-                        type = "description",
-                        name = "Skip specific NPCs (no auto accept/turn-in).",
-                        fontSize = "medium",
-                    },
-                    addTargetNPC = {
-                        order = 6,
-                        type = "execute",
-                        name = function()
-                            local m = autoQuestModule();
-                            if (not m) then return "Add target NPC to skip list"; end
-                            local id, name = m:GetCurrentNPCInfo();
-                            if (id and name) then
-                                return string.format("Add target: %s (%d)", name, id);
-                            elseif (id) then
-                                return string.format("Add target (%d)", id);
-                            end
-                            return "Add target NPC to skip list";
-                        end,
-                        desc = "Add the currently targeted NPC to the skip list.",
-                        width = "full",
-                        disabled = function()
-                            local m = autoQuestModule();
-                            if (not m) then return true; end
-                            local id = m:GetCurrentNPCInfo();
-                            return not id;
-                        end,
-                        func = function()
-                            local m = autoQuestModule();
-                            if (not m) then return; end
-                            local id, name, zone = m:GetCurrentNPCInfo();
-                            if (id) then
-                                m:AddSkippedNPC(id, name, zone);
-                                Lantern:Print(string.format("Added %s to skip list", formatSkipLabel(id, name, zone)));
-                            end
-                        end,
-                    },
-                    addNPCID = {
-                        order = 7,
-                        type = "input",
-                        name = "Add NPC ID",
-                        desc = "Enter an NPC ID to skip. Auto Quest will ignore this NPC.",
-                        width = "full",
-                        pattern = "^%d+$",
-                        get = function() return ""; end,
-                        set = function(_, val)
-                            local id = tonumber(val);
-                            local m = autoQuestModule();
-                            if (m and id) then
-                                m:AddSkippedNPC(id);
-                                Lantern:Print(string.format("Added %s to skip list", formatSkipLabel(id, nil, nil)));
-                            end
-                        end,
-                    },
-                    skipList = {
-                        order = 8,
-                        type = "multiselect",
-                        name = "Skipped NPCs",
-                        desc = "Click to remove an NPC from the skip list.",
-                        width = "full",
-                        values = function()
-                            local vals, sorting = autoQuestSkipValues();
-                            return vals, sorting;
-                        end,
-                        get = function(_, key)
-                            return key and key:sub(1, 4) == "npc:" and true or false;
-                        end,
-                        set = function(_, key)
-                            if (not key or key:sub(1, 4) ~= "npc:") then
-                                return;
-                            end
-                            local id = tonumber(select(3, key:find("npc:[^:]*:(.+)$")));
-                            local m = autoQuestModule();
-                            if (m and id) then
-                                local entry = m.db and m.db.skipNPCs and m.db.skipNPCs[id];
-                                m:RemoveSkippedNPC(id);
-                                local name, zone = entry, nil;
-                                if (type(entry) == "table") then
-                                    name = entry.name;
-                                    zone = entry.zone;
-                                end
-                                Lantern:Print(string.format("Removed %s from skip list", formatSkipLabel(id, name, zone)));
-                            end
                         end,
                     },
                 },
