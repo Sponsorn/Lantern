@@ -126,6 +126,30 @@ local function addChannelToWindow(index, channelName)
     end
 end
 
+local function windowHasChannel(index, channelName)
+    local channels = { GetChatWindowChannels(index) };
+    for i = 1, #channels, 2 do
+        if (channels[i] == channelName or channels[i + 1] == channelName) then
+            return true;
+        end
+    end
+end
+
+local function removeChannelFromWindow(index, channelName)
+    local frame = _G["ChatFrame" .. index];
+    if (not frame or not channelName) then return; end
+    if (ChatFrame_RemoveChannel) then
+        ChatFrame_RemoveChannel(frame, channelName);
+        return;
+    end
+    if (C_ChatInfo and C_ChatInfo.RemoveChatWindowChannel and frame.GetID) then
+        C_ChatInfo.RemoveChatWindowChannel(frame:GetID(), channelName);
+        if (frame.UpdateChannelMenu) then
+            frame:UpdateChannelMenu();
+        end
+    end
+end
+
 
 local function ensureDB(self)
     _G.LanternChatQoLDB = _G.LanternChatQoLDB or {};
@@ -337,6 +361,9 @@ function ChatQoL:HandleChatChannels()
         if (index and not existing) then
             addChannelToWindow(index, "Trade");
         end
+        if (index and index ~= MAIN_CHAT_FRAME and windowHasChannel(index, "Trade") and windowHasChannel(MAIN_CHAT_FRAME, "Trade")) then
+            removeChannelFromWindow(MAIN_CHAT_FRAME, "Trade");
+        end
     end
     if (servicesMode == MODE_MOVE) then
         local name = normalizeTabName("Services", servicesTabName);
@@ -344,6 +371,9 @@ function ChatQoL:HandleChatChannels()
         local index = existing or ensureWindow(name);
         if (index and not existing) then
             addChannelToWindow(index, "Services");
+        end
+        if (index and index ~= MAIN_CHAT_FRAME and windowHasChannel(index, "Services") and windowHasChannel(MAIN_CHAT_FRAME, "Services")) then
+            removeChannelFromWindow(MAIN_CHAT_FRAME, "Services");
         end
     end
 end
