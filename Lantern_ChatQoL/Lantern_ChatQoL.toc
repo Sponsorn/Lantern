@@ -1,0 +1,10 @@
+## Interface: 110207
+## Title: Lantern: Chat QoL
+## Notes: Chat QoL module for Lantern.
+## Author: Dede in-game / Sponsorn on curseforge & github
+## Version: 0.1.0
+## Dependencies: Lantern
+## DefaultState: enabled
+## SavedVariables: LanternChatQoLDB
+
+ChatQoL.lua

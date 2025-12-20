@@ -10,8 +10,16 @@ local function log(msg)
     print("|cffe6c619Lantern:|r " .. tostring(msg or ""));
 end
 
+local function printProxy(self, msg)
+    if (self == addon) then
+        log(msg);
+    else
+        log(self);
+    end
+end
+
 utils.log = log;
-addon.Print = log;
+addon.Print = printProxy;
 
 local CET_OFFSET_SECONDS = 3600; -- CET is UTC+1 (ignores CEST for simplicity)
 local REGION_BY_ID = { "US", "KR", "EU", "TW", "CN" };

@@ -94,20 +94,24 @@ function Lantern:RegisterModuleOptions(module)
     local label = (module.opts and module.opts.title) or module.name;
     local desc = module.opts and module.opts.desc;
 
+    local childGroups = (module.opts and module.opts.childGroups) or "tree";
     local group = {
         type = "group",
         name = label,
-        childGroups = "tab",
+        childGroups = childGroups,
         args = {
-            enabled = {
-                type = "toggle",
-                name = "Enable",
-                desc = desc,
-                width = "full",
-                get = moduleToggleGetter(module.name),
-                set = moduleToggle(module.name),
-            },
+            enabled = nil,
         },
+    };
+    local enableLabel = (module.opts and module.opts.enableLabel) or "Enable";
+    group.args.enabled = {
+        order = 0,
+        type = "toggle",
+        name = enableLabel,
+        desc = desc,
+        width = "full",
+        get = moduleToggleGetter(module.name),
+        set = moduleToggle(module.name),
     };
     -- Allow modules to contribute additional options.
     local extraArgs;
