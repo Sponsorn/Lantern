@@ -46,16 +46,86 @@ local function getWindowIndexByName(name)
     end
 end
 
+local function refreshDock()
+    if (GeneralDockManager and GeneralDockManager.UpdateTabs) then
+        GeneralDockManager:UpdateTabs();
+    end
+    if (FCFDock_UpdateTabs and GeneralDockManager) then
+        pcall(FCFDock_UpdateTabs, GeneralDockManager);
+    end
+    if (FCF_UpdateDockPosition) then
+        pcall(FCF_UpdateDockPosition);
+    end
+    if (FCF_SelectWindow and _G.DEFAULT_CHAT_FRAME) then
+        pcall(FCF_SelectWindow, _G.DEFAULT_CHAT_FRAME);
+    end
+end
+
 local function ensureWindow(windowName)
+    local function showAndDock(index, label)
+        local frame = _G["ChatFrame" .. index];
+        if (frame) then
+            if (frame.Show) then frame:Show(); end
+            if (frame.SetShown) then frame:SetShown(true); end
+            if (GeneralDockManager and GeneralDockManager.DOCKED_CHAT_FRAMES) then
+                if (frame.isDocked ~= 1) then
+                    local ok = false;
+                    if (FCFDock_AddChatFrame) then
+                        local position = #GeneralDockManager.DOCKED_CHAT_FRAMES + 1;
+                        ok = pcall(FCFDock_AddChatFrame, GeneralDockManager, frame, position);
+                    end
+                    if (not ok and FCF_DockFrame) then
+                        pcall(FCF_DockFrame, frame, 1);
+                    end
+                end
+            end
+        end
+        refreshDock();
+        Lantern:Print("Chat QoL: tab ready: " .. tostring(label) .. " (#" .. tostring(index) .. ")");
+    end
+
     local index = getWindowIndexByName(windowName);
-    if (index) then return index; end
+    if (index) then
+        showAndDock(index, windowName);
+        return index;
+    end
     if (FCF_OpenNewWindow) then
         local frame = FCF_OpenNewWindow(windowName);
         if (frame and frame.GetID) then
-            return frame:GetID();
+            local id = frame:GetID();
+            showAndDock(id, windowName);
+            return id;
         end
     end
+    if (FCF_NewChatWindow) then
+        local newIndex = FCF_NewChatWindow(windowName);
+        if (newIndex) then
+            showAndDock(newIndex, windowName);
+            return newIndex;
+        end
+    end
+    Lantern:Print("Chat QoL: failed to create tab: " .. tostring(windowName));
 end
+
+local function getChannelIdByName(channelName)
+    if (not GetChannelName) then return; end
+    local id = GetChannelName(channelName);
+    if (type(id) == "number" and id > 0) then
+        return id;
+    end
+end
+
+local function addChannelToWindow(index, channelName)
+    if (not index or not channelName) then return; end
+    local channelId = getChannelIdByName(channelName);
+    if (AddChatWindowChannel) then
+        AddChatWindowChannel(index, channelId or channelName);
+    end
+    if (C_ChatInfo and C_ChatInfo.AddChatWindowChannel) then
+        C_ChatInfo.AddChatWindowChannel(index, channelId or channelName);
+    end
+end
+
 
 local function ensureDB(self)
     _G.LanternChatQoLDB = _G.LanternChatQoLDB or {};
@@ -262,11 +332,19 @@ function ChatQoL:HandleChatChannels()
     local servicesMode, servicesTabName = getModeConfig(self, "Services");
     if (tradeMode == MODE_MOVE) then
         local name = normalizeTabName("Trade", tradeTabName);
-        ensureWindow(name);
+        local existing = getWindowIndexByName(name);
+        local index = existing or ensureWindow(name);
+        if (index and not existing) then
+            addChannelToWindow(index, "Trade");
+        end
     end
     if (servicesMode == MODE_MOVE) then
         local name = normalizeTabName("Services", servicesTabName);
-        ensureWindow(name);
+        local existing = getWindowIndexByName(name);
+        local index = existing or ensureWindow(name);
+        if (index and not existing) then
+            addChannelToWindow(index, "Services");
+        end
     end
 end
 
