@@ -421,17 +421,18 @@ function CraftingOrders:EnsureWhisperButton()
     if (not view or not view.CompleteOrderButton or view._lanternCompleteWhisperButton) then return; end
 
     local baseButton = view.CompleteOrderButton;
-    local recraftButton = view.RecraftOrderButton;
-    local rightButton = getRightButton(view) or baseButton;
     local button = CreateFrame("Button", nil, view, "UIPanelButtonTemplate");
     button:SetText("Complete + Whisper");
     button:SetHeight(baseButton:GetHeight());
-    button:SetWidth(160);
-    if (recraftButton) then
-        button:SetPoint("RIGHT", recraftButton, "LEFT", -6, 0);
-    else
-        button:SetPoint("RIGHT", rightButton, "LEFT", -6, 0);
+    button:SetWidth(baseButton:GetWidth());
+    if (button.SetFrameStrata) then
+        button:SetFrameStrata("TOOLTIP");
     end
+    if (button.SetFrameLevel and baseButton.GetFrameLevel) then
+        button:SetFrameLevel(baseButton:GetFrameLevel() + 20);
+    end
+    button:ClearAllPoints();
+    button:SetPoint("BOTTOM", baseButton, "TOP", 0, 2);
     button:SetScript("OnClick", function()
         self:HandleCompleteAndWhisper();
     end);

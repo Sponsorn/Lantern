@@ -8,6 +8,8 @@ local AceConfigRegistry = LibStub and LibStub("AceConfigRegistry-3.0", true);
 
 local MINIMAP_OBJECT_NAME = "Lantern";
 local DEFAULT_ICON = "Interface\\AddOns\\Lantern\\Media\\Images\\Icons\\lantern-core-icon64.blp";
+local CURSEFORGE_CRAFTING_ORDERS = "https://www.curseforge.com/wow/addons/lantern-craftingorders";
+local LINK_POPUP_NAME = "LanternCopyLinkDialog";
 
 local function hasMinimapLibs()
     return LDB and LDBIcon;
@@ -15,6 +17,41 @@ end
 
 local function hasOptionsLibs()
     return AceConfig and AceConfigDialog;
+end
+
+local function ensureLinkPopup()
+    if (StaticPopupDialogs[LINK_POPUP_NAME]) then return; end
+    StaticPopupDialogs[LINK_POPUP_NAME] = {
+        text = "CTRL-C to copy link",
+        button1 = CLOSE,
+        OnShow = function(dialog, data)
+            local function hidePopup()
+                dialog:Hide();
+            end
+            local editBox = dialog.GetEditBox and dialog:GetEditBox() or dialog.editBox;
+            editBox:SetScript("OnEscapePressed", hidePopup);
+            editBox:SetScript("OnEnterPressed", hidePopup);
+            editBox:SetScript("OnKeyUp", function(_, key)
+                if (IsControlKeyDown() and (key == "C" or key == "X")) then
+                    hidePopup();
+                end
+            end);
+            editBox:SetMaxLetters(0);
+            editBox:SetText(data or "");
+            editBox:HighlightText();
+        end,
+        hasEditBox = true,
+        editBoxWidth = 260,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    };
+end
+
+local function showLinkPopup(link)
+    ensureLinkPopup();
+    StaticPopup_Show(LINK_POPUP_NAME, nil, nil, link);
 end
 
 function Lantern:EnsureUIState()
@@ -467,6 +504,38 @@ local function decorateSplash(panel)
     local thanks = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
     thanks:SetPoint("TOPLEFT", authorLabel, "BOTTOMLEFT", 0, -8);
     thanks:SetText("Special Thanks to copyrighters for making me pull my thumb out.");
+
+    local modulesTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge");
+    modulesTitle:SetPoint("TOPLEFT", thanks, "BOTTOMLEFT", 0, -18);
+    modulesTitle:SetText("Available modules");
+
+    local modulesLine = panel:CreateTexture(nil, "ARTWORK");
+    modulesLine:SetPoint("TOPLEFT", modulesTitle, "BOTTOMLEFT", 0, -6);
+    modulesLine:SetSize(520, 1);
+    modulesLine:SetColorTexture(0.7, 0.6, 0.3, 0.9);
+
+    local craftingDesc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    craftingDesc:SetPoint("TOPLEFT", modulesLine, "BOTTOMLEFT", 0, -10);
+    craftingDesc:SetJustifyH("LEFT");
+    craftingDesc:SetWidth(520);
+    craftingDesc:SetWordWrap(true);
+    craftingDesc:SetText("Crafting Orders: announces guild order activity, personal order alerts, and a Complete + Whisper button.");
+
+    local curseForgeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate");
+    curseForgeButton:SetSize(120, 24);
+    curseForgeButton:SetPoint("TOPLEFT", craftingDesc, "BOTTOMLEFT", 0, -10);
+    local craftingAddonName = "Lantern_CraftingOrders";
+    local hasCraftingOrders = C_AddOns and C_AddOns.IsAddOnLoaded
+        and C_AddOns.IsAddOnLoaded(craftingAddonName);
+    if (hasCraftingOrders) then
+        curseForgeButton:SetText("Already enabled");
+        curseForgeButton:SetEnabled(false);
+    else
+        curseForgeButton:SetText("CurseForge");
+        curseForgeButton:SetScript("OnClick", function()
+            showLinkPopup(CURSEFORGE_CRAFTING_ORDERS);
+        end);
+    end
 end
 
 function Lantern:SetupOptions()
