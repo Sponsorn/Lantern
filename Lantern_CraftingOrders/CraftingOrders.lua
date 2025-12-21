@@ -5,6 +5,7 @@ local Lantern = _G.Lantern;
 if (not Lantern) then return; end
 
 local LibSink = LibStub and LibStub("LibSink-2.0", true);
+local LibSharedMedia = LibStub and LibStub("LibSharedMedia-3.0", true);
 
 local CraftingOrders = Lantern:NewModule("CraftingOrders", {
     title = "Crafting Orders",
@@ -15,6 +16,8 @@ local DEFAULTS = {
     postPlacement = true,
     postFulfill = true,
     notifyPersonal = true,
+    personalSoundEnabled = true,
+    personalSoundName = "Auction Window Open",
     enableWhisperButton = true,
     whisperMessage = "Order complete! Thanks!",
     debug = false,
@@ -111,6 +114,29 @@ local function formatPersonalOrderMessage()
     return "New personal crafting order received.";
 end
 
+local function getSoundValues()
+    if (not LibSharedMedia or not LibSharedMedia.List) then
+        return { RaidWarning = "Raid warning" };
+    end
+    local values = {};
+    for _, name in ipairs(LibSharedMedia:List("sound") or {}) do
+        values[name] = name;
+    end
+    if (not values.RaidWarning) then
+        values.RaidWarning = "Raid warning";
+    end
+    return values;
+end
+
+local function playPersonalSound(self)
+    if (not self.db or not self.db.personalSoundEnabled or self.db.debug) then return; end
+    if (not LibSharedMedia or not LibSharedMedia.Fetch) then return; end
+    local sound = LibSharedMedia:Fetch("sound", self.db.personalSoundName or "RaidWarning");
+    if (sound and PlaySoundFile) then
+        PlaySoundFile(sound, "Master");
+    end
+end
+
 local function getPersonalOrderCount()
     if (not C_CraftingOrders) then return nil; end
     if (C_CraftingOrders.GetPersonalOrderCounts) then
@@ -148,6 +174,17 @@ end
 local function getActiveOrder()
     local view = getOrderView();
     return view and view.order;
+end
+
+local function getRightButton(view)
+    if (not view) then return nil; end
+    if (view.CompleteOrderButton and view.CompleteOrderButton:IsShown()) then
+        return view.CompleteOrderButton;
+    end
+    if (view.CreateOrderButton and view.CreateOrderButton:IsShown()) then
+        return view.CreateOrderButton;
+    end
+    return view.CompleteOrderButton or view.CreateOrderButton;
 end
 
 function CraftingOrders:HandlePlacement()
@@ -299,6 +336,7 @@ function CraftingOrders:HandlePersonalOrderMessage(msg)
     if (not self._personalCountAvailable) then
         if (type(msg) == "string" and msg:find("received a new Personal Crafting Order", 1, true)) then
             self:OutputMessage(formatPersonalOrderMessage());
+            playPersonalSound(self);
         end
     end
 end
@@ -313,6 +351,7 @@ function CraftingOrders:HandlePersonalOrderCountUpdate()
     self._personalCountAvailable = true;
     if (self._personalCount ~= nil and count > self._personalCount) then
         self:OutputMessage(formatPersonalOrderMessage());
+        playPersonalSound(self);
     end
     self._personalCount = count;
 end
@@ -344,13 +383,22 @@ function CraftingOrders:UpdateWhisperButton()
         button:Hide();
         return;
     end
-    button:Show();
     local order = view.order;
     local canUse = order and isPersonalOrderType(order.orderType);
-    if (view.CompleteOrderButton and view.CompleteOrderButton.IsEnabled) then
-        canUse = canUse and view.CompleteOrderButton:IsEnabled();
+    local baseButton = view.CompleteOrderButton;
+    if (baseButton and baseButton.IsShown) then
+        canUse = canUse and baseButton:IsShown();
     end
-    button:SetEnabled(canUse and true or false);
+    if (baseButton and baseButton.IsEnabled) then
+        canUse = canUse and baseButton:IsEnabled();
+    end
+    if (canUse) then
+        button:Show();
+        button:SetEnabled(true);
+    else
+        button:SetEnabled(false);
+        button:Hide();
+    end
 end
 
 function CraftingOrders:EnsureWhisperButton()
@@ -358,11 +406,17 @@ function CraftingOrders:EnsureWhisperButton()
     if (not view or not view.CompleteOrderButton or view._lanternCompleteWhisperButton) then return; end
 
     local baseButton = view.CompleteOrderButton;
+    local recraftButton = view.RecraftOrderButton;
+    local rightButton = getRightButton(view) or baseButton;
     local button = CreateFrame("Button", nil, view, "UIPanelButtonTemplate");
     button:SetText("Complete + Whisper");
     button:SetHeight(baseButton:GetHeight());
     button:SetWidth(160);
-    button:SetPoint("RIGHT", baseButton, "LEFT", -6, 0);
+    if (recraftButton) then
+        button:SetPoint("RIGHT", recraftButton, "LEFT", -6, 0);
+    else
+        button:SetPoint("RIGHT", rightButton, "LEFT", -6, 0);
+    end
     button:SetScript("OnClick", function()
         self:HandleCompleteAndWhisper();
     end);
@@ -415,19 +469,8 @@ function CraftingOrders:GetOptions()
                         self.db.postFulfill = value and true or false;
                     end,
                 },
-                notifyPersonal = {
-                    order = 3,
-                    type = "toggle",
-                    name = "Notify on personal orders",
-                    desc = "Show a notification when you receive a personal crafting order.",
-                    width = "full",
-                    get = function() return self.db and self.db.notifyPersonal; end,
-                    set = function(_, value)
-                        self.db.notifyPersonal = value and true or false;
-                    end,
-                },
                 debug = {
-                    order = 4,
+                    order = 3,
                     type = "toggle",
                     name = "Debug (print only)",
                     desc = "When enabled, announcements are printed instead of sent to the chosen output.",
@@ -444,10 +487,15 @@ function CraftingOrders:GetOptions()
             type = "group",
             name = "Personal Orders",
             args = {
+                receivedHeader = {
+                    order = 0,
+                    type = "header",
+                    name = "Personal order received",
+                },
                 enabled = {
                     order = 1,
                     type = "toggle",
-                    name = "Enable",
+                    name = "Enable notification",
                     width = "full",
                     get = function() return self.db and self.db.notifyPersonal; end,
                     set = function(_, value)
@@ -469,8 +517,50 @@ function CraftingOrders:GetOptions()
                         self.db.sink.sink20OutputSink = value;
                     end,
                 },
-                whisperButton = {
+                soundEnabled = {
                     order = 3,
+                    type = "toggle",
+                    name = "Play sound",
+                    width = "full",
+                    disabled = function() return not (self.db and self.db.notifyPersonal); end,
+                    get = function() return self.db and self.db.personalSoundEnabled; end,
+                    set = function(_, value)
+                        self.db.personalSoundEnabled = value and true or false;
+                    end,
+                },
+                soundName = {
+                    order = 4,
+                    type = "select",
+                    name = "Sound",
+                    width = 1.4,
+                    values = getSoundValues,
+                    itemControl = "DDI-Sound",
+                    disabled = function()
+                        return not (self.db and self.db.notifyPersonal and self.db.personalSoundEnabled);
+                    end,
+                    get = function() return self.db and self.db.personalSoundName or "RaidWarning"; end,
+                    set = function(_, value)
+                        self.db.personalSoundName = value;
+                    end,
+                },
+                testNotification = {
+                    order = 5,
+                    type = "execute",
+                    name = "Test notification",
+                    width = "full",
+                    disabled = function() return not (self.db and self.db.notifyPersonal); end,
+                    func = function()
+                        self:OutputMessage(formatPersonalOrderMessage());
+                        playPersonalSound(self);
+                    end,
+                },
+                craftHeader = {
+                    order = 6,
+                    type = "header",
+                    name = "Crafting window options",
+                },
+                whisperButton = {
+                    order = 7,
                     type = "toggle",
                     name = "Show Complete + Whisper button",
                     width = "full",
@@ -481,7 +571,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 whisperMessage = {
-                    order = 4,
+                    order = 8,
                     type = "input",
                     name = "Whisper message",
                     desc = "Use {name} and {item} as placeholders.",
@@ -514,6 +604,12 @@ function CraftingOrders:OnEnable()
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_FULFILL_ORDER_RESPONSE", function(_, _, ...)
         self:HandleFulfillResponse(...);
+    end);
+    self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function()
+        self:UpdateWhisperButton();
+    end);
+    self.addon:ModuleRegisterEvent(self, "TRADE_SKILL_ITEM_CRAFTED_RESULT", function()
+        self:UpdateWhisperButton();
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_UPDATE_PERSONAL_ORDER_COUNTS", function()
         self:HandlePersonalOrderCountUpdate();
