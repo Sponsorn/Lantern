@@ -7,11 +7,14 @@ Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused 
 - **Delete Confirm**: Hides the delete prompt input and enables the confirm button immediately.
 - **Disable Auto Add Spells**: Prevents spells from being auto-added to your action bars.
 
-The framework is module-based, so additional features can be plugged in later without impacting the core. Modules marked `skipOptions` only appear under General Options, keeping the AddOns list tidy.
+The framework is module-based, so additional features can be plugged in later without impacting the core.
+
+Available modules:
+- Crafting Orders: Functionality to get info if you received a personal crafting order, send guild message when placing orders. QoL button for one-click complete personal work order and whisper recipient
 
 Current WIP modules:
 - Vendor Filter: Filter/sort vendor items by type (icons on the merchant frame).
-- Crafting Orders: Functionality to get info if you received a personal crafting order, send guild message when placing orders. Maybe stats to see what people are requesting in trade chat to be able to make decisions on which profession trees to pick.
+- Crafting orders, additionals: Maybe stats to see what people are requesting in trade chat to be able to make decisions on which profession trees to pick.
 
 ## Configuration
 
