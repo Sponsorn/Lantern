@@ -15,6 +15,8 @@ local DEFAULTS = {
     postPlacement = true,
     postFulfill = true,
     notifyPersonal = true,
+    enableWhisperButton = true,
+    whisperMessage = "Order complete! Thanks!",
     debug = false,
 };
 
@@ -97,6 +99,14 @@ local function isGuildOrderType(orderType)
     return orderType == 2;
 end
 
+local function isPersonalOrderType(orderType)
+    if (orderType == nil) then return false; end
+    if (Enum and Enum.CraftingOrderType) then
+        return orderType == Enum.CraftingOrderType.Personal;
+    end
+    return orderType == 0;
+end
+
 local function formatPersonalOrderMessage()
     return "New personal crafting order received.";
 end
@@ -119,6 +129,25 @@ local function getPersonalOrderCount()
         end
     end
     return nil;
+end
+
+local function formatWhisperMessage(template, order)
+    local msg = tostring(template or "");
+    local itemLink = order and (order.outputItemHyperlink or order.outputItemLink) or "";
+    local name = stripRealm(order and (order.customerName or order.recipient) or "") or "";
+    msg = msg:gsub("{item}", itemLink ~= "" and itemLink or "your item");
+    msg = msg:gsub("{name}", name ~= "" and name or "there");
+    return msg;
+end
+
+local function getOrderView()
+    local ordersPage = ProfessionsFrame and ProfessionsFrame.OrdersPage;
+    return ordersPage and ordersPage.OrderView;
+end
+
+local function getActiveOrder()
+    local view = getOrderView();
+    return view and view.order;
 end
 
 function CraftingOrders:HandlePlacement()
@@ -288,13 +317,78 @@ function CraftingOrders:HandlePersonalOrderCountUpdate()
     self._personalCount = count;
 end
 
-function CraftingOrders:GetOptions()
-    local outputOptions;
-    if (LibSink and LibSink.GetSinkAce3OptionsDataTable) then
-        outputOptions = LibSink.GetSinkAce3OptionsDataTable(self);
-        outputOptions.order = 2;
+function CraftingOrders:HandleCompleteAndWhisper()
+    local view = getOrderView();
+    local button = view and view.CompleteOrderButton;
+    local order = view and view.order;
+    if (not view or not button or not button.IsEnabled or not button:IsEnabled()) then return; end
+    if (not order or not isPersonalOrderType(order.orderType)) then return; end
+    if (button.Click) then
+        button:Click();
     end
+    if (not self.db or not self.db.enableWhisperButton) then return; end
+    local recipient = stripRealm(order.customerName or order.recipient);
+    if (recipient and recipient ~= "" and SendChatMessage) then
+        local msg = formatWhisperMessage(self.db.whisperMessage, order);
+        if (msg ~= "") then
+            SendChatMessage(msg, "WHISPER", nil, recipient);
+        end
+    end
+end
 
+function CraftingOrders:UpdateWhisperButton()
+    local view = getOrderView();
+    local button = view and view._lanternCompleteWhisperButton;
+    if (not view or not button) then return; end
+    if (not self.db or not self.db.enableWhisperButton) then
+        button:Hide();
+        return;
+    end
+    button:Show();
+    local order = view.order;
+    local canUse = order and isPersonalOrderType(order.orderType);
+    if (view.CompleteOrderButton and view.CompleteOrderButton.IsEnabled) then
+        canUse = canUse and view.CompleteOrderButton:IsEnabled();
+    end
+    button:SetEnabled(canUse and true or false);
+end
+
+function CraftingOrders:EnsureWhisperButton()
+    local view = getOrderView();
+    if (not view or not view.CompleteOrderButton or view._lanternCompleteWhisperButton) then return; end
+
+    local baseButton = view.CompleteOrderButton;
+    local button = CreateFrame("Button", nil, view, "UIPanelButtonTemplate");
+    button:SetText("Complete + Whisper");
+    button:SetHeight(baseButton:GetHeight());
+    button:SetWidth(160);
+    button:SetPoint("RIGHT", baseButton, "LEFT", -6, 0);
+    button:SetScript("OnClick", function()
+        self:HandleCompleteAndWhisper();
+    end);
+    view._lanternCompleteWhisperButton = button;
+
+    if (view.HookScript) then
+        view:HookScript("OnShow", function() self:UpdateWhisperButton(); end);
+    end
+    if (baseButton.HookScript) then
+        baseButton:HookScript("OnEnable", function() self:UpdateWhisperButton(); end);
+        baseButton:HookScript("OnDisable", function() self:UpdateWhisperButton(); end);
+    end
+    if (view.SetOrder and hooksecurefunc) then
+        hooksecurefunc(view, "SetOrder", function() self:UpdateWhisperButton(); end);
+    end
+    if (view.SetOrderInfo and hooksecurefunc) then
+        hooksecurefunc(view, "SetOrderInfo", function() self:UpdateWhisperButton(); end);
+    end
+end
+
+function CraftingOrders:GetOptions()
+    local sinkValues = {
+        RaidWarning = "Raid warning",
+        ChatFrame = "Chat frame",
+        None = "None",
+    };
     return {
         general = {
             order = 1,
@@ -345,16 +439,58 @@ function CraftingOrders:GetOptions()
                 },
             },
         },
-        output = outputOptions or {
+        personal = {
             order = 2,
             type = "group",
-            name = "Output",
+            name = "Personal Orders",
             args = {
-                desc = {
+                enabled = {
                     order = 1,
-                    type = "description",
-                    name = "LibSink-2.0 not available. Messages will be sent to guild chat.",
-                    fontSize = "medium",
+                    type = "toggle",
+                    name = "Enable",
+                    width = "full",
+                    get = function() return self.db and self.db.notifyPersonal; end,
+                    set = function(_, value)
+                        self.db.notifyPersonal = value and true or false;
+                    end,
+                },
+                sink = {
+                    order = 2,
+                    type = "select",
+                    name = "Channel",
+                    values = sinkValues,
+                    disabled = function() return not (self.db and self.db.notifyPersonal); end,
+                    get = function()
+                        return self.db and self.db.sink and self.db.sink.sink20OutputSink or "RaidWarning";
+                    end,
+                    set = function(_, value)
+                        if (not self.db) then return; end
+                        self.db.sink = self.db.sink or {};
+                        self.db.sink.sink20OutputSink = value;
+                    end,
+                },
+                whisperButton = {
+                    order = 3,
+                    type = "toggle",
+                    name = "Show Complete + Whisper button",
+                    width = "full",
+                    get = function() return self.db and self.db.enableWhisperButton; end,
+                    set = function(_, value)
+                        self.db.enableWhisperButton = value and true or false;
+                        self:UpdateWhisperButton();
+                    end,
+                },
+                whisperMessage = {
+                    order = 4,
+                    type = "input",
+                    name = "Whisper message",
+                    desc = "Use {name} and {item} as placeholders.",
+                    width = "full",
+                    disabled = function() return not (self.db and self.db.enableWhisperButton); end,
+                    get = function() return self.db and self.db.whisperMessage; end,
+                    set = function(_, value)
+                        self.db.whisperMessage = value or "";
+                    end,
                 },
             },
         },
@@ -371,6 +507,8 @@ function CraftingOrders:OnEnable()
     self._awaitDeadline = 0;
     self._personalCount = getPersonalOrderCount();
     self._personalCountAvailable = self._personalCount ~= nil;
+    self:EnsureWhisperButton();
+    self:UpdateWhisperButton();
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", function()
         self:HandlePlacement();
     end);
