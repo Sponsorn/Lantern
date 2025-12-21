@@ -1,0 +1,9 @@
+## Interface: 110207
+## Title: Lantern: Crafting Orders
+## Notes: Scaffolding for crafting order monitoring.
+## Author: Dede
+## Version: 0.2.3
+## Dependencies: Lantern
+## DefaultState: enabled
+
+CraftingOrders.lua

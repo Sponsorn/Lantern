@@ -7,7 +7,7 @@ local AceConfigDialog = LibStub and LibStub("AceConfigDialog-3.0", true);
 local AceConfigRegistry = LibStub and LibStub("AceConfigRegistry-3.0", true);
 
 local MINIMAP_OBJECT_NAME = "Lantern";
-local DEFAULT_ICON = "Interface\\Icons\\INV_Misc_Lantern_01";
+local DEFAULT_ICON = "Interface\\AddOns\\Lantern\\Media\\Images\\Icons\\lantern-core-icon64.blp";
 
 local function hasMinimapLibs()
     return LDB and LDBIcon;
@@ -449,7 +449,7 @@ local function decorateSplash(panel)
     local icon = panel:CreateTexture(nil, "ARTWORK");
     icon:SetSize(96, 96);
     icon:SetPoint("TOPLEFT", 12, -32);
-    icon:SetTexture("Interface\\Icons\\INV_Misc_Lantern_01");
+    icon:SetTexture("Interface\\AddOns\\Lantern\\Media\\Images\\Icons\\lantern-core-icon128.blp");
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge");
     title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 12, -4);
