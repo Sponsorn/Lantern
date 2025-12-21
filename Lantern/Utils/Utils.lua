@@ -114,5 +114,26 @@ addon:RegisterConverter("time:next_reset_epoch", function(now)
     return last and (last + 24 * 60 * 60) or nil;
 end);
 
+addon:RegisterConverter("money:format_copper", function(amount)
+    local copper = tonumber(amount) or 0;
+    if (copper <= 0) then return ""; end
+    local gold = math.floor(copper / 10000);
+    local silver = math.floor((copper % 10000) / 100);
+    local coin = copper % 100;
+    local function formatThousands(value)
+        local str = tostring(value);
+        local formatted, count = str:gsub("^(-?%d+)(%d%d%d)", "%1,%2");
+        while (count > 0) do
+            formatted, count = formatted:gsub("^(-?%d+)(%d%d%d)", "%1,%2");
+        end
+        return formatted;
+    end
+    local parts = {};
+    if (gold > 0) then table.insert(parts, formatThousands(gold) .. "g"); end
+    if (silver > 0) then table.insert(parts, silver .. "s"); end
+    if (coin > 0) then table.insert(parts, coin .. "c"); end
+    return table.concat(parts, " ");
+end);
+
 utils.normalizeRegionCode = normalizeRegionCode;
 utils.GetDailyResetHourCET = GetDailyResetHourCET;

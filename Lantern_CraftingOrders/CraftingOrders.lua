@@ -15,12 +15,14 @@ local CraftingOrders = Lantern:NewModule("CraftingOrders", {
 local DEFAULTS = {
     postPlacement = true,
     postFulfill = true,
+    guildPlacedMessage = "[Guild order placed] {item}, {tip}",
+    guildFulfilledMessage = "[Guild order fulfilled] {item} for {who}, {tip}",
+    debugGuild = false,
     notifyPersonal = true,
     personalSoundEnabled = true,
     personalSoundName = "Auction Window Open",
     enableWhisperButton = true,
     whisperMessage = "Order complete! Thanks!",
-    debug = false,
 };
 
 local function ensureDB(self)
@@ -64,11 +66,30 @@ local function buildMessage(prefix, itemLink, who, tipGold, missingMats)
     return table.concat(parts, "");
 end
 
+local function formatGuildMessage(template, itemLink, who, tipCopper)
+    local msg = tostring(template or "");
+    local tipValue = Lantern and Lantern:Convert("money:format_copper", tipCopper) or "";
+    local tipText = (tipValue ~= "") and (", commission: " .. tipValue) or "";
+    msg = msg:gsub("{item}", itemLink or "Unknown item");
+    msg = msg:gsub("{who}", who or "");
+    msg = msg:gsub("{tip}", tipText);
+    msg = msg:gsub("%s+", " ");
+    msg = msg:gsub("%s+,", ",");
+    msg = msg:gsub(",%s*,", ",");
+    msg = msg:gsub(",%s*$", "");
+    msg = msg:gsub("for%s*,", "for ");
+    msg = msg:gsub("%s+$", "");
+    return msg;
+end
+
+local function buildGuildPreview(template, isFulfilled)
+    local itemLink = "|cffffffff|Hitem:0:0:0:0:0:0:0:0:0|h[Sample Item]|h|r";
+    local who = isFulfilled and "Customer" or "";
+    local tip = 125000;
+    return formatGuildMessage(template, itemLink, who, tip);
+end
+
 function CraftingOrders:OutputMessage(msg)
-    if (self.db and self.db.debug) then
-        Lantern:Print("Crafting Orders: " .. tostring(msg));
-        return;
-    end
     if (self.Pour) then
         self:Pour(msg);
         return;
@@ -129,7 +150,7 @@ local function getSoundValues()
 end
 
 local function playPersonalSound(self)
-    if (not self.db or not self.db.personalSoundEnabled or self.db.debug) then return; end
+    if (not self.db or not self.db.personalSoundEnabled) then return; end
     if (not LibSharedMedia or not LibSharedMedia.Fetch) then return; end
     local sound = LibSharedMedia:Fetch("sound", self.db.personalSoundName or "RaidWarning");
     if (sound and PlaySoundFile) then
@@ -211,17 +232,25 @@ function CraftingOrders:HandlePlacement()
     local itemLink = out and out.hyperlink or nil;
 
     local tip = 0;
-    local tipBox = form.PaymentContainer.TipMoneyInputFrame
-        and form.PaymentContainer.TipMoneyInputFrame.GoldBox;
-    if (tipBox and tipBox.GetAmount) then
-        tip = tipBox:GetAmount() or 0;
+    local tipFrame = form.PaymentContainer.TipMoneyInputFrame;
+    if (tipFrame and tipFrame.GetAmount) then
+        tip = tipFrame:GetAmount() or 0;
+    else
+        local tipBox = tipFrame and tipFrame.GoldBox;
+        if (tipBox and tipBox.GetAmount) then
+            tip = (tipBox:GetAmount() or 0) * 10000;
+        end
     end
     local missingMats = false;
     if (form.transaction.HasMetQuantityRequirements) then
         missingMats = not form.transaction:HasMetQuantityRequirements();
     end
 
-    local msg = buildMessage("[Guild order placed]", itemLink, nil, tip, missingMats);
+    local msg = formatGuildMessage(self.db.guildPlacedMessage, itemLink, nil, tip);
+    if (self.db.debugGuild) then
+        Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
+        return;
+    end
     if (SendChatMessage) then
         SendChatMessage(msg, "GUILD");
     else
@@ -271,11 +300,13 @@ function CraftingOrders:HandleFulfillResponse(...)
     local grossCopper = info and (info.tipAmount or info.tip) or 0;
     local cutCopper = info and (info.consortiumCut or info.consortiumFee or 0) or 0;
     local netCopper = math.max(grossCopper - cutCopper, 0);
-    local tipGold = math.floor(netCopper / 10000);
+    local tipCopper = netCopper or 0;
 
     if (itemLink and who) then
-        local msg = buildMessage("[Guild order fulfilled]", itemLink, who, tipGold, false);
-        if (SendChatMessage) then
+        local msg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, who, tipCopper);
+        if (self.db.debugGuild) then
+            Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
+        elseif (SendChatMessage) then
             SendChatMessage(msg, "GUILD");
         else
             Lantern:Print("Crafting Orders: " .. tostring(msg));
@@ -322,8 +353,10 @@ function CraftingOrders:HandleSystemMessage(msg)
         tipGold = tonumber(digits) or 0;
     end
 
-    local msg = buildMessage("[Guild order fulfilled]", itemLink, who, tipGold, false);
-    if (SendChatMessage) then
+    local msg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, who, tipCopper);
+    if (self.db.debugGuild) then
+        Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
+    elseif (SendChatMessage) then
         SendChatMessage(msg, "GUILD");
     else
         Lantern:Print("Crafting Orders: " .. tostring(msg));
@@ -447,38 +480,97 @@ function CraftingOrders:GetOptions()
         general = {
             order = 1,
             type = "group",
-            name = "General",
+            name = "Guild Orders",
             args = {
+                placedHeader = {
+                    order = 0,
+                    type = "header",
+                    name = "Order placed",
+                },
                 postPlacement = {
                     order = 1,
                     type = "toggle",
-                    name = "Announce placed guild orders",
+                    name = "Announce placed orders",
                     width = "full",
                     get = function() return self.db and self.db.postPlacement; end,
                     set = function(_, value)
                         self.db.postPlacement = value and true or false;
                     end,
                 },
-                postFulfill = {
+                placedMessage = {
                     order = 2,
+                    type = "input",
+                    name = "Message",
+                    desc = "Tags: {item} {tip}",
+                    width = "full",
+                    get = function() return self.db and self.db.guildPlacedMessage; end,
+                    set = function(_, value)
+                        self.db.guildPlacedMessage = value or "";
+                    end,
+                },
+                placedPreview = {
+                    order = 3,
+                    type = "description",
+                    name = function()
+                        return "Preview: " .. buildGuildPreview(self.db and self.db.guildPlacedMessage or "", false);
+                    end,
+                    fontSize = "small",
+                },
+                fulfilledHeader = {
+                    order = 4,
+                    type = "header",
+                    name = "Order fulfilled",
+                },
+                postFulfill = {
+                    order = 5,
                     type = "toggle",
-                    name = "Announce fulfilled guild orders",
+                    name = "Announce fulfilled orders",
                     width = "full",
                     get = function() return self.db and self.db.postFulfill; end,
                     set = function(_, value)
                         self.db.postFulfill = value and true or false;
                     end,
                 },
-                debug = {
-                    order = 3,
+                fulfilledMessage = {
+                    order = 6,
+                    type = "input",
+                    name = "Message",
+                    desc = "Tags: {item} {who} {tip}",
+                    width = "full",
+                    get = function() return self.db and self.db.guildFulfilledMessage; end,
+                    set = function(_, value)
+                        self.db.guildFulfilledMessage = value or "";
+                    end,
+                },
+                fulfilledPreview = {
+                    order = 7,
+                    type = "description",
+                    name = function()
+                        return "Preview: " .. buildGuildPreview(self.db and self.db.guildFulfilledMessage or "", true);
+                    end,
+                    fontSize = "small",
+                },
+                debugGuild = {
+                    order = 8,
                     type = "toggle",
                     name = "Debug (print only)",
-                    desc = "When enabled, announcements are printed instead of sent to the chosen output.",
+                    desc = "When enabled, guild messages are printed instead of sent.",
                     width = "full",
-                    get = function() return self.db and self.db.debug; end,
+                    get = function() return self.db and self.db.debugGuild; end,
                     set = function(_, value)
-                        self.db.debug = value and true or false;
+                        self.db.debugGuild = value and true or false;
                     end,
+                },
+                tagHeader = {
+                    order = 9,
+                    type = "header",
+                    name = "Tag details",
+                },
+                tagDetails = {
+                    order = 10,
+                    type = "description",
+                    name = "{item} = item link\n{who} = customer name\n{tip} = commission",
+                    fontSize = "small",
                 },
             },
         },
