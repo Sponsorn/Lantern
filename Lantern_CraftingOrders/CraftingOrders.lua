@@ -1,5 +1,10 @@
 local ADDON_NAME = ...;
 local Lantern = _G.Lantern;
+local C_CraftingOrders = C_CraftingOrders;
+local C_TradeSkillUI = C_TradeSkillUI;
+local Enum = Enum;
+local PlaySoundFile = PlaySoundFile;
+local SendChatMessage = SendChatMessage;
 
 -- Abort early if the core addon is not available.
 if (not Lantern) then return; end
@@ -52,20 +57,6 @@ local function stripRealm(name)
     return name:gsub("%-[^%-]+$", "");
 end
 
-local function buildMessage(prefix, itemLink, who, tipGold, missingMats)
-    local parts = { prefix, itemLink or "Unknown item" };
-    if (who and who ~= "") then
-        table.insert(parts, " for " .. who);
-    end
-    if (tipGold and tipGold > 0) then
-        table.insert(parts, ", commission: " .. tostring(tipGold) .. "g");
-    end
-    if (missingMats) then
-        table.insert(parts, " (missing mats)");
-    end
-    return table.concat(parts, "");
-end
-
 local function formatGuildMessage(template, itemLink, who, tipCopper)
     local msg = tostring(template or "");
     local tipValue = Lantern and Lantern:Convert("money:format_copper", tipCopper) or "";
@@ -82,6 +73,14 @@ local function formatGuildMessage(template, itemLink, who, tipCopper)
     return msg;
 end
 
+local function sendGuildMessage(msg)
+    if (SendChatMessage) then
+        SendChatMessage(msg, "GUILD");
+    else
+        Lantern:Print("Crafting Orders: " .. tostring(msg));
+    end
+end
+
 local function buildGuildPreview(template, isFulfilled)
     local itemLink = "|cffffffff|Hitem:0:0:0:0:0:0:0:0:0|h[Sample Item]|h|r";
     local who = isFulfilled and "Customer" or "";
@@ -94,11 +93,7 @@ function CraftingOrders:OutputMessage(msg)
         self:Pour(msg);
         return;
     end
-    if (SendChatMessage) then
-        SendChatMessage(msg, "GUILD");
-    else
-        Lantern:Print("Crafting Orders: " .. tostring(msg));
-    end
+    sendGuildMessage(msg);
 end
 
 local function getOrderInfoByID(orderID)
@@ -136,8 +131,12 @@ local function formatPersonalOrderMessage()
 end
 
 local function getSoundValues()
+    if (CraftingOrders._soundValues) then
+        return CraftingOrders._soundValues;
+    end
     if (not LibSharedMedia or not LibSharedMedia.List) then
-        return { RaidWarning = "Raid warning" };
+        CraftingOrders._soundValues = { RaidWarning = "Raid warning" };
+        return CraftingOrders._soundValues;
     end
     local values = {};
     for _, name in ipairs(LibSharedMedia:List("sound") or {}) do
@@ -146,6 +145,7 @@ local function getSoundValues()
     if (not values.RaidWarning) then
         values.RaidWarning = "Raid warning";
     end
+    CraftingOrders._soundValues = values;
     return values;
 end
 
@@ -192,11 +192,6 @@ local function getOrderView()
     return ordersPage and ordersPage.OrderView;
 end
 
-local function getActiveOrder()
-    local view = getOrderView();
-    return view and view.order;
-end
-
 local function getRightButton(view)
     if (not view) then return nil; end
     if (view.CompleteOrderButton and view.CompleteOrderButton:IsShown()) then
@@ -241,21 +236,12 @@ function CraftingOrders:HandlePlacement()
             tip = (tipBox:GetAmount() or 0) * 10000;
         end
     end
-    local missingMats = false;
-    if (form.transaction.HasMetQuantityRequirements) then
-        missingMats = not form.transaction:HasMetQuantityRequirements();
-    end
-
     local msg = formatGuildMessage(self.db.guildPlacedMessage, itemLink, nil, tip);
     if (self.db.debugGuild) then
         Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
         return;
     end
-    if (SendChatMessage) then
-        SendChatMessage(msg, "GUILD");
-    else
-        Lantern:Print("Crafting Orders: " .. tostring(msg));
-    end
+    sendGuildMessage(msg);
 end
 
 local function parseFulfillArgs(...)
@@ -306,10 +292,8 @@ function CraftingOrders:HandleFulfillResponse(...)
         local msg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, who, tipCopper);
         if (self.db.debugGuild) then
             Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
-        elseif (SendChatMessage) then
-            SendChatMessage(msg, "GUILD");
         else
-            Lantern:Print("Crafting Orders: " .. tostring(msg));
+            sendGuildMessage(msg);
         end
         self._awaitingFulfill = false;
         return;
@@ -347,19 +331,17 @@ function CraftingOrders:HandleSystemMessage(msg)
     end
 
     local commissionText = text:match("earned a%s+(.+)%s+commission");
-    local tipGold = 0;
+    local tipCopper = 0;
     if (commissionText) then
         local digits = commissionText:gsub("[^%d]", "");
-        tipGold = tonumber(digits) or 0;
+        tipCopper = (tonumber(digits) or 0) * 10000;
     end
 
     local msg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, who, tipCopper);
     if (self.db.debugGuild) then
         Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
-    elseif (SendChatMessage) then
-        SendChatMessage(msg, "GUILD");
     else
-        Lantern:Print("Crafting Orders: " .. tostring(msg));
+        sendGuildMessage(msg);
     end
     self._awaitingFulfill = false;
 end
@@ -470,6 +452,15 @@ function CraftingOrders:EnsureWhisperButton()
     end
 end
 
+function CraftingOrders:HandleDebugUnlockClick()
+    self._debugClickCount = (self._debugClickCount or 0) + 1;
+    if (self._debugClickCount >= 5) then
+        self._debugClickCount = 0;
+        self._debugUnlocked = true;
+        Lantern:Print("Crafting Orders: debug options unlocked.");
+    end
+end
+
 function CraftingOrders:GetOptions()
     local sinkValues = {
         RaidWarning = "Raid warning",
@@ -482,13 +473,23 @@ function CraftingOrders:GetOptions()
             type = "group",
             name = "Guild Orders",
             args = {
-                placedHeader = {
+                guildHeader = {
                     order = 0,
+                    type = "execute",
+                    name = "Guild Orders",
+                    desc = "Click 5 times to unlock debug.",
+                    width = "full",
+                    func = function()
+                        self:HandleDebugUnlockClick();
+                    end,
+                },
+                placedHeader = {
+                    order = 1,
                     type = "header",
                     name = "Order placed",
                 },
                 postPlacement = {
-                    order = 1,
+                    order = 2,
                     type = "toggle",
                     name = "Announce placed orders",
                     width = "full",
@@ -498,7 +499,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 placedMessage = {
-                    order = 2,
+                    order = 3,
                     type = "input",
                     name = "Message",
                     desc = "Tags: {item} {tip}",
@@ -509,7 +510,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 placedPreview = {
-                    order = 3,
+                    order = 4,
                     type = "description",
                     name = function()
                         return "Preview: " .. buildGuildPreview(self.db and self.db.guildPlacedMessage or "", false);
@@ -517,12 +518,12 @@ function CraftingOrders:GetOptions()
                     fontSize = "small",
                 },
                 fulfilledHeader = {
-                    order = 4,
+                    order = 5,
                     type = "header",
                     name = "Order fulfilled",
                 },
                 postFulfill = {
-                    order = 5,
+                    order = 6,
                     type = "toggle",
                     name = "Announce fulfilled orders",
                     width = "full",
@@ -532,7 +533,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 fulfilledMessage = {
-                    order = 6,
+                    order = 7,
                     type = "input",
                     name = "Message",
                     desc = "Tags: {item} {who} {tip}",
@@ -543,7 +544,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 fulfilledPreview = {
-                    order = 7,
+                    order = 8,
                     type = "description",
                     name = function()
                         return "Preview: " .. buildGuildPreview(self.db and self.db.guildFulfilledMessage or "", true);
@@ -551,23 +552,24 @@ function CraftingOrders:GetOptions()
                     fontSize = "small",
                 },
                 debugGuild = {
-                    order = 8,
+                    order = 9,
                     type = "toggle",
                     name = "Debug (print only)",
                     desc = "When enabled, guild messages are printed instead of sent.",
                     width = "full",
+                    hidden = function() return not self._debugUnlocked; end,
                     get = function() return self.db and self.db.debugGuild; end,
                     set = function(_, value)
                         self.db.debugGuild = value and true or false;
                     end,
                 },
                 tagHeader = {
-                    order = 9,
+                    order = 10,
                     type = "header",
                     name = "Tag details",
                 },
                 tagDetails = {
-                    order = 10,
+                    order = 11,
                     type = "description",
                     name = "{item} = item link\n{who} = customer name\n{tip} = commission",
                     fontSize = "small",
@@ -681,6 +683,10 @@ end
 
 function CraftingOrders:OnInit()
     ensureDB(self);
+    self._debugUnlocked = false;
+    if (self.db) then
+        self.db.debugGuild = false;
+    end
 end
 
 function CraftingOrders:OnEnable()
