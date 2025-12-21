@@ -4,6 +4,7 @@ TODO
 - statistic menu for alts, with better UI than current 
 - add custom lootframe
 - crafting orders: reintroduce materials tag with reliable "all missing/some missing/all provided" detection
+- crafting orders: fix position of "complete + whisper"
 - add links and checks for modules on splash screen
 - tidy up UI so it looks cleaner
 - add localization for other versions
