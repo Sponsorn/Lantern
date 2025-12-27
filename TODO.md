@@ -8,3 +8,4 @@ TODO
 - add links and checks for modules on splash screen
 - tidy up UI so it looks cleaner
 - add localization for other versions
+- add warband module: create groups so characters can be easily added to different behaviour, warband banking, profiles

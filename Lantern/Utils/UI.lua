@@ -216,3 +216,262 @@ function UI.CreateInput(category, layout, variable, settingKey, dbTable, label, 
     initializer:AddSearchTags(label);
     return initializer, setting;
 end
+
+function UI.RegisterRightButtonWidget()
+    local AceGUI = LibStub and LibStub("AceGUI-3.0", true);
+    if (not AceGUI) then return; end
+
+    local Type, Version = "LanternRightButton", 1;
+    if ((AceGUI:GetWidgetVersion(Type) or 0) >= Version) then return; end
+
+    local PlaySound = PlaySound;
+    local CreateFrame = CreateFrame;
+    local UIParent = UIParent;
+
+    local function Button_OnClick(frame, ...)
+        AceGUI:ClearFocus();
+        PlaySound(852);
+        frame.obj:Fire("OnClick", ...);
+    end
+
+    local function updateButtonWidth(self)
+        local textWidth = self.text:GetStringWidth() + 30;
+        local maxWidth = self.frame:GetWidth();
+        if (maxWidth and maxWidth > 0) then
+            textWidth = math.min(textWidth, maxWidth);
+        end
+        self.button:SetWidth(textWidth);
+    end
+
+    local methods = {
+        OnAcquire = function(self)
+            self:SetHeight(24);
+            self:SetWidth(200);
+            self:SetDisabled(false);
+            self:SetAutoWidth(true);
+            self:SetText();
+        end,
+        SetText = function(self, text)
+            self.text:SetText(text);
+            updateButtonWidth(self);
+        end,
+        SetAutoWidth = function(self, autoWidth)
+            self.autoWidth = autoWidth and true or false;
+            updateButtonWidth(self);
+        end,
+        SetDisabled = function(self, disabled)
+            self.disabled = disabled;
+            if (disabled) then
+                self.button:Disable();
+            else
+                self.button:Enable();
+            end
+        end,
+        SetWidth = function(self, width)
+            self.frame:SetWidth(width);
+            updateButtonWidth(self);
+        end,
+        SetHeight = function(self, height)
+            self.frame:SetHeight(height);
+            self.button:SetHeight(height);
+        end,
+    };
+
+    local function Constructor()
+        local name = "LanternRightButton" .. AceGUI:GetNextWidgetNum(Type);
+        local frame = CreateFrame("Frame", name, UIParent);
+        frame:Hide();
+
+        local button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate");
+        button:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
+        button:SetPoint("TOP", frame, "TOP", 0, 0);
+        button:SetPoint("BOTTOM", frame, "BOTTOM", 0, 0);
+        button:SetScript("OnClick", Button_OnClick);
+
+        local text = button:GetFontString();
+        text:ClearAllPoints();
+        text:SetPoint("TOPLEFT", 15, -1);
+        text:SetPoint("BOTTOMRIGHT", -15, 1);
+        text:SetJustifyV("MIDDLE");
+
+        local widget = {
+            frame = frame,
+            button = button,
+            text = text,
+            type = Type,
+        };
+
+        button.obj = widget;
+
+        for method, func in pairs(methods) do
+            widget[method] = func;
+        end
+
+        return AceGUI:RegisterAsWidget(widget);
+    end
+
+    AceGUI:RegisterWidgetType(Type, Constructor, Version);
+end
+
+local function registerInlineButtonRowWidget(typeName, buttonTextValue)
+    local AceGUI = LibStub and LibStub("AceGUI-3.0", true);
+    if (not AceGUI) then return; end
+
+    local Type, Version = typeName, 1;
+    if ((AceGUI:GetWidgetVersion(Type) or 0) >= Version) then return; end
+
+    local PlaySound = PlaySound;
+    local CreateFrame = CreateFrame;
+    local UIParent = UIParent;
+
+    local function Button_OnClick(frame, ...)
+        AceGUI:ClearFocus();
+        PlaySound(852);
+        frame.obj:Fire("OnClick", ...);
+    end
+
+    local function updateLayout(self)
+        local buttonTextWidth = self.buttonText:GetStringWidth() + 30;
+        local maxWidth = self.frame:GetWidth();
+        if (maxWidth and maxWidth > 0) then
+            buttonTextWidth = math.min(buttonTextWidth, maxWidth);
+        end
+        self.button:SetWidth(buttonTextWidth);
+    end
+
+    local methods = {
+        OnAcquire = function(self)
+            self:SetHeight(24);
+            self:SetWidth(200);
+            self:SetDisabled(false);
+            self:SetText();
+        end,
+        SetText = function(self, text)
+            self.label:SetText(text);
+            updateLayout(self);
+        end,
+        SetDisabled = function(self, disabled)
+            self.disabled = disabled;
+            if (disabled) then
+                self.button:Disable();
+            else
+                self.button:Enable();
+            end
+        end,
+        SetWidth = function(self, width)
+            self.frame:SetWidth(width);
+            updateLayout(self);
+        end,
+        SetHeight = function(self, height)
+            self.frame:SetHeight(height);
+            self.button:SetHeight(height);
+        end,
+    };
+
+    local function Constructor()
+        local name = Type .. AceGUI:GetNextWidgetNum(Type);
+        local frame = CreateFrame("Frame", name, UIParent);
+        frame:Hide();
+
+        local button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate");
+        button:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
+        button:SetPoint("TOP", frame, "TOP", 0, 0);
+        button:SetPoint("BOTTOM", frame, "BOTTOM", 0, 0);
+        button:SetScript("OnClick", Button_OnClick);
+
+        local buttonText = button:GetFontString();
+        buttonText:SetText(buttonTextValue or "Action");
+        buttonText:ClearAllPoints();
+        buttonText:SetPoint("TOPLEFT", 15, -1);
+        buttonText:SetPoint("BOTTOMRIGHT", -15, 1);
+        buttonText:SetJustifyV("MIDDLE");
+
+        local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+        label:SetPoint("LEFT", frame, "LEFT", 0, 0);
+        label:SetPoint("RIGHT", button, "LEFT", -10, 0);
+        label:SetJustifyH("LEFT");
+        label:SetJustifyV("MIDDLE");
+
+        local widget = {
+            frame = frame,
+            button = button,
+            buttonText = buttonText,
+            label = label,
+            type = Type,
+        };
+
+        button.obj = widget;
+
+        for method, func in pairs(methods) do
+            widget[method] = func;
+        end
+
+        return AceGUI:RegisterAsWidget(widget);
+    end
+
+    AceGUI:RegisterWidgetType(Type, Constructor, Version);
+end
+
+function UI.RegisterInlineButtonRowWidgets()
+    registerInlineButtonRowWidget("LanternInlineButtonRow", "Add to block list");
+    registerInlineButtonRowWidget("LanternInlineRemoveButtonRow", "Remove");
+end
+
+function UI.RegisterDividerWidget()
+    local AceGUI = LibStub and LibStub("AceGUI-3.0", true);
+    if (not AceGUI) then return; end
+
+    local Type, Version = "LanternDivider", 1;
+    if ((AceGUI:GetWidgetVersion(Type) or 0) >= Version) then return; end
+
+    local CreateFrame = CreateFrame;
+    local UIParent = UIParent;
+
+    local function updateLineWidth(self)
+        local width = self.frame:GetWidth();
+        if (not width or width <= 0) then
+            return;
+        end
+        self.line:SetWidth(math.max(40, width * 0.5));
+    end
+
+    local methods = {
+        OnAcquire = function(self)
+            self:SetHeight(8);
+            self:SetWidth(200);
+        end,
+        SetWidth = function(self, width)
+            self.frame:SetWidth(width);
+            updateLineWidth(self);
+        end,
+        SetHeight = function(self, height)
+            self.frame:SetHeight(height);
+        end,
+        SetText = function() end,
+        SetFontObject = function() end,
+    };
+
+    local function Constructor()
+        local frame = CreateFrame("Frame", nil, UIParent);
+        frame:Hide();
+
+        local line = frame:CreateTexture(nil, "ARTWORK");
+        line:SetPoint("CENTER", frame, "CENTER", 0, 0);
+        line:SetHeight(1);
+        line:SetColorTexture(0.7, 0.6, 0.3, 0.8);
+
+        local widget = {
+            frame = frame,
+            line = line,
+            type = Type,
+        };
+
+        for method, func in pairs(methods) do
+            widget[method] = func;
+        end
+
+        return AceGUI:RegisterAsWidget(widget);
+    end
+
+    AceGUI:RegisterWidgetType(Type, Constructor, Version);
+end

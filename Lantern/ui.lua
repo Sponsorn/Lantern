@@ -190,7 +190,20 @@ end
 
 function Lantern:BuildOptions()
     if (self.options) then return self.options; end
-    local function notifyOptionsChange() end
+    local function notifyOptionsChange()
+        if (AceConfigRegistry) then
+            AceConfigRegistry:NotifyChange(ADDON_NAME .. "_General");
+        end
+    end
+    local function clearTable(t)
+        if (wipe) then
+            wipe(t);
+            return;
+        end
+        for k in pairs(t) do
+            t[k] = nil;
+        end
+    end
     local function autoQuestModule()
         return Lantern.modules and Lantern.modules.AutoQuest;
     end
@@ -202,7 +215,39 @@ function Lantern:BuildOptions()
                 Lantern.db.autoQuest[k] = v;
             end
         end
+        if (type(Lantern.db.autoQuest.blockedNPCs) ~= "table") then
+            Lantern.db.autoQuest.blockedNPCs = {};
+        end
+        if (type(Lantern.db.autoQuest.blockedQuests) ~= "table") then
+            Lantern.db.autoQuest.blockedQuests = {};
+        end
+        if (Lantern.db.autoQuest.blockedNPCFilter == nil) then
+            Lantern.db.autoQuest.blockedNPCFilter = "current";
+        end
         return Lantern.db.autoQuest;
+    end
+    local function autoQuestBlockedList()
+        local db = autoQuestDB();
+        db.blockedNPCs = db.blockedNPCs or {};
+        return db.blockedNPCs;
+    end
+    local function autoQuestBlockedQuestList()
+        local db = autoQuestDB();
+        db.blockedQuests = db.blockedQuests or {};
+        return db.blockedQuests;
+    end
+    local useRowDividers = true;
+    local function autoQuestRecentList()
+        local db = autoQuestDB();
+        db.recentAutomated = db.recentAutomated or {};
+        return db.recentAutomated;
+    end
+    local function autoQuestBlockedFilter()
+        local db = autoQuestDB();
+        if (db.blockedNPCFilter == nil) then
+            db.blockedNPCFilter = "current";
+        end
+        return db.blockedNPCFilter;
     end
     local function autoQuestDisabled()
         local m = autoQuestModule();
@@ -258,80 +303,577 @@ function Lantern:BuildOptions()
             autoQuest = {
                 type = "group",
                 name = "Auto Quest",
-                args = {
-                    desc = {
-                        order = 0,
-                        type = "description",
-                        name = "Automatically accepts and turns in quests; hold Shift to pause.",
-                        fontSize = "medium",
-                    },
-                    enabled = {
-                        order = 1,
-                        type = "toggle",
-                        name = "Enable",
-                        desc = "Enable or disable Auto Quest.",
-                        width = "full",
-                        get = function()
-                            local m = autoQuestModule();
-                            return m and m.enabled;
-                        end,
-                        set = function(_, val)
-                            if val then
-                                Lantern:EnableModule("AutoQuest");
-                            else
-                                Lantern:DisableModule("AutoQuest");
+                args = (function()
+                    local blockedArgs = {};
+                    local blockedQuestArgs = {};
+                    local function getRecentEntry(index)
+                        local list = autoQuestRecentList();
+                        return list[index];
+                    end
+                    local function recentQuestLabel(index)
+                        return function()
+                            local entry = getRecentEntry(index);
+                            if (not entry) then return ""; end
+                            local label = entry.name or "Unknown Quest";
+                            if (entry.questID) then
+                                label = string.format("%s (ID: %s)", label, tostring(entry.questID));
                             end
-                        end,
-                    },
-                    autoAccept = {
-                        order = 2,
-                        type = "toggle",
-                        name = "Auto-accept quests",
-                        desc = "Automatically accept quests from NPCs.",
-                        width = "full",
-                        disabled = autoQuestDisabled,
-                        get = function()
-                            local db = autoQuestDB();
-                            return db.autoAccept;
-                        end,
-                        set = function(_, val)
-                            local db = autoQuestDB();
-                            db.autoAccept = val and true or false;
-                        end,
-                    },
-                    autoTurnIn = {
-                        order = 3,
-                        type = "toggle",
-                        name = "Auto turn-in quests",
-                        desc = "Automatically turn in completed quests to NPCs.",
-                        width = "full",
-                        disabled = autoQuestDisabled,
-                        get = function()
-                            local db = autoQuestDB();
-                            return db.autoTurnIn;
-                        end,
-                        set = function(_, val)
-                            local db = autoQuestDB();
-                            db.autoTurnIn = val and true or false;
-                        end,
-                    },
-                    autoSelectSingleReward = {
-                        order = 4,
-                        type = "toggle",
-                        name = "Auto select single reward",
-                        desc = "If a quest offers only one reward, auto-select it.",
-                        width = "full",
-                        disabled = autoQuestDisabled,
-                        get = function()
-                            local db = autoQuestDB();
-                            return db.autoSelectSingleReward;
-                        end,
-                        set = function(_, val)
-                            local db = autoQuestDB();
-                            db.autoSelectSingleReward = val and true or false;
-                        end,
-                    },
-                },
+                            return label;
+                        end
+                    end
+                    local function recentNpcLabel(index)
+                        return function()
+                            local entry = getRecentEntry(index);
+                            if (not entry or not entry.npcKey) then return ""; end
+                            return entry.npcKey;
+                        end
+                    end
+                    local function recentHidden(index)
+                        return function()
+                            return not getRecentEntry(index);
+                        end
+                    end
+                    local function hasRecent()
+                        return getRecentEntry(1) ~= nil;
+                    end
+                    local function buildZoneOptions()
+                        local opts = {
+                            all = "All zones",
+                            current = "Current zone",
+                        };
+                        local list = autoQuestBlockedList();
+                        for key in pairs(list) do
+                            local zone = key:match("^.+%s%-%s(.+)$");
+                            if (zone and zone ~= "") then
+                                opts[zone] = zone;
+                            end
+                        end
+                        return opts;
+                    end
+                    local function buildZoneSorting()
+                        local list = autoQuestBlockedList();
+                        local zones = {};
+                        local seen = {};
+                        for key in pairs(list) do
+                            local zone = key:match("^.+%s%-%s(.+)$");
+                            if (zone and zone ~= "" and not seen[zone]) then
+                                seen[zone] = true;
+                                table.insert(zones, zone);
+                            end
+                        end
+                        table.sort(zones);
+                        local order = { "all", "current" };
+                        for _, zone in ipairs(zones) do
+                            table.insert(order, zone);
+                        end
+                        return order;
+                    end
+                    local function rebuildBlockedArgs()
+                        clearTable(blockedArgs);
+                        blockedArgs.addCurrent = {
+                            order = 1,
+                            type = "execute",
+                            name = "Add current NPC to block list",
+                            width = "full",
+                            func = function()
+                                local module = autoQuestModule();
+                                if (not module or not module.GetCurrentNPCKey) then return; end
+                                local key = module:GetCurrentNPCKey();
+                                if (not key) then
+                                    Lantern:Print("No NPC found. Talk to an NPC first.");
+                                    return;
+                                end
+                                local list = autoQuestBlockedList();
+                                list[key] = true;
+                                rebuildBlockedArgs();
+                                notifyOptionsChange();
+                            end,
+                        };
+                        blockedArgs.help = {
+                            order = 2,
+                            type = "description",
+                            name = "Blocked NPCs won't be auto-accepted or auto-turned in.",
+                            fontSize = "medium",
+                        };
+                        blockedArgs.zoneFilter = {
+                            order = 3,
+                            type = "select",
+                            name = "Zone filter",
+                            width = "full",
+                            values = buildZoneOptions,
+                            sorting = buildZoneSorting,
+                            get = function()
+                                return autoQuestBlockedFilter();
+                            end,
+                            set = function(_, val)
+                                local db = autoQuestDB();
+                                db.blockedNPCFilter = val;
+                                rebuildBlockedArgs();
+                                notifyOptionsChange();
+                            end,
+                        };
+                        local list = autoQuestBlockedList();
+                        local currentZone = (GetZoneText and GetZoneText()) or "";
+                        local filter = autoQuestBlockedFilter();
+                        local showAll = filter == "all";
+                        local filterZone = currentZone;
+                        if (filter ~= "current" and filter ~= "all") then
+                            filterZone = filter;
+                        end
+                        local keys = {};
+                        for key in pairs(list) do
+                            local zone = key:match("^.+%s%-%s(.+)$");
+                            if (showAll or filterZone == "" or zone == filterZone) then
+                                table.insert(keys, key);
+                            end
+                        end
+                        table.sort(keys);
+                        if (#keys == 0) then
+                        blockedArgs.empty = {
+                            order = 4,
+                            type = "description",
+                            name = (showAll or filterZone == "")
+                                and "No NPCs are blocked."
+                                or ("No NPCs are blocked in " .. filterZone .. "."),
+                            fontSize = "medium",
+                        };
+                            return;
+                        end
+                        local order = 10;
+                        for _, key in ipairs(keys) do
+                            blockedArgs["npc_label_" .. order] = {
+                                order = order,
+                                type = "description",
+                                name = key,
+                                width = "double",
+                            };
+                            blockedArgs["npc_remove_" .. order] = {
+                                order = order + 0.01,
+                                type = "execute",
+                                name = "Remove",
+                                width = "half",
+                                func = function()
+                                    list[key] = nil;
+                                    rebuildBlockedArgs();
+                                    notifyOptionsChange();
+                                end,
+                            };
+                            order = order + 1;
+                        end
+                    end
+                    local function rebuildBlockedQuestArgs()
+                        clearTable(blockedQuestArgs);
+                        blockedQuestArgs.help = {
+                            order = 1,
+                            type = "description",
+                            name = "Blocked quests won't be auto-accepted or auto-turned in.",
+                            fontSize = "medium",
+                        };
+                        local list = autoQuestBlockedQuestList();
+                        local ids = {};
+                        for id in pairs(list) do
+                            table.insert(ids, id);
+                        end
+                        table.sort(ids, function(a, b)
+                            local an = tonumber(a);
+                            local bn = tonumber(b);
+                            if (an and bn) then
+                                return an < bn;
+                            end
+                            return tostring(a) < tostring(b);
+                        end);
+                        if (#ids == 0) then
+                            blockedQuestArgs.empty = {
+                                order = 2,
+                                type = "description",
+                                name = "No quests are blocked.",
+                                fontSize = "medium",
+                            };
+                            return;
+                        end
+                        local entries = {};
+                        for _, id in ipairs(ids) do
+                            local raw = list[id];
+                            local name = nil;
+                            local npcKey = nil;
+                            if (type(raw) == "table") then
+                                name = raw.name;
+                                npcKey = raw.npcKey;
+                            elseif (type(raw) == "string") then
+                                name = raw;
+                            end
+                            table.insert(entries, {
+                                id = id,
+                                name = name,
+                                npcKey = npcKey,
+                            });
+                        end
+                        table.sort(entries, function(a, b)
+                            local aNpc = a.npcKey or "";
+                            local bNpc = b.npcKey or "";
+                            if (aNpc ~= bNpc) then
+                                if (aNpc == "") then return false; end
+                                if (bNpc == "") then return true; end
+                                return aNpc < bNpc;
+                            end
+                            local aName = a.name or "";
+                            local bName = b.name or "";
+                            if (aName ~= bName) then
+                                if (aName == "") then return false; end
+                                if (bName == "") then return true; end
+                                return aName < bName;
+                            end
+                            return tostring(a.id) < tostring(b.id);
+                        end);
+                        local order = 10;
+                        for i, entry in ipairs(entries) do
+                            local label = entry.name;
+                            if (type(label) == "string" and label ~= "") then
+                                label = string.format("%s (ID: %s)", label, tostring(entry.id));
+                            else
+                                label = string.format("Quest ID: %s", tostring(entry.id));
+                            end
+                            blockedQuestArgs["quest_row_" .. order] = {
+                                order = order,
+                                type = "execute",
+                                name = label,
+                                width = "full",
+                                control = "LanternInlineRemoveButtonRow",
+                                func = function()
+                                    list[entry.id] = nil;
+                                    rebuildBlockedQuestArgs();
+                                    notifyOptionsChange();
+                                end,
+                            };
+                            if (useRowDividers and i < #entries) then
+                                local nextEntry = entries[i + 1];
+                                if ((entry.npcKey or "") ~= (nextEntry.npcKey or "")) then
+                                    blockedQuestArgs["quest_divider_" .. order] = {
+                                        order = order + 0.5,
+                                        type = "description",
+                                        name = "",
+                                        width = "full",
+                                        control = "LanternDivider",
+                                    };
+                                end
+                            end
+                            order = order + 1;
+                        end
+                    end
+
+                    rebuildBlockedArgs();
+                    rebuildBlockedQuestArgs();
+
+                    return {
+                        desc = {
+                            order = 0,
+                            type = "description",
+                            name = "Automatically accepts and turns in quests; hold Shift to pause.",
+                            fontSize = "medium",
+                        },
+                        enabled = {
+                            order = 1,
+                            type = "toggle",
+                            name = "Enable",
+                            desc = "Enable or disable Auto Quest.",
+                            width = "full",
+                            get = function()
+                                local m = autoQuestModule();
+                                return m and m.enabled;
+                            end,
+                            set = function(_, val)
+                                if val then
+                                    Lantern:EnableModule("AutoQuest");
+                                else
+                                    Lantern:DisableModule("AutoQuest");
+                                end
+                            end,
+                        },
+                        autoAccept = {
+                            order = 2,
+                            type = "toggle",
+                            name = "Auto-accept quests",
+                            desc = "Automatically accept quests from NPCs.",
+                            width = "full",
+                            disabled = autoQuestDisabled,
+                            get = function()
+                                local db = autoQuestDB();
+                                return db.autoAccept;
+                            end,
+                            set = function(_, val)
+                                local db = autoQuestDB();
+                                db.autoAccept = val and true or false;
+                            end,
+                        },
+                        autoTurnIn = {
+                            order = 3,
+                            type = "toggle",
+                            name = "Auto turn-in quests",
+                            desc = "Automatically turn in completed quests to NPCs.",
+                            width = "full",
+                            disabled = autoQuestDisabled,
+                            get = function()
+                                local db = autoQuestDB();
+                                return db.autoTurnIn;
+                            end,
+                            set = function(_, val)
+                                local db = autoQuestDB();
+                                db.autoTurnIn = val and true or false;
+                            end,
+                        },
+                        autoSelectSingleReward = {
+                            order = 4,
+                            type = "toggle",
+                            name = "Auto select single reward",
+                            desc = "If a quest offers only one reward, auto-select it.",
+                            width = "full",
+                            disabled = autoQuestDisabled,
+                            get = function()
+                                local db = autoQuestDB();
+                                return db.autoSelectSingleReward;
+                            end,
+                            set = function(_, val)
+                                local db = autoQuestDB();
+                                db.autoSelectSingleReward = val and true or false;
+                            end,
+                        },
+                        blockList = {
+                            order = 5,
+                            type = "group",
+                            name = "Blocked NPCs",
+                            inline = true,
+                            args = blockedArgs,
+                        },
+                        recent = {
+                            order = 6,
+                            type = "group",
+                            name = "Recent automated quests",
+                            inline = true,
+                            args = {
+                                desc = {
+                                    order = 0,
+                                    type = "description",
+                                    name = "Your 5 most recent automated quests.",
+                                    fontSize = "medium",
+                                },
+                                empty = {
+                                    order = 1,
+                                    type = "description",
+                                    name = "No automated quests yet.",
+                                    fontSize = "medium",
+                                    hidden = function() return hasRecent(); end,
+                                },
+                                entry1 = {
+                                    order = 10,
+                                    type = "execute",
+                                    name = recentQuestLabel(1),
+                                    width = "full",
+                                    control = "LanternInlineButtonRow",
+                                    hidden = recentHidden(1),
+                                    disabled = function()
+                                        local entry = getRecentEntry(1);
+                                        return not (entry and entry.questID);
+                                    end,
+                                    func = function()
+                                        local entry = getRecentEntry(1);
+                                        if (entry and entry.questID) then
+                                            local list = autoQuestBlockedQuestList();
+                                            list[tostring(entry.questID)] = {
+                                                name = entry.name or true,
+                                                npcKey = entry.npcKey,
+                                            };
+                                            rebuildBlockedQuestArgs();
+                                            notifyOptionsChange();
+                                        end
+                                    end,
+                                },
+                                entry1Npc = {
+                                    order = 10.01,
+                                    type = "description",
+                                    name = recentNpcLabel(1),
+                                    width = "full",
+                                    fontSize = "small",
+                                    hidden = recentHidden(1),
+                                },
+                                divider1 = useRowDividers and {
+                                    order = 10.02,
+                                    type = "description",
+                                    name = "",
+                                    width = "full",
+                                    control = "LanternDivider",
+                                    hidden = function()
+                                        return recentHidden(1)() or recentHidden(2)();
+                                    end,
+                                } or nil,
+                                entry2 = {
+                                    order = 11,
+                                    type = "execute",
+                                    name = recentQuestLabel(2),
+                                    width = "full",
+                                    control = "LanternInlineButtonRow",
+                                    hidden = recentHidden(2),
+                                    disabled = function()
+                                        local entry = getRecentEntry(2);
+                                        return not (entry and entry.questID);
+                                    end,
+                                    func = function()
+                                        local entry = getRecentEntry(2);
+                                        if (entry and entry.questID) then
+                                            local list = autoQuestBlockedQuestList();
+                                            list[tostring(entry.questID)] = {
+                                                name = entry.name or true,
+                                                npcKey = entry.npcKey,
+                                            };
+                                            rebuildBlockedQuestArgs();
+                                            notifyOptionsChange();
+                                        end
+                                    end,
+                                },
+                                entry2Npc = {
+                                    order = 11.01,
+                                    type = "description",
+                                    name = recentNpcLabel(2),
+                                    width = "full",
+                                    fontSize = "small",
+                                    hidden = recentHidden(2),
+                                },
+                                divider2 = useRowDividers and {
+                                    order = 11.02,
+                                    type = "description",
+                                    name = "",
+                                    width = "full",
+                                    control = "LanternDivider",
+                                    hidden = function()
+                                        return recentHidden(2)() or recentHidden(3)();
+                                    end,
+                                } or nil,
+                                entry3 = {
+                                    order = 12,
+                                    type = "execute",
+                                    name = recentQuestLabel(3),
+                                    width = "full",
+                                    control = "LanternInlineButtonRow",
+                                    hidden = recentHidden(3),
+                                    disabled = function()
+                                        local entry = getRecentEntry(3);
+                                        return not (entry and entry.questID);
+                                    end,
+                                    func = function()
+                                        local entry = getRecentEntry(3);
+                                        if (entry and entry.questID) then
+                                            local list = autoQuestBlockedQuestList();
+                                            list[tostring(entry.questID)] = {
+                                                name = entry.name or true,
+                                                npcKey = entry.npcKey,
+                                            };
+                                            rebuildBlockedQuestArgs();
+                                            notifyOptionsChange();
+                                        end
+                                    end,
+                                },
+                                entry3Npc = {
+                                    order = 12.01,
+                                    type = "description",
+                                    name = recentNpcLabel(3),
+                                    width = "full",
+                                    fontSize = "small",
+                                    hidden = recentHidden(3),
+                                },
+                                divider3 = useRowDividers and {
+                                    order = 12.02,
+                                    type = "description",
+                                    name = "",
+                                    width = "full",
+                                    control = "LanternDivider",
+                                    hidden = function()
+                                        return recentHidden(3)() or recentHidden(4)();
+                                    end,
+                                } or nil,
+                                entry4 = {
+                                    order = 13,
+                                    type = "execute",
+                                    name = recentQuestLabel(4),
+                                    width = "full",
+                                    control = "LanternInlineButtonRow",
+                                    hidden = recentHidden(4),
+                                    disabled = function()
+                                        local entry = getRecentEntry(4);
+                                        return not (entry and entry.questID);
+                                    end,
+                                    func = function()
+                                        local entry = getRecentEntry(4);
+                                        if (entry and entry.questID) then
+                                            local list = autoQuestBlockedQuestList();
+                                            list[tostring(entry.questID)] = {
+                                                name = entry.name or true,
+                                                npcKey = entry.npcKey,
+                                            };
+                                            rebuildBlockedQuestArgs();
+                                            notifyOptionsChange();
+                                        end
+                                    end,
+                                },
+                                entry4Npc = {
+                                    order = 13.01,
+                                    type = "description",
+                                    name = recentNpcLabel(4),
+                                    width = "full",
+                                    fontSize = "small",
+                                    hidden = recentHidden(4),
+                                },
+                                divider4 = useRowDividers and {
+                                    order = 13.02,
+                                    type = "description",
+                                    name = "",
+                                    width = "full",
+                                    control = "LanternDivider",
+                                    hidden = function()
+                                        return recentHidden(4)() or recentHidden(5)();
+                                    end,
+                                } or nil,
+                                entry5 = {
+                                    order = 14,
+                                    type = "execute",
+                                    name = recentQuestLabel(5),
+                                    width = "full",
+                                    control = "LanternInlineButtonRow",
+                                    hidden = recentHidden(5),
+                                    disabled = function()
+                                        local entry = getRecentEntry(5);
+                                        return not (entry and entry.questID);
+                                    end,
+                                    func = function()
+                                        local entry = getRecentEntry(5);
+                                        if (entry and entry.questID) then
+                                            local list = autoQuestBlockedQuestList();
+                                            list[tostring(entry.questID)] = {
+                                                name = entry.name or true,
+                                                npcKey = entry.npcKey,
+                                            };
+                                            rebuildBlockedQuestArgs();
+                                            notifyOptionsChange();
+                                        end
+                                    end,
+                                },
+                                entry5Npc = {
+                                    order = 14.01,
+                                    type = "description",
+                                    name = recentNpcLabel(5),
+                                    width = "full",
+                                    fontSize = "small",
+                                    hidden = recentHidden(5),
+                                },
+                            },
+                        },
+                        blockedQuests = {
+                            order = 7,
+                            type = "group",
+                            name = "Blocked quests",
+                            inline = true,
+                            args = blockedQuestArgs,
+                        },
+                    };
+                end)(),
             },
             autoQueue = {
                 type = "group",
@@ -540,6 +1082,15 @@ end
 
 function Lantern:SetupOptions()
     if (self.optionsInitialized or not hasOptionsLibs()) then return; end
+    if (Lantern.utils and Lantern.utils.ui and Lantern.utils.ui.RegisterRightButtonWidget) then
+        Lantern.utils.ui.RegisterRightButtonWidget();
+    end
+    if (Lantern.utils and Lantern.utils.ui and Lantern.utils.ui.RegisterInlineButtonRowWidgets) then
+        Lantern.utils.ui.RegisterInlineButtonRowWidgets();
+    end
+    if (Lantern.utils and Lantern.utils.ui and Lantern.utils.ui.RegisterDividerWidget) then
+        Lantern.utils.ui.RegisterDividerWidget();
+    end
     local generalOptions = self:BuildOptions();
     AceConfig:RegisterOptionsTable(ADDON_NAME .. "_General", generalOptions);
 
