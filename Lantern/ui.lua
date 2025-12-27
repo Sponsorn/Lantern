@@ -362,7 +362,7 @@ function Lantern:BuildOptions()
                         end,
                     },
                     active = {
-                        order = 1,
+                        order = 2,
                         type = "toggle",
                         name = "Auto-accept role checks",
                         desc = "Accept LFG role checks automatically (Shift pauses).",
@@ -378,7 +378,7 @@ function Lantern:BuildOptions()
                         end,
                     },
                     announce = {
-                        order = 2,
+                        order = 3,
                         type = "toggle",
                         name = "Chat announce",
                         desc = "Print a chat message when a role check is auto-accepted.",
@@ -394,7 +394,7 @@ function Lantern:BuildOptions()
                         end,
                     },
                     note = {
-                        order = 3,
+                        order = 4,
                         type = "description",
                         name = "Roles are set in the LFG tool. This will accept the role check using your current selection.",
                         fontSize = "medium",

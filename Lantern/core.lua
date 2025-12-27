@@ -71,9 +71,6 @@ function Lantern:DisableModule(name)
         self.db.modules[name] = false;
         if (module.OnDisable) then module:OnDisable(); end
         if (module._events) then
-            for event in pairs(module._events) do
-                self.eventFrame:UnregisterEvent(event);
-            end
             module._events = {};
         end
     end
@@ -97,6 +94,10 @@ function Lantern:RegisterEvent(event, handler)
 end
 
 function Lantern:ModuleRegisterEvent(module, event, handler)
+    if (module._events and module._events[event]) then
+        return;
+    end
+    module._events = module._events or {};
     module._events[event] = true;
     self:RegisterEvent(event, function(ev, ...) if module.enabled then handler(module, ev, ...) end end);
 end

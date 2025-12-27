@@ -22,6 +22,8 @@ local DEFAULTS = {
     servicesMode = MODE_MOVE,
     servicesTabName = "Services",
     usePlainUpArrow = false,
+    aggregateGuildAchievements = false,
+    guildAchievementWindow = 1.5,
 };
 
 local function isTradeServicesChannel(name)
@@ -107,29 +109,51 @@ local function ensureWindow(windowName)
     Lantern:Print("Chat QoL: failed to create tab: " .. tostring(windowName));
 end
 
-local function getChannelIdByName(channelName)
+local function getChannelInfo(channelName)
     if (not GetChannelName) then return; end
-    local id = GetChannelName(channelName);
+    local id, name = GetChannelName(channelName);
     if (type(id) == "number" and id > 0) then
-        return id;
+        return id, name;
+    end
+    if (GetChannelList and type(channelName) == "string") then
+        local list = { GetChannelList() };
+        local stride = (type(list[3]) == "number") and 3 or 2;
+        local needle = channelName:lower();
+        for i = 1, #list, stride do
+            local channelId = list[i];
+            local channelNameFull = list[i + 1];
+            if (type(channelNameFull) == "string") then
+                local lower = channelNameFull:lower();
+                if (lower:find(needle, 1, true)) then
+                    return channelId, channelNameFull;
+                end
+                local kind = isTradeServicesChannel(channelNameFull);
+                if (kind == channelName) then
+                    return channelId, channelNameFull;
+                end
+            end
+        end
     end
 end
 
 local function addChannelToWindow(index, channelName)
     if (not index or not channelName) then return; end
-    local channelId = getChannelIdByName(channelName);
+    local channelId, channelFullName = getChannelInfo(channelName);
     if (AddChatWindowChannel) then
-        AddChatWindowChannel(index, channelId or channelName);
+        AddChatWindowChannel(index, channelId or channelFullName or channelName);
     end
     if (C_ChatInfo and C_ChatInfo.AddChatWindowChannel) then
-        C_ChatInfo.AddChatWindowChannel(index, channelId or channelName);
+        C_ChatInfo.AddChatWindowChannel(index, channelFullName or channelName);
     end
 end
 
 local function windowHasChannel(index, channelName)
+    local channelId, channelFullName = getChannelInfo(channelName);
     local channels = { GetChatWindowChannels(index) };
     for i = 1, #channels, 2 do
-        if (channels[i] == channelName or channels[i + 1] == channelName) then
+        local name = channels[i];
+        local id = channels[i + 1];
+        if (name == channelName or name == channelFullName or id == channelId) then
             return true;
         end
     end
@@ -138,12 +162,14 @@ end
 local function removeChannelFromWindow(index, channelName)
     local frame = _G["ChatFrame" .. index];
     if (not frame or not channelName) then return; end
+    local _, channelFullName = getChannelInfo(channelName);
+    local targetName = channelFullName or channelName;
     if (ChatFrame_RemoveChannel) then
-        ChatFrame_RemoveChannel(frame, channelName);
+        ChatFrame_RemoveChannel(frame, targetName);
         return;
     end
     if (C_ChatInfo and C_ChatInfo.RemoveChatWindowChannel and frame.GetID) then
-        C_ChatInfo.RemoveChatWindowChannel(frame:GetID(), channelName);
+        C_ChatInfo.RemoveChatWindowChannel(frame:GetID(), targetName);
         if (frame.UpdateChannelMenu) then
             frame:UpdateChannelMenu();
         end
@@ -235,6 +261,114 @@ local function handleEditBoxKey(module, editBox, key)
     return true;
 end
 
+local function extractAchievementLinks(message)
+    local links = {};
+    if (type(message) ~= "string") then return links; end
+    local seen = {};
+    local function addLink(link)
+        if (link and not seen[link]) then
+            seen[link] = true;
+            links[#links + 1] = link;
+        end
+    end
+    for link in message:gmatch("|c%x%x%x%x%x%x%x%x|Hachievement:[^|]+|h%[[^%]]+%]|h|r") do
+        addLink(link);
+    end
+    for link in message:gmatch("|Hachievement:[^|]+|h%[[^%]]+%]|h") do
+        addLink(link);
+    end
+    for link in message:gmatch("|c%x%x%x%x%x%x%x%x|HguildAchievement:[^|]+|h%[[^%]]+%]|h|r") do
+        addLink(link);
+    end
+    for link in message:gmatch("|HguildAchievement:[^|]+|h%[[^%]]+%]|h") do
+        addLink(link);
+    end
+    return links;
+end
+
+local function normalizeAchievementSender(sender, message)
+    if (type(sender) == "string" and sender ~= "") then
+        return sender;
+    end
+    if (type(message) ~= "string") then return; end
+    local fromLink = message:match("|Hplayer:([^:|]+)") or message:match("|Hplayer:([^|]+)");
+    if (fromLink and fromLink ~= "") then
+        return fromLink;
+    end
+    local fromText = message:match("^([^%s]+)%s+has earned the achievement")
+        or message:match("^([^%s]+)%s+earned the achievement")
+        or message:match("^([^%s]+)%s+has earned the guild achievement")
+        or message:match("^([^%s]+)%s+earned the guild achievement");
+    if (fromText and fromText ~= "") then
+        return fromText;
+    end
+end
+
+function ChatQoL:QueueGuildAchievement(message, sender)
+    sender = normalizeAchievementSender(sender, message);
+    if (type(sender) ~= "string" or sender == "") then
+        return false;
+    end
+    self._guildAchievementQueue = self._guildAchievementQueue or {};
+    local bucket = self._guildAchievementQueue[sender];
+    if (not bucket) then
+        bucket = { achievements = {}, raw = {} };
+        self._guildAchievementQueue[sender] = bucket;
+    end
+    local links = extractAchievementLinks(message);
+    if (#links > 0) then
+        for i = 1, #links do
+            bucket.achievements[#bucket.achievements + 1] = links[i];
+        end
+    else
+        bucket.raw[#bucket.raw + 1] = message;
+    end
+    if (not self._guildAchievementTimerPending) then
+        self._guildAchievementTimerPending = true;
+        local delay = tonumber(self.db and self.db.guildAchievementWindow) or 1.5;
+        if (C_Timer and C_Timer.After and delay > 0) then
+            C_Timer.After(delay, function()
+                self._guildAchievementTimerPending = nil;
+                self:FlushGuildAchievements();
+            end);
+        else
+            self._guildAchievementTimerPending = nil;
+            self:FlushGuildAchievements();
+        end
+    end
+    return true;
+end
+
+function ChatQoL:FlushGuildAchievements()
+    local queue = self._guildAchievementQueue;
+    if (not queue) then return; end
+    self._guildAchievementQueue = nil;
+    local frame = _G.DEFAULT_CHAT_FRAME or _G.ChatFrame1;
+    if (not frame or not frame.AddMessage) then return; end
+    local info = ChatTypeInfo and ChatTypeInfo["GUILD_ACHIEVEMENT"];
+    local r = info and info.r or 0.25;
+    local g = info and info.g or 1.0;
+    local b = info and info.b or 0.25;
+    for sender, bucket in pairs(queue) do
+        local achievements = bucket.achievements;
+        local raw = bucket.raw;
+        if (achievements and #achievements > 1) then
+            local text = sender .. " earned achievements: " .. table.concat(achievements, ", ");
+            frame:AddMessage(text, r, g, b);
+        else
+            if (achievements and #achievements == 1) then
+                local text = sender .. " has earned the achievement " .. achievements[1] .. "!";
+                frame:AddMessage(text, r, g, b);
+            end
+            if (raw) then
+                for i = 1, #raw do
+                    frame:AddMessage(raw[i], r, g, b);
+                end
+            end
+        end
+    end
+end
+
 function ChatQoL:AttachEditBoxHandlers()
     if (self._editBoxesHooked) then return; end
     local max = NUM_CHAT_WINDOWS or 10;
@@ -279,6 +413,36 @@ function ChatQoL:GetOptions()
                     set = function(_, value)
                         self.db.usePlainUpArrow = value and true or false;
                     end,
+                },
+                aggregateGuildAchievements = {
+                    order = 2,
+                    type = "toggle",
+                    name = "Aggregate guild achievements",
+                    width = "full",
+                    get = function() return self.db.aggregateGuildAchievements; end,
+                    set = function(_, value)
+                        self.db.aggregateGuildAchievements = value and true or false;
+                        self:RefreshGuildAchievementFilter();
+                    end,
+                },
+                aggregateGuildAchievementsInfo = {
+                    order = 2.1,
+                    type = "description",
+                    name = "Combine multiple guild achievement messages from the same player into one line when they occur close together.",
+                    fontSize = "small",
+                },
+                guildAchievementWindow = {
+                    order = 3,
+                    type = "range",
+                    name = "Guild achievement merge window",
+                    min = 0.2,
+                    max = 3.0,
+                    step = 0.1,
+                    get = function() return self.db.guildAchievementWindow; end,
+                    set = function(_, value)
+                        self.db.guildAchievementWindow = value;
+                    end,
+                    disabled = function() return not self.db.aggregateGuildAchievements; end,
                 },
             },
         },
@@ -358,7 +522,7 @@ function ChatQoL:HandleChatChannels()
         local name = normalizeTabName("Trade", tradeTabName);
         local existing = getWindowIndexByName(name);
         local index = existing or ensureWindow(name);
-        if (index and not existing) then
+        if (index and not windowHasChannel(index, "Trade")) then
             addChannelToWindow(index, "Trade");
         end
         if (index and index ~= MAIN_CHAT_FRAME and windowHasChannel(index, "Trade") and windowHasChannel(MAIN_CHAT_FRAME, "Trade")) then
@@ -369,7 +533,7 @@ function ChatQoL:HandleChatChannels()
         local name = normalizeTabName("Services", servicesTabName);
         local existing = getWindowIndexByName(name);
         local index = existing or ensureWindow(name);
-        if (index and not existing) then
+        if (index and not windowHasChannel(index, "Services")) then
             addChannelToWindow(index, "Services");
         end
         if (index and index ~= MAIN_CHAT_FRAME and windowHasChannel(index, "Services") and windowHasChannel(MAIN_CHAT_FRAME, "Services")) then
@@ -404,6 +568,20 @@ function ChatQoL:ScheduleChannelCheck()
     end
 end
 
+function ChatQoL:RefreshGuildAchievementFilter()
+    if (not ChatFrame_AddMessageEventFilter or not ChatFrame_RemoveMessageEventFilter) then return; end
+    if (self.db and self.db.aggregateGuildAchievements) then
+        if (not self._guildAchievementFilter) then
+            self._guildAchievementFilter = function(_, _, msg, sender, ...)
+                return ChatQoL:QueueGuildAchievement(msg, sender);
+            end;
+        end
+        ChatFrame_AddMessageEventFilter("CHAT_MSG_GUILD_ACHIEVEMENT", self._guildAchievementFilter);
+    elseif (self._guildAchievementFilter) then
+        ChatFrame_RemoveMessageEventFilter("CHAT_MSG_GUILD_ACHIEVEMENT", self._guildAchievementFilter);
+    end
+end
+
 function ChatQoL:OnInit()
     ensureDB(self);
     self._channelCheckPending = nil;
@@ -413,6 +591,7 @@ end
 function ChatQoL:OnEnable()
     ensureDB(self);
     self:AttachEditBoxHandlers();
+    self:RefreshGuildAchievementFilter();
     for _, ev in ipairs(MONITORED_CHAT_EVENTS) do
         self.addon:ModuleRegisterEvent(self, ev, function(_, _, msg, author)
             captureMessage(_, msg, author);
@@ -429,6 +608,11 @@ end
 
 function ChatQoL:OnDisable()
     self._channelCheckPending = nil;
+    if (self._guildAchievementFilter and ChatFrame_RemoveMessageEventFilter) then
+        ChatFrame_RemoveMessageEventFilter("CHAT_MSG_GUILD_ACHIEVEMENT", self._guildAchievementFilter);
+    end
+    self._guildAchievementQueue = nil;
+    self._guildAchievementTimerPending = nil;
 end
 
 Lantern:RegisterModule(ChatQoL);
