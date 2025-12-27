@@ -43,6 +43,30 @@ function addon:GetRegion()
     return normalized;
 end
 
+function utils.GetCurrentZoneName()
+    local zone = GetZoneText and GetZoneText() or "";
+    if (zone == "") then
+        return nil;
+    end
+    return zone;
+end
+
+utils._optionsRebuilders = utils._optionsRebuilders or {};
+
+function utils.RegisterOptionsRebuilder(key, fn)
+    if (type(key) ~= "string" or key == "" or type(fn) ~= "function") then
+        return;
+    end
+    utils._optionsRebuilders[key] = fn;
+end
+
+function utils.RunOptionsRebuilder(key)
+    local fn = utils._optionsRebuilders and utils._optionsRebuilders[key];
+    if (type(fn) == "function") then
+        fn();
+    end
+end
+
 local function GetDailyResetHourCET(region)
     region = region or addon:GetRegion();
     if (region == "US") then

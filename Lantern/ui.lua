@@ -54,6 +54,24 @@ local function showLinkPopup(link)
     StaticPopup_Show(LINK_POPUP_NAME, nil, nil, link);
 end
 
+function Lantern:NotifyOptionsChange()
+    local panel = self.optionsPanel;
+    local optionsVisible = false;
+    if (panel and panel.IsShown and panel:IsShown()) then
+        optionsVisible = true;
+    elseif (SettingsPanel and SettingsPanel.IsShown and SettingsPanel:IsShown()) then
+        optionsVisible = true;
+    elseif (InterfaceOptionsFrame and InterfaceOptionsFrame.IsShown and InterfaceOptionsFrame:IsShown()) then
+        optionsVisible = true;
+    end
+    if (not optionsVisible) then
+        return;
+    end
+    if (AceConfigRegistry) then
+        AceConfigRegistry:NotifyChange(ADDON_NAME .. "_General");
+    end
+end
+
 function Lantern:EnsureUIState()
     self.db.minimap = self.db.minimap or {};
     self.db.options = self.db.options or {};
@@ -191,9 +209,7 @@ end
 function Lantern:BuildOptions()
     if (self.options) then return self.options; end
     local function notifyOptionsChange()
-        if (AceConfigRegistry) then
-            AceConfigRegistry:NotifyChange(ADDON_NAME .. "_General");
-        end
+        Lantern:NotifyOptionsChange();
     end
     local function clearTable(t)
         if (wipe) then
@@ -510,10 +526,12 @@ function Lantern:BuildOptions()
                         };
 
                         local list = autoQuestBlockedList();
-                        local currentZone = (GetZoneText and GetZoneText()) or "";
+                        local currentZone = Lantern.utils and Lantern.utils.GetCurrentZoneName
+                            and Lantern.utils.GetCurrentZoneName()
+                            or nil;
                         local filter = autoQuestBlockedFilter();
                         local showAll = filter == "all";
-                        local filterZone = currentZone;
+                        local filterZone = currentZone or "";
                         if (filter ~= "current" and filter ~= "all") then
                             filterZone = filter;
                         end
@@ -574,7 +592,10 @@ function Lantern:BuildOptions()
                         };
 
                         local blockedList = autoQuestBlockedQuestList();
-                        local questZone = (GetZoneText and GetZoneText()) or "";
+                        local questZone = Lantern.utils and Lantern.utils.GetCurrentZoneName
+                            and Lantern.utils.GetCurrentZoneName()
+                            or nil;
+                        local showAllQuests = not questZone;
                         local ids = {};
                         for id in pairs(blockedList) do
                             table.insert(ids, id);
@@ -591,7 +612,7 @@ function Lantern:BuildOptions()
                             args.blockedQuestEmpty = {
                                 order = 82,
                                 type = "description",
-                                name = questZone ~= "" and ("No quests are blocked in " .. questZone .. ".") or "No quests are blocked.",
+                                name = questZone and ("No quests are blocked in " .. questZone .. ".") or "No quests are blocked.",
                                 fontSize = "medium",
                             };
                         else
@@ -607,7 +628,7 @@ function Lantern:BuildOptions()
                                     name = raw;
                                 end
                                 local zone = npcKey and npcKey:match("^.+%s%-%s(.+)$") or nil;
-                                if (zone and zone == questZone) then
+                                if (showAllQuests or (zone and zone == questZone)) then
                                     table.insert(entries, {
                                         id = id,
                                         name = name,
@@ -764,6 +785,10 @@ function Lantern:BuildOptions()
                             addRecentEntry(i, base);
                             base = base + 1;
                         end
+                    end
+
+                    if (Lantern.utils and Lantern.utils.RegisterOptionsRebuilder) then
+                        Lantern.utils.RegisterOptionsRebuilder("autoQuest", rebuildArgs);
                     end
 
                     rebuildArgs();
@@ -1057,3 +1082,16 @@ Lantern:RegisterEvent("PLAYER_LOGIN", function()
     Lantern:SetupOptions();
     Lantern:InitMinimap();
 end);
+
+local function refreshZoneOptions()
+    if (Lantern.optionsInitialized) then
+        if (Lantern.utils and Lantern.utils.RunOptionsRebuilder) then
+            Lantern.utils.RunOptionsRebuilder("autoQuest");
+        end
+        Lantern:NotifyOptionsChange();
+    end
+end
+
+Lantern:RegisterEvent("ZONE_CHANGED_NEW_AREA", refreshZoneOptions);
+Lantern:RegisterEvent("ZONE_CHANGED_INDOORS", refreshZoneOptions);
+Lantern:RegisterEvent("ZONE_CHANGED", refreshZoneOptions);
