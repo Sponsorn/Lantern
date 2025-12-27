@@ -29,6 +29,18 @@ local function ensureDB(self)
     if (type(self.db.blockedQuests) ~= "table") then
         self.db.blockedQuests = {};
     end
+    if (type(self.db.blockedQuestNames) ~= "table") then
+        self.db.blockedQuestNames = {};
+    end
+    if (next(self.db.blockedQuestNames) == nil) then
+        for _, value in pairs(self.db.blockedQuests) do
+            if (type(value) == "string" and value ~= "") then
+                self.db.blockedQuestNames[value] = true;
+            elseif (type(value) == "table" and type(value.name) == "string" and value.name ~= "") then
+                self.db.blockedQuestNames[value.name] = true;
+            end
+        end
+    end
     if (type(self.db.recentAutomated) ~= "table") then
         self.db.recentAutomated = {};
     end
@@ -118,6 +130,10 @@ function module:IsQuestNameBlocked(name)
     if (not name or name == "") then return false; end
     local list = self.db and self.db.blockedQuests;
     if (not list) then return false; end
+    local names = self.db and self.db.blockedQuestNames;
+    if (names and names[name]) then
+        return true;
+    end
     for _, value in pairs(list) do
         if (value == name) then
             return true;
