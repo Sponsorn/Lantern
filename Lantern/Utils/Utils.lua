@@ -51,6 +51,18 @@ function utils.GetCurrentZoneName()
     return zone;
 end
 
+function utils.RegisterMediaSounds(lsm)
+    if (not lsm or not lsm.Register) then return; end
+    local mediaSounds = {
+        { label = "Lantern: Auction Window Open", path = "Interface\\AddOns\\Lantern\\Media\\Sound\\AuctionWindowOpen.ogg" },
+        { label = "Lantern: Auction Window Close", path = "Interface\\AddOns\\Lantern\\Media\\Sound\\AuctionWindowClose.ogg" },
+        { label = "Lantern: Loot Coin Small", path = "Interface\\AddOns\\Lantern\\Media\\Sound\\LootCoinSmall.ogg" },
+    };
+    for _, entry in ipairs(mediaSounds) do
+        lsm:Register("sound", entry.label, entry.path);
+    end
+end
+
 utils._optionsRebuilders = utils._optionsRebuilders or {};
 
 function utils.RegisterOptionsRebuilder(key, fn)

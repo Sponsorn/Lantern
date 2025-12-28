@@ -25,7 +25,7 @@ local DEFAULTS = {
     debugGuild = false,
     notifyPersonal = true,
     personalSoundEnabled = true,
-    personalSoundName = "Auction Window Open",
+    personalSoundName = "Lantern: Auction Window Open",
     enableWhisperButton = true,
     whisperMessage = "Order complete! Thanks!",
 };
@@ -131,6 +131,9 @@ local function formatPersonalOrderMessage()
 end
 
 local function getSoundValues()
+    if (Lantern.utils and Lantern.utils.RegisterMediaSounds) then
+        Lantern.utils.RegisterMediaSounds(LibSharedMedia);
+    end
     if (CraftingOrders._soundValues) then
         return CraftingOrders._soundValues;
     end
@@ -153,7 +156,13 @@ local function playPersonalSound(self)
     if (not self.db or not self.db.personalSoundEnabled) then return; end
     if (not LibSharedMedia or not LibSharedMedia.Fetch) then return; end
     local sound = LibSharedMedia:Fetch("sound", self.db.personalSoundName or "RaidWarning");
-    if (sound and PlaySoundFile) then
+    if (not sound) then return; end
+    local soundId = tonumber(sound);
+    if (soundId and PlaySound) then
+        PlaySound(soundId, "Master");
+        return;
+    end
+    if (PlaySoundFile) then
         PlaySoundFile(sound, "Master");
     end
 end
@@ -369,16 +378,6 @@ function CraftingOrders:HandlePersonalOrderCountUpdate()
         playPersonalSound(self);
     end
     self._personalCount = count;
-end
-
-function CraftingOrders:CheckPersonalOrdersOnLogin()
-    if (not self.db or not self.db.notifyPersonal) then return; end
-    if (not self._personalCountAvailable) then return; end
-    if (type(self._personalCount) ~= "number") then return; end
-    if (self._personalCount > 0) then
-        self:OutputMessage(formatPersonalOrderMessage());
-        playPersonalSound(self);
-    end
 end
 
 function CraftingOrders:HandleCompleteAndWhisper()
@@ -643,7 +642,7 @@ function CraftingOrders:GetOptions()
                     disabled = function()
                         return not (self.db and self.db.notifyPersonal and self.db.personalSoundEnabled);
                     end,
-                    get = function() return self.db and self.db.personalSoundName or "RaidWarning"; end,
+                    get = function() return self.db and self.db.personalSoundName or "Lantern: Auction Window Open"; end,
                     set = function(_, value)
                         self.db.personalSoundName = value;
                     end,
@@ -698,6 +697,9 @@ function CraftingOrders:OnInit()
     if (self.db) then
         self.db.debugGuild = false;
     end
+    if (Lantern.utils and Lantern.utils.RegisterMediaSounds) then
+        Lantern.utils.RegisterMediaSounds(LibSharedMedia);
+    end
 end
 
 function CraftingOrders:OnEnable()
@@ -706,7 +708,6 @@ function CraftingOrders:OnEnable()
     self._awaitDeadline = 0;
     self._personalCount = getPersonalOrderCount();
     self._personalCountAvailable = self._personalCount ~= nil;
-    self:CheckPersonalOrdersOnLogin();
     self:EnsureWhisperButton();
     self:UpdateWhisperButton();
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", function()
