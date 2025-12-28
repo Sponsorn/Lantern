@@ -330,6 +330,11 @@ function Lantern:BuildOptions()
                         local list = autoQuestRecentList();
                         return list[index];
                     end
+                    local function isQuestBlockedById(id)
+                        if (not id) then return false; end
+                        local list = autoQuestBlockedQuestList();
+                        return list[tostring(id)] ~= nil or list[tonumber(id) or id] ~= nil;
+                    end
                     local function recentQuestLabel(index)
                         return function()
                             local entry = getRecentEntry(index);
@@ -482,10 +487,16 @@ function Lantern:BuildOptions()
                             type = "header",
                             name = "Blocked NPCs",
                         };
+                        args.blocklistInfo = {
+                            order = 10.1,
+                            type = "description",
+                            name = "Note: other quest automation addons (QuickQuest, Plumber, etc.) may bypass the blocklist.",
+                            fontSize = "small",
+                        };
                         args.blockedNpcAdd = {
                             order = 11,
                             type = "execute",
-                            name = "Add current NPC to block list",
+                            name = "Add current NPC to blocklist",
                             width = "full",
                             func = function()
                                 local module = autoQuestModule();
@@ -643,7 +654,6 @@ function Lantern:BuildOptions()
                                     name = questZone ~= "" and ("No quests are blocked in " .. questZone .. ".") or "No quests are blocked.",
                                     fontSize = "medium",
                                 };
-                                return;
                             end
                             local groups = {};
                             for _, entry in ipairs(entries) do
@@ -750,16 +760,17 @@ function Lantern:BuildOptions()
                         end
 
                         local function addRecentEntry(index, baseOrder)
+                            local entry = getRecentEntry(index);
+                            local added = entry and entry.questID and isQuestBlockedById(entry.questID);
                             args["recent_entry_" .. index] = {
                                 order = baseOrder,
                                 type = "execute",
                                 name = recentQuestLabel(index),
                                 width = "full",
-                                control = "LanternInlineButtonRow",
+                                control = added and "LanternInlineButtonRowAdded" or "LanternInlineButtonRow",
                                 hidden = recentHidden(index),
                                 disabled = function()
-                                    local entry = getRecentEntry(index);
-                                    return not (entry and entry.questID);
+                                    return not (entry and entry.questID) or added;
                                 end,
                                 func = function()
                                     addRecentBlock(getRecentEntry(index));

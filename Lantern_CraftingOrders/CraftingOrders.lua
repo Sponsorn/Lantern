@@ -371,6 +371,16 @@ function CraftingOrders:HandlePersonalOrderCountUpdate()
     self._personalCount = count;
 end
 
+function CraftingOrders:CheckPersonalOrdersOnLogin()
+    if (not self.db or not self.db.notifyPersonal) then return; end
+    if (not self._personalCountAvailable) then return; end
+    if (type(self._personalCount) ~= "number") then return; end
+    if (self._personalCount > 0) then
+        self:OutputMessage(formatPersonalOrderMessage());
+        playPersonalSound(self);
+    end
+end
+
 function CraftingOrders:HandleCompleteAndWhisper()
     local view = getOrderView();
     local button = view and view.CompleteOrderButton;
@@ -696,6 +706,7 @@ function CraftingOrders:OnEnable()
     self._awaitDeadline = 0;
     self._personalCount = getPersonalOrderCount();
     self._personalCountAvailable = self._personalCount ~= nil;
+    self:CheckPersonalOrdersOnLogin();
     self:EnsureWhisperButton();
     self:UpdateWhisperButton();
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", function()

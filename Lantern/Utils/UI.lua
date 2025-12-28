@@ -413,7 +413,8 @@ local function registerInlineButtonRowWidget(typeName, buttonTextValue)
 end
 
 function UI.RegisterInlineButtonRowWidgets()
-    registerInlineButtonRowWidget("LanternInlineButtonRow", "Add to block list");
+    registerInlineButtonRowWidget("LanternInlineButtonRow", "Add to blocklist");
+    registerInlineButtonRowWidget("LanternInlineButtonRowAdded", "Added");
     registerInlineButtonRowWidget("LanternInlineRemoveButtonRow", "Remove");
 end
 
