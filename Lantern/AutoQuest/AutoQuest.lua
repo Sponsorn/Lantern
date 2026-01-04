@@ -17,6 +17,17 @@ local function shouldPause()
     return IsShiftKeyDown();
 end
 
+local function isQuestReadyForTurnIn(questID)
+    if (not questID) then return false; end
+    if (C_QuestLog and C_QuestLog.ReadyForTurnIn and C_QuestLog.ReadyForTurnIn(questID)) then
+        return true;
+    end
+    if (C_QuestLog and C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID)) then
+        return true;
+    end
+    return false;
+end
+
 local function ensureDB(self)
     self.db = self.addon.db.autoQuest or {};
     self.addon.db.autoQuest = self.db;
@@ -192,7 +203,7 @@ local function handleActiveQuests(self)
     if (C_GossipInfo and C_GossipInfo.GetActiveQuests) then
         local quests = C_GossipInfo.GetActiveQuests();
         for _, q in ipairs(quests or {}) do
-            if (q and q.questID and q.isComplete and not self:IsQuestBlocked(q.questID)) then
+            if (q and q.questID and (q.isComplete or isQuestReadyForTurnIn(q.questID)) and not self:IsQuestBlocked(q.questID)) then
                 C_GossipInfo.SelectActiveQuest(q.questID);
             end
         end
@@ -206,6 +217,17 @@ end
 
 function module:OnQuestGreeting()
     if (shouldPause()) then return; end
+    if (self.db.autoTurnIn and GetNumActiveQuests and GetActiveTitle and SelectActiveQuest) then
+        local count = GetNumActiveQuests() or 0;
+        for i = 1, count do
+            local questID = GetActiveQuestID and GetActiveQuestID(i);
+            local title, _, isTrivial, isComplete = GetActiveTitle(i);
+            local ready = isComplete or isQuestReadyForTurnIn(questID);
+            if (not isTrivial and ready and not self:IsQuestNameBlocked(title)) then
+                SelectActiveQuest(i);
+            end
+        end
+    end
     if (self.db.autoAccept and GetNumAvailableQuests and GetAvailableTitle and SelectAvailableQuest) then
         local count = GetNumAvailableQuests() or 0;
         for i = 1, count do
@@ -232,8 +254,8 @@ end
 
 function module:OnQuestProgress()
     if (shouldPause() or not self.db.autoTurnIn or self:IsCurrentNPCBlocked()) then return; end
-    if (IsQuestCompletable()) then
-        local questID = GetQuestID and GetQuestID();
+    local questID = GetQuestID and GetQuestID();
+    if (IsQuestCompletable() or isQuestReadyForTurnIn(questID)) then
         if (self:IsQuestBlocked(questID)) then return; end
         local title = GetTitleText and GetTitleText();
         CompleteQuest();
