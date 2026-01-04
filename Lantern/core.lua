@@ -9,6 +9,17 @@ Lantern.messageHandlers = Lantern.messageHandlers or {};
 
 local tinsert = table.insert;
 
+-- Protected call wrapper for module callbacks
+local function safeCall(fn, context, ...)
+    if (type(fn) ~= "function") then return; end
+    local success, err = pcall(fn, ...);
+    if (not success) then
+        local contextStr = context or "unknown";
+        print("|cffe6c619Lantern error|r in " .. contextStr .. ": " .. tostring(err));
+    end
+    return success;
+end
+
 function Lantern:SetupDB()
     if (not _G.LanternDB) then
         _G.LanternDB = {
@@ -48,8 +59,12 @@ function Lantern:RegisterModule(module)
     end
     module.enabled = self.db.modules[module.name];
     if (self.ready and module.enabled) then
-        if (module.OnInit) then module:OnInit(); end
-        if (module.OnEnable) then module:OnEnable(); end
+        if (module.OnInit) then
+            safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
+        end
+        if (module.OnEnable) then
+            safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
+        end
     else
         table.insert(self._pendingModules, module);
     end
@@ -60,7 +75,9 @@ function Lantern:EnableModule(name)
     if (module and not module.enabled) then
         module.enabled = true;
         self.db.modules[name] = true;
-        if (module.OnEnable) then module:OnEnable(); end
+        if (module.OnEnable) then
+            safeCall(module.OnEnable, "module " .. name .. " OnEnable", module);
+        end
     end
 end
 
@@ -69,8 +86,14 @@ function Lantern:DisableModule(name)
     if (module and module.enabled) then
         module.enabled = false;
         self.db.modules[name] = false;
-        if (module.OnDisable) then module:OnDisable(); end
+        if (module.OnDisable) then
+            safeCall(module.OnDisable, "module " .. name .. " OnDisable", module);
+        end
+        -- Properly unregister all event handlers for this module
         if (module._events) then
+            for event, handler in pairs(module._events) do
+                self:UnregisterEvent(event, handler);
+            end
             module._events = {};
         end
     end
@@ -83,7 +106,7 @@ function Lantern:RegisterEvent(event, handler)
             local listeners = Lantern.eventHandlers[ev];
             if (listeners) then
                 for i = 1, #listeners do
-                    listeners[i](ev, ...);
+                    safeCall(listeners[i], "event " .. ev, ev, ...);
                 end
             end
         end);
@@ -93,13 +116,31 @@ function Lantern:RegisterEvent(event, handler)
     self.eventFrame:RegisterEvent(event);
 end
 
+function Lantern:UnregisterEvent(event, handler)
+    local listeners = self.eventHandlers[event];
+    if (not listeners) then return; end
+
+    for i = #listeners, 1, -1 do
+        if (listeners[i] == handler) then
+            table.remove(listeners, i);
+        end
+    end
+
+    -- If no more listeners for this event, unregister from the frame
+    if (#listeners == 0 and self.eventFrame) then
+        self.eventFrame:UnregisterEvent(event);
+    end
+end
+
 function Lantern:ModuleRegisterEvent(module, event, handler)
     if (module._events and module._events[event]) then
         return;
     end
     module._events = module._events or {};
-    module._events[event] = true;
-    self:RegisterEvent(event, function(ev, ...) if module.enabled then handler(module, ev, ...) end end);
+    -- Store the wrapped handler so we can remove it later
+    local wrappedHandler = function(ev, ...) if module.enabled then handler(module, ev, ...) end end;
+    module._events[event] = wrappedHandler;
+    self:RegisterEvent(event, wrappedHandler);
 end
 
 function Lantern:RegisterMessage(message, handler)
@@ -111,7 +152,7 @@ function Lantern:SendMessage(message, ...)
     local handlers = self.messageHandlers[message];
     if (handlers) then
         for i = 1, #handlers do
-            handlers[i](message, ...);
+            safeCall(handlers[i], "message " .. message, message, ...);
         end
     end
 end
@@ -124,8 +165,12 @@ Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
     Lantern._pendingModules = {};
     for _, module in ipairs(pending) do
         if (module.enabled) then
-            if (module.OnInit) then module:OnInit(); end
-            if (module.OnEnable) then module:OnEnable(); end
+            if (module.OnInit) then
+                safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
+            end
+            if (module.OnEnable) then
+                safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
+            end
         end
     end
 end);

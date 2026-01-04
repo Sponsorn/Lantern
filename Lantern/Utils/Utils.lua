@@ -173,3 +173,27 @@ end);
 
 utils.normalizeRegionCode = normalizeRegionCode;
 utils.GetDailyResetHourCET = GetDailyResetHourCET;
+
+-- Input validation helpers
+function utils.ValidateString(str, maxLength)
+    if (type(str) ~= "string") then return false; end
+    if (str == "") then return false; end
+    if (maxLength and #str > maxLength) then return false; end
+    return true;
+end
+
+function utils.SanitizeString(str, maxLength)
+    if (type(str) ~= "string") then return ""; end
+    local sanitized = str:gsub("[%z\1-\31]", ""); -- Remove control characters
+    if (maxLength and #sanitized > maxLength) then
+        sanitized = sanitized:sub(1, maxLength);
+    end
+    return sanitized;
+end
+
+function utils.ValidateQuestID(questID)
+    local num = tonumber(questID);
+    if (not num) then return false; end
+    if (num < 1 or num > 999999) then return false; end -- Reasonable quest ID range
+    return true;
+end
