@@ -171,6 +171,27 @@ addon:RegisterConverter("money:format_copper", function(amount)
     return table.concat(parts, " ");
 end);
 
+addon:RegisterConverter("money:parse_gold", function(goldStr)
+    local num = tonumber(goldStr);
+    if (not num or num < 0) then return nil; end
+    return num * 10000; -- Convert gold to copper
+end);
+
+addon:RegisterConverter("money:format_gold", function(copper)
+    local gold = math.floor((tonumber(copper) or 0) / 10000);
+    return tostring(gold);
+end);
+
+addon:RegisterConverter("money:format_gold_thousands", function(copper)
+    local gold = math.floor((tonumber(copper) or 0) / 10000);
+    local str = tostring(gold);
+    local formatted, count = str:gsub("^(-?%d+)(%d%d%d)", "%1,%2");
+    while (count > 0) do
+        formatted, count = formatted:gsub("^(-?%d+)(%d%d%d)", "%1,%2");
+    end
+    return formatted;
+end);
+
 utils.normalizeRegionCode = normalizeRegionCode;
 utils.GetDailyResetHourCET = GetDailyResetHourCET;
 

@@ -30,6 +30,53 @@ function Lantern:SetupDB()
     self.db.modules = self.db.modules or {};
     self.db.minimap = self.db.minimap or {};
     self.db.options = self.db.options or {};
+    self.db.characters = self.db.characters or {};
+end
+
+-- Character utility functions
+function Lantern:GetCharacterKey()
+    local name = UnitName("player");
+    local realm = GetRealmName();
+    if (not name or not realm) then return nil; end
+    return string.format("%s-%s", name, realm);
+end
+
+function Lantern:UpdateCharacterLogin()
+    local key = self:GetCharacterKey();
+    if (not key) then return; end
+
+    if (not self.db or not self.db.characters) then
+        self:SetupDB();
+    end
+
+    self.db.characters[key] = self.db.characters[key] or {};
+    self.db.characters[key].lastLogin = time();
+    self.db.characters[key].name = UnitName("player");
+    self.db.characters[key].realm = GetRealmName();
+end
+
+function Lantern:GetCharacterLastLogin(characterKey)
+    if (not characterKey) then
+        characterKey = self:GetCharacterKey();
+    end
+
+    if (not self.db or not self.db.characters or not self.db.characters[characterKey]) then
+        return nil;
+    end
+
+    return self.db.characters[characterKey].lastLogin;
+end
+
+function Lantern:GetCharacterInfo(characterKey)
+    if (not characterKey) then
+        characterKey = self:GetCharacterKey();
+    end
+
+    if (not self.db or not self.db.characters) then
+        return nil;
+    end
+
+    return self.db.characters[characterKey];
 end
 
 function Lantern:NewModule(name, opts)
@@ -173,4 +220,8 @@ Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
             end
         end
     end
+end);
+
+Lantern:RegisterEvent("PLAYER_LOGIN", function()
+    Lantern:UpdateCharacterLogin();
 end);

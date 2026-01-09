@@ -15,14 +15,6 @@ local DEFAULTS = {
     characterGroups = {}, -- Maps character name to group name
 };
 
--- Character key format: "CharacterName-RealmName"
-local function getCharacterKey()
-    local name = UnitName("player");
-    local realm = GetRealmName();
-    if (not name or not realm) then return nil; end
-    return string.format("%s-%s", name, realm);
-end
-
 local function ensureDB(self)
     if (not _G.LanternWarbandDB) then
         _G.LanternWarbandDB = {};
@@ -50,7 +42,7 @@ local function ensureDB(self)
 end
 
 local function getCurrentCharacterGroup(self)
-    local key = getCharacterKey();
+    local key = Lantern:GetCharacterKey();
     if (not key) then return nil; end
 
     local groupName = self.db.characterGroups[key];
@@ -64,41 +56,29 @@ local function getPlayerGold()
 end
 
 local function depositToWarbank(amount)
-    if (not C_Bank or not C_Bank.CanUseBank or not C_Bank.CanUseBank()) then
+    if (not C_Bank or not C_Bank.CanUseBank or not C_Bank.DepositMoney) then
         return false;
     end
 
-    if (not C_Bank.HasMaxWithdrawLimit) then
-        -- Warbank API not available
+    if (not C_Bank.CanUseBank(Enum.BankType.Account)) then
         return false;
     end
 
-    -- Deposit to warbank tab 1 (warband bank is a special bank type)
-    if (C_Bank.DepositMoney) then
-        C_Bank.DepositMoney(Enum.BankType.Account, amount);
-        return true;
-    end
-
-    return false;
+    C_Bank.DepositMoney(Enum.BankType.Account, amount);
+    return true;
 end
 
 local function withdrawFromWarbank(amount)
-    if (not C_Bank or not C_Bank.CanUseBank or not C_Bank.CanUseBank()) then
+    if (not C_Bank or not C_Bank.CanUseBank or not C_Bank.WithdrawMoney) then
         return false;
     end
 
-    if (not C_Bank.HasMaxWithdrawLimit) then
-        -- Warbank API not available
+    if (not C_Bank.CanUseBank(Enum.BankType.Account)) then
         return false;
     end
 
-    -- Withdraw from warbank
-    if (C_Bank.WithdrawMoney) then
-        C_Bank.WithdrawMoney(Enum.BankType.Account, amount);
-        return true;
-    end
-
-    return false;
+    C_Bank.WithdrawMoney(Enum.BankType.Account, amount);
+    return true;
 end
 
 local function calculateDepositAmount(self)
@@ -135,11 +115,17 @@ local function calculateWithdrawAmount(self)
 end
 
 local function handleBankOpened(self)
-    if (not self.db or not self.db.autoDeposit) then return; end
-    if (not self.enabled) then return; end
+    if (not self.db or not self.db.autoDeposit or not self.enabled) then
+        return;
+    end
 
     -- Wait a frame to ensure bank is fully loaded
     C_Timer.After(0.5, function()
+        local group = getCurrentCharacterGroup(self);
+        if (not group) then
+            return;
+        end
+
         -- Check if we need to deposit
         local depositAmount = calculateDepositAmount(self);
         if (depositAmount > 0) then
@@ -164,11 +150,13 @@ local function handleBankOpened(self)
 end
 
 function Warband:OnInit()
-    ensureDB(self);
+    -- Don't initialize DB here - SavedVariables haven't loaded yet
+    -- DB will be initialized in ADDON_LOADED event
 end
 
 function Warband:OnEnable()
-    -- DB already initialized in OnInit, just register events
+    -- Ensure DB is initialized when module is enabled
+    ensureDB(self);
 
     -- Register events for bank interaction
     self.addon:ModuleRegisterEvent(self, "BANKFRAME_OPENED", function(module)
@@ -211,10 +199,54 @@ function Warband:DeleteGroup(groupName)
     return true;
 end
 
+function Warband:RenameGroup(oldName, newName)
+    if (not oldName or not newName) then
+        return false;
+    end
+
+    if (not self.db.groups[oldName]) then
+        return false;
+    end
+
+    if (self.db.groups[newName]) then
+        return false;
+    end
+
+    -- Copy group to new name
+    self.db.groups[newName] = self.db.groups[oldName];
+    self.db.groups[newName].name = newName;
+
+    -- Update character assignments
+    for charKey, groupName in pairs(self.db.characterGroups) do
+        if (groupName == oldName) then
+            self.db.characterGroups[charKey] = newName;
+        end
+    end
+
+    -- Delete old group
+    self.db.groups[oldName] = nil;
+
+    return true;
+end
+
 function Warband:AssignCharacterToGroup(characterKey, groupName)
     if (not characterKey or characterKey == "") then return false; end
     if (not groupName or not self.db.groups[groupName]) then return false; end
 
+    -- First, remove from old group if assigned to one
+    local oldGroupName = self.db.characterGroups[characterKey];
+    if (oldGroupName and oldGroupName ~= groupName) then
+        local oldGroup = self.db.groups[oldGroupName];
+        if (oldGroup and oldGroup.members) then
+            for i = #oldGroup.members, 1, -1 do
+                if (oldGroup.members[i] == characterKey) then
+                    table.remove(oldGroup.members, i);
+                end
+            end
+        end
+    end
+
+    -- Now assign to new group
     self.db.characterGroups[characterKey] = groupName;
 
     -- Add to group members if not already there
@@ -261,12 +293,12 @@ function Warband:RemoveCharacterFromGroup(characterKey)
 end
 
 function Warband:GetCurrentCharacter()
-    return getCharacterKey();
+    return Lantern:GetCharacterKey();
 end
 
 function Warband:GetCharacterGroup(characterKey)
     if (not characterKey) then
-        characterKey = getCharacterKey();
+        characterKey = Lantern:GetCharacterKey();
     end
 
     local groupName = self.db.characterGroups[characterKey];
@@ -306,14 +338,21 @@ frame:RegisterEvent("ADDON_LOADED");
 frame:SetScript("OnEvent", function(_, event, addonName)
     if (addonName ~= ADDON_NAME) then return; end
 
-    -- SavedVariables are now loaded, refresh the options UI
+    -- SavedVariables are now loaded, initialize database
+    ensureDB(Warband);
+
+    -- Small delay to refresh the options UI
     C_Timer.After(0.1, function()
-        if (not Warband or not Warband.GetOptions) then return; end
+        if (not Warband or not Warband.GetOptions) then
+            return;
+        end
 
         local AceConfig = LibStub and LibStub("AceConfig-3.0", true);
         local AceConfigRegistry = LibStub and LibStub("AceConfigRegistry-3.0", true);
 
-        if (not AceConfig or not AceConfigRegistry) then return; end
+        if (not AceConfig or not AceConfigRegistry) then
+            return;
+        end
 
         local key = "module_Warband";
         local newOptions = Warband:GetOptions();

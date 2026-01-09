@@ -140,6 +140,7 @@ function Warband:GetOptions()
     -- Build groups tab
     local groupsArgs = options.groups.args;
 
+    -- Add "Create New Group" section directly in Groups tab
     groupsArgs.newGroupHeader = {
         order = 1,
         type = "header",
@@ -153,7 +154,14 @@ function Warband:GetOptions()
         desc = "Enter a name for the new group (e.g., 'Mains', 'Alts', 'Bankers')",
         width = "full",
         get = function() return self._newGroupTemp.name or ""; end,
-        set = function(_, val) self._newGroupTemp.name = val or ""; end,
+        set = function(_, val)
+            self._newGroupTemp.name = val or "";
+        end,
+        validate = function(_, val)
+            -- Update the temp storage immediately as user types
+            self._newGroupTemp.name = val or "";
+            return true;
+        end,
     };
 
     groupsArgs.newGroupThreshold = {
@@ -231,101 +239,253 @@ function Warband:GetOptions()
         end,
     };
 
-    groupsArgs.existingGroupsHeader = {
-        order = 10,
-        type = "header",
-        name = "Existing Groups",
-    };
-
     -- List existing groups
     local groups = self:GetAllGroups();
-    if (#groups == 0) then
-        groupsArgs.noGroups = {
-            order = 11,
-            type = "description",
-            name = "No groups created yet. Create a group above to get started.",
-            fontSize = "medium",
-        };
-    else
-        table.sort(groups, function(a, b) return a.name < b.name; end);
+    table.sort(groups, function(a, b)
+        return (a.name or ""):lower() < (b.name or ""):lower();
+    end);
 
-        local order = 20;
-        for _, group in ipairs(groups) do
-            local groupKey = "group_" .. group.name:gsub("[^%w]", "_");
+    local order = 20;
+    for _, group in ipairs(groups) do
+        local groupKey = "group_" .. group.name:gsub("[^%w]", "_");
+        local memberCount = group.members and #group.members or 0;
 
-            groupsArgs[groupKey] = {
-                order = order,
-                type = "group",
-                name = group.name,
-                inline = true,
-                args = {
-                    thresholdSlider = {
-                        order = 1,
-                        type = "range",
-                        name = "Gold threshold",
-                        desc = function()
-                            return string.format("Amount of gold to keep on characters. The addon will automatically balance to this amount. Set to 0 to disable auto-balance.\n\n|cff00ff00Current: %s gold|r", formatGoldThousands(group.goldThreshold or 0));
-                        end,
-                        width = "double",
-                        min = 0,
-                        max = 500000,
-                        step = 5000,
-                        bigStep = 10000,
-                        get = function()
-                            local copper = group.goldThreshold or 0;
-                            local gold = math.floor(copper / 10000);
-                            return gold;
-                        end,
-                        set = function(_, val)
-                            local copper = val * 10000;
-                            self:SetGroupGoldThreshold(group.name, copper);
-                        end,
-                    },
-                    thresholdCustom = {
-                        order = 2,
-                        type = "input",
-                        name = "Custom amount",
-                        desc = "Enter a custom gold amount if you need a value outside the slider range",
-                        width = "normal",
-                        get = function()
-                            return formatGoldThousands(group.goldThreshold or 0);
-                        end,
-                        set = function(_, val)
-                            local amount = parseGold(val);
-                            if (amount and amount >= 0) then
-                                self:SetGroupGoldThreshold(group.name, amount);
-                                Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
-                            end
-                        end,
-                    },
-                    memberCount = {
-                        order = 3,
-                        type = "description",
-                        name = function()
-                            local count = group.members and #group.members or 0;
-                            return string.format("|cff00ff00Members:|r %d", count);
-                        end,
-                    },
-                    deleteGroup = {
-                        order = 4,
-                        type = "execute",
-                        name = "Delete Group",
-                        desc = "Delete this group (characters will be unassigned)",
-                        confirm = true,
-                        confirmText = "Are you sure you want to delete this group?",
-                        func = function()
-                            self:DeleteGroup(group.name);
-                            Lantern:Print("Deleted group '" .. group.name .. "'.");
+        -- Temporary storage for group rename
+        if (not self._renameTemp) then
+            self._renameTemp = {};
+        end
+        if (not self._renameTemp[group.name]) then
+            self._renameTemp[group.name] = group.name;
+        end
 
-                            -- Refresh options UI
-                            refreshOptions(self);
-                        end,
-                    },
+        groupsArgs[groupKey] = {
+            order = order,
+            type = "group",
+            name = string.format("%s - %d member%s", group.name, memberCount, memberCount == 1 and "" or "s"),
+            args = {
+                thresholdSlider = {
+                    order = 1,
+                    type = "range",
+                    name = "Gold threshold",
+                    desc = function()
+                        return string.format("Amount of gold to keep on characters. The addon will automatically balance to this amount. Set to 0 to disable auto-balance.\n\n|cff00ff00Current: %s gold|r", formatGoldThousands(group.goldThreshold or 0));
+                    end,
+                    width = "double",
+                    min = 0,
+                    max = 500000,
+                    step = 5000,
+                    bigStep = 10000,
+                    get = function()
+                        local copper = group.goldThreshold or 0;
+                        local gold = math.floor(copper / 10000);
+                        return gold;
+                    end,
+                    set = function(_, val)
+                        local copper = val * 10000;
+                        self:SetGroupGoldThreshold(group.name, copper);
+                    end,
                 },
+                thresholdCustom = {
+                    order = 2,
+                    type = "input",
+                    name = "Custom amount",
+                    desc = "Enter a custom gold amount if you need a value outside the slider range",
+                    width = "normal",
+                    get = function()
+                        return formatGoldThousands(group.goldThreshold or 0);
+                    end,
+                    set = function(_, val)
+                        local amount = parseGold(val);
+                        if (amount and amount >= 0) then
+                            self:SetGroupGoldThreshold(group.name, amount);
+                            Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
+                        end
+                    end,
+                },
+                renameHeader = {
+                    order = 10,
+                    type = "header",
+                    name = "Rename Group",
+                },
+                renameName = {
+                    order = 11,
+                    type = "input",
+                    name = "New name",
+                    desc = "Enter a new name for this group",
+                    width = "normal",
+                    get = function()
+                        return self._renameTemp[group.name] or group.name;
+                    end,
+                    set = function(_, val)
+                        self._renameTemp[group.name] = val or "";
+                    end,
+                },
+                renameButton = {
+                    order = 12,
+                    type = "execute",
+                    name = "Change Name",
+                    desc = "Rename this group",
+                    func = function()
+                        local newName = self._renameTemp[group.name];
+                        if (not newName or newName == "") then
+                            Lantern:Print("Please enter a new name.");
+                            return;
+                        end
+                        if (newName == group.name) then
+                            Lantern:Print("New name is the same as current name.");
+                            return;
+                        end
+                        if (self.db.groups[newName]) then
+                            Lantern:Print("Group '" .. newName .. "' already exists.");
+                            return;
+                        end
+
+                        self:RenameGroup(group.name, newName);
+                        Lantern:Print("Renamed group '" .. group.name .. "' to '" .. newName .. "'.");
+
+                        -- Clear temp storage
+                        self._renameTemp[group.name] = nil;
+
+                        -- Refresh options UI
+                        refreshOptions(self);
+                    end,
+                },
+                addCharHeader = {
+                    order = 20,
+                    type = "header",
+                    name = "Add Character",
+                },
+                addCurrentChar = {
+                    order = 21,
+                    type = "execute",
+                    name = "Add Current Character",
+                    desc = "Add the current character to this group",
+                    func = function()
+                        local currentChar = self:GetCurrentCharacter();
+                        if (not currentChar) then
+                            Lantern:Print("Could not get current character.");
+                            return;
+                        end
+
+                        local currentGroup = self:GetCharacterGroup(currentChar);
+                        if (currentGroup and currentGroup.name == group.name) then
+                            Lantern:Print(currentChar .. " is already in group '" .. group.name .. "'.");
+                            return;
+                        end
+
+                        self:AssignCharacterToGroup(currentChar, group.name);
+                        Lantern:Print("Added " .. currentChar .. " to group '" .. group.name .. "'.");
+
+                        -- Refresh options UI
+                        refreshOptions(self);
+                    end,
+                },
+            },
+        };
+
+        -- Add character members to this group's options
+        if (group.members and #group.members > 0) then
+            -- Helper function to format time ago
+            local function formatTimeAgo(timestamp)
+                if (not timestamp) then return "Never"; end
+                local now = time();
+                local diff = now - timestamp;
+
+                if (diff < 60) then
+                    return "Just now";
+                elseif (diff < 3600) then
+                    local mins = math.floor(diff / 60);
+                    return mins .. "m ago";
+                elseif (diff < 86400) then
+                    local hours = math.floor(diff / 3600);
+                    return hours .. "h ago";
+                else
+                    local days = math.floor(diff / 86400);
+                    return days .. "d ago";
+                end
+            end
+
+            -- Build member table header
+            groupsArgs[groupKey].args.memberTableHeader = {
+                order = 30,
+                type = "header",
+                name = "Members",
             };
 
-            order = order + 1;
+            local memberOrder = 31;
+            for _, memberKey in ipairs(group.members) do
+                local lastLogin = Lantern:GetCharacterLastLogin(memberKey);
+                local timeAgo = formatTimeAgo(lastLogin);
+
+                -- Column 1: Character name (left, takes more space)
+                groupsArgs[groupKey].args["member_name_" .. memberOrder] = {
+                    order = memberOrder,
+                    type = "description",
+                    name = memberKey,
+                    fontSize = "medium",
+                    width = "normal",
+                };
+
+                -- Column 2: Last login (middle)
+                groupsArgs[groupKey].args["member_login_" .. memberOrder] = {
+                    order = memberOrder + 0.01,
+                    type = "description",
+                    name = timeAgo,
+                    fontSize = "medium",
+                    width = "normal",
+                };
+
+                -- Column 3: Remove button (right)
+                groupsArgs[groupKey].args["member_remove_" .. memberOrder] = {
+                    order = memberOrder + 0.02,
+                    type = "execute",
+                    name = "Remove",
+                    desc = "Remove " .. memberKey .. " from this group",
+                    width = "half",
+                    func = function()
+                        self:RemoveCharacterFromGroup(memberKey);
+                        Lantern:Print("Removed " .. memberKey .. " from group '" .. group.name .. "'.");
+
+                        -- Refresh options UI
+                        refreshOptions(self);
+                    end,
+                };
+
+                memberOrder = memberOrder + 1;
+            end
+        else
+            groupsArgs[groupKey].args.noMembers = {
+                order = 30,
+                type = "description",
+                name = "No members in this group yet.",
+                fontSize = "medium",
+            };
         end
+
+        -- Add delete section at the end
+        groupsArgs[groupKey].args.deleteHeader = {
+            order = 100,
+            type = "header",
+            name = "Delete",
+        };
+
+        groupsArgs[groupKey].args.deleteGroup = {
+            order = 101,
+            type = "execute",
+            name = "Delete Group",
+            desc = "Delete this group (characters will be unassigned)",
+            confirm = true,
+            confirmText = "Are you sure you want to delete this group?",
+            func = function()
+                self:DeleteGroup(group.name);
+                Lantern:Print("Deleted group '" .. group.name .. "'.");
+
+                -- Refresh options UI
+                refreshOptions(self);
+            end,
+        };
+
+        order = order + 1;
     end
 
     -- Build characters tab

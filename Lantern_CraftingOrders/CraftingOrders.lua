@@ -74,11 +74,6 @@ local function formatGuildMessage(template, itemLink, who, tipCopper)
 end
 
 local function sendGuildMessage(msg)
-    if (type(msg) ~= "string" or msg == "") then return; end
-    -- Limit message length to avoid spam
-    if (#msg > 255) then
-        msg = msg:sub(1, 252) .. "...";
-    end
     if (SendChatMessage) then
         SendChatMessage(msg, "GUILD");
     else
@@ -398,17 +393,8 @@ function CraftingOrders:HandleCompleteAndWhisper()
     local recipient = stripRealm(order.customerName or order.recipient);
     if (recipient and recipient ~= "" and SendChatMessage) then
         local msg = formatWhisperMessage(self.db.whisperMessage, order);
-        -- Validate type and content
-        if (type(msg) == "string" and msg:match("%S")) then
-            -- Trim whitespace
-            msg = msg:match("^%s*(.-)%s*$");
-            -- Limit whisper length to avoid spam
-            if (msg and #msg > 255) then
-                msg = msg:sub(1, 252) .. "...";
-            end
-            if (msg and msg ~= "") then
-                SendChatMessage(msg, "WHISPER", nil, recipient);
-            end
+        if (msg ~= "") then
+            SendChatMessage(msg, "WHISPER", nil, recipient);
         end
     end
 end

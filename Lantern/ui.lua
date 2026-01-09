@@ -1009,6 +1009,19 @@ local function decorateSplash(panel)
             showLinkPopup(CURSEFORGE_CRAFTING_ORDERS);
         end);
     end
+
+    local warbandDesc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    warbandDesc:SetPoint("TOPLEFT", curseForgeButton, "BOTTOMLEFT", 0, -16);
+    warbandDesc:SetJustifyH("LEFT");
+    warbandDesc:SetWidth(520);
+    warbandDesc:SetWordWrap(true);
+    warbandDesc:SetText("Warband: organize characters into groups with automated gold balancing to/from warbank when opening a bank.");
+
+    local warbandButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate");
+    warbandButton:SetSize(120, 24);
+    warbandButton:SetPoint("TOPLEFT", warbandDesc, "BOTTOMLEFT", 0, -10);
+    warbandButton:SetText("Coming soon");
+    warbandButton:SetEnabled(false);
 end
 
 function Lantern:SetupOptions()
