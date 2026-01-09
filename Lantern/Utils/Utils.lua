@@ -172,7 +172,9 @@ addon:RegisterConverter("money:format_copper", function(amount)
 end);
 
 addon:RegisterConverter("money:parse_gold", function(goldStr)
-    local num = tonumber(goldStr);
+    -- Strip commas before parsing
+    local cleaned = tostring(goldStr):gsub(",", "");
+    local num = tonumber(cleaned);
     if (not num or num < 0) then return nil; end
     return num * 10000; -- Convert gold to copper
 end);

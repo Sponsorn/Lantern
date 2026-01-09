@@ -157,47 +157,24 @@ function Warband:GetOptions()
         set = function(_, val)
             self._newGroupTemp.name = val or "";
         end,
-        validate = function(_, val)
-            -- Update the temp storage immediately as user types
-            self._newGroupTemp.name = val or "";
-            return true;
-        end,
     };
 
     groupsArgs.newGroupThreshold = {
         order = 3,
-        type = "range",
-        name = "Gold threshold",
-        desc = function()
-            local val = tonumber(self._newGroupTemp.threshold) or 0;
-            local copper = val * 10000;
-            return string.format("Amount of gold to keep on character. The addon will automatically balance to this amount. Set to 0 to disable auto-balance for this group.\n\n|cff00ff00Current: %s gold|r", formatGoldThousands(copper));
-        end,
-        width = "double",
-        min = 0,
-        max = 500000,
-        step = 5000,
-        bigStep = 10000,
-        get = function()
-            local val = tonumber(self._newGroupTemp.threshold);
-            return val or 100000;
-        end,
-        set = function(_, val)
-            self._newGroupTemp.threshold = tostring(math.floor(val));
-        end,
-    };
-
-    groupsArgs.newGroupThresholdCustom = {
-        order = 4,
         type = "input",
-        name = "Custom amount",
-        desc = "Enter a custom gold amount if you need a value outside the slider range",
+        name = "Gold threshold",
+        desc = "Amount of gold to keep on character. The addon will automatically balance to this amount. Set to 0 to disable auto-balance for this group.",
         width = "normal",
-        get = function() return self._newGroupTemp.threshold or "100000"; end,
+        get = function()
+            local val = tonumber(self._newGroupTemp.threshold) or 100000;
+            local copper = val * 10000;
+            return formatGoldThousands(copper);
+        end,
         set = function(_, val)
-            local num = tonumber(val);
-            if (num and num >= 0) then
-                self._newGroupTemp.threshold = tostring(math.floor(num));
+            local amount = parseGold(val);
+            if (amount and amount >= 0) then
+                local gold = math.floor(amount / 10000);
+                self._newGroupTemp.threshold = tostring(gold);
             end
         end,
     };
@@ -263,91 +240,126 @@ function Warband:GetOptions()
             type = "group",
             name = string.format("%s - %d member%s", group.name, memberCount, memberCount == 1 and "" or "s"),
             args = {
-                thresholdSlider = {
+                settingsHeader = {
                     order = 1,
-                    type = "range",
-                    name = "Gold threshold",
-                    desc = function()
-                        return string.format("Amount of gold to keep on characters. The addon will automatically balance to this amount. Set to 0 to disable auto-balance.\n\n|cff00ff00Current: %s gold|r", formatGoldThousands(group.goldThreshold or 0));
-                    end,
-                    width = "double",
-                    min = 0,
-                    max = 500000,
-                    step = 5000,
-                    bigStep = 10000,
-                    get = function()
-                        local copper = group.goldThreshold or 0;
-                        local gold = math.floor(copper / 10000);
-                        return gold;
-                    end,
-                    set = function(_, val)
-                        local copper = val * 10000;
-                        self:SetGroupGoldThreshold(group.name, copper);
-                    end,
-                },
-                thresholdCustom = {
-                    order = 2,
-                    type = "input",
-                    name = "Custom amount",
-                    desc = "Enter a custom gold amount if you need a value outside the slider range",
-                    width = "normal",
-                    get = function()
-                        return formatGoldThousands(group.goldThreshold or 0);
-                    end,
-                    set = function(_, val)
-                        local amount = parseGold(val);
-                        if (amount and amount >= 0) then
-                            self:SetGroupGoldThreshold(group.name, amount);
-                            Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
-                        end
-                    end,
-                },
-                renameHeader = {
-                    order = 10,
                     type = "header",
-                    name = "Rename Group",
+                    name = "Group Settings",
                 },
-                renameName = {
-                    order = 11,
-                    type = "input",
-                    name = "New name",
-                    desc = "Enter a new name for this group",
-                    width = "normal",
-                    get = function()
-                        return self._renameTemp[group.name] or group.name;
+                groupNameDisplay = {
+                    order = 2,
+                    type = "description",
+                    name = function()
+                        return "|cff00ff00Group name:|r " .. group.name;
                     end,
-                    set = function(_, val)
-                        self._renameTemp[group.name] = val or "";
-                    end,
+                    fontSize = "medium",
+                    width = "double",
                 },
-                renameButton = {
-                    order = 12,
+                groupNameChange = {
+                    order = 2.1,
                     type = "execute",
-                    name = "Change Name",
-                    desc = "Rename this group",
+                    name = "Change",
+                    desc = "Change the name of this group",
+                    width = "half",
                     func = function()
-                        local newName = self._renameTemp[group.name];
-                        if (not newName or newName == "") then
-                            Lantern:Print("Please enter a new name.");
-                            return;
-                        end
-                        if (newName == group.name) then
-                            Lantern:Print("New name is the same as current name.");
-                            return;
-                        end
-                        if (self.db.groups[newName]) then
-                            Lantern:Print("Group '" .. newName .. "' already exists.");
-                            return;
-                        end
+                        -- Use StaticPopup for the dialog
+                        StaticPopupDialogs["LANTERN_WARBAND_RENAME_GROUP"] = {
+                            text = "Enter a new name for '" .. group.name .. "':",
+                            button1 = "OK",
+                            button2 = "Cancel",
+                            hasEditBox = true,
+                            OnShow = function(popup)
+                                popup.EditBox:SetText(group.name);
+                                popup.EditBox:HighlightText();
+                            end,
+                            OnAccept = function(popup)
+                                local newName = popup.EditBox:GetText();
+                                if (not newName or newName == "") then
+                                    Lantern:Print("Please enter a new name.");
+                                    return;
+                                end
+                                if (newName == group.name) then
+                                    return;
+                                end
+                                if (self.db.groups[newName]) then
+                                    Lantern:Print("Group '" .. newName .. "' already exists.");
+                                    return;
+                                end
 
-                        self:RenameGroup(group.name, newName);
-                        Lantern:Print("Renamed group '" .. group.name .. "' to '" .. newName .. "'.");
+                                local oldName = group.name;
+                                self:RenameGroup(oldName, newName);
+                                Lantern:Print("Renamed group '" .. oldName .. "' to '" .. newName .. "'.");
 
-                        -- Clear temp storage
-                        self._renameTemp[group.name] = nil;
+                                -- Refresh options UI
+                                refreshOptions(self);
+                            end,
+                            timeout = 0,
+                            whileDead = true,
+                            hideOnEscape = true,
+                            preferredIndex = 3,
+                        };
+                        StaticPopup_Show("LANTERN_WARBAND_RENAME_GROUP");
+                    end,
+                },
+                groupNameBreak = {
+                    order = 2.2,
+                    type = "description",
+                    name = "",
+                    width = "full",
+                },
+                thresholdDisplay = {
+                    order = 3,
+                    type = "description",
+                    name = function()
+                        local freshGroup = self.db.groups[group.name];
+                        return "|cff00ff00Gold threshold:|r " .. formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0) .. " gold";
+                    end,
+                    fontSize = "medium",
+                    width = "double",
+                },
+                thresholdChange = {
+                    order = 3.1,
+                    type = "execute",
+                    name = "Change",
+                    desc = "Change the gold threshold for this group",
+                    width = "half",
+                    func = function()
+                        local freshGroup = self.db.groups[group.name];
+                        local currentThreshold = formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0);
 
-                        -- Refresh options UI
-                        refreshOptions(self);
+                        -- Use StaticPopup for the dialog
+                        StaticPopupDialogs["LANTERN_WARBAND_CHANGE_THRESHOLD"] = {
+                            text = "Enter a new gold threshold for '" .. group.name .. "':",
+                            button1 = "OK",
+                            button2 = "Cancel",
+                            hasEditBox = true,
+                            OnShow = function(popup)
+                                popup.EditBox:SetText(currentThreshold);
+                                popup.EditBox:HighlightText();
+                            end,
+                            OnAccept = function(popup)
+                                local val = popup.EditBox:GetText();
+                                local amount = parseGold(val);
+                                if (not amount) then
+                                    Lantern:Print("Please enter a valid gold amount.");
+                                    return;
+                                end
+                                if (amount < 0) then
+                                    Lantern:Print("Gold amount must be 0 or greater.");
+                                    return;
+                                end
+
+                                self:SetGroupGoldThreshold(group.name, amount);
+                                Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
+
+                                -- Refresh options UI
+                                refreshOptions(self);
+                            end,
+                            timeout = 0,
+                            whileDead = true,
+                            hideOnEscape = true,
+                            preferredIndex = 3,
+                        };
+                        StaticPopup_Show("LANTERN_WARBAND_CHANGE_THRESHOLD");
                     end,
                 },
                 addCharHeader = {
