@@ -9,6 +9,7 @@ local AceConfigRegistry = LibStub and LibStub("AceConfigRegistry-3.0", true);
 local MINIMAP_OBJECT_NAME = "Lantern";
 local DEFAULT_ICON = "Interface\\AddOns\\Lantern\\Media\\Images\\Icons\\lantern-core-icon64.blp";
 local CURSEFORGE_CRAFTING_ORDERS = "https://www.curseforge.com/wow/addons/lantern-craftingorders";
+local CURSEFORGE_WARBAND = "https://www.curseforge.com/wow/addons/lantern-warband";
 local LINK_POPUP_NAME = "LanternCopyLinkDialog";
 
 local function hasMinimapLibs()
@@ -1017,11 +1018,21 @@ local function decorateSplash(panel)
     warbandDesc:SetWordWrap(true);
     warbandDesc:SetText("Warband: organize characters into groups with automated gold balancing to/from warbank when opening a bank.");
 
-    local warbandButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate");
-    warbandButton:SetSize(120, 24);
-    warbandButton:SetPoint("TOPLEFT", warbandDesc, "BOTTOMLEFT", 0, -10);
-    warbandButton:SetText("Coming soon");
-    warbandButton:SetEnabled(false);
+    local curseForgeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate");
+    curseForgeButton:SetSize(120, 24);
+    curseForgeButton:SetPoint("TOPLEFT", warbandDesc, "BOTTOMLEFT", 0, -10);
+    local warbandAddonName = "Lantern_CraftingOrders";
+    local hasWarband = C_AddOns and C_AddOns.IsAddOnLoaded
+        and C_AddOns.IsAddOnLoaded(warbandAddonName);
+    if (hasWarband) then
+        curseForgeButton:SetText("Already enabled");
+        curseForgeButton:SetEnabled(false);
+    else
+        curseForgeButton:SetText("CurseForge");
+        curseForgeButton:SetScript("OnClick", function()
+            showLinkPopup(CURSEFORGE_WARBAND);
+        end);
+    end
 end
 
 function Lantern:SetupOptions()
@@ -1074,8 +1085,26 @@ function Lantern:OpenOptions()
     end
     -- Prefer Blizzard Settings (10.0+) if available, fallback to Interface Options, then AceConfigDialog frame.
     if (Settings and Settings.OpenToCategory) then
+        -- Try to get category ID if we don't have it cached
+        if (not self.splashCategoryID and self.optionsPanel and self.optionsPanel.GetCategoryID) then
+            self.splashCategoryID = self.optionsPanel:GetCategoryID();
+        end
+
+        -- If still no category ID, try searching by name (Midnight beta compatibility)
+        if (not self.splashCategoryID and Settings.GetCategory) then
+            local category = Settings.GetCategory("Lantern");
+            if (category and category.GetID) then
+                self.splashCategoryID = category:GetID();
+            end
+        end
+
         if (self.splashCategoryID) then
-            Settings.OpenToCategory(self.splashCategoryID);
+            -- Try modern API first (Midnight beta), fallback to Settings.OpenToCategory
+            if (SettingsPanel and SettingsPanel.OpenToCategory) then
+                SettingsPanel:OpenToCategory(self.splashCategoryID);
+            else
+                Settings.OpenToCategory(self.splashCategoryID);
+            end
             return;
         elseif (self.optionsPanel and self.optionsPanel.GetCategoryID) then
             local catId = self.optionsPanel:GetCategoryID();
@@ -1084,8 +1113,8 @@ function Lantern:OpenOptions()
                 return;
             end
         end
-        Settings.OpenToCategory(self.optionsPanelName or ADDON_NAME);
-        return;
+        -- If we don't have a numeric category ID, fall through to AceConfigDialog instead
+        -- Settings.OpenToCategory only accepts numeric IDs in modern WoW versions
     elseif (InterfaceOptionsFrame_OpenToCategory) then
         local panel = "LanternSplashPanel";
         if (self.optionsPanel) then
@@ -1095,7 +1124,9 @@ function Lantern:OpenOptions()
         InterfaceOptionsFrame_OpenToCategory(panel); -- call twice to work around scroll offset
         return;
     end
-    AceConfigDialog:Open(ADDON_NAME);
+    -- Final fallback: open AceConfigDialog directly
+    -- Use the registered name which is ADDON_NAME .. "_Root"
+    AceConfigDialog:Open(ADDON_NAME .. "_Root");
 end
 
 Lantern:RegisterEvent("PLAYER_LOGIN", function()

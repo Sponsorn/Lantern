@@ -1,4 +1,4 @@
-## Interface: 110207
+## Interface: 120001, 110207, 50501
 ## Title: Lantern
 ## Notes: Core QoL framework with pluggable modules.
 ## Author: Dede in-game / Sponsorn on curseforge & github

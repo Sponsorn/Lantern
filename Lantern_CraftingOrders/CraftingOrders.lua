@@ -427,24 +427,40 @@ end
 
 function CraftingOrders:EnsureWhisperButton()
     local view = getOrderView();
-    if (not view or not view.CompleteOrderButton or view._lanternCompleteWhisperButton) then return; end
+    if (not view) then return; end
 
+    -- Try to find the complete button
     local baseButton = view.CompleteOrderButton;
+    if (not baseButton) then
+        -- Midnight beta might have renamed or moved the button
+        return;
+    end
+
+    -- Don't recreate if it already exists
+    if (view._lanternCompleteWhisperButton) then return; end
+
     local button = CreateFrame("Button", nil, view, "UIPanelButtonTemplate");
     button:SetText("Complete + Whisper");
-    button:SetHeight(baseButton:GetHeight());
-    button:SetWidth(baseButton:GetWidth());
+
+    -- Set size based on base button
+    local height = baseButton:GetHeight() or 22;
+    local width = baseButton:GetWidth() or 120;
+    button:SetHeight(height);
+    button:SetWidth(width);
+
     if (button.SetFrameStrata) then
         button:SetFrameStrata("TOOLTIP");
     end
     if (button.SetFrameLevel and baseButton.GetFrameLevel) then
         button:SetFrameLevel(baseButton:GetFrameLevel() + 20);
     end
+
     button:ClearAllPoints();
     button:SetPoint("BOTTOM", baseButton, "TOP", 0, 2);
     button:SetScript("OnClick", function()
         self:HandleCompleteAndWhisper();
     end);
+
     view._lanternCompleteWhisperButton = button;
 
     if (view.HookScript) then
@@ -453,6 +469,8 @@ function CraftingOrders:EnsureWhisperButton()
     if (baseButton.HookScript) then
         baseButton:HookScript("OnEnable", function() self:UpdateWhisperButton(); end);
         baseButton:HookScript("OnDisable", function() self:UpdateWhisperButton(); end);
+        baseButton:HookScript("OnShow", function() self:UpdateWhisperButton(); end);
+        baseButton:HookScript("OnHide", function() self:UpdateWhisperButton(); end);
     end
     if (view.SetOrder and hooksecurefunc) then
         hooksecurefunc(view, "SetOrder", function() self:UpdateWhisperButton(); end);
@@ -717,9 +735,11 @@ function CraftingOrders:OnEnable()
         self:HandleFulfillResponse(...);
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function()
+        self:EnsureWhisperButton();
         self:UpdateWhisperButton();
     end);
     self.addon:ModuleRegisterEvent(self, "TRADE_SKILL_ITEM_CRAFTED_RESULT", function()
+        self:EnsureWhisperButton();
         self:UpdateWhisperButton();
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_UPDATE_PERSONAL_ORDER_COUNTS", function()
@@ -729,6 +749,13 @@ function CraftingOrders:OnEnable()
         self:HandleSystemMessage(msg);
         self:HandlePersonalOrderMessage(msg);
     end);
+    -- Hook ProfessionsFrame to create button when it becomes available
+    if (ProfessionsFrame and ProfessionsFrame.HookScript) then
+        ProfessionsFrame:HookScript("OnShow", function()
+            self:EnsureWhisperButton();
+            self:UpdateWhisperButton();
+        end);
+    end
 end
 
 function CraftingOrders:OnDisable()

@@ -147,6 +147,38 @@ function Warband:GetOptions()
         name = "Create New Group",
     };
 
+    -- Helper function to trigger group creation
+    local function triggerCreateGroup()
+        local groupName = self._newGroupTemp.name;
+        local thresholdStr = self._newGroupTemp.threshold;
+        local threshold = parseGold(thresholdStr);
+
+        if (not groupName or groupName == "") then
+            Lantern:Print("Please enter a group name.");
+            return;
+        end
+
+        if (not threshold) then
+            Lantern:Print("Please enter a valid gold amount.");
+            return;
+        end
+
+        if (self.db.groups[groupName]) then
+            Lantern:Print("Group '" .. groupName .. "' already exists.");
+            return;
+        end
+
+        self:CreateGroup(groupName, threshold);
+        Lantern:Print("Created group '" .. groupName .. "' with threshold of " .. formatGoldThousands(threshold) .. " gold.");
+
+        -- Clear the inputs
+        self._newGroupTemp.name = "";
+        self._newGroupTemp.threshold = "100000";
+
+        -- Refresh options UI
+        refreshOptions(self);
+    end
+
     groupsArgs.newGroupName = {
         order = 2,
         type = "input",
@@ -156,6 +188,11 @@ function Warband:GetOptions()
         get = function() return self._newGroupTemp.name or ""; end,
         set = function(_, val)
             self._newGroupTemp.name = val or "";
+            -- Trigger creation if user presses Enter after typing
+            if val and val:find("\n") then
+                self._newGroupTemp.name = val:gsub("\n", "");
+                triggerCreateGroup();
+            end
         end,
     };
 
@@ -185,34 +222,7 @@ function Warband:GetOptions()
         name = "Create Group",
         desc = "Create a new character group",
         func = function(info)
-            local groupName = self._newGroupTemp.name;
-            local thresholdStr = self._newGroupTemp.threshold;
-            local threshold = parseGold(thresholdStr);
-
-            if (not groupName or groupName == "") then
-                Lantern:Print("Please enter a group name.");
-                return;
-            end
-
-            if (not threshold) then
-                Lantern:Print("Please enter a valid gold amount.");
-                return;
-            end
-
-            if (self.db.groups[groupName]) then
-                Lantern:Print("Group '" .. groupName .. "' already exists.");
-                return;
-            end
-
-            self:CreateGroup(groupName, threshold);
-            Lantern:Print("Created group '" .. groupName .. "' with threshold of " .. formatGoldThousands(threshold) .. " gold.");
-
-            -- Clear the inputs
-            self._newGroupTemp.name = "";
-            self._newGroupTemp.threshold = "100000";
-
-            -- Refresh options UI
-            refreshOptions(self);
+            triggerCreateGroup();
         end,
     };
 
@@ -270,6 +280,15 @@ function Warband:GetOptions()
                             OnShow = function(popup)
                                 popup.EditBox:SetText(group.name);
                                 popup.EditBox:HighlightText();
+                                popup.EditBox:SetFocus();
+                            end,
+                            EditBoxOnEnterPressed = function(popup)
+                                local parent = popup:GetParent();
+                                StaticPopup_OnClick(parent, 1); -- Simulate clicking button1 (OK)
+                            end,
+                            EditBoxOnEscapePressed = function(popup)
+                                local parent = popup:GetParent();
+                                parent:Hide();
                             end,
                             OnAccept = function(popup)
                                 local newName = popup.EditBox:GetText();
@@ -335,6 +354,15 @@ function Warband:GetOptions()
                             OnShow = function(popup)
                                 popup.EditBox:SetText(currentThreshold);
                                 popup.EditBox:HighlightText();
+                                popup.EditBox:SetFocus();
+                            end,
+                            EditBoxOnEnterPressed = function(popup)
+                                local parent = popup:GetParent();
+                                StaticPopup_OnClick(parent, 1); -- Simulate clicking button1 (OK)
+                            end,
+                            EditBoxOnEscapePressed = function(popup)
+                                local parent = popup:GetParent();
+                                parent:Hide();
                             end,
                             OnAccept = function(popup)
                                 local val = popup.EditBox:GetText();
@@ -567,13 +595,17 @@ function Warband:GetOptions()
             order = order,
             type = "description",
             name = function()
+                -- Split character key into name and realm
+                local name, realm = charKey:match("^(.+)-(.+)$");
+                local displayName = name and realm and (name .. " - " .. realm) or charKey;
+
                 if (group) then
                     return string.format("|cff00ff00%s|r → %s (%s gold threshold)",
-                        charKey,
+                        displayName,
                         groupName,
                         formatGoldThousands(group.goldThreshold or 0));
                 else
-                    return string.format("|cffff0000%s|r → %s (group not found)", charKey, groupName);
+                    return string.format("|cffff0000%s|r → %s (group not found)", displayName, groupName);
                 end
             end,
             fontSize = "medium",
