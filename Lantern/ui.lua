@@ -1021,7 +1021,7 @@ local function decorateSplash(panel)
     local curseForgeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate");
     curseForgeButton:SetSize(120, 24);
     curseForgeButton:SetPoint("TOPLEFT", warbandDesc, "BOTTOMLEFT", 0, -10);
-    local warbandAddonName = "Lantern_CraftingOrders";
+    local warbandAddonName = "Lantern_Warband";
     local hasWarband = C_AddOns and C_AddOns.IsAddOnLoaded
         and C_AddOns.IsAddOnLoaded(warbandAddonName);
     if (hasWarband) then
