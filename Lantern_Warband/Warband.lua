@@ -86,9 +86,14 @@ end
 local function calculateDepositAmount(self)
     local group = getCurrentCharacterGroup(self);
     local threshold;
+    local allowDeposit = true;
 
     if (group and group.goldThreshold) then
         threshold = group.goldThreshold;
+        -- Check if deposit is allowed for this group (default to true for existing groups)
+        if (group.allowDeposit ~= nil) then
+            allowDeposit = group.allowDeposit;
+        end
     elseif (self.db.useDefaultThreshold) then
         -- Use default threshold for ungrouped characters if enabled
         threshold = self.db.defaultThreshold or 1000000000;
@@ -96,7 +101,7 @@ local function calculateDepositAmount(self)
         return 0;
     end
 
-    if (threshold == 0) then
+    if (not allowDeposit or threshold == 0) then
         return 0;
     end
 
@@ -112,9 +117,14 @@ end
 local function calculateWithdrawAmount(self)
     local group = getCurrentCharacterGroup(self);
     local threshold;
+    local allowWithdraw = true;
 
     if (group and group.goldThreshold) then
         threshold = group.goldThreshold;
+        -- Check if withdraw is allowed for this group (default to true for existing groups)
+        if (group.allowWithdraw ~= nil) then
+            allowWithdraw = group.allowWithdraw;
+        end
     elseif (self.db.useDefaultThreshold) then
         -- Use default threshold for ungrouped characters if enabled
         threshold = self.db.defaultThreshold or 1000000000;
@@ -122,7 +132,7 @@ local function calculateWithdrawAmount(self)
         return 0;
     end
 
-    if (threshold == 0) then
+    if (not allowWithdraw or threshold == 0) then
         return 0;
     end
 
@@ -193,15 +203,28 @@ function Warband:OnDisable()
 end
 
 -- Public API for managing groups
-function Warband:CreateGroup(groupName, goldThreshold)
+function Warband:CreateGroup(groupName, goldThreshold, allowDeposit, allowWithdraw)
     if (not groupName or groupName == "") then return false; end
 
     ensureDB(self);
 
+    -- Handle boolean flags properly (false is a valid value)
+    local finalAllowDeposit = true;
+    if (allowDeposit ~= nil) then
+        finalAllowDeposit = allowDeposit;
+    end
+
+    local finalAllowWithdraw = true;
+    if (allowWithdraw ~= nil) then
+        finalAllowWithdraw = allowWithdraw;
+    end
+
     self.db.groups[groupName] = {
         name = groupName,
-        goldThreshold = goldThreshold or 1000000000, -- Default 10g in copper
+        goldThreshold = goldThreshold or 1000000000, -- Default 100k gold in copper
         members = {},
+        allowDeposit = finalAllowDeposit,
+        allowWithdraw = finalAllowWithdraw,
     };
 
     return true;

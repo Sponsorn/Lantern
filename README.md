@@ -11,6 +11,7 @@ The framework is module-based, so additional features can be plugged in later wi
 
 Available modules:
 - Crafting Orders: Functionality to get info if you received a personal crafting order, send guild message when placing orders. QoL button for one-click complete personal work order and whisper recipient
+- Warband: Organize characters into groups with automated gold balancing to/from warbank when opening a bank.
 
 Current WIP modules:
 - Vendor Filter: Filter/sort vendor items by type (icons on the merchant frame).

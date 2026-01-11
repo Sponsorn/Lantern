@@ -74,7 +74,17 @@ function Warband:GetOptions()
         self._newGroupTemp = {
             name = "",
             threshold = "100000",
+            allowDeposit = true,
+            allowWithdraw = true,
         };
+    else
+        -- Ensure fields exist if upgrading from old version
+        if (self._newGroupTemp.allowDeposit == nil) then
+            self._newGroupTemp.allowDeposit = true;
+        end
+        if (self._newGroupTemp.allowWithdraw == nil) then
+            self._newGroupTemp.allowWithdraw = true;
+        end
     end
 
     local options = {
@@ -217,12 +227,17 @@ function Warband:GetOptions()
             return;
         end
 
-        self:CreateGroup(groupName, threshold);
+        local allowDeposit = self._newGroupTemp.allowDeposit;
+        local allowWithdraw = self._newGroupTemp.allowWithdraw;
+
+        self:CreateGroup(groupName, threshold, allowDeposit, allowWithdraw);
         Lantern:Print("Created group '" .. groupName .. "' with threshold of " .. formatGoldThousands(threshold) .. " gold.");
 
         -- Clear the inputs
         self._newGroupTemp.name = "";
         self._newGroupTemp.threshold = "100000";
+        self._newGroupTemp.allowDeposit = true;
+        self._newGroupTemp.allowWithdraw = true;
 
         -- Refresh options UI
         refreshOptions(self);
@@ -262,6 +277,47 @@ function Warband:GetOptions()
                 local gold = math.floor(amount / 10000);
                 self._newGroupTemp.threshold = tostring(gold);
             end
+        end,
+    };
+
+    groupsArgs.newGroupBreak = {
+        order = 3.1,
+        type = "description",
+        name = "",
+        width = "full",
+    };
+
+    groupsArgs.newGroupAllowDeposit = {
+        order = 3.2,
+        type = "toggle",
+        name = "Allow deposits",
+        desc = "Allow depositing gold to warbank when over threshold",
+        width = "normal",
+        get = function()
+            if (self._newGroupTemp.allowDeposit == nil) then
+                return true;
+            end
+            return self._newGroupTemp.allowDeposit;
+        end,
+        set = function(_, val)
+            self._newGroupTemp.allowDeposit = val and true or false;
+        end,
+    };
+
+    groupsArgs.newGroupAllowWithdraw = {
+        order = 3.3,
+        type = "toggle",
+        name = "Allow withdrawals",
+        desc = "Allow withdrawing gold from warbank when below threshold",
+        width = "normal",
+        get = function()
+            if (self._newGroupTemp.allowWithdraw == nil) then
+                return true;
+            end
+            return self._newGroupTemp.allowWithdraw;
+        end,
+        set = function(_, val)
+            self._newGroupTemp.allowWithdraw = val and true or false;
         end,
     };
 
@@ -437,6 +493,54 @@ function Warband:GetOptions()
                             preferredIndex = 3,
                         };
                         StaticPopup_Show("LANTERN_WARBAND_CHANGE_THRESHOLD");
+                    end,
+                },
+                thresholdBreak2 = {
+                    order = 3.2,
+                    type = "description",
+                    name = "",
+                    width = "full",
+                },
+                allowDeposit = {
+                    order = 3.3,
+                    type = "toggle",
+                    name = "Allow deposits",
+                    desc = "Allow depositing gold to warbank when over threshold",
+                    width = "normal",
+                    get = function()
+                        local freshGroup = self.db.groups[group.name];
+                        -- Default to true for existing groups
+                        if (freshGroup and freshGroup.allowDeposit ~= nil) then
+                            return freshGroup.allowDeposit;
+                        end
+                        return true;
+                    end,
+                    set = function(_, val)
+                        local freshGroup = self.db.groups[group.name];
+                        if (freshGroup) then
+                            freshGroup.allowDeposit = val and true or false;
+                        end
+                    end,
+                },
+                allowWithdraw = {
+                    order = 3.4,
+                    type = "toggle",
+                    name = "Allow withdrawals",
+                    desc = "Allow withdrawing gold from warbank when below threshold",
+                    width = "normal",
+                    get = function()
+                        local freshGroup = self.db.groups[group.name];
+                        -- Default to true for existing groups
+                        if (freshGroup and freshGroup.allowWithdraw ~= nil) then
+                            return freshGroup.allowWithdraw;
+                        end
+                        return true;
+                    end,
+                    set = function(_, val)
+                        local freshGroup = self.db.groups[group.name];
+                        if (freshGroup) then
+                            freshGroup.allowWithdraw = val and true or false;
+                        end
                     end,
                 },
                 addCharHeader = {
