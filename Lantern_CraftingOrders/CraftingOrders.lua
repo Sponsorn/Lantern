@@ -201,15 +201,36 @@ local function getOrderView()
     return ordersPage and ordersPage.OrderView;
 end
 
+local function getCompleteButton(view)
+    if (not view) then return nil; end
+
+    -- Try OrderDetails.FulfillmentForm first (Midnight beta)
+    if (view.OrderDetails and view.OrderDetails.FulfillmentForm) then
+        local form = view.OrderDetails.FulfillmentForm;
+        if (form.CompleteOrderButton) then
+            return form.CompleteOrderButton;
+        end
+    end
+
+    -- Try OrderDetails directly
+    if (view.OrderDetails and view.OrderDetails.CompleteOrderButton) then
+        return view.OrderDetails.CompleteOrderButton;
+    end
+
+    -- Fallback to view.CompleteOrderButton (old structure)
+    return view.CompleteOrderButton;
+end
+
 local function getRightButton(view)
     if (not view) then return nil; end
-    if (view.CompleteOrderButton and view.CompleteOrderButton:IsShown()) then
-        return view.CompleteOrderButton;
+    local button = getCompleteButton(view);
+    if (button and button:IsShown()) then
+        return button;
     end
     if (view.CreateOrderButton and view.CreateOrderButton:IsShown()) then
         return view.CreateOrderButton;
     end
-    return view.CompleteOrderButton or view.CreateOrderButton;
+    return button or view.CreateOrderButton;
 end
 
 function CraftingOrders:HandlePlacement()
@@ -382,7 +403,7 @@ end
 
 function CraftingOrders:HandleCompleteAndWhisper()
     local view = getOrderView();
-    local button = view and view.CompleteOrderButton;
+    local button = getCompleteButton(view);
     local order = view and view.order;
     if (not view or not button or not button.IsEnabled or not button:IsEnabled()) then return; end
     if (not order or not isPersonalOrderType(order.orderType)) then return; end
@@ -409,7 +430,7 @@ function CraftingOrders:UpdateWhisperButton()
     end
     local order = view.order;
     local canUse = order and isPersonalOrderType(order.orderType);
-    local baseButton = view.CompleteOrderButton;
+    local baseButton = getCompleteButton(view);
     if (baseButton and baseButton.IsShown) then
         canUse = canUse and baseButton:IsShown();
     end
@@ -429,10 +450,9 @@ function CraftingOrders:EnsureWhisperButton()
     local view = getOrderView();
     if (not view) then return; end
 
-    -- Try to find the complete button
-    local baseButton = view.CompleteOrderButton;
+    -- Try to find the complete button (handles both old and Midnight beta structure)
+    local baseButton = getCompleteButton(view);
     if (not baseButton) then
-        -- Midnight beta might have renamed or moved the button
         return;
     end
 

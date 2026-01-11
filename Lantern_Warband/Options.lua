@@ -104,8 +104,53 @@ function Warband:GetOptions()
                         end
                     end,
                 },
-                currentChar = {
+                defaultThresholdHeader = {
                     order = 3,
+                    type = "header",
+                    name = "Ungrouped Characters",
+                },
+                useDefaultThreshold = {
+                    order = 4,
+                    type = "toggle",
+                    name = "Use default threshold for ungrouped characters",
+                    desc = "Apply a default gold threshold to characters not assigned to any group.",
+                    width = "full",
+                    get = function()
+                        return self.db and self.db.useDefaultThreshold;
+                    end,
+                    set = function(_, val)
+                        if (self.db) then
+                            self.db.useDefaultThreshold = val and true or false;
+                        end
+                    end,
+                },
+                defaultThreshold = {
+                    order = 5,
+                    type = "input",
+                    name = "Default gold threshold",
+                    desc = "Gold threshold for characters not in any group. The addon will automatically balance to this amount.",
+                    width = "normal",
+                    disabled = function()
+                        return not (self.db and self.db.useDefaultThreshold);
+                    end,
+                    get = function()
+                        local val = self.db and self.db.defaultThreshold or 1000000000;
+                        return formatGoldThousands(val);
+                    end,
+                    set = function(_, val)
+                        local amount = parseGold(val);
+                        if (amount and amount >= 0) then
+                            self.db.defaultThreshold = amount;
+                        end
+                    end,
+                },
+                currentCharHeader = {
+                    order = 6,
+                    type = "header",
+                    name = "Current Character",
+                },
+                currentChar = {
+                    order = 7,
                     type = "description",
                     name = function()
                         local key = self:GetCurrentCharacter();
@@ -116,7 +161,11 @@ function Warband:GetOptions()
                                 group.name or "None",
                                 formatGoldThousands(group.goldThreshold or 0));
                         else
-                            return string.format("|cff00ff00Current character:|r %s\n|cffff0000Not assigned to any group|r", key or "Unknown");
+                            local thresholdText = "";
+                            if (self.db and self.db.useDefaultThreshold) then
+                                thresholdText = string.format("\n|cff00ff00Default threshold:|r %s gold", formatGoldThousands(self.db.defaultThreshold or 1000000));
+                            end
+                            return string.format("|cff00ff00Current character:|r %s\n|cffff0000Not assigned to any group|r%s", key or "Unknown", thresholdText);
                         end
                     end,
                     fontSize = "medium",

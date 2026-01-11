@@ -11,6 +11,8 @@ local Warband = Lantern:NewModule("Warband", {
 local DEFAULTS = {
     enabled = true,
     autoDeposit = true,
+    useDefaultThreshold = false, -- Apply default threshold to ungrouped characters
+    defaultThreshold = 1000000000, -- 100k gold default for ungrouped characters (in copper)
     groups = {},
     characterGroups = {}, -- Maps character name to group name
 };
@@ -83,12 +85,22 @@ end
 
 local function calculateDepositAmount(self)
     local group = getCurrentCharacterGroup(self);
-    if (not group or not group.goldThreshold) then
+    local threshold;
+
+    if (group and group.goldThreshold) then
+        threshold = group.goldThreshold;
+    elseif (self.db.useDefaultThreshold) then
+        -- Use default threshold for ungrouped characters if enabled
+        threshold = self.db.defaultThreshold or 1000000000;
+    else
+        return 0;
+    end
+
+    if (threshold == 0) then
         return 0;
     end
 
     local currentGold = getPlayerGold();
-    local threshold = group.goldThreshold;
 
     if (currentGold <= threshold) then
         return 0;
@@ -99,12 +111,22 @@ end
 
 local function calculateWithdrawAmount(self)
     local group = getCurrentCharacterGroup(self);
-    if (not group or not group.goldThreshold or group.goldThreshold == 0) then
+    local threshold;
+
+    if (group and group.goldThreshold) then
+        threshold = group.goldThreshold;
+    elseif (self.db.useDefaultThreshold) then
+        -- Use default threshold for ungrouped characters if enabled
+        threshold = self.db.defaultThreshold or 1000000000;
+    else
+        return 0;
+    end
+
+    if (threshold == 0) then
         return 0;
     end
 
     local currentGold = getPlayerGold();
-    local threshold = group.goldThreshold;
 
     -- Only withdraw if below threshold
     if (currentGold >= threshold) then
@@ -122,7 +144,9 @@ local function handleBankOpened(self)
     -- Wait a frame to ensure bank is fully loaded
     C_Timer.After(0.5, function()
         local group = getCurrentCharacterGroup(self);
-        if (not group) then
+
+        -- Skip if no group and default threshold is not enabled
+        if (not group and not self.db.useDefaultThreshold) then
             return;
         end
 
@@ -176,7 +200,7 @@ function Warband:CreateGroup(groupName, goldThreshold)
 
     self.db.groups[groupName] = {
         name = groupName,
-        goldThreshold = goldThreshold or 100000, -- Default 10g in copper
+        goldThreshold = goldThreshold or 1000000000, -- Default 10g in copper
         members = {},
     };
 
