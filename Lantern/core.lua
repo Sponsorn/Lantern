@@ -96,23 +96,27 @@ function Lantern:RegisterModule(module)
     if (not module or not module.name) then
         return;
     end
-    if (not self.db) then
-        self:SetupDB();
-    end
     self.modules[module.name] = module;
-    self.db.modules = self.db.modules or {};
-    if (self.db.modules[module.name] == nil) then
-        self.db.modules[module.name] = true;
-    end
-    module.enabled = self.db.modules[module.name];
-    if (self.ready and module.enabled) then
-        if (module.OnInit) then
-            safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
+    if (self.ready) then
+        -- Addon is ready, DB is loaded, initialize now
+        if (not self.db) then
+            self:SetupDB();
         end
-        if (module.OnEnable) then
-            safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
+        self.db.modules = self.db.modules or {};
+        if (self.db.modules[module.name] == nil) then
+            self.db.modules[module.name] = true;
+        end
+        module.enabled = self.db.modules[module.name];
+        if (module.enabled) then
+            if (module.OnInit) then
+                safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
+            end
+            if (module.OnEnable) then
+                safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
+            end
         end
     else
+        -- Addon not ready yet, defer initialization until ADDON_LOADED
         table.insert(self._pendingModules, module);
     end
 end
@@ -211,6 +215,13 @@ Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
     local pending = Lantern._pendingModules;
     Lantern._pendingModules = {};
     for _, module in ipairs(pending) do
+        -- Initialize module.enabled from saved variables
+        Lantern.db.modules = Lantern.db.modules or {};
+        if (Lantern.db.modules[module.name] == nil) then
+            Lantern.db.modules[module.name] = true;
+        end
+        module.enabled = Lantern.db.modules[module.name];
+        -- Only call OnInit/OnEnable if module is enabled
         if (module.enabled) then
             if (module.OnInit) then
                 safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
