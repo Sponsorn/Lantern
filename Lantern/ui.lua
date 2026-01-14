@@ -603,11 +603,79 @@ function Lantern:BuildOptions()
                             fontSize = "medium",
                         };
 
+                        -- Build zone filter options for blocked quests
+                        local function buildQuestZoneOptions()
+                            local opts = {
+                                all = "All zones",
+                                current = "Current zone",
+                            };
+                            local blockedList = autoQuestBlockedQuestList();
+                            for _, entry in pairs(blockedList) do
+                                if (type(entry) == "table" and entry.npcKey) then
+                                    local zone = entry.npcKey:match("^.+%s%-%s(.+)$");
+                                    if (zone and zone ~= "") then
+                                        opts[zone] = zone;
+                                    end
+                                end
+                            end
+                            return opts;
+                        end
+
+                        local function buildQuestZoneSorting()
+                            local zones = {};
+                            local seen = {};
+                            local blockedList = autoQuestBlockedQuestList();
+                            for _, entry in pairs(blockedList) do
+                                if (type(entry) == "table" and entry.npcKey) then
+                                    local zone = entry.npcKey:match("^.+%s%-%s(.+)$");
+                                    if (zone and zone ~= "" and not seen[zone]) then
+                                        seen[zone] = true;
+                                        table.insert(zones, zone);
+                                    end
+                                end
+                            end
+                            table.sort(zones);
+                            local order = { "all", "current" };
+                            for _, zone in ipairs(zones) do
+                                table.insert(order, zone);
+                            end
+                            return order;
+                        end
+
+                        local function getQuestZoneFilter()
+                            local db = autoQuestDB();
+                            if (db.blockedQuestFilter == nil) then
+                                db.blockedQuestFilter = "current";
+                            end
+                            return db.blockedQuestFilter;
+                        end
+
+                        args.blockedQuestFilter = {
+                            order = 82,
+                            type = "select",
+                            name = "Zone filter",
+                            width = "full",
+                            values = buildQuestZoneOptions,
+                            sorting = buildQuestZoneSorting,
+                            get = getQuestZoneFilter,
+                            set = function(_, val)
+                                local db = autoQuestDB();
+                                db.blockedQuestFilter = val;
+                                rebuildArgs();
+                                notifyOptionsChange();
+                            end,
+                        };
+
                         local blockedList = autoQuestBlockedQuestList();
-                        local questZone = Lantern.utils and Lantern.utils.GetCurrentZoneName
+                        local questZoneFilter = getQuestZoneFilter();
+                        local currentZone = Lantern.utils and Lantern.utils.GetCurrentZoneName
                             and Lantern.utils.GetCurrentZoneName()
                             or nil;
-                        local showAllQuests = not questZone;
+                        local showAllQuests = (questZoneFilter == "all");
+                        local questZone = currentZone or "";
+                        if (questZoneFilter ~= "current" and questZoneFilter ~= "all") then
+                            questZone = questZoneFilter;
+                        end
                         local ids = {};
                         for id in pairs(blockedList) do
                             table.insert(ids, id);
@@ -622,9 +690,9 @@ function Lantern:BuildOptions()
                         end);
                         if (#ids == 0) then
                             args.blockedQuestEmpty = {
-                                order = 82,
+                                order = 83,
                                 type = "description",
-                                name = questZone and ("No quests are blocked in " .. questZone .. ".") or "No quests are blocked.",
+                                name = (not showAllQuests and questZone ~= "") and ("No quests are blocked in " .. questZone .. ".") or "No quests are blocked.",
                                 fontSize = "medium",
                             };
                         else

@@ -29,8 +29,17 @@ local function isQuestReadyForTurnIn(questID)
 end
 
 local function ensureDB(self)
-    self.db = self.addon.db.autoQuest or {};
-    self.addon.db.autoQuest = self.db;
+    -- Ensure parent db exists
+    if (not self.addon.db) then
+        return;
+    end
+    -- Initialize autoQuest table if it doesn't exist
+    if (not self.addon.db.autoQuest) then
+        self.addon.db.autoQuest = {};
+    end
+    -- Always reference the addon's autoQuest table directly
+    self.db = self.addon.db.autoQuest;
+
     for k, v in pairs(DEFAULTS) do
         if (self.db[k] == nil) then self.db[k] = v; end
     end
@@ -175,12 +184,16 @@ function module:LogAutomatedQuest(questName, questID)
             end
         end
     end
+    -- Use cached NPC key if current one is nil (dialog may have closed)
+    local npcKey = self:GetCurrentNPCKey() or self._lastNPCKey;
     table.insert(list, 1, {
         name = questName,
         questID = questID,
-        npcKey = self:GetCurrentNPCKey(),
+        npcKey = npcKey,
         time = GetServerTime and GetServerTime() or time(),
     });
+    -- Clear the cached NPC key
+    self._lastNPCKey = nil;
     for i = #list, 6, -1 do
         list[i] = nil;
     end
@@ -244,11 +257,15 @@ function module:OnQuestDetail()
     local questID = GetQuestID and GetQuestID();
     if (self:IsQuestBlocked(questID)) then return; end
     local title = GetTitleText and GetTitleText();
+    -- Capture NPC key before accepting quest (in case dialog closes)
+    local npcKey = self:GetCurrentNPCKey();
     if (QuestGetAutoAccept() or QuestIsFromAreaTrigger()) then
         AcknowledgeAutoAcceptQuest();
     else
         AcceptQuest();
     end
+    -- Store NPC key temporarily for logging
+    self._lastNPCKey = npcKey;
     self:LogAutomatedQuest(title, questID);
 end
 
@@ -258,7 +275,11 @@ function module:OnQuestProgress()
     if (IsQuestCompletable() or isQuestReadyForTurnIn(questID)) then
         if (self:IsQuestBlocked(questID)) then return; end
         local title = GetTitleText and GetTitleText();
+        -- Capture NPC key before completing quest (in case dialog closes)
+        local npcKey = self:GetCurrentNPCKey();
         CompleteQuest();
+        -- Store NPC key temporarily for logging
+        self._lastNPCKey = npcKey;
         self:LogAutomatedQuest(title, questID);
     end
 end
@@ -269,11 +290,17 @@ function module:OnQuestComplete()
     local questID = GetQuestID and GetQuestID();
     if (self:IsQuestBlocked(questID)) then return; end
     local title = GetTitleText and GetTitleText();
+    -- Capture NPC key before getting quest reward (in case dialog closes)
+    local npcKey = self:GetCurrentNPCKey();
     if (numChoices == 0) then
         GetQuestReward(1);
+        -- Store NPC key temporarily for logging
+        self._lastNPCKey = npcKey;
         self:LogAutomatedQuest(title, questID);
     elseif (numChoices == 1 and self.db.autoSelectSingleReward) then
         GetQuestReward(1);
+        -- Store NPC key temporarily for logging
+        self._lastNPCKey = npcKey;
         self:LogAutomatedQuest(title, questID);
     end
 end
