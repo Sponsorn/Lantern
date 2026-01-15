@@ -88,7 +88,7 @@ local function calculateDepositAmount(self)
     local threshold;
     local allowDeposit = true;
 
-    if (group and group.goldThreshold) then
+    if (group and group.goldThreshold ~= nil) then
         threshold = group.goldThreshold;
         -- Check if deposit is allowed for this group (default to true for existing groups)
         if (group.allowDeposit ~= nil) then
@@ -101,11 +101,16 @@ local function calculateDepositAmount(self)
         return 0;
     end
 
-    if (not allowDeposit or threshold == 0) then
+    if (not allowDeposit) then
         return 0;
     end
 
     local currentGold = getPlayerGold();
+
+    -- If threshold is 0, deposit all gold
+    if (threshold == 0) then
+        return currentGold;
+    end
 
     if (currentGold <= threshold) then
         return 0;
@@ -119,7 +124,7 @@ local function calculateWithdrawAmount(self)
     local threshold;
     local allowWithdraw = true;
 
-    if (group and group.goldThreshold) then
+    if (group and group.goldThreshold ~= nil) then
         threshold = group.goldThreshold;
         -- Check if withdraw is allowed for this group (default to true for existing groups)
         if (group.allowWithdraw ~= nil) then
@@ -132,7 +137,12 @@ local function calculateWithdrawAmount(self)
         return 0;
     end
 
-    if (not allowWithdraw or threshold == 0) then
+    if (not allowWithdraw) then
+        return 0;
+    end
+
+    -- If threshold is 0, don't withdraw (deposit-only mode)
+    if (threshold == 0) then
         return 0;
     end
 
@@ -360,7 +370,7 @@ function Warband:SetGroupGoldThreshold(groupName, threshold)
     end
 
     local thresholdNum = tonumber(threshold);
-    if (not thresholdNum or thresholdNum < 0) then
+    if (thresholdNum == nil or thresholdNum < 0) then
         return false;
     end
 

@@ -264,7 +264,7 @@ function Warband:GetOptions()
         order = 3,
         type = "input",
         name = "Gold threshold",
-        desc = "Amount of gold to keep on character. The addon will automatically balance to this amount. Set to 0 to disable auto-balance for this group.",
+        desc = "Amount of gold to keep on character. The addon will automatically balance to this amount. Set to 0 to deposit all gold (deposit-only mode).",
         width = "normal",
         get = function()
             local val = tonumber(self._newGroupTemp.threshold) or 100000;
@@ -444,7 +444,7 @@ function Warband:GetOptions()
                     order = 3.1,
                     type = "execute",
                     name = "Change",
-                    desc = "Change the gold threshold for this group",
+                    desc = "Change the gold threshold for this group. Set to 0 to deposit all gold (deposit-only mode).",
                     width = "half",
                     func = function()
                         local freshGroup = self.db.groups[group.name];
