@@ -1,6 +1,6 @@
 ---
-name: Issue template
-about: WoW focused bug report
+name: Bug/Issue template
+about: Use this if you need to report a bug
 title: ''
 labels: ''
 assignees: Sponsorn
