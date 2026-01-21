@@ -1,8 +1,8 @@
-## Interface: 120001, 110207, 50501
+## Interface: 120000, 120001, 110207, 50501
 ## Title: Lantern: Crafting Orders
 ## Notes: Scaffolding for crafting order monitoring.
 ## Author: Dede
-## Version: 0.4.3
+## Version: 0.4.5
 ## IconTexture: Interface\AddOns\Lantern_CraftingOrders\Media\Images\Icons\lantern-co-icon64.blp
 ## Dependencies: Lantern
 ## DefaultState: enabled

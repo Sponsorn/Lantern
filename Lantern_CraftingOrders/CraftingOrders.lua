@@ -4,7 +4,7 @@ local C_CraftingOrders = C_CraftingOrders;
 local C_TradeSkillUI = C_TradeSkillUI;
 local Enum = Enum;
 local PlaySoundFile = PlaySoundFile;
-local SendChatMessage = SendChatMessage;
+local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage;
 
 -- Abort early if the core addon is not available.
 if (not Lantern) then return; end

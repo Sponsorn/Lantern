@@ -1,8 +1,8 @@
-## Interface: 120001, 110207, 50501
+## Interface: 120000, 120001, 110207, 50501
 ## Title: Lantern
 ## Notes: Core QoL framework with pluggable modules.
 ## Author: Dede in-game / Sponsorn on curseforge & github
-## Version: 0.4.17
+## Version: 0.4.18
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
 ## SavedVariables: LanternDB
 ## DefaultState: enabled
