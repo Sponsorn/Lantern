@@ -1124,7 +1124,7 @@ function Lantern:SetupOptions()
         args = {},
     };
     AceConfig:RegisterOptionsTable(ADDON_NAME .. "_Root", rootOptions);
-    local rootPanel = AceConfigDialog:AddToBlizOptions(ADDON_NAME .. "_Root", "Lantern");
+    local rootPanel, rootCategoryID = AceConfigDialog:AddToBlizOptions(ADDON_NAME .. "_Root", "Lantern");
     decorateSplash(rootPanel);
     self.optionsPanel = rootPanel;
     self.optionsPanelName = (rootPanel and (rootPanel.name or rootPanel.ID)) or ADDON_NAME;
@@ -1135,8 +1135,12 @@ function Lantern:SetupOptions()
     -- Settings API (Dragonflight+)
     -- AddToBlizOptions already surfaces categories in the modern Settings UI, so
     -- just capture the category ID if it's available instead of registering a duplicate root.
-    if (Settings and Settings.OpenToCategory and rootPanel and rootPanel.GetCategoryID) then
-        self.splashCategoryID = rootPanel:GetCategoryID();
+    if (Settings and Settings.OpenToCategory and not self.splashCategoryID) then
+        if (rootCategoryID) then
+            self.splashCategoryID = rootCategoryID;
+        elseif (rootPanel and rootPanel.GetCategoryID) then
+            self.splashCategoryID = rootPanel:GetCategoryID();
+        end
     end
 
     self.optionsInitialized = true;
@@ -1151,50 +1155,48 @@ function Lantern:OpenOptions()
     if (not self.optionsInitialized) then
         self:SetupOptions();
     end
-    -- Prefer Blizzard Settings (10.0+) if available, fallback to Interface Options, then AceConfigDialog frame.
-    if (Settings and Settings.OpenToCategory) then
-        -- Try to get category ID if we don't have it cached
-        if (not self.splashCategoryID and self.optionsPanel and self.optionsPanel.GetCategoryID) then
-            self.splashCategoryID = self.optionsPanel:GetCategoryID();
+    local function tryOpenSettings()
+        if not (Settings and Settings.OpenToCategory) then
+            return false;
+        end
+        local function settingsShown()
+            return SettingsPanel and SettingsPanel.IsShown and SettingsPanel:IsShown();
         end
 
-        -- If still no category ID, try searching by name (Midnight beta compatibility)
-        if (not self.splashCategoryID and Settings.GetCategory) then
-            local category = Settings.GetCategory("Lantern");
-            if (category and category.GetID) then
-                self.splashCategoryID = category:GetID();
-            end
+        local catId = self.splashCategoryID;
+        if (not catId and self.optionsPanel and self.optionsPanel.GetCategoryID) then
+            catId = self.optionsPanel:GetCategoryID();
         end
 
-        if (self.splashCategoryID) then
-            -- Try modern API first (Midnight beta), fallback to Settings.OpenToCategory
+        if (catId) then
             if (SettingsPanel and SettingsPanel.OpenToCategory) then
-                SettingsPanel:OpenToCategory(self.splashCategoryID);
-            else
-                Settings.OpenToCategory(self.splashCategoryID);
+                pcall(SettingsPanel.OpenToCategory, SettingsPanel, catId);
+                if (settingsShown()) then return true; end
             end
-            return;
-        elseif (self.optionsPanel and self.optionsPanel.GetCategoryID) then
-            local catId = self.optionsPanel:GetCategoryID();
-            if (catId) then
-                Settings.OpenToCategory(catId);
-                return;
+            pcall(Settings.OpenToCategory, catId);
+            if (settingsShown()) then return true; end
+        end
+
+        if (Settings.GetCategory) then
+            local category = Settings.GetCategory(self.optionsPanelName or "Lantern");
+            if (category) then
+                if (SettingsPanel and SettingsPanel.OpenToCategory) then
+                    pcall(SettingsPanel.OpenToCategory, SettingsPanel, category);
+                    if (settingsShown()) then return true; end
+                end
+                pcall(Settings.OpenToCategory, category);
+                if (settingsShown()) then return true; end
             end
         end
-        -- If we don't have a numeric category ID, fall through to AceConfigDialog instead
-        -- Settings.OpenToCategory only accepts numeric IDs in modern WoW versions
-    elseif (InterfaceOptionsFrame_OpenToCategory) then
-        local panel = "LanternSplashPanel";
-        if (self.optionsPanel) then
-            panel = self.optionsPanel;
-        end
-        InterfaceOptionsFrame_OpenToCategory(panel);
-        InterfaceOptionsFrame_OpenToCategory(panel); -- call twice to work around scroll offset
+
+        return false;
+    end
+
+    -- Prefer Blizzard Settings (10.0+) if available, fallback to Interface Options, then AceConfigDialog frame.
+    if (tryOpenSettings()) then
         return;
     end
-    -- Final fallback: open AceConfigDialog directly
-    -- Use the registered name which is ADDON_NAME .. "_Root"
-    AceConfigDialog:Open(ADDON_NAME .. "_Root");
+    Lantern:Print("Options unavailable: Blizzard Settings panel not accessible.");
 end
 
 Lantern:RegisterEvent("PLAYER_LOGIN", function()
