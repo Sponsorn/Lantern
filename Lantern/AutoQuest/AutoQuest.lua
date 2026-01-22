@@ -204,8 +204,9 @@ local function handleAvailableQuests(self)
     if (C_GossipInfo and C_GossipInfo.GetAvailableQuests) then
         local quests = C_GossipInfo.GetAvailableQuests();
         for _, q in ipairs(quests or {}) do
-            if (q and q.questID and not q.isTrivial and not self:IsQuestBlocked(q.questID)) then
+            if (q and q.questID and not self:IsQuestBlocked(q.questID)) then
                 C_GossipInfo.SelectAvailableQuest(q.questID);
+                return; -- Process one quest per event; next GOSSIP_SHOW handles remaining
             end
         end
     end
@@ -218,6 +219,7 @@ local function handleActiveQuests(self)
         for _, q in ipairs(quests or {}) do
             if (q and q.questID and (q.isComplete or isQuestReadyForTurnIn(q.questID)) and not self:IsQuestBlocked(q.questID)) then
                 C_GossipInfo.SelectActiveQuest(q.questID);
+                return; -- Process one quest per event; next GOSSIP_SHOW handles remaining
             end
         end
     end
@@ -234,19 +236,21 @@ function module:OnQuestGreeting()
         local count = GetNumActiveQuests() or 0;
         for i = 1, count do
             local questID = GetActiveQuestID and GetActiveQuestID(i);
-            local title, _, isTrivial, isComplete = GetActiveTitle(i);
+            local title, _, _, isComplete = GetActiveTitle(i);
             local ready = isComplete or isQuestReadyForTurnIn(questID);
-            if (not isTrivial and ready and not self:IsQuestNameBlocked(title)) then
+            if (ready and not self:IsQuestNameBlocked(title)) then
                 SelectActiveQuest(i);
+                return; -- Process one quest per event; next QUEST_GREETING handles remaining
             end
         end
     end
     if (self.db.autoAccept and GetNumAvailableQuests and GetAvailableTitle and SelectAvailableQuest) then
         local count = GetNumAvailableQuests() or 0;
         for i = 1, count do
-            local title, _, isTrivial = GetAvailableTitle(i);
-            if (not isTrivial and not self:IsQuestNameBlocked(title)) then
+            local title = GetAvailableTitle(i);
+            if (not self:IsQuestNameBlocked(title)) then
                 SelectAvailableQuest(i);
+                return; -- Process one quest per event; next QUEST_GREETING handles remaining
             end
         end
     end
