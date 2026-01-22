@@ -766,6 +766,7 @@ function CraftingOrders:OnEnable()
         self:HandlePersonalOrderCountUpdate();
     end);
     self.addon:ModuleRegisterEvent(self, "CHAT_MSG_SYSTEM", function(_, _, msg)
+        if (IsInInstance()) then return; end
         self:HandleSystemMessage(msg);
         self:HandlePersonalOrderMessage(msg);
     end);
