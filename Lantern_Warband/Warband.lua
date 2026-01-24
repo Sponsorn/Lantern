@@ -41,6 +41,18 @@ local function ensureDB(self)
     if (type(self.db.characterGroups) ~= "table") then
         self.db.characterGroups = {};
     end
+
+    -- Migrate old rules-based warehousing schema to groups
+    if (type(self.db.warehousing) == "table" and self.db.warehousing.rules) then
+        self.db.warehousing = { groups = {} };
+    end
+    -- Ensure new warehousing schema
+    if (type(self.db.warehousing) ~= "table") then
+        self.db.warehousing = { groups = {} };
+    end
+    if (type(self.db.warehousing.groups) ~= "table") then
+        self.db.warehousing.groups = {};
+    end
 end
 
 local function getCurrentCharacterGroup(self)
@@ -204,7 +216,12 @@ function Warband:OnEnable()
 
     -- Register events for bank interaction
     self.addon:ModuleRegisterEvent(self, "BANKFRAME_OPENED", function(module)
+        module.bankOpen = true;
         handleBankOpened(module);
+    end);
+
+    self.addon:ModuleRegisterEvent(self, "BANKFRAME_CLOSED", function(module)
+        module.bankOpen = false;
     end);
 end
 

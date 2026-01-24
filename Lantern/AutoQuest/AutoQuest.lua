@@ -14,7 +14,9 @@ local DEFAULTS = {
 };
 
 local function shouldPause()
-    return IsShiftKeyDown();
+    if (IsShiftKeyDown()) then return true; end
+    if (IsInInstance()) then return true; end
+    return false;
 end
 
 local function isQuestReadyForTurnIn(questID)

@@ -10,3 +10,6 @@
 
 Warband.lua
 Options.lua
+Warehousing.lua
+WarehousingEngine.lua
+WarehousingUI.lua
