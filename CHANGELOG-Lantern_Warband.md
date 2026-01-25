@@ -3,6 +3,8 @@
 ## 0.2.9 - 2026-01-25
 - Remember warehousing panel open state across bank sessions
 - Fix retry logic: operations with failures now properly retry instead of triggering stall counter
+- Store group selection per character instead of account-wide
+- Show/hide panel when switching between bank tabs
 
 ## 0.2.8 - 2026-01-25
 - Reorganize warehousing files into Warehousing/ folder (Data.lua, Engine.lua, UI.lua, Options.lua)
