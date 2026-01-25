@@ -27,16 +27,29 @@ local selectedGroups = {};
 local operationsRunning = false;
 local progressResetTimer = nil;
 
+local function GetCharKey()
+    return Lantern:GetCharacterKey();
+end
+
 local function LoadSelectedGroups()
-    if (Warband.db and Warband.db.warehousing and Warband.db.warehousing.selectedGroups) then
-        selectedGroups = Warband.db.warehousing.selectedGroups;
+    local charKey = GetCharKey();
+    if (Warband.db and Warband.db.warehousing and Warband.db.warehousing.selectedGroupsByChar and Warband.db.warehousing.selectedGroupsByChar[charKey]) then
+        selectedGroups = Warband.db.warehousing.selectedGroupsByChar[charKey];
+    else
+        selectedGroups = {};
     end
 end
 
 local function SaveSelectedGroups()
-    if (Warband.db and Warband.db.warehousing) then
-        Warband.db.warehousing.selectedGroups = selectedGroups;
+    if (not Warband.db) then return; end
+    if (not Warband.db.warehousing) then
+        Warband.db.warehousing = {};
     end
+    if (not Warband.db.warehousing.selectedGroupsByChar) then
+        Warband.db.warehousing.selectedGroupsByChar = {};
+    end
+    local charKey = GetCharKey();
+    Warband.db.warehousing.selectedGroupsByChar[charKey] = selectedGroups;
 end
 
 local function SavePanelOpen(isOpen)
@@ -636,6 +649,12 @@ local function HookBankPanel()
 
     hooksecurefunc(BankFrame.BankPanel, "SetBankType", function()
         UpdateButtonVisibility();
+        -- Show/hide panel based on tab and saved state
+        if (IsAccountBankActive() and IsPanelOpenSaved()) then
+            WarehousingUI:ShowPanel();
+        elseif (not IsAccountBankActive() and panel and panel:IsShown()) then
+            panel:Hide();
+        end
     end);
     BankFrame.BankPanel._lanternHooked = true;
 end
