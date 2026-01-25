@@ -39,6 +39,18 @@ local function SaveSelectedGroups()
     end
 end
 
+local function SavePanelOpen(isOpen)
+    if (not Warband.db) then return; end
+    if (not Warband.db.warehousing) then
+        Warband.db.warehousing = {};
+    end
+    Warband.db.warehousing.panelOpen = isOpen;
+end
+
+local function IsPanelOpenSaved()
+    return Warband.db and Warband.db.warehousing and Warband.db.warehousing.panelOpen;
+end
+
 local function SetActionButtonsEnabled(enabled)
     if (depositBtn) then depositBtn:SetEnabled(enabled); end
     if (restockBtn) then restockBtn:SetEnabled(enabled); end
@@ -335,12 +347,12 @@ local function CreatePanel()
         frame:SetPoint("TOPRIGHT", BankFrame, "TOPRIGHT", 345, 0);
     end
 
-    -- Hook close button to stop engine
+    -- Hook close button to stop engine and save state
     frame.CloseButton:SetScript("OnClick", function()
         if (Engine:IsRunning()) then
             Engine:Stop("Cancelled");
         end
-        frame:Hide();
+        WarehousingUI:Hide();
     end);
 
     -- Options (cogwheel) button next to close button
@@ -555,12 +567,14 @@ function WarehousingUI:ShowPanel()
     local frame = CreatePanel();
     PopulatePanel();
     frame:Show();
+    SavePanelOpen(true);
 end
 
 function WarehousingUI:Hide()
     if (panel) then
         panel:Hide();
     end
+    SavePanelOpen(false);
 end
 
 function WarehousingUI:Toggle()
@@ -637,6 +651,10 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
             CreateBankButton();
             HookBankPanel();
             UpdateButtonVisibility();
+            -- Restore panel if it was open last time
+            if (IsAccountBankActive() and IsPanelOpenSaved()) then
+                WarehousingUI:ShowPanel();
+            end
         end);
     elseif (event == "BANKFRAME_CLOSED") then
         if (bankButton) then
@@ -646,7 +664,9 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         if (Engine:IsRunning()) then
             Engine:Stop("Bank closed");
         end
-        -- Hide panel
-        WarehousingUI:Hide();
+        -- Hide panel (without changing saved state)
+        if (panel) then
+            panel:Hide();
+        end
     end
 end);

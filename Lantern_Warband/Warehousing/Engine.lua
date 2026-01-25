@@ -189,6 +189,7 @@ function Engine:ProcessBatch()
     local allOperationsHandled = true;
     local batchMoves = 0;
     local batchLimitHit = false;
+    local anyOpRetrying = false;
 
     for opIndex, op in ipairs(self.queue) do
         if (batchLimitHit) then
@@ -327,6 +328,7 @@ function Engine:ProcessBatch()
                     else
                         -- Retry in next batch
                         allOperationsHandled = false;
+                        anyOpRetrying = true;
                     end
                 end
             end
@@ -342,8 +344,11 @@ function Engine:ProcessBatch()
         self:StartPolling();
     elseif (not allOperationsHandled) then
         -- No moves succeeded but operations remain (items locked/unavailable)
-        self.stallCount = (self.stallCount or 0) + 1;
-        if (self.stallCount >= 3) then
+        -- Only count as stall if no operation is actively retrying due to failure
+        if (not anyOpRetrying) then
+            self.stallCount = (self.stallCount or 0) + 1;
+        end
+        if (self.stallCount >= 3 and not anyOpRetrying) then
             -- Stalled too many times, fail remaining operations
             for opIndex, op in ipairs(self.queue) do
                 if (not self.operationsDone[opIndex]) then
