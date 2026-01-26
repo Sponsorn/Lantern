@@ -7,5 +7,5 @@ TODO
 - add localization for other versions
 - add durability with edit mode lib
 - add summoning portal into core - /say current target and ask for help, maybe add optional notification if someone else is summoning
-- warband: function to move items to warband bank without breaking
 - autoquest: add option to turn off automation for trivial/low level quests
+- crafting orders: save last crafting cost known across warband into tooltip

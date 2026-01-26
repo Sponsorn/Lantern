@@ -15,7 +15,6 @@ local DEFAULTS = {
 
 local function shouldPause()
     if (IsShiftKeyDown()) then return true; end
-    if (IsInInstance()) then return true; end
     return false;
 end
 
