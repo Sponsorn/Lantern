@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.23 - 2026-01-26
+- AutoQuest: add option to skip trivial (gray/low-level) quests
+- AutoQuest: allow automation in instances (removed instance pause)
+
 ## 0.4.22 - 2026-01-25
 - Split ui.lua: extract module options into AutoQuest/Options.lua, AutoQueue/Options.lua, DeleteConfirm/Options.lua, DisableAutoAddSpells/Options.lua
 
