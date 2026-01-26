@@ -7,7 +7,7 @@ end
 
 local function autoQuestDB()
     Lantern.db.autoQuest = Lantern.db.autoQuest or {};
-    local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true };
+    local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true, skipTrivialQuests = false };
     for k, v in pairs(defaults) do
         if (Lantern.db.autoQuest[k] == nil) then
             Lantern.db.autoQuest[k] = v;
@@ -243,6 +243,22 @@ function Lantern:BuildAutoQuestOptions()
             set = function(_, val)
                 local db = autoQuestDB();
                 db.autoSelectSingleReward = val and true or false;
+            end,
+        };
+        args.skipTrivialQuests = {
+            order = 5,
+            type = "toggle",
+            name = "Skip trivial quests",
+            desc = "Don't auto-accept quests that are gray (trivial/low-level).",
+            width = "full",
+            disabled = autoQuestDisabled,
+            get = function()
+                local db = autoQuestDB();
+                return db.skipTrivialQuests;
+            end,
+            set = function(_, val)
+                local db = autoQuestDB();
+                db.skipTrivialQuests = val and true or false;
             end,
         };
 

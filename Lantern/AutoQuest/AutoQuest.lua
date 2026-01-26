@@ -11,6 +11,7 @@ local DEFAULTS = {
     autoAccept = true,
     autoTurnIn = true,
     autoSelectSingleReward = true,
+    skipTrivialQuests = false,
 };
 
 local function shouldPause()
@@ -57,6 +58,14 @@ local function isQuestReadyForTurnIn(questID)
     end
     if (C_QuestLog and C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID)) then
         return true;
+    end
+    return false;
+end
+
+local function isQuestTrivial(questID)
+    if (not questID) then return false; end
+    if (C_QuestLog and C_QuestLog.IsQuestTrivial) then
+        return C_QuestLog.IsQuestTrivial(questID);
     end
     return false;
 end
@@ -124,6 +133,14 @@ function module:GetOptions()
             width = "full",
             get = function() return module.db and module.db.autoSelectSingleReward; end,
             set = function(_, val) module.db.autoSelectSingleReward = val and true or false; end,
+        },
+        skipTrivialQuests = {
+            type = "toggle",
+            name = "Skip trivial quests",
+            desc = "Don't auto-accept quests that are gray (trivial/low-level).",
+            width = "full",
+            get = function() return module.db and module.db.skipTrivialQuests; end,
+            set = function(_, val) module.db.skipTrivialQuests = val and true or false; end,
         },
     };
 end
@@ -238,8 +255,13 @@ local function handleAvailableQuests(self)
         local quests = C_GossipInfo.GetAvailableQuests();
         for _, q in ipairs(quests or {}) do
             if (q and q.questID and not self:IsQuestBlocked(q.questID)) then
-                SafeCall(C_GossipInfo.SelectAvailableQuest, q.questID);
-                return; -- Process one quest per event; next GOSSIP_SHOW handles remaining
+                -- Skip trivial quests if option enabled
+                if (self.db.skipTrivialQuests and (q.isTrivial or isQuestTrivial(q.questID))) then
+                    -- Skip this quest
+                else
+                    SafeCall(C_GossipInfo.SelectAvailableQuest, q.questID);
+                    return; -- Process one quest per event; next GOSSIP_SHOW handles remaining
+                end
             end
         end
     end
@@ -293,6 +315,7 @@ function module:OnQuestDetail()
     if (shouldPause() or not self.db.autoAccept or self:IsCurrentNPCBlocked()) then return; end
     local questID = GetQuestID and GetQuestID();
     if (self:IsQuestBlocked(questID)) then return; end
+    if (self.db.skipTrivialQuests and isQuestTrivial(questID)) then return; end
     local title = GetTitleText and GetTitleText();
     -- Capture NPC key before accepting quest (in case dialog closes)
     local npcKey = self:GetCurrentNPCKey();
