@@ -7,3 +7,4 @@ TODO
 - add durability with edit mode lib
 - add summoning portal into core - /say current target and ask for help, maybe add optional notification if someone else is summoning
 - crafting orders: save last crafting cost known across warband into tooltip
+- core: add check for hidden quests fps fix

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.26 - 2026-01-28
+- Core: defer options panel opening if clicked during combat (opens automatically after combat)
+- OptionsLayout: add editableField helper for display + edit button pattern
+- OptionsLayout: add staticPopupInput helper for text input dialogs
+
 ## 0.4.25 - 2026-01-28
 - Add MissingPet module: displays a warning when your pet is missing or set to passive
 - Add TextAnimations utility library with reusable animation styles (bounce, pulse, fade, shake, glow, heartbeat)

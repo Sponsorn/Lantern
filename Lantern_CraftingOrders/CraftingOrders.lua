@@ -26,6 +26,11 @@ local DEFAULTS = {
     notifyPersonal = true,
     personalSoundEnabled = true,
     personalSoundName = "Lantern: Auction Window Open",
+    personalFont = "Friz Quadrata TT",
+    personalFontSize = 24,
+    personalFontOutline = "OUTLINE",
+    personalColor = { r = 1, g = 1, b = 1 },  -- White
+    personalDuration = 5,
     enableWhisperButton = true,
     whisperMessage = "Order complete! Thanks!",
 };
@@ -86,14 +91,6 @@ local function buildGuildPreview(template, isFulfilled)
     local who = isFulfilled and "Customer" or "";
     local tip = 125000;
     return formatGuildMessage(template, itemLink, who, tip);
-end
-
-function CraftingOrders:OutputMessage(msg)
-    if (self.Pour) then
-        self:Pour(msg);
-        return;
-    end
-    sendGuildMessage(msg);
 end
 
 local function getOrderInfoByID(orderID)
@@ -165,6 +162,117 @@ local function playPersonalSound(self)
     if (PlaySoundFile) then
         PlaySoundFile(sound, "Master");
     end
+end
+
+-------------------------------------------------------------------------------
+-- Custom Notification Frame
+-------------------------------------------------------------------------------
+
+local notificationFrame = nil;
+local notificationText = nil;
+local fadeOutTimer = nil;
+
+local function GetFontPath(fontName)
+    if (LibSharedMedia) then
+        local path = LibSharedMedia:Fetch("font", fontName);
+        if (path) then return path; end
+    end
+    return "Fonts\\FRIZQT__.TTF";
+end
+
+local function GetFontValues()
+    local fonts = {};
+    if (LibSharedMedia) then
+        for _, name in ipairs(LibSharedMedia:List("font") or {}) do
+            fonts[name] = name;
+        end
+    end
+    if (not fonts["Friz Quadrata TT"]) then
+        fonts["Friz Quadrata TT"] = "Friz Quadrata TT";
+    end
+    return fonts;
+end
+
+local function GetOutlineValues()
+    return {
+        [""] = "None",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+        ["OUTLINE, MONOCHROME"] = "Outline + Monochrome",
+    };
+end
+
+local function CreateNotificationFrame()
+    if (notificationFrame) then return; end
+
+    notificationFrame = CreateFrame("Frame", "LanternCraftingOrdersNotification", UIParent);
+    notificationFrame:SetSize(400, 50);
+    notificationFrame:SetPoint("TOP", UIParent, "TOP", 0, -200);
+    notificationFrame:SetFrameStrata("HIGH");
+    notificationFrame:SetFrameLevel(100);
+
+    notificationText = notificationFrame:CreateFontString(nil, "OVERLAY");
+    notificationText:SetPoint("CENTER", notificationFrame, "CENTER", 0, 0);
+    notificationText:SetShadowOffset(2, -2);
+    notificationText:SetShadowColor(0, 0, 0, 0.8);
+
+    notificationFrame:Hide();
+end
+
+local function UpdateNotificationFont(db)
+    if (not notificationText) then return; end
+
+    local fontPath = GetFontPath(db.personalFont or DEFAULTS.personalFont);
+    local fontSize = db.personalFontSize or DEFAULTS.personalFontSize;
+    local fontOutline = db.personalFontOutline or DEFAULTS.personalFontOutline;
+
+    notificationText:SetFont(fontPath, fontSize, fontOutline);
+
+    local c = db.personalColor or DEFAULTS.personalColor;
+    notificationText:SetTextColor(c.r, c.g, c.b, 1);
+end
+
+local function ShowNotification(self, msg)
+    CreateNotificationFrame();
+
+    local db = self.db or DEFAULTS;
+    UpdateNotificationFont(db);
+
+    notificationText:SetText(msg);
+    notificationFrame:SetAlpha(1);
+    notificationFrame:Show();
+
+    -- Cancel any existing fade timer
+    if (fadeOutTimer) then
+        fadeOutTimer:Cancel();
+        fadeOutTimer = nil;
+    end
+
+    -- Fade out after configured duration
+    local duration = db.personalDuration or DEFAULTS.personalDuration;
+    fadeOutTimer = C_Timer.NewTimer(duration, function()
+        -- Fade out animation
+        local fadeTime = 1;
+        local startTime = GetTime();
+        notificationFrame:SetScript("OnUpdate", function(frame)
+            local elapsed = GetTime() - startTime;
+            local alpha = 1 - (elapsed / fadeTime);
+            if (alpha <= 0) then
+                frame:SetAlpha(0);
+                frame:Hide();
+                frame:SetScript("OnUpdate", nil);
+            else
+                frame:SetAlpha(alpha);
+            end
+        end);
+        fadeOutTimer = nil;
+    end);
+end
+
+function CraftingOrders:OutputMessage(msg)
+    -- Use custom notification frame for personal order notifications
+    ShowNotification(self, msg);
 end
 
 local function getPersonalOrderCount()
@@ -510,19 +618,22 @@ function CraftingOrders:HandleDebugUnlockClick()
 end
 
 function CraftingOrders:GetOptions()
-    local sinkValues = {
-        RaidWarning = "Raid warning",
-        ChatFrame = "Chat frame",
-        None = "None",
-    };
+    local notifyDisabled = function() return not (self.db and self.db.notifyPersonal); end;
+
     return {
         general = {
             order = 1,
             type = "group",
             name = "Guild Orders",
             args = {
+                moduleDesc = {
+                    order = 0.5,
+                    type = "description",
+                    name = "Automatically announce guild crafting orders in guild chat when you place or fulfill them.",
+                    fontSize = "medium",
+                },
                 guildHeader = {
-                    order = 0,
+                    order = 1,
                     type = "execute",
                     name = "Guild Orders",
                     desc = "Click 5 times to unlock debug.",
@@ -532,12 +643,12 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 placedHeader = {
-                    order = 1,
+                    order = 2,
                     type = "header",
                     name = "Order placed",
                 },
                 postPlacement = {
-                    order = 2,
+                    order = 3,
                     type = "toggle",
                     name = "Announce placed orders",
                     width = "full",
@@ -547,7 +658,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 placedMessage = {
-                    order = 3,
+                    order = 4,
                     type = "input",
                     name = "Message",
                     desc = "Tags: {item} {tip}",
@@ -558,20 +669,20 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 placedPreview = {
-                    order = 4,
+                    order = 5,
                     type = "description",
                     name = function()
                         return "Preview: " .. buildGuildPreview(self.db and self.db.guildPlacedMessage or "", false);
                     end,
-                    fontSize = "small",
+                    fontSize = "medium",
                 },
                 fulfilledHeader = {
-                    order = 5,
+                    order = 6,
                     type = "header",
                     name = "Order fulfilled",
                 },
                 postFulfill = {
-                    order = 6,
+                    order = 7,
                     type = "toggle",
                     name = "Announce fulfilled orders",
                     width = "full",
@@ -581,7 +692,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 fulfilledMessage = {
-                    order = 7,
+                    order = 8,
                     type = "input",
                     name = "Message",
                     desc = "Tags: {item} {who} {tip}",
@@ -592,15 +703,15 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 fulfilledPreview = {
-                    order = 8,
+                    order = 9,
                     type = "description",
                     name = function()
                         return "Preview: " .. buildGuildPreview(self.db and self.db.guildFulfilledMessage or "", true);
                     end,
-                    fontSize = "small",
+                    fontSize = "medium",
                 },
                 debugGuild = {
-                    order = 9,
+                    order = 10,
                     type = "toggle",
                     name = "Debug (print only)",
                     desc = "When enabled, guild messages are printed instead of sent.",
@@ -612,15 +723,15 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 tagHeader = {
-                    order = 10,
+                    order = 11,
                     type = "header",
                     name = "Tag details",
                 },
                 tagDetails = {
-                    order = 11,
+                    order = 12,
                     type = "description",
                     name = "{item} = item link\n{who} = customer name\n{tip} = commission",
-                    fontSize = "small",
+                    fontSize = "medium",
                 },
             },
         },
@@ -629,13 +740,19 @@ function CraftingOrders:GetOptions()
             type = "group",
             name = "Personal Orders",
             args = {
+                moduleDesc = {
+                    order = 0.5,
+                    type = "description",
+                    name = "Get notified when you receive personal crafting orders.",
+                    fontSize = "medium",
+                },
                 receivedHeader = {
-                    order = 0,
+                    order = 1,
                     type = "header",
                     name = "Personal order received",
                 },
                 enabled = {
-                    order = 1,
+                    order = 2,
                     type = "toggle",
                     name = "Enable notification",
                     width = "full",
@@ -644,65 +761,139 @@ function CraftingOrders:GetOptions()
                         self.db.notifyPersonal = value and true or false;
                     end,
                 },
-                sink = {
-                    order = 2,
-                    type = "select",
-                    name = "Channel",
-                    values = sinkValues,
-                    disabled = function() return not (self.db and self.db.notifyPersonal); end,
-                    get = function()
-                        return self.db and self.db.sink and self.db.sink.sink20OutputSink or "RaidWarning";
-                    end,
-                    set = function(_, value)
-                        if (not self.db) then return; end
-                        self.db.sink = self.db.sink or {};
-                        self.db.sink.sink20OutputSink = value;
-                    end,
-                },
                 soundEnabled = {
                     order = 3,
                     type = "toggle",
                     name = "Play sound",
-                    width = "full",
-                    disabled = function() return not (self.db and self.db.notifyPersonal); end,
+                    width = "normal",
+                    disabled = notifyDisabled,
                     get = function() return self.db and self.db.personalSoundEnabled; end,
                     set = function(_, value)
                         self.db.personalSoundEnabled = value and true or false;
                     end,
                 },
                 soundName = {
-                    order = 4,
+                    order = 3.1,
                     type = "select",
                     name = "Sound",
-                    width = 1.4,
+                    width = "normal",
                     values = getSoundValues,
                     itemControl = "DDI-Sound",
-                    disabled = function()
-                        return not (self.db and self.db.notifyPersonal and self.db.personalSoundEnabled);
-                    end,
+                    disabled = function() return not (self.db and self.db.notifyPersonal and self.db.personalSoundEnabled); end,
                     get = function() return self.db and self.db.personalSoundName or "Lantern: Auction Window Open"; end,
                     set = function(_, value)
                         self.db.personalSoundName = value;
                     end,
                 },
-                testNotification = {
+                fontHeader = {
+                    order = 4,
+                    type = "header",
+                    name = "Notification Appearance",
+                },
+                font = {
                     order = 5,
+                    type = "select",
+                    name = "Font",
+                    width = "normal",
+                    disabled = notifyDisabled,
+                    dialogControl = "LSM30_Font",
+                    values = GetFontValues,
+                    get = function() return self.db and self.db.personalFont or "Friz Quadrata TT"; end,
+                    set = function(_, value)
+                        self.db.personalFont = value;
+                    end,
+                },
+                fontSize = {
+                    order = 5.1,
+                    type = "range",
+                    name = "Font Size",
+                    width = "normal",
+                    min = 12,
+                    max = 48,
+                    step = 1,
+                    disabled = notifyDisabled,
+                    get = function() return self.db and self.db.personalFontSize or 24; end,
+                    set = function(_, value)
+                        self.db.personalFontSize = value;
+                    end,
+                },
+                spacer1 = {
+                    order = 5.99,
+                    type = "description",
+                    name = "",
+                    width = "full",
+                },
+                fontOutline = {
+                    order = 6,
+                    type = "select",
+                    name = "Font Outline",
+                    width = "normal",
+                    disabled = notifyDisabled,
+                    values = GetOutlineValues,
+                    get = function() return self.db and self.db.personalFontOutline or "OUTLINE"; end,
+                    set = function(_, value)
+                        self.db.personalFontOutline = value;
+                    end,
+                },
+                color = {
+                    order = 6.1,
+                    type = "color",
+                    name = "Text Color",
+                    width = "normal",
+                    disabled = notifyDisabled,
+                    get = function()
+                        local c = self.db and self.db.personalColor or DEFAULTS.personalColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(_, r, g, b)
+                        self.db.personalColor = { r = r, g = g, b = b };
+                    end,
+                },
+                spacer2 = {
+                    order = 6.99,
+                    type = "description",
+                    name = "",
+                    width = "full",
+                },
+                duration = {
+                    order = 7,
+                    type = "range",
+                    name = "Duration",
+                    desc = "How long the notification is shown (seconds).",
+                    width = "normal",
+                    min = 1,
+                    max = 15,
+                    step = 1,
+                    disabled = notifyDisabled,
+                    get = function() return self.db and self.db.personalDuration or 5; end,
+                    set = function(_, value)
+                        self.db.personalDuration = value;
+                    end,
+                },
+                spacer3 = {
+                    order = 7.99,
+                    type = "description",
+                    name = "",
+                    width = "full",
+                },
+                testNotification = {
+                    order = 8,
                     type = "execute",
                     name = "Test notification",
-                    width = "full",
-                    disabled = function() return not (self.db and self.db.notifyPersonal); end,
+                    width = "normal",
+                    disabled = notifyDisabled,
                     func = function()
                         self:OutputMessage(formatPersonalOrderMessage());
                         playPersonalSound(self);
                     end,
                 },
                 craftHeader = {
-                    order = 6,
+                    order = 10,
                     type = "header",
-                    name = "Crafting window options",
+                    name = "Crafting window",
                 },
                 whisperButton = {
-                    order = 7,
+                    order = 11,
                     type = "toggle",
                     name = "Show Complete + Whisper button",
                     width = "full",
@@ -713,7 +904,7 @@ function CraftingOrders:GetOptions()
                     end,
                 },
                 whisperMessage = {
-                    order = 8,
+                    order = 12,
                     type = "input",
                     name = "Whisper message",
                     desc = "Use {name} and {item} as placeholders.",

@@ -20,6 +20,24 @@ local function hasOptionsLibs()
     return AceConfig and AceConfigDialog;
 end
 
+-------------------------------------------------------------------------------
+-- Combat Lockdown Handling for Options
+-------------------------------------------------------------------------------
+
+local pendingOpenOptions = false;
+
+local combatFrame = CreateFrame("Frame");
+combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
+combatFrame:SetScript("OnEvent", function(self, event)
+    if (event == "PLAYER_REGEN_ENABLED" and pendingOpenOptions) then
+        pendingOpenOptions = false;
+        -- Small delay to ensure UI is ready after combat
+        C_Timer.After(0.1, function()
+            Lantern:OpenOptions();
+        end);
+    end
+end);
+
 local function ensureLinkPopup()
     if (StaticPopupDialogs[LINK_POPUP_NAME]) then return; end
     StaticPopupDialogs[LINK_POPUP_NAME] = {
@@ -403,6 +421,16 @@ function Lantern:OpenOptions()
         Lantern:Print("Options unavailable: AceConfig/AceGUI not loaded.");
         return;
     end
+
+    -- Defer opening options if in combat (Settings panel is protected)
+    if (InCombatLockdown()) then
+        if (not pendingOpenOptions) then
+            pendingOpenOptions = true;
+            Lantern:Print("Options will open after combat.");
+        end
+        return;
+    end
+
     if (not self.optionsInitialized) then
         self:SetupOptions();
     end

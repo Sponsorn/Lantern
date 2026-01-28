@@ -3,6 +3,7 @@ local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.Warband) then return; end
 
 local Warband = Lantern.modules.Warband;
+local Layout = Lantern.optionsLayout;
 
 -- Import shared utilities from Options.lua (must load after Options.lua)
 local function getUtils()
@@ -176,147 +177,6 @@ function Warband:BuildGroupsOptions(groupsArgs, refreshOptions)
                     type = "header",
                     name = "Group Settings",
                 },
-                groupNameDisplay = {
-                    order = 2,
-                    type = "description",
-                    name = function()
-                        return "|cff00ff00Group name:|r " .. group.name;
-                    end,
-                    fontSize = "medium",
-                    width = "double",
-                },
-                groupNameChange = {
-                    order = 2.1,
-                    type = "execute",
-                    name = "Change",
-                    desc = "Change the name of this group",
-                    width = "half",
-                    func = function()
-                        -- Use StaticPopup for the dialog
-                        StaticPopupDialogs["LANTERN_WARBAND_RENAME_GROUP"] = {
-                            text = "Enter a new name for '" .. group.name .. "':",
-                            button1 = "OK",
-                            button2 = "Cancel",
-                            hasEditBox = true,
-                            OnShow = function(popup)
-                                popup.EditBox:SetText(group.name);
-                                popup.EditBox:HighlightText();
-                                popup.EditBox:SetFocus();
-                            end,
-                            EditBoxOnEnterPressed = function(popup)
-                                local parent = popup:GetParent();
-                                StaticPopup_OnClick(parent, 1); -- Simulate clicking button1 (OK)
-                            end,
-                            EditBoxOnEscapePressed = function(popup)
-                                local parent = popup:GetParent();
-                                parent:Hide();
-                            end,
-                            OnAccept = function(popup)
-                                local newName = popup.EditBox:GetText();
-                                if (not newName or newName == "") then
-                                    Lantern:Print("Please enter a new name.");
-                                    return;
-                                end
-                                if (newName == group.name) then
-                                    return;
-                                end
-                                if (self.db.groups[newName]) then
-                                    Lantern:Print("Group '" .. newName .. "' already exists.");
-                                    return;
-                                end
-
-                                local oldName = group.name;
-                                self:RenameGroup(oldName, newName);
-                                Lantern:Print("Renamed group '" .. oldName .. "' to '" .. newName .. "'.");
-
-                                -- Refresh options UI
-                                refreshOptions(self);
-                            end,
-                            timeout = 0,
-                            whileDead = true,
-                            hideOnEscape = true,
-                            preferredIndex = 3,
-                        };
-                        StaticPopup_Show("LANTERN_WARBAND_RENAME_GROUP");
-                    end,
-                },
-                groupNameBreak = {
-                    order = 2.2,
-                    type = "description",
-                    name = "",
-                    width = "full",
-                },
-                thresholdDisplay = {
-                    order = 3,
-                    type = "description",
-                    name = function()
-                        local freshGroup = self.db.groups[group.name];
-                        return "|cff00ff00Gold threshold:|r " .. formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0) .. " gold";
-                    end,
-                    fontSize = "medium",
-                    width = "double",
-                },
-                thresholdChange = {
-                    order = 3.1,
-                    type = "execute",
-                    name = "Change",
-                    desc = "Change the gold threshold for this group. Set to 0 to deposit all gold (deposit-only mode).",
-                    width = "half",
-                    func = function()
-                        local freshGroup = self.db.groups[group.name];
-                        local currentThreshold = formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0);
-
-                        -- Use StaticPopup for the dialog
-                        StaticPopupDialogs["LANTERN_WARBAND_CHANGE_THRESHOLD"] = {
-                            text = "Enter a new gold threshold for '" .. group.name .. "':",
-                            button1 = "OK",
-                            button2 = "Cancel",
-                            hasEditBox = true,
-                            OnShow = function(popup)
-                                popup.EditBox:SetText(currentThreshold);
-                                popup.EditBox:HighlightText();
-                                popup.EditBox:SetFocus();
-                            end,
-                            EditBoxOnEnterPressed = function(popup)
-                                local parent = popup:GetParent();
-                                StaticPopup_OnClick(parent, 1); -- Simulate clicking button1 (OK)
-                            end,
-                            EditBoxOnEscapePressed = function(popup)
-                                local parent = popup:GetParent();
-                                parent:Hide();
-                            end,
-                            OnAccept = function(popup)
-                                local val = popup.EditBox:GetText();
-                                local amount = parseGold(val);
-                                if (not amount) then
-                                    Lantern:Print("Please enter a valid gold amount.");
-                                    return;
-                                end
-                                if (amount < 0) then
-                                    Lantern:Print("Gold amount must be 0 or greater.");
-                                    return;
-                                end
-
-                                self:SetGroupGoldThreshold(group.name, amount);
-                                Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
-
-                                -- Refresh options UI
-                                refreshOptions(self);
-                            end,
-                            timeout = 0,
-                            whileDead = true,
-                            hideOnEscape = true,
-                            preferredIndex = 3,
-                        };
-                        StaticPopup_Show("LANTERN_WARBAND_CHANGE_THRESHOLD");
-                    end,
-                },
-                thresholdBreak2 = {
-                    order = 3.2,
-                    type = "description",
-                    name = "",
-                    width = "full",
-                },
                 allowDeposit = {
                     order = 3.3,
                     type = "toggle",
@@ -391,6 +251,76 @@ function Warband:BuildGroupsOptions(groupsArgs, refreshOptions)
                 },
             },
         };
+
+        -- Add editable fields using Layout helpers
+        Layout.merge(groupsArgs[groupKey].args, Layout.editableField(2, "groupName", {
+            label = "Group name",
+            getValue = function() return group.name; end,
+            buttonDesc = "Change the name of this group",
+            onEdit = function()
+                Layout.staticPopupInput("LANTERN_WARBAND_RENAME_GROUP", {
+                    text = "Enter a new name for '" .. group.name .. "':",
+                    initialValue = group.name,
+                    onAccept = function(newName)
+                        if (not newName or newName == "") then
+                            Lantern:Print("Please enter a new name.");
+                            return false;
+                        end
+                        if (newName == group.name) then
+                            return;
+                        end
+                        if (self.db.groups[newName]) then
+                            Lantern:Print("Group '" .. newName .. "' already exists.");
+                            return false;
+                        end
+
+                        local oldName = group.name;
+                        self:RenameGroup(oldName, newName);
+                        Lantern:Print("Renamed group '" .. oldName .. "' to '" .. newName .. "'.");
+
+                        -- Refresh options UI
+                        refreshOptions(self);
+                    end,
+                });
+                StaticPopup_Show("LANTERN_WARBAND_RENAME_GROUP");
+            end,
+        }));
+
+        Layout.merge(groupsArgs[groupKey].args, Layout.editableField(3, "threshold", {
+            label = "Gold threshold",
+            getValue = function()
+                local freshGroup = self.db.groups[group.name];
+                return formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0) .. " gold";
+            end,
+            buttonDesc = "Change the gold threshold for this group. Set to 0 to deposit all gold (deposit-only mode).",
+            onEdit = function()
+                local freshGroup = self.db.groups[group.name];
+                local currentThreshold = formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0);
+
+                Layout.staticPopupInput("LANTERN_WARBAND_CHANGE_THRESHOLD", {
+                    text = "Enter a new gold threshold for '" .. group.name .. "':",
+                    initialValue = currentThreshold,
+                    onAccept = function(val)
+                        local amount = parseGold(val);
+                        if (not amount) then
+                            Lantern:Print("Please enter a valid gold amount.");
+                            return false;
+                        end
+                        if (amount < 0) then
+                            Lantern:Print("Gold amount must be 0 or greater.");
+                            return false;
+                        end
+
+                        self:SetGroupGoldThreshold(group.name, amount);
+                        Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
+
+                        -- Refresh options UI
+                        refreshOptions(self);
+                    end,
+                });
+                StaticPopup_Show("LANTERN_WARBAND_CHANGE_THRESHOLD");
+            end,
+        }));
 
         -- Add character members to this group's options
         if (group.members and #group.members > 0) then

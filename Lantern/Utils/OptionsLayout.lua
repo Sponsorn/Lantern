@@ -242,3 +242,122 @@ function Layout.execute(order, key, opts)
     opts.type = "execute";
     return Layout.buildControl(order, opts);
 end
+
+-------------------------------------------------------------------------------
+-- Editable Field
+-- Creates a display + edit button + line break pattern
+-- Returns table with keys: {key}Display, {key}Change, {key}Break
+--
+-- Usage:
+--   Layout.merge(args, Layout.editableField(2, "groupName", {
+--       label = "Group name",
+--       getValue = function() return group.name; end,
+--       buttonName = "Change",      -- optional, default "Change"
+--       buttonDesc = "Change the name",
+--       onEdit = function() ShowDialog(); end,
+--       labelColor = "00ff00",      -- optional, default green
+--       fontSize = "medium",        -- optional
+--       displayWidth = "double",    -- optional, default "double"
+--       buttonWidth = "half",       -- optional, default "half"
+--   }));
+-------------------------------------------------------------------------------
+function Layout.editableField(order, key, opts)
+    opts = opts or {};
+    local labelColor = opts.labelColor or "00ff00";
+    local label = opts.label or key;
+
+    local result = {};
+
+    -- Display description
+    result[key .. "Display"] = {
+        order = order,
+        type = "description",
+        name = function()
+            local value = opts.getValue and opts.getValue() or "";
+            return "|cff" .. labelColor .. label .. ":|r " .. tostring(value);
+        end,
+        fontSize = opts.fontSize or "medium",
+        width = opts.displayWidth or "double",
+    };
+
+    -- Edit button
+    result[key .. "Change"] = {
+        order = order + 0.1,
+        type = "execute",
+        name = opts.buttonName or "Change",
+        desc = opts.buttonDesc,
+        width = opts.buttonWidth or "half",
+        func = opts.onEdit,
+    };
+
+    -- Line break
+    result[key .. "Break"] = {
+        order = order + 0.2,
+        type = "description",
+        name = "",
+        width = "full",
+    };
+
+    return result;
+end
+
+-------------------------------------------------------------------------------
+-- Static Popup Input
+-- Creates and shows a StaticPopupDialogs entry for text input
+--
+-- Usage:
+--   Layout.staticPopupInput("LANTERN_RENAME_GROUP", {
+--       text = "Enter new name:",
+--       initialValue = currentValue,  -- string or function
+--       onAccept = function(value)
+--           if not value or value == "" then
+--               Lantern:Print("Please enter a value.");
+--               return false; -- keep dialog open (optional)
+--           end
+--           doAction(value);
+--       end,
+--   });
+--   StaticPopup_Show("LANTERN_RENAME_GROUP");
+-------------------------------------------------------------------------------
+function Layout.staticPopupInput(dialogKey, opts)
+    opts = opts or {};
+
+    local initialValue = opts.initialValue;
+    if (type(initialValue) == "function") then
+        initialValue = initialValue();
+    end
+
+    StaticPopupDialogs[dialogKey] = {
+        text = opts.text or "Enter a value:",
+        button1 = opts.button1 or "OK",
+        button2 = opts.button2 or "Cancel",
+        hasEditBox = true,
+        OnShow = function(popup)
+            popup.EditBox:SetText(initialValue or "");
+            popup.EditBox:HighlightText();
+            popup.EditBox:SetFocus();
+        end,
+        EditBoxOnEnterPressed = function(popup)
+            local parent = popup:GetParent();
+            StaticPopup_OnClick(parent, 1);
+        end,
+        EditBoxOnEscapePressed = function(popup)
+            local parent = popup:GetParent();
+            parent:Hide();
+        end,
+        OnAccept = function(popup)
+            local value = popup.EditBox:GetText();
+            if (opts.onAccept) then
+                local result = opts.onAccept(value);
+                -- If onAccept returns false, keep dialog open
+                if (result == false) then
+                    return true; -- returning true prevents dialog from closing
+                end
+            end
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    };
+end
