@@ -570,18 +570,6 @@ function Engine:Complete()
     self.opRetries = {};
 end
 
-function Engine:GetState()
-    return self.state;
-end
-
-function Engine:GetProgress()
-    local done = 0;
-    for _ in pairs(self.operationsDone) do
-        done = done + 1;
-    end
-    return done, #self.queue;
-end
-
 function Engine:IsRunning()
     return self.state == STATE_RUNNING;
 end

@@ -241,6 +241,7 @@ local function ClearGroupRows()
     groupRows = {};
 end
 
+-- Simple group row for operations panel (no icons, just name and mode)
 local function CreateGroupRow(parent, index, groupName, group)
     local ROW_HEIGHT = 36;
     local ROW_WIDTH = 250;
@@ -295,7 +296,17 @@ local function CreateGroupRow(parent, index, groupName, group)
         end
     end
 
-    local modeText = (group.depositMode == "all") and "deposit all" or "keep " .. group.limit;
+    local parts = {};
+    if (group.depositEnabled) then
+        table.insert(parts, group.depositAll and "D:All" or ("D:" .. (group.depositLimit or 0)));
+    end
+    if (group.restockEnabled) then
+        table.insert(parts, group.restockAll and "R:All" or ("R:" .. (group.restockLimit or 0)));
+    end
+    if (group.keepEnabled) then
+        table.insert(parts, "K:" .. (group.keepLimit or 0));
+    end
+    local modeText = #parts > 0 and table.concat(parts, " ") or "Disabled";
     local infoText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall");
     infoText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -1);
     infoText:SetJustifyH("LEFT");
@@ -368,34 +379,22 @@ local function CreatePanel()
         WarehousingUI:Hide();
     end);
 
-    -- Options (cogwheel) button next to close button
-    local optionsBtn = CreateFrame("Button", nil, frame, "UIPanelSquareButton");
-    optionsBtn:SetSize(20, 20);
-    optionsBtn:SetPoint("RIGHT", frame.CloseButton, "LEFT", 2, 0);
-    optionsBtn:SetFrameLevel(1020);
-    optionsBtn:SetFrameStrata("MEDIUM");
-    -- Hide template icon; use a child frame to guarantee the gear draws on top
-    if (optionsBtn.icon) then optionsBtn.icon:Hide(); end
-    local iconFrame = CreateFrame("Frame", nil, optionsBtn);
-    iconFrame:SetAllPoints();
-    iconFrame:SetFrameLevel(optionsBtn:GetFrameLevel() + 1);
-    local gearTex = iconFrame:CreateTexture(nil, "ARTWORK");
-    gearTex:SetTexture("Interface\\Buttons\\UI-OptionsButton");
-    gearTex:SetSize(12, 12);
-    gearTex:SetPoint("CENTER");
-    optionsBtn:SetScript("OnClick", function()
-        local AceConfigDialog = LibStub and LibStub("AceConfigDialog-3.0", true);
-        if (AceConfigDialog) then
-            AceConfigDialog:Open("module_Warband");
-        end
+    -- Settings button below the close button
+    local settingsBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate");
+    settingsBtn:SetSize(70, 22);
+    settingsBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -30, -26);
+    settingsBtn:SetFrameLevel(1020);
+    settingsBtn:SetText("Settings");
+    settingsBtn:SetScript("OnClick", function()
+        WarehousingUI:ToggleSettingsPanel();
     end);
-    optionsBtn:SetScript("OnEnter", function(btn)
+    settingsBtn:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_TOP");
-        GameTooltip:SetText("Warehousing Options");
-        GameTooltip:AddLine("Open Lantern > Warband settings.", 1, 1, 1, true);
+        GameTooltip:SetText("Warehousing Settings");
+        GameTooltip:AddLine("Create and manage groups.", 1, 1, 1, true);
         GameTooltip:Show();
     end);
-    optionsBtn:SetScript("OnLeave", function() GameTooltip:Hide(); end);
+    settingsBtn:SetScript("OnLeave", function() GameTooltip:Hide(); end);
 
     -- Title bar drag and right-click reset
     if (frame.TitleContainer) then
@@ -516,6 +515,10 @@ local function CreatePanel()
     table.insert(UISpecialFrames, "LanternWarehousingPanel");
 
     panel = frame;
+
+    -- Export panel reference for Settings.lua
+    WarehousingUI._panel = panel;
+
     return frame;
 end
 
@@ -540,7 +543,7 @@ local function PopulatePanel()
 
         local hintText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall");
         hintText:SetPoint("TOP", noGroupsText, "BOTTOM", 0, -8);
-        hintText:SetText("Create groups in\nLantern > Warband > Warehousing");
+        hintText:SetText("Click Settings above to create groups.");
         hintText:SetTextColor(0.5, 0.5, 0.5);
         hintText:SetJustifyH("CENTER");
 
@@ -576,6 +579,9 @@ local function PopulatePanel()
     end
 end
 
+-- Export PopulatePanel for Settings.lua
+WarehousingUI._populatePanel = PopulatePanel;
+
 function WarehousingUI:ShowPanel()
     local frame = CreatePanel();
     PopulatePanel();
@@ -587,6 +593,7 @@ function WarehousingUI:Hide()
     if (panel) then
         panel:Hide();
     end
+    self:HideSettingsPanel();
     SavePanelOpen(false);
 end
 
@@ -687,5 +694,7 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         if (panel) then
             panel:Hide();
         end
+        -- Clear settings state when bank closes
+        WarehousingUI:ClearSettingsState();
     end
 end);

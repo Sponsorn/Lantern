@@ -23,6 +23,34 @@ local function getDB()
     if (not Warband.db.warehousing.groups) then
         Warband.db.warehousing.groups = {};
     end
+
+    -- Migrate old formats to new enabled/all/limit model
+    for _, group in pairs(Warband.db.warehousing.groups) do
+        if (group.depositEnabled == nil) then
+            if (group.depositMode ~= nil) then
+                -- Original format: depositMode + limit
+                local oldLimit = group.limit or 0;
+                group.depositEnabled = true;
+                group.depositAll = true;
+                group.depositLimit = 0;
+                group.restockEnabled = (oldLimit > 0);
+                group.restockAll = false;
+                group.restockLimit = oldLimit;
+                group.keepEnabled = (group.depositMode == "keep_limit");
+                group.keepLimit = (group.depositMode == "keep_limit") and oldLimit or 0;
+                group.depositMode = nil;
+                group.limit = nil;
+            else
+                -- Intermediate numeric-only format
+                group.depositEnabled = (group.depositLimit or 0) > 0;
+                group.depositAll = not group.depositEnabled;
+                group.restockEnabled = (group.restockLimit or 0) > 0;
+                group.restockAll = not group.restockEnabled;
+                group.keepEnabled = (group.keepLimit or 0) > 0;
+            end
+        end
+    end
+
     return Warband.db.warehousing;
 end
 
@@ -36,8 +64,14 @@ function Warehousing:CreateGroup(name)
 
     db.groups[name] = {
         name = name,
-        limit = 20,
-        depositMode = "all",
+        depositEnabled = false,
+        depositAll = true,
+        depositLimit = 0,
+        restockEnabled = false,
+        restockAll = true,
+        restockLimit = 0,
+        keepEnabled = false,
+        keepLimit = 0,
         items = {},
     };
     return true;
@@ -64,23 +98,36 @@ function Warehousing:GetGroup(name)
     return db.groups[name];
 end
 
-function Warehousing:SetGroupLimit(name, limit)
+function Warehousing:SetGroupDepositLimit(name, val)
     local db = getDB();
     if (not db or not db.groups[name]) then return false; end
 
-    limit = tonumber(limit);
-    if (not limit or limit < 0) then return false; end
+    val = tonumber(val);
+    if (not val or val < 0) then return false; end
 
-    db.groups[name].limit = limit;
+    db.groups[name].depositLimit = val;
     return true;
 end
 
-function Warehousing:SetGroupDepositMode(name, mode)
+function Warehousing:SetGroupRestockLimit(name, val)
     local db = getDB();
     if (not db or not db.groups[name]) then return false; end
-    if (mode ~= "all" and mode ~= "keep_limit") then return false; end
 
-    db.groups[name].depositMode = mode;
+    val = tonumber(val);
+    if (not val or val < 0) then return false; end
+
+    db.groups[name].restockLimit = val;
+    return true;
+end
+
+function Warehousing:SetGroupKeepLimit(name, val)
+    local db = getDB();
+    if (not db or not db.groups[name]) then return false; end
+
+    val = tonumber(val);
+    if (not val or val < 0) then return false; end
+
+    db.groups[name].keepLimit = val;
     return true;
 end
 
@@ -240,13 +287,18 @@ function Warehousing:ComputeDeposit(groupName)
             if (not allowed) then
                 local name = itemName ~= "" and itemName or ("item " .. tostring(itemID));
                 Lantern:Print(string.format("Warehousing: Skipping %s (not warbound).", name));
-            else
-                local depositAmount = 0;
-
-                if (group.depositMode == "all") then
+            elseif (group.depositEnabled) then
+                local depositAmount;
+                if (group.depositAll) then
                     depositAmount = inventoryCount;
-                elseif (group.depositMode == "keep_limit") then
-                    depositAmount = math.max(0, inventoryCount - group.limit);
+                else
+                    depositAmount = math.min(inventoryCount, group.depositLimit);
+                end
+
+                -- Apply keep limit: don't let bags drop below keepLimit
+                if (group.keepEnabled and group.keepLimit > 0) then
+                    local maxDeposit = math.max(0, inventoryCount - group.keepLimit);
+                    depositAmount = math.min(depositAmount, maxDeposit);
                 end
 
                 if (depositAmount > 0) then
@@ -255,7 +307,7 @@ function Warehousing:ComputeDeposit(groupName)
                         itemName = itemName,
                         mode = "deposit",
                         amount = depositAmount,
-                        limit = (group.depositMode == "all") and 0 or group.limit,
+                        limit = math.max(0, inventoryCount - depositAmount),
                         sourceSlots = trimSlots(inventoryData.slots, depositAmount),
                     });
                 end
@@ -281,17 +333,34 @@ function Warehousing:ComputeRestock(groupName)
         local inventoryCount = inventoryData and inventoryData.total or 0;
         local warbankCount = warbankData and warbankData.total or 0;
 
-        if (inventoryCount < group.limit and warbankCount > 0) then
-            local deficit = group.limit - inventoryCount;
+        if (group.restockEnabled and warbankCount > 0) then
+            local deficit;
+            if (group.restockAll) then
+                deficit = warbankCount;
+            else
+                if (inventoryCount >= group.restockLimit) then
+                    deficit = 0;
+                else
+                    deficit = group.restockLimit - inventoryCount;
+                end
+            end
+
+            -- Apply keep limit: don't let warbank drop below keepLimit
+            if (group.keepEnabled and group.keepLimit > 0) then
+                local maxWithdraw = math.max(0, warbankCount - group.keepLimit);
+                deficit = math.min(deficit, maxWithdraw);
+            end
+
             local withdrawAmount = math.min(deficit, warbankCount);
 
             if (withdrawAmount > 0) then
+                local restockTarget = group.restockAll and (inventoryCount + withdrawAmount) or group.restockLimit;
                 table.insert(operations, {
                     itemID = itemID,
                     itemName = itemName,
                     mode = "withdraw",
                     amount = withdrawAmount,
-                    limit = group.limit,
+                    limit = restockTarget,
                     sourceSlots = trimSlots(warbankData.slots, withdrawAmount),
                 });
             end

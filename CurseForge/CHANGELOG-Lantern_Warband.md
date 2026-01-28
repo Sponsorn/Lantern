@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 - 2026-01-28
+- Warehousing UI redesign: separate Settings panel for group management
+- Operations panel simplified: shows groups with checkboxes and item counts
+- New Settings button opens dedicated panel for creating/editing groups
+- Clearer dropdown options: "Move all to warbank" and "Keep some in bags"
+- Added tip in Options panel about managing items at the bank
+- Restyled Settings panel to match Blizzard's Settings UI look (flat background, atlas textures, minimal scrollbar)
+- Redesigned warehousing settings: deposit, restock, and keep are now three independent sections
+- Each section has its own enable checkbox and quantity input
+- Added "All" option for deposit and restock to move all matching items
+- Keep limit now applies independently: preserves a minimum in bags (when depositing) or warbank (when restocking)
+- Existing groups should be automatically migrated to the new settings format
+
 ## 0.2.10 - 2026-01-28
 - Improved options UI layout and consistency
 
