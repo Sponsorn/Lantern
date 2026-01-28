@@ -249,6 +249,11 @@ function Lantern:BuildOptions()
                 name = "Disable Auto Add Spells",
                 args = self.BuildDisableAutoAddSpellsOptions and self:BuildDisableAutoAddSpellsOptions() or {},
             },
+            missingPet = {
+                type = "group",
+                name = "Missing Pet",
+                args = self.BuildMissingPetOptions and self:BuildMissingPetOptions() or {},
+            },
             -- Module placeholders added at runtime via RegisterModuleOptions.
         },
     };
