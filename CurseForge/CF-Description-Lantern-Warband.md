@@ -1,4 +1,5 @@
 Lantern: Warband helps you organize characters and automate gold/item management across your warband.
+
 ![](https://media.forgecdn.net/attachments/1461/331/lanternwb113149-png.png)
 
 - Create custom groups for organizing your characters (e.g., "Mains", "Alts", "Bankers")
