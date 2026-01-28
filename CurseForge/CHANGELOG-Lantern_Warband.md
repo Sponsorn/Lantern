@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.10 - 2026-01-28
+- Improved options UI layout and consistency
+
 ## 0.2.9 - 2026-01-25
 - Remember warehousing panel open state across bank sessions
 - Fix retry logic: operations with failures now properly retry instead of triggering stall counter
