@@ -5,7 +5,7 @@ Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused 
 *   **Auto Queue**: Auto-accepts LFG role checks using your roles set in the LFG tool (Shift to pause).
 *   **Delete Confirm**: Hides the delete prompt input and enables the confirm button immediately.
 *   **Disable Auto Add Spells**: Prevents spells from being auto-added to your action bars.
-*   **Missing Pet**: Displays an animated on-screen warning when your pet is missing or set to passive. Works for Hunters, Warlocks, and Unholy Death Knights. Customizable text, colors, fonts, animations, and optional sound alerts. Auto-hides while mounted or in combat.
+*   **Missing Pet**: Displays an animated on-screen warning when your pet is missing or set to passive. Works for Hunters, Warlocks, Unholy Death Knights, and Frost Mages with Water Elemental. Customizable text, colors, fonts, animations, and optional sound alerts. Auto-hides while mounted.
 
 The framework is module-based, so additional features can be plugged in later without impacting the core. 
 
@@ -20,4 +20,4 @@ The framework is module-based, so additional features can be plugged in later wi
 
 <div><h4>Configuration</h4></div>
 
-Open the game’s Options → AddOns → Lantern → General Options. Each module has an enable toggle and a short description.
+Click on minimap button or open the game’s Options → AddOns → Lantern → General Options. Each module has an enable toggle and a short description.

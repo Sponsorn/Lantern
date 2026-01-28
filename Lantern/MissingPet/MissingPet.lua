@@ -26,65 +26,75 @@ local DEFAULTS = {
     missingColor = { r = 1, g = 0.2, b = 0.2 },  -- Red
     passiveColor = { r = 1, g = 0.6, b = 0 },    -- Orange
     soundEnabled = false,
+    soundMissing = true,
+    soundPassive = true,
     soundName = "RaidWarning",
     soundRepeat = false,
     soundInterval = 5,
+    soundInCombat = false,
 };
-
--------------------------------------------------------------------------------
--- Combat Lockdown Handling
--------------------------------------------------------------------------------
-
-local pendingUpdate = nil;
-
-local combatFrame = CreateFrame("Frame");
-combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
-combatFrame:SetScript("OnEvent", function(self, event)
-    if (event == "PLAYER_REGEN_ENABLED" and pendingUpdate) then
-        pendingUpdate();
-        pendingUpdate = nil;
-    end
-end);
-
-local function SafeUpdateUI(updateFn)
-    if (InCombatLockdown()) then
-        pendingUpdate = updateFn;
-    else
-        updateFn();
-    end
-end
 
 -------------------------------------------------------------------------------
 -- Pet Detection
 -------------------------------------------------------------------------------
 
 -- Class IDs: 3=Hunter, 6=DeathKnight, 8=Mage, 9=Warlock
--- Spec IDs: 252=Unholy DK, 253/254/255=Hunter specs, 64=Frost Mage, 265/266/267=Warlock specs
-local PET_CLASS_IDS = {
-    [3] = true,   -- Hunter (all specs)
-    [9] = true,   -- Warlock (all specs)
-};
+-- Spec IDs: 253=BM Hunter, 254=MM Hunter, 255=Survival Hunter
 
-local PET_SPEC_IDS = {
-    [252] = true, -- Unholy Death Knight
-    -- Note: Frost Mage (64) Water Elemental is talent-dependent, excluded for simplicity
-};
+-- Pet summoning spell IDs (for classes where pets are talent/spec-dependent)
+local RAISE_DEAD_SPELL_ID = 46584;       -- Unholy DK
+local WATER_ELEMENTAL_SPELL_ID = 31687;  -- Frost Mage
+local GRIMOIRE_OF_SACRIFICE_SPELL_ID = 196099; -- Warlock, when active, the player intentionally has no pet
+
+-- MM Hunter talent node 104127 choices:
+--   Avian Specialization (Entry 128710, Spell 466867) - NO pet
+--   Unbreakable Bond (Entry 129619, Spell 1223323) - HAS pet
+local MM_HUNTER_PET_NODE_ID = 104127;
+local MM_HUNTER_PET_ENTRY_ID = 129619;  -- Unbreakable Bond
+
+local function HasMMHunterPetTalent()
+    local configID = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID();
+    if (not configID) then return false; end
+
+    local nodeInfo = C_Traits and C_Traits.GetNodeInfo and C_Traits.GetNodeInfo(configID, MM_HUNTER_PET_NODE_ID);
+    if (nodeInfo and nodeInfo.activeEntry) then
+        return nodeInfo.activeEntry.entryID == MM_HUNTER_PET_ENTRY_ID;
+    end
+    return false;
+end
 
 local function IsPetClass()
     local _, _, classID = UnitClass("player");
 
-    -- Check if class always has pets
-    if (PET_CLASS_IDS[classID]) then
+    -- Warlock (all specs have pets)
+    if (classID == 9) then
         return true;
     end
 
-    -- Check if current spec has pets
-    local specIndex = GetSpecialization();
-    if (specIndex) then
-        local specID = GetSpecializationInfo(specIndex);
-        if (specID and PET_SPEC_IDS[specID]) then
-            return true;
+    -- Hunter: BM and Survival always have pets, MM only with Unbreakable Bond talent
+    if (classID == 3) then
+        local specIndex = GetSpecialization();
+        if (not specIndex) then
+            -- No spec selected (low level) - assume no pet requirement
+            return false;
         end
+        local specID = GetSpecializationInfo(specIndex);
+        if (specID == 254) then
+            -- Marksmanship: check talent node for Unbreakable Bond
+            return HasMMHunterPetTalent();
+        end
+        -- BM (253) or Survival (255) always have pets
+        return true;
+    end
+
+    -- Death Knight with Raise Dead (Unholy)
+    if (classID == 6 and IsSpellKnown(RAISE_DEAD_SPELL_ID)) then
+        return true;
+    end
+
+    -- Mage with Water Elemental (Frost talent)
+    if (classID == 8 and IsSpellKnown(WATER_ELEMENTAL_SPELL_ID)) then
+        return true;
     end
 
     return false;
@@ -107,20 +117,9 @@ local function HasPet()
     return UnitExists("pet");
 end
 
--- Warlock Grimoire of Sacrifice (talent 108503, spellID 196099) - sacrifices pet for power
--- When active, the player intentionally has no pet
-local GRIMOIRE_OF_SACRIFICE_SPELL_ID = 196099;
-
 local function HasGrimoireOfSacrifice()
-    if (C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID) then
-        local auraInfo = C_UnitAuras.GetPlayerAuraBySpellID(GRIMOIRE_OF_SACRIFICE_SPELL_ID);
-        return auraInfo ~= nil;
-    end
-    -- Fallback for older API
-    if (AuraUtil and AuraUtil.FindAuraBySpellID) then
-        return AuraUtil.FindAuraBySpellID("player", GRIMOIRE_OF_SACRIFICE_SPELL_ID) ~= nil;
-    end
-    return false;
+    local auraInfo = C_UnitAuras.GetPlayerAuraBySpellID(GRIMOIRE_OF_SACRIFICE_SPELL_ID);
+    return auraInfo ~= nil;
 end
 
 -------------------------------------------------------------------------------
@@ -174,11 +173,15 @@ local function StopSoundTimer()
     end
 end
 
-local function StartSoundTimer()
+local function StartSoundTimer(state)
     StopSoundTimer();
 
     local db = getDB();
     if (not db or not db.soundEnabled) then return; end
+
+    -- Check if sound is enabled for this specific state
+    if (state == "missing" and not db.soundMissing) then return; end
+    if (state == "passive" and not db.soundPassive) then return; end
 
     -- Play immediately
     PlayWarningSound();
@@ -272,6 +275,11 @@ end
 -------------------------------------------------------------------------------
 
 local function ShouldHideWarning()
+    -- Player is dead/ghost
+    if (UnitIsDeadOrGhost("player")) then
+        return true;
+    end
+
     -- Not a pet class/spec (e.g., Blood DK, Frost DK, most classes)
     if (not IsPetClass()) then
         return true;
@@ -279,16 +287,6 @@ local function ShouldHideWarning()
 
     -- Warlock with Grimoire of Sacrifice active (intentionally no pet)
     if (HasGrimoireOfSacrifice()) then
-        return true;
-    end
-
-    -- Player is dead/ghost
-    if (UnitIsDeadOrGhost("player")) then
-        return true;
-    end
-
-    -- Always hide during combat
-    if (UnitAffectingCombat("player")) then
         return true;
     end
 
@@ -348,51 +346,48 @@ local function UpdatePetStatus()
 
     CreateWarningFrame();
 
-    local function doUpdate()
-        if (ShouldHideWarning()) then
-            warningFrame:Hide();
-            if (warningText) then
-                Lantern:StopTextAnimation(warningText);
-            end
-            StopSoundTimer();
-            currentState = nil;
-            return;
+    -- No combat lockdown protection needed - our frame is not protected
+    if (ShouldHideWarning()) then
+        warningFrame:Hide();
+        if (warningText) then
+            Lantern:StopTextAnimation(warningText);
         end
-
-        local state, text = GetWarningState();
-        if (state and text) then
-            warningText:SetText(text);
-
-            -- Apply color based on state
-            local db = getDB();
-            if (state == "passive") then
-                local c = db and db.passiveColor or DEFAULTS.passiveColor;
-                warningText:SetTextColor(c.r, c.g, c.b, 1);
-            else
-                local c = db and db.missingColor or DEFAULTS.missingColor;
-                warningText:SetTextColor(c.r, c.g, c.b, 1);
-            end
-
-            warningFrame:Show();
-
-            -- Only restart animation and sound if state changed
-            if (state ~= currentState) then
-                local animStyle = db and db.animationStyle or DEFAULTS.animationStyle;
-                Lantern:ApplyTextAnimation(warningText, animStyle);
-                StartSoundTimer();
-                currentState = state;
-            end
-        else
-            warningFrame:Hide();
-            if (warningText) then
-                Lantern:StopTextAnimation(warningText);
-            end
-            StopSoundTimer();
-            currentState = nil;
-        end
+        StopSoundTimer();
+        currentState = nil;
+        return;
     end
 
-    SafeUpdateUI(doUpdate);
+    local state, text = GetWarningState();
+    if (state and text) then
+        warningText:SetText(text);
+
+        -- Apply color based on state
+        local db = getDB();
+        if (state == "passive") then
+            local c = db and db.passiveColor or DEFAULTS.passiveColor;
+            warningText:SetTextColor(c.r, c.g, c.b, 1);
+        else
+            local c = db and db.missingColor or DEFAULTS.missingColor;
+            warningText:SetTextColor(c.r, c.g, c.b, 1);
+        end
+
+        warningFrame:Show();
+
+        -- Only restart animation and sound if state changed
+        if (state ~= currentState) then
+            local animStyle = db and db.animationStyle or DEFAULTS.animationStyle;
+            Lantern:ApplyTextAnimation(warningText, animStyle);
+            StartSoundTimer(state);
+            currentState = state;
+        end
+    else
+        warningFrame:Hide();
+        if (warningText) then
+            Lantern:StopTextAnimation(warningText);
+        end
+        StopSoundTimer();
+        currentState = nil;
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -529,6 +524,11 @@ function module:OnEnable()
     self.addon:ModuleRegisterEvent(self, "PLAYER_ALIVE", self.OnPlayerAlive);
     self.addon:ModuleRegisterEvent(self, "PLAYER_UNGHOST", self.OnPlayerAlive);
 
+    -- Talent/spec change events (for MM Hunter pet talent, DK Raise Dead, Mage Water Elemental)
+    self.addon:ModuleRegisterEvent(self, "TRAIT_CONFIG_UPDATED", self.OnTalentChanged);
+    self.addon:ModuleRegisterEvent(self, "ACTIVE_COMBAT_CONFIG_CHANGED", self.OnTalentChanged);
+    self.addon:ModuleRegisterEvent(self, "PLAYER_SPECIALIZATION_CHANGED", self.OnTalentChanged);
+
     -- Register LSM callback to refresh font when fonts are registered (uses CallbackHandler)
     if (LSM and LSM.RegisterCallback) then
         LSM.RegisterCallback(module, "LibSharedMedia_Registered", function(_, mediaType, key)
@@ -555,7 +555,6 @@ function module:OnDisable()
     end
     StopSoundTimer();
     waitingAfterDismount = false;
-    pendingUpdate = nil;
 
     -- Unregister LSM callbacks
     if (LSM and LSM.UnregisterCallback) then
@@ -612,15 +611,11 @@ function module:OnRestingChanged()
 end
 
 function module:OnCombatStart()
-    -- Immediately hide warning and stop sound when entering combat
-    if (warningFrame) then
-        warningFrame:Hide();
+    -- Stop sound when entering combat unless soundInCombat is enabled
+    local db = getDB();
+    if (not db or not db.soundInCombat) then
+        StopSoundTimer();
     end
-    if (warningText) then
-        Lantern:StopTextAnimation(warningText);
-    end
-    StopSoundTimer();
-    currentState = nil;
 end
 
 function module:OnCombatEnd()
@@ -629,6 +624,10 @@ function module:OnCombatEnd()
 end
 
 function module:OnPlayerAlive()
+    UpdatePetStatus();
+end
+
+function module:OnTalentChanged()
     UpdatePetStatus();
 end
 

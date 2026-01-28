@@ -24,9 +24,12 @@ local DEFAULTS = {
     missingColor = { r = 1, g = 0.2, b = 0.2 },
     passiveColor = { r = 1, g = 0.6, b = 0 },
     soundEnabled = false,
+    soundMissing = true,
+    soundPassive = true,
     soundName = "RaidWarning",
     soundRepeat = false,
     soundInterval = 5,
+    soundInCombat = false,
 };
 
 local function missingPetDB()
@@ -131,7 +134,7 @@ function Lantern:BuildMissingPetOptions()
     local args = {};
 
     -- Description
-    args.desc = Layout.description(0, "Displays a warning when your pet is missing or set to passive. Works for Hunters, Warlocks, Death Knights, and Mages with pets.");
+    args.desc = Layout.description(0, "Displays a warning when your pet is missing or set to passive. Works for Hunters, Warlocks, Unholy Death Knights, and Frost Mages with Water Elemental.");
 
     -- Enable toggle (full width)
     args.enabled = {
@@ -528,7 +531,75 @@ function Lantern:BuildMissingPetOptions()
     };
 
     -- Spacer to force new line
-    args.spacer6 = Layout.spacer(51.99);
+    args.spacer6 = Layout.spacer(51.09);
+
+    -- Row: Sound for missing and passive side by side (micro-ordering: 51.10, 51.11)
+    args.soundMissing = {
+        order = 51.10,
+        type = "toggle",
+        name = "Sound When Missing",
+        desc = "Play sound when pet is missing.",
+        width = "normal",
+        disabled = function()
+            local db = missingPetDB();
+            return missingPetDisabled() or not db.soundEnabled;
+        end,
+        get = function()
+            local db = missingPetDB();
+            return db.soundMissing;
+        end,
+        set = function(_, val)
+            local db = missingPetDB();
+            db.soundMissing = val and true or false;
+        end,
+    };
+
+    args.soundPassive = {
+        order = 51.11,
+        type = "toggle",
+        name = "Sound When Passive",
+        desc = "Play sound when pet is set to passive.",
+        width = "normal",
+        disabled = function()
+            local db = missingPetDB();
+            return missingPetDisabled() or not db.soundEnabled;
+        end,
+        get = function()
+            local db = missingPetDB();
+            return db.soundPassive;
+        end,
+        set = function(_, val)
+            local db = missingPetDB();
+            db.soundPassive = val and true or false;
+        end,
+    };
+
+    -- Spacer to force new line
+    args.spacer6a = Layout.spacer(51.19);
+
+    -- Row: Sound in combat (micro-ordering: 51.20)
+    args.soundInCombat = {
+        order = 51.20,
+        type = "toggle",
+        name = "Sound In Combat",
+        desc = "Continue playing sound while in combat. When disabled, sound stops when combat begins.",
+        width = "normal",
+        disabled = function()
+            local db = missingPetDB();
+            return missingPetDisabled() or not db.soundEnabled;
+        end,
+        get = function()
+            local db = missingPetDB();
+            return db.soundInCombat;
+        end,
+        set = function(_, val)
+            local db = missingPetDB();
+            db.soundInCombat = val and true or false;
+        end,
+    };
+
+    -- Spacer to force new line
+    args.spacer6b = Layout.spacer(51.29);
 
     -- Row: Sound name and interval side by side (micro-ordering: 52.00, 52.01)
     args.soundName = {
