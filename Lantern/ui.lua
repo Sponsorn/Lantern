@@ -272,6 +272,11 @@ function Lantern:BuildOptions()
                 name = "Missing Pet",
                 args = self.BuildMissingPetOptions and self:BuildMissingPetOptions() or {},
             },
+            cleanQuests = {
+                type = "group",
+                name = "Clean Tracked Quests",
+                args = self.BuildCleanQuestsOptions and self:BuildCleanQuestsOptions() or {},
+            },
             -- Module placeholders added at runtime via RegisterModuleOptions.
         },
     };

@@ -236,3 +236,13 @@ end);
 Lantern:RegisterEvent("PLAYER_LOGIN", function()
     Lantern:UpdateCharacterLogin();
 end);
+
+SLASH_LANTERN1 = "/lantern";
+SlashCmdList["LANTERN"] = function(msg)
+    local cmd = (msg or ""):lower():match("^(%S+)") or "";
+    if (cmd == "clean") then
+        Lantern:SendMessage("LANTERN_CLEAN_QUESTS");
+    else
+        Lantern:OpenOptions();
+    end
+end;
