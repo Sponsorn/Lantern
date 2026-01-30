@@ -6,6 +6,7 @@ Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused 
 *   **Delete Confirm**: Hides the delete prompt input and enables the confirm button immediately.
 *   **Disable Auto Add Spells**: Prevents spells from being auto-added to your action bars.
 *   **Missing Pet**: Displays an animated on-screen warning when your pet is missing or set to passive. Works for Hunters, Warlocks, Unholy Death Knights, and Frost Mages with Water Elemental. Customizable text, colors, fonts, animations, and optional sound alerts. Auto-hides while mounted.
+*   **Clean Tracked Quests**: Detects and removes hidden tracked quests (a Blizzard bug that can cause FPS drops). Optional auto-clean on login or manual cleanup via `/lantern clean`.
 
 The framework is module-based, so additional features can be plugged in later without impacting the core. 
 
