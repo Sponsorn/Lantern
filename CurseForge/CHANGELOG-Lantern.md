@@ -1,12 +1,8 @@
 # Changelog
 
-## 0.4.27 - 2026-01-30
-- Add Clean Tracked Quests module: detects and removes hidden tracked quests (a Blizzard bug that can cause FPS drops)
-- Clean Tracked Quests: optional login warning when hidden quests are detected (up to 5 times)
-- Clean Tracked Quests: auto-clean on login option with configurable chat announcement
-- Clean Tracked Quests: manual cleanup via /lantern clean slash command
-- Add /lantern slash command: opens options panel, or /lantern clean to run quest cleanup
-- Credit to Dramatic-Fortune-416 on Reddit for the original discovery
+## 0.4.27 - 2026-01-31
+- Add /lantern slash command to open the options panel
+- Minimap icon left-click now toggles the options panel (closes if already open)
 
 ## 0.4.26 - 2026-01-28
 - Core: defer options panel opening if clicked during combat (opens automatically after combat)

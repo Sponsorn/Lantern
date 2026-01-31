@@ -28,11 +28,9 @@ AutoQueue\Options.lua
 DeleteConfirm\Options.lua
 DisableAutoAddSpells\Options.lua
 MissingPet\Options.lua
-CleanQuests\Options.lua
 ui.lua
 AutoQuest\AutoQuest.lua
 AutoQueue\AutoQueue.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
 MissingPet\MissingPet.lua
-CleanQuests\CleanQuests.lua
