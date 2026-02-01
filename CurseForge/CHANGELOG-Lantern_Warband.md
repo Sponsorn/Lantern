@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.0b - 2026-02-01
+- Fix zip file not extracting as folder on macOS/Linux (GitHub issue #2)
+
 ## 0.3.0 - 2026-01-28
 - Warehousing UI redesign, hopefully more intuitive than beta version; separate Settings panel for group management
 - Operations panel simplified: shows groups with checkboxes and item counts

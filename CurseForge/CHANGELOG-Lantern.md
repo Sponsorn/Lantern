@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.27b - 2026-02-01
+- Fix zip file not extracting as folder on macOS/Linux (GitHub issue #2)
+
 ## 0.4.27 - 2026-01-31
 - Add /lantern slash command to open the options panel
 - Minimap icon left-click now toggles the options panel (closes if already open)

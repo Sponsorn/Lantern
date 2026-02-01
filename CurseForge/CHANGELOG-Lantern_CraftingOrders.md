@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.7b - 2026-02-01
+- Fix zip file not extracting as folder on macOS/Linux (GitHub issue #2)
+
 ## 0.4.7 - 2026-01-28
 - Personal Orders: add customizable notification appearance (font, size, outline, color, duration)
 - Personal Orders: use custom notification frame instead of LibSink for better visual control
