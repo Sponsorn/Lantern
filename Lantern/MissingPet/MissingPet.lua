@@ -87,8 +87,8 @@ local function IsPetClass()
         return true;
     end
 
-    -- Death Knight with Raise Dead (Unholy)
-    if (classID == 6 and IsSpellKnown(RAISE_DEAD_SPELL_ID)) then
+    -- Death Knight with Raise Dead (Unholy baseline, talent for other specs)
+    if (classID == 6 and IsPlayerSpell(RAISE_DEAD_SPELL_ID)) then
         return true;
     end
 
@@ -584,6 +584,12 @@ end
 
 function module:OnPetBarUpdate()
     UpdatePetStatus();
+    -- Deferred re-check: pet bar info may not reflect the new stance immediately
+    C_Timer.After(0.1, function()
+        if (module.enabled) then
+            UpdatePetStatus();
+        end
+    end);
 end
 
 function module:OnPlayerEnteringWorld()

@@ -2,7 +2,7 @@
 ## Title: Lantern
 ## Notes: Core QoL framework with pluggable modules.
 ## Author: Dede in-game / Sponsorn on curseforge & github
-## Version: 0.4.27b
+## Version: 0.4.28
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
 ## SavedVariables: LanternDB
 ## DefaultState: enabled

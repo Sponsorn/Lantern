@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.28 - 2026-02-01
+- Fix: MissingPet not detecting Death Knight pets (passive warning not showing)
+- Fix: MissingPet pet stance detection delayed on bar update
+
 ## 0.4.27b - 2026-02-01
 - Fix zip file not extracting as folder on macOS/Linux (GitHub issue #2)
 
