@@ -277,40 +277,46 @@ end
 local function ShouldHideWarning()
     -- Player is dead/ghost
     if (UnitIsDeadOrGhost("player")) then
-        return true;
+        return true, "dead";
     end
 
     -- Not a pet class/spec (e.g., Blood DK, Frost DK, most classes)
     if (not IsPetClass()) then
-        return true;
+        return true, "not_pet_class";
     end
 
     -- Warlock with Grimoire of Sacrifice active (intentionally no pet)
     if (HasGrimoireOfSacrifice()) then
-        return true;
+        return true, "grimoire_of_sacrifice";
     end
 
     local db = getDB();
-    if (not db) then return true; end
+    if (not db) then return true, "no_db"; end
 
     -- Mounted, on taxi, or in vehicle
     if (db.hideWhenMounted) then
-        if (IsMounted() or UnitOnTaxi("player") or UnitHasVehicleUI("player")) then
-            return true;
+        if (IsMounted()) then
+            return true, "mounted";
+        end
+        if (UnitOnTaxi("player")) then
+            return true, "on_taxi";
+        end
+        if (UnitHasVehicleUI("player")) then
+            return true, "in_vehicle";
         end
     end
 
     -- In rest zone
     if (db.hideInRestZone and IsResting()) then
-        return true;
+        return true, "rest_zone";
     end
 
     -- Waiting after dismount
     if (waitingAfterDismount) then
-        return true;
+        return true, "dismount_delay";
     end
 
-    return false;
+    return false, nil;
 end
 
 local function GetWarningState()
@@ -473,6 +479,62 @@ end
 
 function module:UpdateLock()
     UpdateFrameLock();
+end
+
+function module:PetDebug()
+    local _, className, classID = UnitClass("player");
+    local specIndex = GetSpecialization();
+    local specID, specName;
+    if (specIndex) then
+        specID, specName = GetSpecializationInfo(specIndex);
+    end
+
+    local isPetClass = IsPetClass();
+    local hasPet = HasPet();
+    local isPetOnPassive = IsPetOnPassive();
+    local shouldHide, hideReason = ShouldHideWarning();
+    local warningState, warningStateText = GetWarningState();
+
+    local db = getDB();
+
+    local prefix = "|cffe6c619Lantern PetDebug:|r ";
+    print(prefix .. "--- MissingPet Diagnostics ---");
+    print(prefix .. "classID=" .. tostring(classID) .. " (" .. tostring(className) .. ")");
+    print(prefix .. "specIndex=" .. tostring(specIndex) .. ", specID=" .. tostring(specID) .. " (" .. tostring(specName) .. ")");
+    print(prefix .. "IsPetClass()=" .. tostring(isPetClass));
+    print(prefix .. "HasPet()=" .. tostring(hasPet));
+    print(prefix .. "IsPetOnPassive()=" .. tostring(isPetOnPassive));
+    print(prefix .. "ShouldHideWarning()=" .. tostring(shouldHide) .. ", reason=" .. tostring(hideReason));
+    print(prefix .. "GetWarningState()=" .. tostring(warningState) .. ", text=" .. tostring(warningStateText));
+    print(prefix .. "module.enabled=" .. tostring(self.enabled));
+    print(prefix .. "waitingAfterDismount=" .. tostring(waitingAfterDismount));
+
+    if (db) then
+        print(prefix .. "db.showMissing=" .. tostring(db.showMissing));
+        print(prefix .. "db.showPassive=" .. tostring(db.showPassive));
+        print(prefix .. "db.hideWhenMounted=" .. tostring(db.hideWhenMounted));
+        print(prefix .. "db.hideInRestZone=" .. tostring(db.hideInRestZone));
+        print(prefix .. "db.dismountDelay=" .. tostring(db.dismountDelay));
+    else
+        print(prefix .. "db=nil (no saved variables)");
+    end
+
+    -- MM Hunter talent check
+    if (classID == 3 and specID == 254) then
+        print(prefix .. "HasMMHunterPetTalent()=" .. tostring(HasMMHunterPetTalent()));
+    end
+
+    -- DK Raise Dead check
+    if (classID == 6) then
+        print(prefix .. "IsPlayerSpell(RaiseDead)=" .. tostring(IsPlayerSpell(RAISE_DEAD_SPELL_ID)));
+    end
+
+    -- Warlock Grimoire check
+    if (classID == 9) then
+        print(prefix .. "HasGrimoireOfSacrifice()=" .. tostring(HasGrimoireOfSacrifice()));
+    end
+
+    print(prefix .. "--- End Diagnostics ---");
 end
 
 -------------------------------------------------------------------------------

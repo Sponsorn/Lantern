@@ -142,12 +142,37 @@ function Lantern:InitMinimap()
     self.minimapInitialized = true;
 end
 
+local RELOAD_POPUP_NAME = "LanternModuleReloadConfirm";
+
+local function ensureReloadPopup()
+    if (StaticPopupDialogs[RELOAD_POPUP_NAME]) then return; end
+    StaticPopupDialogs[RELOAD_POPUP_NAME] = {
+        text = "Enabling this module requires a reload.",
+        button1 = "Reload UI",
+        button2 = "Cancel",
+        OnAccept = function(_, moduleName)
+            Lantern.db.modules[moduleName] = true;
+            ReloadUI();
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    };
+end
+
 local function makeModuleOptionKey(name)
     return "module_" .. tostring(name or "");
 end
 
 local function moduleToggle(name)
     return function(_, val)
+        local module = Lantern.modules[name];
+        if (val and module and module.opts and module.opts.requiresReload) then
+            ensureReloadPopup();
+            StaticPopup_Show(RELOAD_POPUP_NAME, nil, nil, name);
+            return;
+        end
         if (val) then
             Lantern:EnableModule(name);
         else

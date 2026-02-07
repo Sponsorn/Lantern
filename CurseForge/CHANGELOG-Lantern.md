@@ -1,5 +1,8 @@
 # Changelog
 
+## Upcoming
+- Add: MissingPet, added /lantern petdebug
+
 ## 0.4.28 - 2026-02-01
 - Fix: MissingPet not detecting Death Knight pets (passive warning not showing)
 - Fix: MissingPet pet stance detection delayed on bar update
