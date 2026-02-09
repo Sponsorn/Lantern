@@ -1,7 +1,16 @@
 # Changelog
 
-## Upcoming
+## 0.4.29 - 2026-02-09
+- Add: Cursor Ring module -- customizable ring(s) around your cursor with cast/GCD indicators and optional mouse trail (disabled by default)
+- Add: Cursor Ring supports two independent rings with adjustable size, shape, and color
+- Add: Cursor Ring cast effect with three styles (segments, fill, swipe)
+- Add: Cursor Ring GCD indicator that can display simultaneously with cast effects
+- Add: Cursor Ring optional center dot with color and size settings
+- Add: Cursor Ring optional mouse trail with adjustable duration and color
+- Add: Cursor Ring preview buttons to test cast/GCD animations from the options panel
 - Add: MissingPet, added /lantern petdebug
+- Chore: Removed old experiment addons (ChatQoL, VendorQoL)
+- Fix: Removed invalid interface versions from CraftingOrders and Warband TOC files
 
 ## 0.4.28 - 2026-02-01
 - Fix: MissingPet not detecting Death Knight pets (passive warning not showing)

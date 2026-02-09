@@ -286,6 +286,11 @@ function Lantern:BuildOptions()
                 name = "Auto Queue",
                 args = self.BuildAutoQueueOptions and self:BuildAutoQueueOptions() or {},
             },
+            cursorRing = {
+                type = "group",
+                name = "Cursor Ring",
+                args = self.BuildCursorRingOptions and self:BuildCursorRingOptions() or {},
+            },
             deleteConfirm = {
                 type = "group",
                 name = "Delete Confirm",
