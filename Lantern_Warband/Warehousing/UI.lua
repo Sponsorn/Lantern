@@ -497,13 +497,13 @@ local function CreatePanel()
 
     local progressBg = progressBar:CreateTexture(nil, "BACKGROUND", nil, 2);
     progressBg:SetAtlas("ui-castingbar-background");
-    progressBg:SetPoint("TOPLEFT", -1, 1);
-    progressBg:SetPoint("BOTTOMRIGHT", 1, -1);
+    progressBg:SetPoint("TOPLEFT", -3, 3);
+    progressBg:SetPoint("BOTTOMRIGHT", 3, -3);
 
     local progressBorder = progressBar:CreateTexture(nil, "ARTWORK", nil, 4);
     progressBorder:SetAtlas("ui-castingbar-frame");
-    progressBorder:SetPoint("TOPLEFT", -2, 2);
-    progressBorder:SetPoint("BOTTOMRIGHT", 2, -2);
+    progressBorder:SetPoint("TOPLEFT", -5, 5);
+    progressBorder:SetPoint("BOTTOMRIGHT", 5, -5);
 
     progressText = progressBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall");
     progressText:SetAllPoints();

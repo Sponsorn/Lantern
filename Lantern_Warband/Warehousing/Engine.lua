@@ -19,12 +19,14 @@ local WARBANK_TAB_START = Enum.BagIndex.AccountBankTab_1;
 local WARBANK_TAB_END = Enum.BagIndex.AccountBankTab_5;
 
 -- Timing
-local POLL_INTERVAL = 0.05;  -- 50ms polling
-local BATCH_SETTLE_DELAY = 0.3;   -- delay after batch moves confirm before re-scanning
-local MOVE_TIMEOUT_BASE = 2.0;    -- base timeout per batch
-local MOVE_TIMEOUT_PER_ITEM = 0.2; -- extra time per individual move in batch
-local MAX_MOVES_PER_BATCH = 10;    -- max cursor moves per batch (prevents mass-locking)
-local MAX_OP_RETRIES = 3;          -- max retries per operation before permanent failure
+local SAFETY_POLL_INTERVAL = 0.5;         -- 500ms fallback poll (events are primary)
+local BATCH_SETTLE_DELAY = 0.3;            -- delay after batch moves confirm before re-scanning
+local MOVE_TIMEOUT_BASE = 5.0;             -- base timeout per batch (generous for warbank cross-realm)
+local MOVE_TIMEOUT_PER_ITEM = 0.2;         -- extra time per individual move in batch
+local USE_CONTAINER_CHECK_DELAY = 0.2;     -- detect silent UseContainerItem failures
+local MAX_MOVES_PER_BATCH = 10;            -- max cursor moves per batch (prevents mass-locking)
+local MAX_OP_RETRIES = 3;                  -- max retries per operation before permanent failure
+local MAX_STALLS = 5;                      -- max stall cycles before failing remaining ops
 
 -- Internal state
 Engine.state = STATE_IDLE;
@@ -32,6 +34,8 @@ Engine.queue = {};
 Engine.callbacks = nil;
 Engine.eventFrame = nil;
 Engine.pollTimer = nil;
+Engine.safetyPollTimer = nil;
+Engine.useContainerCheckTimer = nil;
 Engine.results = {};
 Engine.pendingMoves = {};
 Engine.batchStartTime = 0;
@@ -46,9 +50,13 @@ local function ensureEventFrame()
 
     Engine.eventFrame = CreateFrame("Frame");
     Engine.eventFrame:Hide();
-    Engine.eventFrame:SetScript("OnEvent", function(_, event)
+    Engine.eventFrame:SetScript("OnEvent", function(_, event, ...)
         if (event == "BANKFRAME_CLOSED") then
             Engine:Stop("Bank closed");
+        elseif (event == "ITEM_LOCK_CHANGED") then
+            Engine:OnItemLockChanged(...);
+        elseif (event == "BAG_UPDATE") then
+            Engine:OnBagUpdate(...);
         end
     end);
 end
@@ -65,10 +73,30 @@ local function unregisterEvents()
     Engine.eventFrame:Hide();
 end
 
-local function cancelPollTimer()
+local function registerMoveEvents()
+    if (not Engine.eventFrame) then return; end
+    Engine.eventFrame:RegisterEvent("ITEM_LOCK_CHANGED");
+    Engine.eventFrame:RegisterEvent("BAG_UPDATE");
+end
+
+local function unregisterMoveEvents()
+    if (not Engine.eventFrame) then return; end
+    Engine.eventFrame:UnregisterEvent("ITEM_LOCK_CHANGED");
+    Engine.eventFrame:UnregisterEvent("BAG_UPDATE");
+end
+
+local function cancelAllTimers()
     if (Engine.pollTimer) then
         Engine.pollTimer:Cancel();
         Engine.pollTimer = nil;
+    end
+    if (Engine.safetyPollTimer) then
+        Engine.safetyPollTimer:Cancel();
+        Engine.safetyPollTimer = nil;
+    end
+    if (Engine.useContainerCheckTimer) then
+        Engine.useContainerCheckTimer:Cancel();
+        Engine.useContainerCheckTimer = nil;
     end
 end
 
@@ -110,7 +138,8 @@ function Engine:Start(operations, callbacks)
 end
 
 function Engine:Stop(reason)
-    cancelPollTimer();
+    cancelAllTimers();
+    unregisterMoveEvents();
     unregisterEvents();
     ClearCursor();
 
@@ -249,58 +278,78 @@ function Engine:ProcessBatch()
                         -- Different item, skip
                     else
                         local moveCount = math.min(itemInfo.stackCount, remaining);
+                        local isFullStackDeposit = (op.mode == "deposit" and moveCount >= itemInfo.stackCount);
 
-                        -- Find target slot (accounting for already-used slots in this batch)
-                        local targetBag, targetSlot, targetAvailable =
-                            self:FindTargetSlot(targetStart, targetEnd, op.itemID, self.usedTargetSlots);
+                        if (isFullStackDeposit) then
+                            -- Full-stack deposit: use UseContainerItem (server auto-targets)
+                            C_Container.UseContainerItem(srcSlot.bag, srcSlot.slot, nil, Enum.BankType.Account, false);
 
-                        if (targetBag) then
-                            if (targetAvailable < moveCount) then
-                                moveCount = targetAvailable;
-                            end
+                            anyMoveMade = true;
+                            batchMoves = batchMoves + 1;
+                            remaining = remaining - moveCount;
 
-                            -- Execute the move: PickupContainerItem for full stacks/single items,
-                            -- SplitContainerItem for partial splits only
-                            if (moveCount >= itemInfo.stackCount) then
-                                C_Container.PickupContainerItem(srcSlot.bag, srcSlot.slot);
-                            else
-                                C_Container.SplitContainerItem(srcSlot.bag, srcSlot.slot, moveCount);
-                            end
-                            if (GetCursorInfo() == "item") then
-                                C_Container.PickupContainerItem(targetBag, targetSlot);
-                                if (GetCursorInfo() ~= "item") then
-                                    -- Move initiated successfully
-                                    anyMoveMade = true;
-                                    batchMoves = batchMoves + 1;
-                                    remaining = remaining - moveCount;
+                            table.insert(self.pendingMoves, {
+                                sourceBag = srcSlot.bag,
+                                sourceSlot = srcSlot.slot,
+                                expectedEndQty = 0,
+                                opIndex = opIndex,
+                                moveCount = moveCount,
+                                itemID = itemInfo.itemID,
+                                method = "use",
+                                locked = false,
+                            });
+                        else
+                            -- Partial deposits, all withdrawals: cursor-based
+                            local targetBag, targetSlot, targetAvailable =
+                                self:FindTargetSlot(targetStart, targetEnd, op.itemID, self.usedTargetSlots);
 
-                                    -- Track this pending move
-                                    local expectedEndQty = math.max(0, itemInfo.stackCount - moveCount);
-                                    table.insert(self.pendingMoves, {
-                                        sourceBag = srcSlot.bag,
-                                        sourceSlot = srcSlot.slot,
-                                        expectedEndQty = expectedEndQty,
-                                        opIndex = opIndex,
-                                        moveCount = moveCount,
-                                    });
+                            if (targetBag) then
+                                if (targetAvailable < moveCount) then
+                                    moveCount = targetAvailable;
+                                end
 
-                                    -- Mark target slot as used
-                                    self.usedTargetSlots[slotKey(targetBag, targetSlot)] = true;
+                                if (moveCount >= itemInfo.stackCount) then
+                                    C_Container.PickupContainerItem(srcSlot.bag, srcSlot.slot);
                                 else
-                                    -- Placement rejected, clear cursor
+                                    C_Container.SplitContainerItem(srcSlot.bag, srcSlot.slot, moveCount);
+                                end
+                                if (GetCursorInfo() == "item") then
+                                    C_Container.PickupContainerItem(targetBag, targetSlot);
+                                    if (GetCursorInfo() ~= "item") then
+                                        -- Move initiated successfully
+                                        anyMoveMade = true;
+                                        batchMoves = batchMoves + 1;
+                                        remaining = remaining - moveCount;
+
+                                        local expectedEndQty = math.max(0, itemInfo.stackCount - moveCount);
+                                        table.insert(self.pendingMoves, {
+                                            sourceBag = srcSlot.bag,
+                                            sourceSlot = srcSlot.slot,
+                                            expectedEndQty = expectedEndQty,
+                                            opIndex = opIndex,
+                                            moveCount = moveCount,
+                                            itemID = itemInfo.itemID,
+                                            method = "cursor",
+                                            locked = false,
+                                        });
+
+                                        self.usedTargetSlots[slotKey(targetBag, targetSlot)] = true;
+                                    else
+                                        -- Placement rejected, clear cursor
+                                        ClearCursor();
+                                        opHadFailure = true;
+                                        break;
+                                    end
+                                else
                                     ClearCursor();
-                                    opHadFailure = true;
-                                    break;
+                                    -- Source locked mid-split, retry later
+                                    allOperationsHandled = false;
                                 end
                             else
-                                ClearCursor();
-                                -- Source locked mid-split, retry later
-                                allOperationsHandled = false;
+                                -- No target space available
+                                opHadFailure = true;
+                                break;
                             end
-                        else
-                            -- No target space available
-                            opHadFailure = true;
-                            break;
                         end
                     end
                 end
@@ -340,15 +389,17 @@ function Engine:ProcessBatch()
         self.stallCount = 0;
         -- Store batch size for dynamic timeout calculation
         self.batchMoveCount = #self.pendingMoves;
-        -- Start polling for move completion
-        self:StartPolling();
+        -- Register events for move confirmation + safety fallback
+        registerMoveEvents();
+        self:StartSafetyPoll();
+        self:ScheduleUseContainerCheck();
     elseif (not allOperationsHandled) then
         -- No moves succeeded but operations remain (items locked/unavailable)
         -- Only count as stall if no operation is actively retrying due to failure
         if (not anyOpRetrying) then
             self.stallCount = (self.stallCount or 0) + 1;
         end
-        if (self.stallCount >= 3 and not anyOpRetrying) then
+        if (self.stallCount >= MAX_STALLS and not anyOpRetrying) then
             -- Stalled too many times, fail remaining operations
             for opIndex, op in ipairs(self.queue) do
                 if (not self.operationsDone[opIndex]) then
@@ -364,9 +415,11 @@ function Engine:ProcessBatch()
             end
             self:Complete();
         else
-            -- Retry after a short delay
-            cancelPollTimer();
-            self.pollTimer = C_Timer.NewTimer(0.3, function()
+            -- Retry with exponential backoff
+            local backoffDelay = BATCH_SETTLE_DELAY * math.pow(2, (self.stallCount or 1) - 1);
+            backoffDelay = math.min(backoffDelay, 5.0);
+            cancelAllTimers();
+            self.pollTimer = C_Timer.NewTimer(backoffDelay, function()
                 self.pollTimer = nil;
                 if (self.state ~= STATE_RUNNING) then return; end
                 self:ProcessBatch();
@@ -378,60 +431,83 @@ function Engine:ProcessBatch()
     end
 end
 
-function Engine:StartPolling()
-    cancelPollTimer();
-    self.pollTimer = C_Timer.NewTimer(POLL_INTERVAL, function()
-        self.pollTimer = nil;
-        if (self.state ~= STATE_RUNNING) then return; end
-        self:PollMoves();
-    end);
-end
-
-function Engine:PollMoves()
+function Engine:OnItemLockChanged(bagOrSlotIndex, slotIndex)
     if (self.state ~= STATE_RUNNING) then return; end
+    if (not slotIndex) then return; end  -- Equipment slot, not a bag slot
 
-    -- Check timeout (scales with batch size for non-stacked items)
-    local moveTimeout = MOVE_TIMEOUT_BASE + (self.batchMoveCount or 0) * MOVE_TIMEOUT_PER_ITEM;
-    local elapsed = GetTime() - self.batchStartTime;
-    if (elapsed > moveTimeout) then
-        -- Timeout: check each remaining move one last time
-        for _, move in ipairs(self.pendingMoves) do
+    for _, move in ipairs(self.pendingMoves) do
+        if (move.sourceBag == bagOrSlotIndex and move.sourceSlot == slotIndex) then
             local info = C_Container.GetContainerItemInfo(move.sourceBag, move.sourceSlot);
-            local currentQty = info and info.stackCount or 0;
-            if (currentQty <= move.expectedEndQty) then
-                -- Move did complete, count it
-                self.totalMoved[move.opIndex] = (self.totalMoved[move.opIndex] or 0) + move.moveCount;
-                if (self.callbacks and self.callbacks.onMoveComplete) then
-                    self.callbacks.onMoveComplete(move.opIndex, move.moveCount);
-                end
+            if (info and info.isLocked) then
+                move.locked = true;
+            else
+                self:CheckMoveCompletion(move);
             end
         end
-        self.pendingMoves = {};
-        -- Settle before re-scanning to let game state stabilize
-        cancelPollTimer();
-        self.pollTimer = C_Timer.NewTimer(BATCH_SETTLE_DELAY, function()
-            self.pollTimer = nil;
-            if (self.state ~= STATE_RUNNING) then return; end
-            self:OnBatchComplete();
-        end);
+    end
+
+    self:CheckAllMovesResolved();
+end
+
+function Engine:OnBagUpdate(bagID)
+    if (self.state ~= STATE_RUNNING) then return; end
+
+    for _, move in ipairs(self.pendingMoves) do
+        if (move.sourceBag == bagID) then
+            self:CheckMoveCompletion(move);
+        end
+    end
+
+    self:CheckAllMovesResolved();
+end
+
+function Engine:CheckMoveCompletion(move)
+    if (move.confirmed or move.failed) then return; end
+
+    local info = C_Container.GetContainerItemInfo(move.sourceBag, move.sourceSlot);
+    local currentQty = info and info.stackCount or 0;
+    local isLocked = info and info.isLocked or false;
+    local currentItemID = info and info.itemID or nil;
+
+    -- Don't confirm while locked
+    if (isLocked) then return; end
+
+    -- Identity check: different item now occupies the slot
+    if (info and currentItemID ~= move.itemID) then
+        if (move.expectedEndQty == 0) then
+            move.confirmed = true;   -- Full stack moved, different item now in slot
+        else
+            move.failed = true;      -- Partial split lost, wrong item replaced it
+        end
         return;
     end
 
-    -- Check each pending move
+    -- Standard check: unlocked and quantity reduced to expected or below
+    if (currentQty <= move.expectedEndQty) then
+        move.confirmed = true;
+        return;
+    end
+
+    -- Was locked before but now unlocked with unchanged quantity = move failed
+    if (move.locked and currentQty > move.expectedEndQty) then
+        move.failed = true;
+        return;
+    end
+end
+
+function Engine:CheckAllMovesResolved()
+    if (self.state ~= STATE_RUNNING) then return; end
+
     local stillPending = {};
     for _, move in ipairs(self.pendingMoves) do
-        local info = C_Container.GetContainerItemInfo(move.sourceBag, move.sourceSlot);
-        local currentQty = info and info.stackCount or 0;
-        local isLocked = info and info.isLocked or false;
-
-        if (currentQty <= move.expectedEndQty and not isLocked) then
-            -- Move completed, track amount moved
+        if (move.confirmed) then
             self.totalMoved[move.opIndex] = (self.totalMoved[move.opIndex] or 0) + move.moveCount;
             if (self.callbacks and self.callbacks.onMoveComplete) then
                 self.callbacks.onMoveComplete(move.opIndex, move.moveCount);
             end
+        elseif (move.failed) then
+            -- Don't credit; will retry in next batch
         else
-            -- Still pending
             table.insert(stillPending, move);
         end
     end
@@ -439,17 +515,81 @@ function Engine:PollMoves()
     self.pendingMoves = stillPending;
 
     if (#stillPending == 0) then
-        -- All moves confirmed; settle before re-scanning to let game state stabilize
-        cancelPollTimer();
+        -- All resolved; settle then proceed
+        cancelAllTimers();
+        unregisterMoveEvents();
         self.pollTimer = C_Timer.NewTimer(BATCH_SETTLE_DELAY, function()
             self.pollTimer = nil;
             if (self.state ~= STATE_RUNNING) then return; end
             self:OnBatchComplete();
         end);
-    else
-        -- Keep polling
-        self:StartPolling();
     end
+end
+
+function Engine:StartSafetyPoll()
+    self.safetyPollTimer = C_Timer.NewTicker(SAFETY_POLL_INTERVAL, function()
+        if (self.state ~= STATE_RUNNING) then return; end
+
+        -- Check timeout (scales with batch size)
+        local moveTimeout = MOVE_TIMEOUT_BASE + (self.batchMoveCount or 0) * MOVE_TIMEOUT_PER_ITEM;
+        local elapsed = GetTime() - self.batchStartTime;
+        if (elapsed > moveTimeout) then
+            -- Force-resolve all remaining moves
+            for _, move in ipairs(self.pendingMoves) do
+                if (not move.confirmed and not move.failed) then
+                    self:CheckMoveCompletion(move);
+                    if (not move.confirmed and not move.failed) then
+                        local info = C_Container.GetContainerItemInfo(move.sourceBag, move.sourceSlot);
+                        local currentQty = info and info.stackCount or 0;
+                        if (currentQty <= move.expectedEndQty) then
+                            move.confirmed = true;
+                        else
+                            move.failed = true;
+                        end
+                    end
+                end
+            end
+            self:CheckAllMovesResolved();
+            return;
+        end
+
+        -- Normal fallback check
+        for _, move in ipairs(self.pendingMoves) do
+            self:CheckMoveCompletion(move);
+        end
+        self:CheckAllMovesResolved();
+    end);
+end
+
+function Engine:ScheduleUseContainerCheck()
+    -- Only schedule if any move uses the UseContainerItem method
+    local hasUseMethod = false;
+    for _, move in ipairs(self.pendingMoves) do
+        if (move.method == "use") then
+            hasUseMethod = true;
+            break;
+        end
+    end
+
+    if (not hasUseMethod) then return; end
+
+    self.useContainerCheckTimer = C_Timer.NewTimer(USE_CONTAINER_CHECK_DELAY, function()
+        self.useContainerCheckTimer = nil;
+        if (self.state ~= STATE_RUNNING) then return; end
+
+        for _, move in ipairs(self.pendingMoves) do
+            if (move.method == "use" and not move.confirmed and not move.failed) then
+                local info = C_Container.GetContainerItemInfo(move.sourceBag, move.sourceSlot);
+                -- Only mark as failed if item is still there, unlocked, same item, unchanged qty
+                -- (proves UseContainerItem truly did nothing, e.g. warbank full)
+                if (info and not info.isLocked and info.itemID == move.itemID and info.stackCount > move.expectedEndQty) then
+                    move.failed = true;
+                end
+                -- If item is locked (in transit), gone, or qty reduced: move is in progress, leave pending
+            end
+        end
+        self:CheckAllMovesResolved();
+    end);
 end
 
 function Engine:OnBatchComplete()
@@ -506,7 +646,7 @@ function Engine:OnBatchComplete()
 
     if (needsMoreWork) then
         -- Re-scan for fresh source slots before next batch
-        cancelPollTimer();
+        cancelAllTimers();
         self.pollTimer = C_Timer.NewTimer(0.15, function()
             self.pollTimer = nil;
             if (self.state ~= STATE_RUNNING) then return; end
@@ -553,7 +693,8 @@ function Engine:OnBatchComplete()
 end
 
 function Engine:Complete()
-    cancelPollTimer();
+    cancelAllTimers();
+    unregisterMoveEvents();
     unregisterEvents();
 
     self.state = STATE_COMPLETE;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1 - Unreleased
+- Change: Warehousing engine now uses event-driven move confirmation instead of polling, for faster and more reliable item transfers
+- Change: Full-stack deposits use Blizzard's deposit API for improved reliability and automatic stacking
+- Fix: Items no longer get "frozen" when server-side moves complete between poll cycles
+- Fix: Silent deposit failures (e.g. warbank full) are now detected within 200ms
+- Change: More generous timeouts for warbank operations (5s base, up from 2s)
+- Change: Less aggressive stall detection with exponential backoff retry delays
+- Fix: Progress bar not updating during warbank deposits due to false failure detection on slow server responses
+- Fix: Progress bar fill extending outside its border frame
+
 ## 0.3.0b - 2026-02-01
 - Fix zip file not extracting as folder on macOS/Linux (GitHub issue #2)
 
