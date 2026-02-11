@@ -84,11 +84,13 @@ end
 
 local function SetProgress(successCount, max, failCount)
     if (not progressBar) then return; end
-    progressBar:SetMinMaxValues(0, max or 1);
-    progressBar:SetValue(successCount or 0);
+    local total = max or 1;
+    local value = successCount or 0;
+    progressBar:SetMinMaxValues(0, total);
+    progressBar:SetValue(value);
     -- Color: green normal, yellow if some failures, red if all failed
     if (failCount and failCount > 0) then
-        if ((successCount or 0) == 0) then
+        if (value == 0) then
             progressBar:SetStatusBarColor(0.8, 0.2, 0.2, 0.9);
         else
             progressBar:SetStatusBarColor(0.9, 0.7, 0.2, 0.9);
@@ -205,6 +207,7 @@ local function RunOperations(operations, actionLabel)
             operationsRunning = false;
             SetActionButtonsEnabled(true);
             SetProgress(movedItems, totalItems, failedOps);
+
             UpdateStatus(formatStatus());
             -- Auto-hide progress bar after 4 seconds
             progressResetTimer = C_Timer.NewTimer(4, function()
@@ -216,6 +219,7 @@ local function RunOperations(operations, actionLabel)
             operationsRunning = false;
             SetActionButtonsEnabled(true);
             SetProgress(movedItems, totalItems, failedOps);
+
             UpdateStatus(string.format("Stopped: %s (%d/%d)", reason, movedItems, totalItems));
             -- Auto-hide progress bar after 4 seconds
             progressResetTimer = C_Timer.NewTimer(4, function()
@@ -489,6 +493,7 @@ local function CreatePanel()
     progressBar:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 14, 14);
     progressBar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -14, 14);
     progressBar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8");
+    progressBar:GetStatusBarTexture():SetAtlas("ui-castingbar-filling-standard");
     progressBar:GetStatusBarTexture():SetDrawLayer("BORDER");
     progressBar:SetStatusBarColor(0.4, 0.8, 0.4, 0.9);
     progressBar:SetMinMaxValues(0, 1);
