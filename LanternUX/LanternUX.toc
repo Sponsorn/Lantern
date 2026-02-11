@@ -1,0 +1,10 @@
+## Interface: 120000, 120001
+## Title: LanternUX
+## Notes: Custom settings panel for Lantern addons.
+## Author: Dede in-game / Sponsorn on curseforge & github
+## Version: 0.1.0
+## Dependencies: Lantern
+## DefaultState: enabled
+
+Widgets.lua
+SettingsPanel.lua
