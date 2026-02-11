@@ -1,7 +1,15 @@
 # Changelog
 
+## 0.4.30 - 2026-02-11
+- Change: Cursor Ring preview is now a persistent toggle at the top of options for real-time editing
+- Change: Cursor Ring preview continuously loops cast/GCD animations and auto-disables when closing settings
+- Change: Cursor Ring all sub-controls become interactive during preview for easy tweaking
+- Change: Cursor Ring sliders accept precise decimal values typed into the input box
+- Change: Cursor Ring ring size max reduced to 80 for sharper visuals
+- Fix: Cursor Ring no longer pollutes /fstack output
+
 ## 0.4.29 - 2026-02-09
-- Add: Cursor Ring module (disabled by default) - customizable ring(s) around your cursor with cast/GCD indicators and optional mouse trail 
+- Add: Cursor Ring module (disabled by default) - customizable ring(s) around your cursor with cast/GCD indicators and optional mouse trail
     - Cursor Ring supports two independent rings with adjustable size, shape, and color
     - Cursor Ring cast effect with three styles (segments, fill, swipe)
     - Cursor Ring GCD indicator that can display simultaneously with cast effects

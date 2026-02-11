@@ -87,6 +87,7 @@ local gcdActive = false;
 local castTicker = nil;
 local gcdDelayTimer = nil;
 local previewMode = false;
+local previewLoopTimer = nil;
 local fakeCastTimer = nil;
 local fakeGCDTimer = nil;
 
@@ -213,13 +214,17 @@ local function StopCastTicker()
     if (frames.castSegments) then
         for i = 1, CAST_SEGMENTS do
             local seg = frames.castSegments[i];
-            if (seg) then seg:SetVertexColor(1, 1, 1, 0); end
+            if (seg) then
+                seg:SetVertexColor(1, 1, 1, 0);
+                seg:Hide();
+            end
         end
     end
     -- Clear fill overlay
     if (frames.castOverlay) then
         frames.castOverlay:SetAlpha(0);
         frames.castOverlay:SetSize(1, 1);
+        frames.castOverlay:Hide();
     end
     -- Hide cast cooldown (swipe style)
     if (frames.castCooldown) then
@@ -255,13 +260,19 @@ local function StartCastTicker()
             for i = 1, CAST_SEGMENTS do
                 local seg = frames.castSegments[i];
                 if (seg) then
-                    seg:SetVertexColor(c.r, c.g, c.b, visible and (i <= lit) and 1 or 0);
+                    local show = visible and (i <= lit);
+                    seg:SetShown(show);
+                    if (show) then seg:SetVertexColor(c.r, c.g, c.b, 1); end
                 end
             end
         elseif (db.castStyle == "fill" and frames.castOverlay) then
-            frames.castOverlay:SetAlpha(visible and progress > 0 and 1 or 0);
-            local sz = db.ring1Size * max(progress, 0.01);
-            frames.castOverlay:SetSize(sz, sz);
+            local show = visible and progress > 0;
+            frames.castOverlay:SetShown(show);
+            if (show) then
+                frames.castOverlay:SetAlpha(1);
+                local sz = db.ring1Size * max(progress, 0.01);
+                frames.castOverlay:SetSize(sz, sz);
+            end
         end
     end);
 end
@@ -473,8 +484,26 @@ end
 
 function module:SetPreviewMode(enabled)
     previewMode = enabled;
+
+    if (previewLoopTimer) then
+        previewLoopTimer:Cancel();
+        previewLoopTimer = nil;
+    end
+
+    if (enabled) then
+        self:TestBoth();
+        previewLoopTimer = C_Timer.NewTicker(3, function()
+            if (not previewMode) then return; end
+            self:TestBoth();
+        end);
+    end
+
     UpdateVisibility();
     UpdateTrailVisibility();
+end
+
+function module:IsPreviewActive()
+    return previewMode;
 end
 
 function module:TestCast(duration)
@@ -515,13 +544,19 @@ function module:TestCast(duration)
                 for i = 1, CAST_SEGMENTS do
                     local seg = frames.castSegments[i];
                     if (seg) then
-                        seg:SetVertexColor(c.r, c.g, c.b, (i <= lit) and 1 or 0);
+                        local show = (i <= lit);
+                        seg:SetShown(show);
+                        if (show) then seg:SetVertexColor(c.r, c.g, c.b, 1); end
                     end
                 end
             elseif (db.castStyle == "fill" and frames.castOverlay) then
-                frames.castOverlay:SetAlpha(progress > 0 and 1 or 0);
-                local sz = db.ring1Size * max(progress, 0.01);
-                frames.castOverlay:SetSize(sz, sz);
+                local show = progress > 0;
+                frames.castOverlay:SetShown(show);
+                if (show) then
+                    frames.castOverlay:SetAlpha(1);
+                    local sz = db.ring1Size * max(progress, 0.01);
+                    frames.castOverlay:SetSize(sz, sz);
+                end
             end
         end);
     end
@@ -599,6 +634,7 @@ local function CreateCastSegments(parent)
         seg:SetVertexColor(1, 1, 1, 0);
         seg:SetTexCoord(TEXCOORD_HALF, 1 - TEXCOORD_HALF, TEXCOORD_HALF, 1 - TEXCOORD_HALF);
         SetTexProps(seg);
+        seg:Hide();
         segments[i] = seg;
     end
 
@@ -616,16 +652,18 @@ local function CreateCastOverlay(parent)
     overlay:SetPoint("CENTER");
     overlay:SetTexCoord(TEXCOORD_HALF, 1 - TEXCOORD_HALF, TEXCOORD_HALF, 1 - TEXCOORD_HALF);
     SetTexProps(overlay);
+    overlay:Hide();
     return overlay;
 end
 
 local function CreateTrailFrame()
     if (frames.trailContainer) then return; end
 
-    local container = CreateFrame("Frame", nil, UIParent);
+    local container = CreateFrame("Frame", "LanternCursorRingTrail", UIParent);
     container:SetSize(1, 1);
     container:SetFrameStrata("TOOLTIP");
     container:SetFrameLevel(1);
+    container:EnableMouse(false);
     container:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0);
     frames.trailContainer = container;
 
@@ -698,7 +736,7 @@ local function CreateFrames()
     if (frames.container) then return; end
 
     local containerSize = GetContainerSize();
-    local container = CreateFrame("Frame", nil, UIParent);
+    local container = CreateFrame("Frame", "LanternCursorRing", UIParent);
     container:SetSize(containerSize, containerSize);
     container:SetFrameStrata("TOOLTIP");
     container:SetIgnoreParentScale(false);
@@ -717,7 +755,7 @@ local function CreateFrames()
 
     -- GCD Cooldown
     local gcdSize = db.ring1Size + db.gcdOffset * 2;
-    local gcdCd = CreateFrame("Cooldown", nil, container, "CooldownFrameTemplate");
+    local gcdCd = CreateFrame("Cooldown", nil, container);
     gcdCd:SetSize(gcdSize, gcdSize);
     gcdCd:SetPoint("CENTER");
     SetupCooldownFrame(gcdCd, container);
@@ -733,7 +771,7 @@ local function CreateFrames()
 
     -- Cast Cooldown (swipe style)
     local castSize = db.ring1Size + db.gcdOffset * 2 + db.castOffset * 2;
-    local castCd = CreateFrame("Cooldown", nil, container, "CooldownFrameTemplate");
+    local castCd = CreateFrame("Cooldown", nil, container);
     castCd:SetSize(castSize, castSize);
     castCd:SetPoint("CENTER");
     SetupCooldownFrame(castCd, container);
@@ -770,6 +808,10 @@ local function CreateFrames()
         alphaTimer = alphaTimer + elapsed;
         if (alphaTimer >= ALPHA_CHECK_INTERVAL) then
             alphaTimer = 0;
+            -- Auto-disable preview when settings panel closes
+            if (previewMode and SettingsPanel and not SettingsPanel:IsShown()) then
+                module:SetPreviewMode(false);
+            end
             UpdateVisibility();
         end
     end);
@@ -799,6 +841,7 @@ local function DestroyFrames()
     StopCastTicker();
 
     if (gcdDelayTimer) then gcdDelayTimer:Cancel(); gcdDelayTimer = nil; end
+    if (previewLoopTimer) then previewLoopTimer:Cancel(); previewLoopTimer = nil; end
     if (fakeCastTimer) then fakeCastTimer:Cancel(); fakeCastTimer = nil; end
     if (fakeGCDTimer) then fakeGCDTimer:Cancel(); fakeGCDTimer = nil; end
 

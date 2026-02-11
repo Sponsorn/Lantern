@@ -55,6 +55,11 @@ local function isDisabled()
     return not (m and m.enabled);
 end
 
+local function isPreviewActive()
+    local m = cursorRingModule();
+    return m and m.IsPreviewActive and m:IsPreviewActive() or false;
+end
+
 local function refreshModule(method, ...)
     local m = cursorRingModule();
     if (m and m[method]) then
@@ -100,6 +105,22 @@ function Lantern:BuildCursorRingOptions()
             else
                 Lantern:DisableModule("CursorRing");
             end
+        end,
+    };
+
+    -- Preview toggle
+    args.preview = {
+        order = 2,
+        type = "toggle",
+        name = "Preview",
+        desc = "Show all visual elements on the cursor for real-time editing. Automatically disables when the settings panel is closed.",
+        width = "full",
+        disabled = isDisabled,
+        get = function()
+            return isPreviewActive();
+        end,
+        set = function(_, val)
+            refreshModule("SetPreviewMode", val);
         end,
     };
 
@@ -185,7 +206,7 @@ function Lantern:BuildCursorRingOptions()
         width = "normal",
         values = shapeValues,
         sorting = shapeSorting,
-        disabled = function() return isDisabled() or not cursorRingDB().ring1Enabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
         get = function() return cursorRingDB().ring1Shape; end,
         set = function(_, val)
             cursorRingDB().ring1Shape = val;
@@ -201,7 +222,7 @@ function Lantern:BuildCursorRingOptions()
         name = "Color",
         desc = "Ring 1 color.",
         width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().ring1Enabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
         get = function()
             local c = cursorRingDB().ring1Color;
             return c.r, c.g, c.b;
@@ -217,10 +238,10 @@ function Lantern:BuildCursorRingOptions()
         order = 13.00,
         type = "range",
         name = "Size",
-        desc = "Ring 1 size in pixels.",
+        desc = "Ring 1 size in pixels. Type a value in the input box for finer precision.",
         width = "double",
-        min = 16, max = 256, step = 2,
-        disabled = function() return isDisabled() or not cursorRingDB().ring1Enabled; end,
+        min = 16, max = 80, step = 0.01, bigStep = 2,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
         get = function() return cursorRingDB().ring1Size; end,
         set = function(_, val)
             cursorRingDB().ring1Size = val;
@@ -259,7 +280,7 @@ function Lantern:BuildCursorRingOptions()
         width = "normal",
         values = shapeValues,
         sorting = shapeSorting,
-        disabled = function() return isDisabled() or not cursorRingDB().ring2Enabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
         get = function() return cursorRingDB().ring2Shape; end,
         set = function(_, val)
             cursorRingDB().ring2Shape = val;
@@ -273,7 +294,7 @@ function Lantern:BuildCursorRingOptions()
         name = "Color",
         desc = "Ring 2 color.",
         width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().ring2Enabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
         get = function()
             local c = cursorRingDB().ring2Color;
             return c.r, c.g, c.b;
@@ -289,10 +310,10 @@ function Lantern:BuildCursorRingOptions()
         order = 23.00,
         type = "range",
         name = "Size",
-        desc = "Ring 2 size in pixels.",
+        desc = "Ring 2 size in pixels. Type a value in the input box for finer precision.",
         width = "double",
-        min = 16, max = 256, step = 2,
-        disabled = function() return isDisabled() or not cursorRingDB().ring2Enabled; end,
+        min = 16, max = 80, step = 0.01, bigStep = 2,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
         get = function() return cursorRingDB().ring2Size; end,
         set = function(_, val)
             cursorRingDB().ring2Size = val;
@@ -327,7 +348,7 @@ function Lantern:BuildCursorRingOptions()
         name = "Color",
         desc = "Dot color.",
         width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().dotEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
         get = function()
             local c = cursorRingDB().dotColor;
             return c.r, c.g, c.b;
@@ -345,7 +366,7 @@ function Lantern:BuildCursorRingOptions()
         desc = "Dot size in pixels.",
         width = "normal",
         min = 2, max = 24, step = 1,
-        disabled = function() return isDisabled() or not cursorRingDB().dotEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
         get = function() return cursorRingDB().dotSize; end,
         set = function(_, val)
             cursorRingDB().dotSize = val;
@@ -380,7 +401,7 @@ function Lantern:BuildCursorRingOptions()
         width = "normal",
         values = castStyleValues,
         sorting = castStyleSorting,
-        disabled = function() return isDisabled() or not cursorRingDB().castEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
         get = function() return cursorRingDB().castStyle; end,
         set = function(_, val)
             cursorRingDB().castStyle = val;
@@ -394,7 +415,7 @@ function Lantern:BuildCursorRingOptions()
         name = "Color",
         desc = "Cast effect color.",
         width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().castEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
         get = function()
             local c = cursorRingDB().castColor;
             return c.r, c.g, c.b;
@@ -410,10 +431,10 @@ function Lantern:BuildCursorRingOptions()
         order = 33.00,
         type = "range",
         name = "Swipe Offset",
-        desc = "Pixel offset for the cast swipe ring outside the GCD ring. Only applies to Swipe style.",
+        desc = "Pixel offset for the cast swipe ring outside the GCD ring. Only applies to Swipe style. Type a value in the input box for finer precision.",
         width = "double",
-        min = 0, max = 32, step = 1,
-        disabled = function() return isDisabled() or not cursorRingDB().castEnabled or cursorRingDB().castStyle ~= "swipe"; end,
+        min = 0, max = 32, step = 0.01, bigStep = 0.5,
+        disabled = function() return isDisabled() or (not isPreviewActive() and (not cursorRingDB().castEnabled or cursorRingDB().castStyle ~= "swipe")); end,
         get = function() return cursorRingDB().castOffset; end,
         set = function(_, val)
             cursorRingDB().castOffset = val;
@@ -448,7 +469,7 @@ function Lantern:BuildCursorRingOptions()
         name = "Color",
         desc = "GCD swipe color.",
         width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().gcdEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
         get = function()
             local c = cursorRingDB().gcdColor;
             return c.r, c.g, c.b;
@@ -463,10 +484,10 @@ function Lantern:BuildCursorRingOptions()
         order = 42.01,
         type = "range",
         name = "Offset",
-        desc = "Pixel offset for the GCD ring outside Ring 1.",
+        desc = "Pixel offset for the GCD ring outside Ring 1. Type a value in the input box for finer precision.",
         width = "normal",
-        min = 0, max = 32, step = 1,
-        disabled = function() return isDisabled() or not cursorRingDB().gcdEnabled; end,
+        min = 0, max = 32, step = 0.01, bigStep = 0.5,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
         get = function() return cursorRingDB().gcdOffset; end,
         set = function(_, val)
             cursorRingDB().gcdOffset = val;
@@ -502,7 +523,7 @@ function Lantern:BuildCursorRingOptions()
         name = "Color",
         desc = "Trail color.",
         width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().trailEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
         get = function()
             local c = cursorRingDB().trailColor;
             return c.r, c.g, c.b;
@@ -519,60 +540,10 @@ function Lantern:BuildCursorRingOptions()
         desc = "How long trail points last before fading.",
         width = "normal",
         min = 0.1, max = 2.0, step = 0.05,
-        disabled = function() return isDisabled() or not cursorRingDB().trailEnabled; end,
+        disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
         get = function() return cursorRingDB().trailDuration; end,
         set = function(_, val)
             cursorRingDB().trailDuration = val;
-        end,
-    };
-
-    ---------------------------------------------------------------------------
-    -- Preview
-    ---------------------------------------------------------------------------
-    args.previewHeader = Layout.header(60, "Preview");
-
-    args.previewDesc = Layout.description(60.5, "Use these buttons to test the cast and GCD animations without being in combat.");
-
-    args.testCast = {
-        order = 61.00,
-        type = "execute",
-        name = "Test Cast",
-        desc = "Simulate a 2.5 second cast.",
-        width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().castEnabled; end,
-        func = function()
-            refreshModule("SetPreviewMode", true);
-            refreshModule("TestCast", 2.5);
-        end,
-    };
-
-    args.testGCD = {
-        order = 61.01,
-        type = "execute",
-        name = "Test GCD",
-        desc = "Simulate a 1.5 second GCD.",
-        width = "normal",
-        disabled = function() return isDisabled() or not cursorRingDB().gcdEnabled; end,
-        func = function()
-            refreshModule("SetPreviewMode", true);
-            refreshModule("TestGCD", 1.5);
-        end,
-    };
-    args.spacerPreview = Layout.spacer(61.99);
-
-    args.testBoth = {
-        order = 62.00,
-        type = "execute",
-        name = "Test Both",
-        desc = "Simulate a GCD + cast simultaneously.",
-        width = "normal",
-        disabled = function()
-            local db = cursorRingDB();
-            return isDisabled() or (not db.castEnabled and not db.gcdEnabled);
-        end,
-        func = function()
-            refreshModule("SetPreviewMode", true);
-            refreshModule("TestBoth");
         end,
     };
 
