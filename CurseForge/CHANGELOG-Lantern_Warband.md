@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.1 - Unreleased
+## 0.3.1 - 2026-02-11
 - Change: Warehousing engine now uses event-driven move confirmation instead of polling, for faster and more reliable item transfers
 - Change: Full-stack deposits use Blizzard's deposit API for improved reliability and automatic stacking
 - Fix: Items no longer get "frozen" when server-side moves complete between poll cycles
