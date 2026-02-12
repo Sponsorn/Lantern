@@ -1,6 +1,4 @@
 local ADDON_NAME = ...;
-local Lantern = _G.Lantern;
-if (not Lantern) then return; end
 
 -------------------------------------------------------------------------------
 -- Theme (shared reference from SettingsPanel)
@@ -12,8 +10,8 @@ local T = {
     border       = { 0.18, 0.18, 0.20, 1.0 },
     text         = { 0.72, 0.72, 0.72, 1.0 },
     textBright   = { 1.0,  1.0,  1.0,  1.0 },
-    textDim      = { 0.40, 0.40, 0.42, 1.0 },
-    sectionLabel = { 0.42, 0.42, 0.45, 1.0 },
+    textDim      = { 0.52, 0.52, 0.54, 1.0 },
+    sectionLabel = { 0.50, 0.50, 0.53, 1.0 },
     accent       = { 0.88, 0.56, 0.18, 1.0 },
     accentDim    = { 0.88, 0.56, 0.18, 0.40 },
     hover        = { 1.0,  1.0,  1.0,  0.04 },
@@ -86,6 +84,12 @@ local function AcquireWidget(widgetType, parent)
 end
 
 local function ReleaseAll()
+    -- Close any open dropdown
+    if (dropdownPopup and dropdownPopup:IsShown()) then
+        dropdownPopup:Hide();
+        dropdownPopup._owner = nil;
+    end
+
     for _, pool in pairs(pools) do
         for _, w in ipairs(pool) do
             w._inUse = false;
@@ -102,45 +106,180 @@ local function RegisterWidget(widgetType, widget)
 end
 
 -------------------------------------------------------------------------------
--- Toggle refresh (re-evaluates disabled + checked state on all active toggles)
+-- Shared helpers (must be above RefreshActiveWidgets and widget factories)
 -------------------------------------------------------------------------------
 
-local function RefreshActiveToggles()
+local function ClampValue(val, min, max, step)
+    if (step and step > 0) then
+        val = math.floor((val - min) / step + 0.5) * step + min;
+    end
+    return math.max(min, math.min(max, val));
+end
+
+local function FormatValue(val, isPercent)
+    if (isPercent) then
+        return string.format("%d%%", val * 100 + 0.5);
+    end
+    local s = string.format("%.2f", val);
+    s = s:gsub("%.?0+$", "");
+    return s;
+end
+
+-------------------------------------------------------------------------------
+-- Description panel API (hover updates the right-side description pane)
+-------------------------------------------------------------------------------
+
+local function ShowDescription(label, desc)
+    local dp = _G.LanternUX and _G.LanternUX.descPanel;
+    if (not dp or not desc or desc == "") then return; end
+    dp._title:SetText(label or "");
+    dp._text:SetText(desc);
+end
+
+local function ClearDescription()
+    local dp = _G.LanternUX and _G.LanternUX.descPanel;
+    if (not dp) then return; end
+    dp._title:SetText(dp._defaultTitle or "");
+    dp._text:SetText(dp._defaultDesc or "");
+end
+
+local function SetDefaultDescription(title, desc)
+    local dp = _G.LanternUX and _G.LanternUX.descPanel;
+    if (not dp) then return; end
+    dp._defaultTitle = title or "";
+    dp._defaultDesc = desc or "";
+    dp._title:SetText(title or "");
+    dp._text:SetText(desc or "");
+end
+
+-------------------------------------------------------------------------------
+-- Widget refresh (re-evaluates disabled + value state on all active widgets)
+-------------------------------------------------------------------------------
+
+local function EvalDisabled(w)
+    local disabled = false;
+    if (w._disabledFn) then
+        if (type(w._disabledFn) == "function") then
+            disabled = w._disabledFn();
+        else
+            disabled = w._disabledFn;
+        end
+    end
+    w._disabled = disabled;
+    return disabled;
+end
+
+local function RefreshActiveWidgets()
+    -- Toggles
     for _, w in ipairs(pools["toggle"] or {}) do
         if (w._inUse) then
-            -- Re-evaluate checked state
             if (w._getFn) then
                 w._checked = w._getFn();
                 if (w._checked) then w._mark:Show(); else w._mark:Hide(); end
             end
-
-            -- Re-evaluate disabled state
-            local disabled = false;
-            if (w._disabledFn) then
-                if (type(w._disabledFn) == "function") then
-                    disabled = w._disabledFn();
-                else
-                    disabled = w._disabledFn;
-                end
-            end
-            w._disabled = disabled;
-
+            local disabled = EvalDisabled(w);
             if (disabled) then
                 w._boxBorder:SetColorTexture(unpack(T.disabled));
                 w._boxInner:SetColorTexture(0.08, 0.08, 0.08, 1.0);
                 w._mark:SetColorTexture(unpack(T.accentDim));
                 w._label:SetTextColor(unpack(T.disabledText));
-                if (w._desc and w._desc:IsShown()) then w._desc:SetTextColor(unpack(T.disabled)); end
             else
                 w._boxBorder:SetColorTexture(unpack(T.checkBorder));
                 w._boxInner:SetColorTexture(unpack(T.checkInner));
                 w._mark:SetColorTexture(unpack(T.accent));
                 w._label:SetTextColor(unpack(T.text));
-                if (w._desc and w._desc:IsShown()) then w._desc:SetTextColor(unpack(T.textDim)); end
+            end
+        end
+    end
+
+    -- Ranges
+    for _, w in ipairs(pools["range"] or {}) do
+        if (w._inUse) then
+            if (w._getFn) then
+                w._value = ClampValue(w._getFn() or 0, w._min, w._max, w._step);
+                w._updateThumb();
+            end
+            local disabled = EvalDisabled(w);
+            if (disabled) then
+                w._label:SetTextColor(unpack(T.disabledText));
+                w._valueText:SetTextColor(unpack(T.disabled));
+                w._trackBg:SetColorTexture(unpack(T.disabled));
+                w._fill:SetColorTexture(unpack(T.accentDim));
+                w._thumbBg:SetColorTexture(unpack(T.disabled));
+            else
+                w._label:SetTextColor(unpack(T.text));
+                w._valueText:SetTextColor(unpack(T.textDim));
+                w._trackBg:SetColorTexture(unpack(T.trackBg));
+                w._fill:SetColorTexture(unpack(T.accent));
+                w._thumbBg:SetColorTexture(unpack(T.thumbBg));
+            end
+        end
+    end
+
+    -- Selects
+    for _, w in ipairs(pools["select"] or {}) do
+        if (w._inUse) then
+            if (w._getFn) then
+                w._currentKey = w._getFn();
+                local values = w._values;
+                if (type(values) == "function") then values = values(); end
+                w._btnText:SetText((w._currentKey and values[w._currentKey]) or "");
+            end
+            local disabled = EvalDisabled(w);
+            if (disabled) then
+                w._label:SetTextColor(unpack(T.disabledText));
+                w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+                w._btn:SetBackdropBorderColor(unpack(T.disabled));
+                w._btnText:SetTextColor(unpack(T.disabledText));
+                w._arrow:SetVertexColor(unpack(T.disabled));
+            else
+                w._label:SetTextColor(unpack(T.text));
+                w._btn:SetBackdropColor(unpack(T.buttonBg));
+                w._btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+                w._btnText:SetTextColor(unpack(T.buttonText));
+                w._arrow:SetVertexColor(unpack(T.textDim));
+            end
+        end
+    end
+
+    -- Executes
+    for _, w in ipairs(pools["execute"] or {}) do
+        if (w._inUse) then
+            local disabled = EvalDisabled(w);
+            if (disabled) then
+                w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+                w._btn:SetBackdropBorderColor(unpack(T.disabled));
+                w._btnText:SetTextColor(unpack(T.disabledText));
+            else
+                w._btn:SetBackdropColor(unpack(T.buttonBg));
+                w._btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+                w._btnText:SetTextColor(unpack(T.buttonText));
+            end
+        end
+    end
+
+    -- Colors
+    for _, w in ipairs(pools["color"] or {}) do
+        if (w._inUse) then
+            if (w._getFn) then
+                local r, g, b = w._getFn();
+                w._r, w._g, w._b = r or 1, g or 1, b or 1;
+                w._swatch:SetColorTexture(w._r, w._g, w._b);
+            end
+            local disabled = EvalDisabled(w);
+            if (disabled) then
+                w._label:SetTextColor(unpack(T.disabledText));
+                w._border:SetColorTexture(unpack(T.disabled));
+                w._swatch:SetVertexColor(0.5, 0.5, 0.5, 0.5);
+            else
+                w._label:SetTextColor(unpack(T.text));
+                w._border:SetColorTexture(unpack(T.checkBorder));
+                w._swatch:SetVertexColor(1, 1, 1, 1);
             end
         end
     end
 end
+
 
 -------------------------------------------------------------------------------
 -- Widget: Toggle
@@ -188,15 +327,6 @@ local function CreateToggle(parent)
     label:SetTextColor(unpack(T.text));
     w._label = label;
 
-    -- Description (below label, optional)
-    local desc = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
-    desc:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -4);
-    desc:SetJustifyH("LEFT");
-    desc:SetWordWrap(true);
-    desc:SetTextColor(unpack(T.textDim));
-    desc:Hide();
-    w._desc = desc;
-
     -- State
     w._checked = false;
     w._disabled = false;
@@ -206,11 +336,13 @@ local function CreateToggle(parent)
         if (not w._disabled) then
             boxBorder:SetColorTexture(unpack(T.checkHover));
         end
+        ShowDescription(w._label:GetText(), w._desc_text);
     end);
     frame:SetScript("OnLeave", function()
         if (not w._disabled) then
             boxBorder:SetColorTexture(unpack(T.checkBorder));
         end
+        ClearDescription();
     end);
 
     -- Click
@@ -225,8 +357,8 @@ local function CreateToggle(parent)
         if (w._onSet) then
             w._onSet(w._checked);
         end
-        -- Refresh all toggles so disabled states update immediately
-        C_Timer.After(0, RefreshActiveToggles);
+        -- Refresh all widgets so disabled states update immediately
+        C_Timer.After(0, RefreshActiveWidgets);
     end);
 
     RegisterWidget("toggle", w);
@@ -240,20 +372,10 @@ local function SetupToggle(w, parent, data, contentWidth)
     -- Label
     w._label:SetText(data.label or "");
 
-    -- Description
-    if (data.desc) then
-        w._desc:SetText(data.desc);
-        w._desc:SetWidth(contentWidth - TOGGLE_SIZE - TOGGLE_PAD);
-        w._desc:Show();
-        -- Calculate height: toggle row + desc text + padding
-        local descHeight = w._desc:GetStringHeight() or 14;
-        w.frame:SetHeight(TOGGLE_SIZE + 4 + descHeight + 4);
-        w.height = TOGGLE_SIZE + 4 + descHeight + 4;
-    else
-        w._desc:Hide();
-        w.frame:SetHeight(TOGGLE_SIZE + 4);
-        w.height = TOGGLE_SIZE + 4;
-    end
+    -- Description (shown in right panel on hover)
+    w._desc_text = data.desc;
+    w.frame:SetHeight(TOGGLE_SIZE + 4);
+    w.height = TOGGLE_SIZE + 4;
 
     -- Checked state
     local checked = false;
@@ -284,13 +406,11 @@ local function SetupToggle(w, parent, data, contentWidth)
         w._boxInner:SetColorTexture(0.08, 0.08, 0.08, 1.0);
         w._mark:SetColorTexture(unpack(T.accentDim));
         w._label:SetTextColor(unpack(T.disabledText));
-        if (w._desc) then w._desc:SetTextColor(unpack(T.disabled)); end
     else
         w._boxBorder:SetColorTexture(unpack(T.checkBorder));
         w._boxInner:SetColorTexture(unpack(T.checkInner));
         w._mark:SetColorTexture(unpack(T.accent));
         w._label:SetTextColor(unpack(T.text));
-        if (w._desc) then w._desc:SetTextColor(unpack(T.textDim)); end
     end
 
     return w;
@@ -416,6 +536,786 @@ local function SetupDivider(w, parent, data, contentWidth)
 end
 
 -------------------------------------------------------------------------------
+-- Widget: Range (Slider)
+-------------------------------------------------------------------------------
+
+local RANGE_HEIGHT     = 44;
+local TRACK_HEIGHT     = 6;
+local THUMB_SIZE       = 14;
+local RANGE_LABEL_H    = 18;
+local RANGE_TRACK_PAD  = 4;   -- gap between label row and track
+
+local function CreateRange(parent)
+    local w = AcquireWidget("range", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Frame", nil, parent);
+    frame:SetHeight(RANGE_HEIGHT);
+    frame:EnableMouse(true);
+    w.frame = frame;
+
+    -- Label (left)
+    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    label:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    w._label = label;
+
+    -- Value text (right)
+    local valueText = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    valueText:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0);
+    valueText:SetJustifyH("RIGHT");
+    valueText:SetTextColor(unpack(T.textDim));
+    w._valueText = valueText;
+
+    -- Description panel on hover
+    frame:SetScript("OnEnter", function()
+        ShowDescription(w._label:GetText(), w._desc_text);
+    end);
+    frame:SetScript("OnLeave", ClearDescription);
+
+    -- Track background
+    local trackFrame = CreateFrame("Frame", nil, frame);
+    trackFrame:SetHeight(TRACK_HEIGHT);
+    trackFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -(RANGE_LABEL_H + RANGE_TRACK_PAD));
+    trackFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -(RANGE_LABEL_H + RANGE_TRACK_PAD));
+    w._trackFrame = trackFrame;
+
+    local trackBg = trackFrame:CreateTexture(nil, "BACKGROUND");
+    trackBg:SetAllPoints();
+    trackBg:SetColorTexture(unpack(T.trackBg));
+    w._trackBg = trackBg;
+
+    -- Filled portion
+    local fill = trackFrame:CreateTexture(nil, "BORDER");
+    fill:SetHeight(TRACK_HEIGHT);
+    fill:SetPoint("TOPLEFT", trackFrame, "TOPLEFT");
+    fill:SetColorTexture(unpack(T.accent));
+    w._fill = fill;
+
+    -- Thumb
+    local thumb = CreateFrame("Frame", nil, trackFrame);
+    thumb:SetSize(THUMB_SIZE, THUMB_SIZE);
+    thumb:SetFrameLevel(trackFrame:GetFrameLevel() + 2);
+
+    local thumbBg = thumb:CreateTexture(nil, "ARTWORK");
+    thumbBg:SetAllPoints();
+    thumbBg:SetColorTexture(unpack(T.thumbBg));
+    w._thumb = thumb;
+    w._thumbBg = thumbBg;
+
+    -- State
+    w._value = 0;
+    w._min = 0;
+    w._max = 1;
+    w._step = 0.01;
+    w._isPercent = false;
+    w._disabled = false;
+    w._dragging = false;
+
+    -- Helper: update visuals from current value
+    local function UpdateThumbPosition()
+        local trackWidth = trackFrame:GetWidth();
+        if (trackWidth <= 0) then return; end
+        local range = w._max - w._min;
+        if (range <= 0) then return; end
+        local ratio = (w._value - w._min) / range;
+        local xPos = ratio * (trackWidth - THUMB_SIZE);
+        thumb:ClearAllPoints();
+        thumb:SetPoint("LEFT", trackFrame, "LEFT", xPos, 0);
+        w._fill:SetWidth(math.max(1, xPos + THUMB_SIZE / 2));
+        w._valueText:SetText(FormatValue(w._value, w._isPercent));
+    end
+    w._updateThumb = UpdateThumbPosition;
+
+    -- Helper: set value from mouse x position
+    local function SetValueFromX(x)
+        if (w._disabled) then return; end
+        local trackWidth = trackFrame:GetWidth();
+        if (trackWidth <= 0) then return; end
+        local ratio = math.max(0, math.min(1, (x - THUMB_SIZE / 2) / (trackWidth - THUMB_SIZE)));
+        local raw = w._min + ratio * (w._max - w._min);
+        local step = w._dragging and w._step or (w._bigStep or w._step);
+        local clamped = ClampValue(raw, w._min, w._max, step);
+        if (clamped ~= w._value) then
+            w._value = clamped;
+            UpdateThumbPosition();
+            if (w._onSet) then w._onSet(clamped); end
+            C_Timer.After(0, RefreshActiveWidgets);
+        end
+    end
+
+    -- Helper: get cursor x relative to the track frame
+    local function GetTrackRelativeX()
+        local cursorX = GetCursorPosition();
+        local scale = trackFrame:GetEffectiveScale();
+        local left = trackFrame:GetLeft();
+        if (not left) then return 0; end
+        return (cursorX / scale) - left;
+    end
+
+    -- Drag handling on the track frame (covers both thumb and track clicks)
+    local dragFrame = CreateFrame("Frame", nil, trackFrame);
+    dragFrame:SetAllPoints(trackFrame);
+    dragFrame:SetFrameLevel(trackFrame:GetFrameLevel() + 3);
+    dragFrame:EnableMouse(true);
+
+    dragFrame:SetScript("OnMouseDown", function(self, button)
+        if (button ~= "LeftButton" or w._disabled) then return; end
+        w._dragging = true;
+        SetValueFromX(GetTrackRelativeX());
+        -- Track on the main frame so dragging works even when cursor leaves the track
+        frame:SetScript("OnUpdate", function()
+            if (not w._dragging or not IsMouseButtonDown("LeftButton")) then
+                w._dragging = false;
+                frame:SetScript("OnUpdate", nil);
+                return;
+            end
+            SetValueFromX(GetTrackRelativeX());
+        end);
+    end);
+
+    dragFrame:SetScript("OnMouseUp", function(self, button)
+        if (button ~= "LeftButton") then return; end
+        w._dragging = false;
+        frame:SetScript("OnUpdate", nil);
+    end);
+
+    -- Hover on thumb
+    dragFrame:SetScript("OnEnter", function()
+        if (not w._disabled) then
+            w._thumbBg:SetColorTexture(unpack(T.thumbHover));
+        end
+    end);
+    dragFrame:SetScript("OnLeave", function()
+        if (not w._disabled) then
+            w._thumbBg:SetColorTexture(unpack(T.thumbBg));
+        end
+        -- Don't stop dragging on leave — OnUpdate checks IsMouseButtonDown
+    end);
+
+    RegisterWidget("range", w);
+    return w;
+end
+
+local function SetupRange(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._label:SetText(data.label or "");
+    w._min = data.min or 0;
+    w._max = data.max or 1;
+    w._step = data.step or 0.01;
+    w._bigStep = data.bigStep;
+    w._isPercent = data.isPercent or false;
+    w._onSet = data.set;
+    w._getFn = data.get;
+    w._disabledFn = data.disabled;
+
+    -- Get current value
+    local val = 0;
+    if (data.get) then val = data.get() or 0; end
+    w._value = ClampValue(val, w._min, w._max, w._step);
+
+    -- Description (shown as tooltip)
+    w._desc_text = data.desc;
+    w.frame:SetHeight(RANGE_HEIGHT);
+    w.height = RANGE_HEIGHT;
+
+    -- Disabled state
+    local disabled = false;
+    if (data.disabled) then
+        if (type(data.disabled) == "function") then disabled = data.disabled();
+        else disabled = data.disabled; end
+    end
+    w._disabled = disabled;
+
+    if (disabled) then
+        w._label:SetTextColor(unpack(T.disabledText));
+        w._valueText:SetTextColor(unpack(T.disabled));
+        w._trackBg:SetColorTexture(unpack(T.disabled));
+        w._fill:SetColorTexture(unpack(T.accentDim));
+        w._thumbBg:SetColorTexture(unpack(T.disabled));
+    else
+        w._label:SetTextColor(unpack(T.text));
+        w._valueText:SetTextColor(unpack(T.textDim));
+        w._trackBg:SetColorTexture(unpack(T.trackBg));
+        w._fill:SetColorTexture(unpack(T.accent));
+        w._thumbBg:SetColorTexture(unpack(T.thumbBg));
+    end
+
+    -- Defer thumb position to next frame so width is resolved
+    C_Timer.After(0, function()
+        if (w._inUse) then w._updateThumb(); end
+    end);
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
+-- Widget: Select (Dropdown)
+-------------------------------------------------------------------------------
+
+local SELECT_HEIGHT    = 28;
+local SELECT_BTN_W     = 160;
+local SELECT_BTN_H     = 24;
+local SELECT_ITEM_H    = 24;
+
+-- Shared dropdown popup (only one open at a time)
+local dropdownPopup;
+
+local function CloseDropdown()
+    if (dropdownPopup) then
+        dropdownPopup:Hide();
+        dropdownPopup._owner = nil;
+    end
+end
+
+local function EnsureDropdownPopup()
+    if (dropdownPopup) then return dropdownPopup; end
+
+    local f = CreateFrame("Frame", "LanternUXDropdownPopup", UIParent, "BackdropTemplate");
+    f:SetFrameStrata("TOOLTIP");
+    f:SetClampedToScreen(true);
+    f:EnableMouse(true);
+    f:Hide();
+
+    f:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    f:SetBackdropColor(unpack(T.dropdownBg));
+    f:SetBackdropBorderColor(unpack(T.border));
+
+    -- Close on ESC
+    table.insert(UISpecialFrames, "LanternUXDropdownPopup");
+
+    -- Close on click-outside
+    f:SetScript("OnShow", function()
+        f._closeListener = f._closeListener or CreateFrame("Button", nil, UIParent);
+        f._closeListener:SetAllPoints(UIParent);
+        f._closeListener:SetFrameStrata("TOOLTIP");
+        f._closeListener:SetFrameLevel(f:GetFrameLevel() - 1);
+        f._closeListener:Show();
+        f._closeListener:SetScript("OnClick", function()
+            CloseDropdown();
+        end);
+    end);
+    f:SetScript("OnHide", function()
+        if (f._closeListener) then f._closeListener:Hide(); end
+    end);
+
+    f._items = {};
+    dropdownPopup = f;
+    return f;
+end
+
+local function OpenDropdown(w)
+    CloseDropdown();
+
+    local popup = EnsureDropdownPopup();
+    popup._owner = w;
+
+    -- Resolve values and sorting
+    local values = w._values;
+    if (type(values) == "function") then values = values(); end
+    local sorting = w._sorting;
+    if (type(sorting) == "function") then sorting = sorting(); end
+
+    -- Build ordered key list
+    local keys = {};
+    if (sorting) then
+        for _, k in ipairs(sorting) do
+            if (values[k]) then table.insert(keys, k); end
+        end
+    else
+        for k in pairs(values) do table.insert(keys, k); end
+        table.sort(keys, function(a, b) return tostring(values[a]) < tostring(values[b]); end);
+    end
+
+    -- Hide old items
+    for _, item in ipairs(popup._items) do item:Hide(); end
+
+    -- Create/show items
+    local y = -4;
+    for i, key in ipairs(keys) do
+        local item = popup._items[i];
+        if (not item) then
+            item = CreateFrame("Button", nil, popup);
+            item:SetHeight(SELECT_ITEM_H);
+
+            local itemBg = item:CreateTexture(nil, "BACKGROUND");
+            itemBg:SetAllPoints();
+            itemBg:SetColorTexture(0, 0, 0, 0);
+            item._bg = itemBg;
+
+            local itemText = item:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+            itemText:SetPoint("LEFT", 10, 0);
+            itemText:SetJustifyH("LEFT");
+            item._text = itemText;
+
+            item:SetScript("OnEnter", function(self)
+                self._bg:SetColorTexture(unpack(T.dropdownItem));
+            end);
+            item:SetScript("OnLeave", function(self)
+                self._bg:SetColorTexture(0, 0, 0, 0);
+            end);
+
+            popup._items[i] = item;
+        end
+
+        item:SetParent(popup);
+        item:ClearAllPoints();
+        item:SetPoint("TOPLEFT", popup, "TOPLEFT", 1, y);
+        item:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -1, y);
+        item._text:SetText(values[key]);
+        item._text:SetTextColor(unpack(T.text));
+
+        -- Highlight current selection
+        if (key == w._currentKey) then
+            item._text:SetTextColor(unpack(T.accent));
+        end
+
+        item:SetScript("OnClick", function()
+            if (w._onSet) then w._onSet(key); end
+            w._currentKey = key;
+            w._btnText:SetText(values[key] or "");
+            CloseDropdown();
+            C_Timer.After(0, RefreshActiveWidgets);
+        end);
+
+        item:Show();
+        y = y - SELECT_ITEM_H;
+    end
+
+    -- Size popup
+    local popupHeight = math.abs(y) + 8;
+    popup:SetWidth(SELECT_BTN_W);
+    popup:SetHeight(popupHeight);
+
+    -- Anchor below the select button
+    popup:ClearAllPoints();
+    popup:SetPoint("TOPLEFT", w._btn, "BOTTOMLEFT", 0, -2);
+
+    popup:Show();
+end
+
+local function CreateSelect(parent)
+    local w = AcquireWidget("select", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Frame", nil, parent);
+    frame:SetHeight(SELECT_HEIGHT);
+    w.frame = frame;
+
+    -- Label (left)
+    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    label:SetPoint("LEFT", frame, "LEFT", 0, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    w._label = label;
+
+    -- Description panel on hover
+    frame:EnableMouse(true);
+    frame:SetScript("OnEnter", function()
+        ShowDescription(w._label:GetText(), w._desc_text);
+    end);
+    frame:SetScript("OnLeave", ClearDescription);
+
+    -- Button (right)
+    local btn = CreateFrame("Button", nil, frame, "BackdropTemplate");
+    btn:SetSize(SELECT_BTN_W, SELECT_BTN_H);
+    btn:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
+
+    btn:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    btn:SetBackdropColor(unpack(T.buttonBg));
+    btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+    w._btn = btn;
+
+    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    btnText:SetPoint("LEFT", 8, 0);
+    btnText:SetPoint("RIGHT", -20, 0);
+    btnText:SetJustifyH("LEFT");
+    btnText:SetTextColor(unpack(T.buttonText));
+    w._btnText = btnText;
+
+    -- Arrow chevron (two rotated lines forming a "V")
+    local arrowWrap = CreateFrame("Frame", nil, btn);
+    arrowWrap:SetSize(10, 6);
+    arrowWrap:SetPoint("RIGHT", -8, 0);
+
+    local arrowL = arrowWrap:CreateTexture(nil, "ARTWORK");
+    arrowL:SetSize(6, 1.5);
+    arrowL:SetTexture("Interface\\Buttons\\WHITE8x8");
+    arrowL:SetRotation(math.rad(-40));
+    arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
+    arrowL:SetVertexColor(unpack(T.textDim));
+
+    local arrowR = arrowWrap:CreateTexture(nil, "ARTWORK");
+    arrowR:SetSize(6, 1.5);
+    arrowR:SetTexture("Interface\\Buttons\\WHITE8x8");
+    arrowR:SetRotation(math.rad(40));
+    arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
+    arrowR:SetVertexColor(unpack(T.textDim));
+
+    -- Proxy so RefreshActiveWidgets can call w._arrow:SetVertexColor()
+    arrowWrap.SetVertexColor = function(self, r, g, b, a)
+        arrowL:SetVertexColor(r, g, b, a or 1);
+        arrowR:SetVertexColor(r, g, b, a or 1);
+    end;
+    w._arrow = arrowWrap;
+
+    -- Hover
+    btn:SetScript("OnEnter", function()
+        if (not w._disabled) then
+            btn:SetBackdropColor(unpack(T.buttonHover));
+        end
+    end);
+    btn:SetScript("OnLeave", function()
+        if (not w._disabled) then
+            btn:SetBackdropColor(unpack(T.buttonBg));
+        end
+    end);
+
+    -- Click
+    btn:SetScript("OnClick", function()
+        if (w._disabled) then return; end
+        if (dropdownPopup and dropdownPopup:IsShown() and dropdownPopup._owner == w) then
+            CloseDropdown();
+        else
+            OpenDropdown(w);
+        end
+    end);
+
+    -- State
+    w._disabled = false;
+
+    RegisterWidget("select", w);
+    return w;
+end
+
+local function SetupSelect(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._label:SetText(data.label or "");
+    w._values = data.values or {};
+    w._sorting = data.sorting;
+    w._onSet = data.set;
+    w._getFn = data.get;
+    w._disabledFn = data.disabled;
+
+    -- Current value
+    local currentKey = data.get and data.get() or nil;
+    w._currentKey = currentKey;
+
+    -- Resolve display text
+    local values = w._values;
+    if (type(values) == "function") then values = values(); end
+    w._btnText:SetText((currentKey and values[currentKey]) or "");
+
+    -- Description (shown as tooltip)
+    w._desc_text = data.desc;
+    w.frame:SetHeight(SELECT_HEIGHT);
+    w.height = SELECT_HEIGHT;
+
+    -- Disabled state
+    local disabled = false;
+    if (data.disabled) then
+        if (type(data.disabled) == "function") then disabled = data.disabled();
+        else disabled = data.disabled; end
+    end
+    w._disabled = disabled;
+
+    if (disabled) then
+        w._label:SetTextColor(unpack(T.disabledText));
+        w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+        w._btn:SetBackdropBorderColor(unpack(T.disabled));
+        w._btnText:SetTextColor(unpack(T.disabledText));
+        w._arrow:SetVertexColor(unpack(T.disabled));
+    else
+        w._label:SetTextColor(unpack(T.text));
+        w._btn:SetBackdropColor(unpack(T.buttonBg));
+        w._btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+        w._btnText:SetTextColor(unpack(T.buttonText));
+        w._arrow:SetVertexColor(unpack(T.textDim));
+    end
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
+-- Widget: Execute (Action Button)
+-------------------------------------------------------------------------------
+
+local EXECUTE_HEIGHT   = 32;
+local EXECUTE_BTN_H    = 28;
+
+local function CreateExecute(parent)
+    local w = AcquireWidget("execute", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Frame", nil, parent);
+    frame:SetHeight(EXECUTE_HEIGHT);
+    w.frame = frame;
+
+    -- Button
+    local btn = CreateFrame("Button", nil, frame, "BackdropTemplate");
+    btn:SetHeight(EXECUTE_BTN_H);
+    btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0);
+
+    btn:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    btn:SetBackdropColor(unpack(T.buttonBg));
+    btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+    w._btn = btn;
+
+    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    btnText:SetPoint("CENTER");
+    btnText:SetTextColor(unpack(T.buttonText));
+    w._btnText = btnText;
+
+    -- State
+    w._disabled = false;
+    w._confirming = false;
+
+    -- Hover
+    btn:SetScript("OnEnter", function()
+        if (not w._disabled) then
+            btn:SetBackdropColor(unpack(T.buttonHover));
+        end
+        ShowDescription(w._originalLabel or w._btnText:GetText(), w._desc_text);
+    end);
+    btn:SetScript("OnLeave", function()
+        if (not w._disabled) then
+            btn:SetBackdropColor(unpack(T.buttonBg));
+        end
+        -- Reset confirm state on leave
+        if (w._confirming) then
+            w._confirming = false;
+            w._btnText:SetText(w._originalLabel or "");
+            w._btnText:SetTextColor(unpack(T.buttonText));
+        end
+        ClearDescription();
+    end);
+
+    -- Click
+    btn:SetScript("OnClick", function()
+        if (w._disabled) then return; end
+
+        if (w._confirmText and not w._confirming) then
+            -- First click: show confirm text
+            w._confirming = true;
+            w._btnText:SetText(w._confirmText);
+            w._btnText:SetTextColor(unpack(T.accent));
+            return;
+        end
+
+        -- Execute
+        w._confirming = false;
+        w._btnText:SetText(w._originalLabel or "");
+        w._btnText:SetTextColor(unpack(T.buttonText));
+        if (w._func) then w._func(); end
+    end);
+
+    RegisterWidget("execute", w);
+    return w;
+end
+
+local function SetupExecute(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._originalLabel = data.label or "Execute";
+    w._btnText:SetText(w._originalLabel);
+    w._func = data.func;
+    w._confirmText = data.confirm;
+    w._confirming = false;
+    w._disabledFn = data.disabled;
+    w._desc_text = data.desc;
+
+    -- Button width: auto from label, minimum 120
+    local textWidth = w._btnText:GetStringWidth() or 60;
+    w._btn:SetWidth(math.max(120, textWidth + 30));
+
+    w.frame:SetHeight(EXECUTE_HEIGHT);
+    w.height = EXECUTE_HEIGHT;
+
+    -- Disabled state
+    local disabled = false;
+    if (data.disabled) then
+        if (type(data.disabled) == "function") then disabled = data.disabled();
+        else disabled = data.disabled; end
+    end
+    w._disabled = disabled;
+
+    if (disabled) then
+        w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+        w._btn:SetBackdropBorderColor(unpack(T.disabled));
+        w._btnText:SetTextColor(unpack(T.disabledText));
+    else
+        w._btn:SetBackdropColor(unpack(T.buttonBg));
+        w._btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+        w._btnText:SetTextColor(unpack(T.buttonText));
+    end
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
+-- Widget: Color Picker
+-------------------------------------------------------------------------------
+
+local COLOR_HEIGHT     = 22;
+local SWATCH_SIZE      = 16;
+
+local function CreateColor(parent)
+    local w = AcquireWidget("color", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Frame", nil, parent);
+    frame:SetHeight(COLOR_HEIGHT);
+    w.frame = frame;
+
+    -- Label (left)
+    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    label:SetPoint("LEFT", frame, "LEFT", 0, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    w._label = label;
+
+    -- Description panel on hover
+    frame:EnableMouse(true);
+    frame:SetScript("OnEnter", function()
+        ShowDescription(w._label:GetText(), w._desc_text);
+    end);
+    frame:SetScript("OnLeave", ClearDescription);
+
+    -- Swatch button (right)
+    local btn = CreateFrame("Button", nil, frame);
+    btn:SetSize(SWATCH_SIZE, SWATCH_SIZE);
+    btn:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
+    w._btn = btn;
+
+    -- Swatch border
+    local border = btn:CreateTexture(nil, "BORDER");
+    border:SetAllPoints();
+    border:SetColorTexture(unpack(T.checkBorder));
+    w._border = border;
+
+    -- Swatch color fill
+    local swatch = btn:CreateTexture(nil, "ARTWORK");
+    swatch:SetPoint("TOPLEFT", 1, -1);
+    swatch:SetPoint("BOTTOMRIGHT", -1, 1);
+    swatch:SetColorTexture(1, 1, 1);
+    w._swatch = swatch;
+
+    -- State
+    w._disabled = false;
+    w._r = 1;
+    w._g = 1;
+    w._b = 1;
+
+    -- Hover
+    btn:SetScript("OnEnter", function()
+        if (not w._disabled) then
+            border:SetColorTexture(unpack(T.checkHover));
+        end
+    end);
+    btn:SetScript("OnLeave", function()
+        if (not w._disabled) then
+            border:SetColorTexture(unpack(T.checkBorder));
+        end
+    end);
+
+    -- Click → open native color picker
+    btn:SetScript("OnClick", function()
+        if (w._disabled) then return; end
+
+        local info = {};
+        info.r = w._r;
+        info.g = w._g;
+        info.b = w._b;
+        info.hasOpacity = w._hasAlpha or false;
+        info.opacity = w._a or 1;
+
+        info.swatchFunc = function()
+            local r, g, b = ColorPickerFrame:GetColorRGB();
+            w._r, w._g, w._b = r, g, b;
+            w._swatch:SetColorTexture(r, g, b);
+            if (w._onSet) then w._onSet(r, g, b); end
+        end;
+
+        info.cancelFunc = function(prev)
+            w._r, w._g, w._b = prev.r, prev.g, prev.b;
+            w._swatch:SetColorTexture(prev.r, prev.g, prev.b);
+            if (w._onSet) then w._onSet(prev.r, prev.g, prev.b); end
+        end;
+
+        ColorPickerFrame:SetupColorPickerAndShow(info);
+    end);
+
+    RegisterWidget("color", w);
+    return w;
+end
+
+local function SetupColor(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._label:SetText(data.label or "");
+    w._onSet = data.set;
+    w._getFn = data.get;
+    w._disabledFn = data.disabled;
+    w._hasAlpha = data.hasAlpha or false;
+
+    -- Get current color
+    local r, g, b = 1, 1, 1;
+    if (data.get) then r, g, b = data.get(); end
+    w._r = r or 1;
+    w._g = g or 1;
+    w._b = b or 1;
+    w._swatch:SetColorTexture(w._r, w._g, w._b);
+
+    -- Description (shown as tooltip)
+    w._desc_text = data.desc;
+    w.frame:SetHeight(COLOR_HEIGHT);
+    w.height = COLOR_HEIGHT;
+
+    -- Disabled state
+    local disabled = false;
+    if (data.disabled) then
+        if (type(data.disabled) == "function") then disabled = data.disabled();
+        else disabled = data.disabled; end
+    end
+    w._disabled = disabled;
+
+    if (disabled) then
+        w._label:SetTextColor(unpack(T.disabledText));
+        w._border:SetColorTexture(unpack(T.disabled));
+        w._swatch:SetVertexColor(0.5, 0.5, 0.5, 0.5);
+    else
+        w._label:SetTextColor(unpack(T.text));
+        w._border:SetColorTexture(unpack(T.checkBorder));
+        w._swatch:SetVertexColor(1, 1, 1, 1);
+    end
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
 -- Scroll container
 -------------------------------------------------------------------------------
 
@@ -517,14 +1417,18 @@ end
 -------------------------------------------------------------------------------
 
 local widgetFactories = {
-    toggle  = { create = CreateToggle,  setup = SetupToggle },
-    label   = { create = CreateLabel,   setup = SetupLabel },
-    description = { create = CreateLabel, setup = SetupLabel },
-    header  = { create = CreateHeader,  setup = SetupHeader },
-    divider = { create = CreateDivider, setup = SetupDivider },
+    toggle      = { create = CreateToggle,   setup = SetupToggle },
+    label       = { create = CreateLabel,    setup = SetupLabel },
+    description = { create = CreateLabel,    setup = SetupLabel },
+    header      = { create = CreateHeader,   setup = SetupHeader },
+    divider     = { create = CreateDivider,  setup = SetupDivider },
+    range       = { create = CreateRange,    setup = SetupRange },
+    select      = { create = CreateSelect,   setup = SetupSelect },
+    execute     = { create = CreateExecute,  setup = SetupExecute },
+    color       = { create = CreateColor,    setup = SetupColor },
 };
 
-local function RenderContent(scrollContainer, options, moduleName)
+local function RenderContent(scrollContainer, options, headerInfo)
     ReleaseAll();
 
     local parent = scrollContainer.scrollChild;
@@ -534,44 +1438,44 @@ local function RenderContent(scrollContainer, options, moduleName)
 
     local y = -CONTENT_PAD;
 
-    -- Module header (automatic for all modules)
-    if (moduleName) then
-        local mod = Lantern.modules[moduleName];
-        if (mod) then
-            local title = (mod.opts and mod.opts.title) or moduleName;
-            local desc = mod.opts and mod.opts.desc;
+    -- Reset description panel default
+    SetDefaultDescription("", "");
 
-            -- Title
-            local titleW = CreateLabel(parent);
-            SetupLabel(titleW, parent, {
-                text = title,
-                fontSize = "large",
-                color = T.textBright,
+    -- Content header (title + description + divider)
+    if (headerInfo and headerInfo.title) then
+        local title = headerInfo.title;
+        local desc = headerInfo.description;
+
+        -- Title
+        local titleW = CreateLabel(parent);
+        SetupLabel(titleW, parent, {
+            text = title,
+            fontSize = "large",
+            color = T.textBright,
+        }, contentWidth);
+        titleW.frame:ClearAllPoints();
+        titleW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
+        y = y - (titleW.height or 20) - 2;
+
+        -- Description
+        if (desc) then
+            local descW = CreateLabel(parent);
+            SetupLabel(descW, parent, {
+                text = desc,
+                fontSize = "small",
+                color = T.textDim,
             }, contentWidth);
-            titleW.frame:ClearAllPoints();
-            titleW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
-            y = y - (titleW.height or 20) - 2;
-
-            -- Description
-            if (desc) then
-                local descW = CreateLabel(parent);
-                SetupLabel(descW, parent, {
-                    text = desc,
-                    fontSize = "small",
-                    color = T.textDim,
-                }, contentWidth);
-                descW.frame:ClearAllPoints();
-                descW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
-                y = y - (descW.height or 14) - 2;
-            end
-
-            -- Divider after header
-            local divW = CreateDivider(parent);
-            SetupDivider(divW, parent, {}, contentWidth);
-            divW.frame:ClearAllPoints();
-            divW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
-            y = y - (divW.height or DIVIDER_HEIGHT);
+            descW.frame:ClearAllPoints();
+            descW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
+            y = y - (descW.height or 14) - 2;
         end
+
+        -- Divider after header
+        local divW = CreateDivider(parent);
+        SetupDivider(divW, parent, {}, contentWidth);
+        divW.frame:ClearAllPoints();
+        divW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
+        y = y - (divW.height or DIVIDER_HEIGHT);
     end
 
     -- Render each option entry
@@ -609,7 +1513,7 @@ end
 -- Public API
 -------------------------------------------------------------------------------
 
--- Expose for SettingsPanel to use
+-- Public API
 _G.LanternUX = _G.LanternUX or {};
 LanternUX.RenderContent = RenderContent;
 LanternUX.ReleaseAll = ReleaseAll;
