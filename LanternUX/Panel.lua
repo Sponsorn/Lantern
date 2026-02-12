@@ -11,7 +11,7 @@ local AceConfigDialog = LibStub and LibStub("AceConfigDialog-3.0", true);
 -- Layout constants
 -------------------------------------------------------------------------------
 
-local DEFAULT_W       = 840;
+local DEFAULT_W       = 920;
 local DEFAULT_H       = 580;
 local SIDEBAR_W       = 200;
 local TITLE_H         = 42;

@@ -204,8 +204,8 @@ local function RefreshActiveWidgets()
                 w._label:SetTextColor(unpack(T.disabledText));
                 w._valueText:SetTextColor(unpack(T.disabled));
                 w._trackBg:SetColorTexture(unpack(T.disabled));
-                w._fill:SetColorTexture(unpack(T.accentDim));
-                w._thumbBg:SetColorTexture(unpack(T.disabled));
+                w._fill:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
+                w._thumbBg:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
             else
                 w._label:SetTextColor(unpack(T.text));
                 w._valueText:SetTextColor(unpack(T.textDim));
@@ -254,6 +254,29 @@ local function RefreshActiveWidgets()
                 w._btn:SetBackdropColor(unpack(T.buttonBg));
                 w._btn:SetBackdropBorderColor(unpack(T.buttonBorder));
                 w._btnText:SetTextColor(unpack(T.buttonText));
+            end
+        end
+    end
+
+    -- Inputs
+    for _, w in ipairs(pools["input"] or {}) do
+        if (w._inUse) then
+            if (w._getFn and not w._box:HasFocus()) then
+                w._box:SetText(w._getFn() or "");
+            end
+            local disabled = EvalDisabled(w);
+            if (disabled) then
+                w._label:SetTextColor(unpack(T.disabledText));
+                w._box:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+                w._box:SetBackdropBorderColor(unpack(T.disabled));
+                w._box:SetTextColor(unpack(T.disabledText));
+                w._box:EnableMouse(false);
+            else
+                w._label:SetTextColor(unpack(T.text));
+                w._box:SetBackdropColor(unpack(T.inputBg));
+                w._box:SetBackdropBorderColor(unpack(T.inputBorder));
+                w._box:SetTextColor(unpack(T.text));
+                w._box:EnableMouse(true);
             end
         end
     end
@@ -735,8 +758,8 @@ local function SetupRange(w, parent, data, contentWidth)
         w._label:SetTextColor(unpack(T.disabledText));
         w._valueText:SetTextColor(unpack(T.disabled));
         w._trackBg:SetColorTexture(unpack(T.disabled));
-        w._fill:SetColorTexture(unpack(T.accentDim));
-        w._thumbBg:SetColorTexture(unpack(T.disabled));
+        w._fill:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
+        w._thumbBg:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
     else
         w._label:SetTextColor(unpack(T.text));
         w._valueText:SetTextColor(unpack(T.textDim));
@@ -1174,6 +1197,135 @@ local function SetupExecute(w, parent, data, contentWidth)
 end
 
 -------------------------------------------------------------------------------
+-- Widget: Input (Text Field)
+-------------------------------------------------------------------------------
+
+local INPUT_HEIGHT     = 44;
+local INPUT_BOX_H      = 24;
+
+local function CreateInput(parent)
+    local w = AcquireWidget("input", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Frame", nil, parent);
+    frame:SetHeight(INPUT_HEIGHT);
+    frame:EnableMouse(true);
+    w.frame = frame;
+
+    -- Label
+    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    label:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    w._label = label;
+
+    -- Description panel on hover
+    frame:SetScript("OnEnter", function()
+        ShowDescription(w._label:GetText(), w._desc_text);
+    end);
+    frame:SetScript("OnLeave", ClearDescription);
+
+    -- EditBox
+    local box = CreateFrame("EditBox", nil, frame, "BackdropTemplate");
+    box:SetHeight(INPUT_BOX_H);
+    box:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -18);
+    box:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
+    box:SetAutoFocus(false);
+    box:SetFontObject("GameFontHighlight");
+    box:SetTextInsets(8, 8, 0, 0);
+    box:SetMaxLetters(256);
+
+    box:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    box:SetBackdropColor(unpack(T.inputBg));
+    box:SetBackdropBorderColor(unpack(T.inputBorder));
+    box:SetTextColor(unpack(T.text));
+    w._box = box;
+
+    -- Focus highlight
+    box:SetScript("OnEditFocusGained", function(self)
+        if (not w._disabled) then
+            self:SetBackdropBorderColor(unpack(T.inputFocus));
+        end
+    end);
+    box:SetScript("OnEditFocusLost", function(self)
+        self:SetBackdropBorderColor(unpack(T.inputBorder));
+        -- Commit on focus loss
+        if (w._onSet) then
+            w._onSet(self:GetText());
+        end
+    end);
+
+    -- Enter commits and clears focus
+    box:SetScript("OnEnterPressed", function(self)
+        if (w._onSet) then
+            w._onSet(self:GetText());
+        end
+        self:ClearFocus();
+    end);
+
+    -- Escape reverts and clears focus
+    box:SetScript("OnEscapePressed", function(self)
+        if (w._getFn) then
+            self:SetText(w._getFn() or "");
+        end
+        self:ClearFocus();
+    end);
+
+    -- State
+    w._disabled = false;
+
+    RegisterWidget("input", w);
+    return w;
+end
+
+local function SetupInput(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._label:SetText(data.label or "");
+    w._onSet = data.set;
+    w._getFn = data.get;
+    w._disabledFn = data.disabled;
+    w._desc_text = data.desc;
+
+    -- Current value
+    local val = data.get and data.get() or "";
+    w._box:SetText(val);
+
+    w.frame:SetHeight(INPUT_HEIGHT);
+    w.height = INPUT_HEIGHT;
+
+    -- Disabled state
+    local disabled = false;
+    if (data.disabled) then
+        if (type(data.disabled) == "function") then disabled = data.disabled();
+        else disabled = data.disabled; end
+    end
+    w._disabled = disabled;
+
+    if (disabled) then
+        w._label:SetTextColor(unpack(T.disabledText));
+        w._box:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+        w._box:SetBackdropBorderColor(unpack(T.disabled));
+        w._box:SetTextColor(unpack(T.disabledText));
+        w._box:EnableMouse(false);
+    else
+        w._label:SetTextColor(unpack(T.text));
+        w._box:SetBackdropColor(unpack(T.inputBg));
+        w._box:SetBackdropBorderColor(unpack(T.inputBorder));
+        w._box:SetTextColor(unpack(T.text));
+        w._box:EnableMouse(true);
+    end
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
 -- Widget: Color Picker
 -------------------------------------------------------------------------------
 
@@ -1319,8 +1471,13 @@ end
 -- Scroll container
 -------------------------------------------------------------------------------
 
+local SCROLL_STEP       = 40;
+local SCROLL_BLEND      = 0.15;
+local SCROLL_SNAP_THRESHOLD = 0.5;
+
 local function CreateScrollContainer(parent)
     local container = {};
+    local scrollTarget = 0;
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, parent);
     scrollFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0);
@@ -1331,18 +1488,28 @@ local function CreateScrollContainer(parent)
     scrollChild:SetWidth(1);  -- set properly on render
     scrollFrame:SetScrollChild(scrollChild);
 
+    -- Smooth scroll OnUpdate (set/removed dynamically)
+    local function OnUpdate_SmoothScroll(self, elapsed)
+        local current = self:GetVerticalScroll();
+        local amount = math.min(1, SCROLL_BLEND * elapsed * 60);
+        local newPos = current + (scrollTarget - current) * amount;
+
+        local diff = math.abs(newPos - scrollTarget);
+        if (diff < SCROLL_SNAP_THRESHOLD) then
+            newPos = scrollTarget;
+            self:SetScript("OnUpdate", nil);
+        end
+
+        self:SetVerticalScroll(newPos);
+        container:UpdateThumb();
+    end
+
     -- Mouse wheel scrolling
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local current = self:GetVerticalScroll();
         local maxScroll = self:GetVerticalScrollRange();
-        local step = 40;
-        local newScroll = current - (delta * step);
-        newScroll = math.max(0, math.min(newScroll, maxScroll));
-        self:SetVerticalScroll(newScroll);
-        -- Update scrollbar thumb
-        if (container.UpdateThumb) then
-            container:UpdateThumb();
-        end
+        scrollTarget = scrollTarget - (delta * SCROLL_STEP);
+        scrollTarget = math.max(0, math.min(scrollTarget, maxScroll));
+        self:SetScript("OnUpdate", OnUpdate_SmoothScroll);
     end);
 
     -- Scrollbar track
@@ -1397,6 +1564,8 @@ local function CreateScrollContainer(parent)
     function container:SetContentHeight(height)
         self.scrollChild:SetHeight(height);
         self.scrollFrame:SetVerticalScroll(0);
+        scrollTarget = 0;
+        self.scrollFrame:SetScript("OnUpdate", nil);
         -- Defer thumb update to next frame (dimensions need to settle)
         C_Timer.After(0, function()
             self:UpdateThumb();
@@ -1405,6 +1574,8 @@ local function CreateScrollContainer(parent)
 
     function container:Reset()
         self.scrollFrame:SetVerticalScroll(0);
+        scrollTarget = 0;
+        self.scrollFrame:SetScript("OnUpdate", nil);
         self.track:Hide();
         self.thumb:Hide();
     end
@@ -1425,6 +1596,7 @@ local widgetFactories = {
     range       = { create = CreateRange,    setup = SetupRange },
     select      = { create = CreateSelect,   setup = SetupSelect },
     execute     = { create = CreateExecute,  setup = SetupExecute },
+    input       = { create = CreateInput,    setup = SetupInput },
     color       = { create = CreateColor,    setup = SetupColor },
 };
 

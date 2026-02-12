@@ -580,6 +580,427 @@ local panel = LanternUX:CreatePanel({
 });
 
 -------------------------------------------------------------------------------
+-- AutoQuest custom options
+-------------------------------------------------------------------------------
+
+CUSTOM_OPTIONS["autoQuest"] = function()
+    local function db()
+        Lantern.db.autoQuest = Lantern.db.autoQuest or {};
+        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true, skipTrivialQuests = false };
+        for k, v in pairs(defaults) do
+            if (Lantern.db.autoQuest[k] == nil) then
+                Lantern.db.autoQuest[k] = v;
+            end
+        end
+        return Lantern.db.autoQuest;
+    end
+
+    local isDisabled = function()
+        return not moduleEnabled("AutoQuest");
+    end
+
+    return {
+        moduleToggle("AutoQuest", "Enable", "Enable or disable Auto Quest."),
+        {
+            type = "toggle",
+            label = "Auto-accept quests",
+            desc = "Automatically accept quests from NPCs.",
+            disabled = isDisabled,
+            get = function() return db().autoAccept; end,
+            set = function(val) db().autoAccept = val and true or false; end,
+        },
+        {
+            type = "toggle",
+            label = "Auto turn-in quests",
+            desc = "Automatically turn in completed quests to NPCs.",
+            disabled = isDisabled,
+            get = function() return db().autoTurnIn; end,
+            set = function(val) db().autoTurnIn = val and true or false; end,
+        },
+        {
+            type = "toggle",
+            label = "Auto select single reward",
+            desc = "If a quest offers only one reward, auto-select it.",
+            disabled = isDisabled,
+            get = function() return db().autoSelectSingleReward; end,
+            set = function(val) db().autoSelectSingleReward = val and true or false; end,
+        },
+        {
+            type = "toggle",
+            label = "Skip trivial quests",
+            desc = "Don't auto-accept quests that are gray (trivial/low-level).",
+            disabled = isDisabled,
+            get = function() return db().skipTrivialQuests; end,
+            set = function(val) db().skipTrivialQuests = val and true or false; end,
+        },
+        {
+            type = "description",
+            text = "Hold Shift to temporarily pause auto-accept and auto turn-in. Blocked NPCs and quests can be managed in Blizzard Settings > Addons > Lantern.",
+            fontSize = "small",
+            color = T.textDim,
+        },
+    };
+end
+
+-------------------------------------------------------------------------------
+-- MissingPet custom options
+-------------------------------------------------------------------------------
+
+CUSTOM_OPTIONS["missingPet"] = function()
+    local DEFAULTS = {
+        warningText = "Pet Missing!",
+        passiveText = "Pet is PASSIVE!",
+        showMissing = true,
+        showPassive = true,
+        locked = true,
+        hideWhenMounted = true,
+        hideInRestZone = false,
+        dismountDelay = 5,
+        animationStyle = "bounce",
+        font = "Friz Quadrata TT",
+        fontSize = 24,
+        fontOutline = "OUTLINE",
+        missingColor = { r = 1, g = 0.2, b = 0.2 },
+        passiveColor = { r = 1, g = 0.6, b = 0 },
+        soundEnabled = false,
+        soundMissing = true,
+        soundPassive = true,
+        soundName = "RaidWarning",
+        soundRepeat = false,
+        soundInterval = 5,
+        soundInCombat = false,
+    };
+
+    local function mpDB()
+        if (not Lantern.db) then Lantern.db = {}; end
+        if (not Lantern.db.missingPet) then Lantern.db.missingPet = {}; end
+        local db = Lantern.db.missingPet;
+        for k, v in pairs(DEFAULTS) do
+            if (db[k] == nil) then
+                if (type(v) == "table") then
+                    db[k] = { r = v.r, g = v.g, b = v.b };
+                else
+                    db[k] = v;
+                end
+            end
+        end
+        return db;
+    end
+
+    local function mpModule()
+        return Lantern.modules and Lantern.modules.MissingPet;
+    end
+
+    local function isDisabled()
+        return not moduleEnabled("MissingPet");
+    end
+
+    local function refreshWarning()
+        local m = mpModule();
+        if (m and m.RefreshWarning) then m:RefreshWarning(); end
+    end
+
+    local function refreshAnimation()
+        local m = mpModule();
+        if (m and m.RefreshAnimation) then m:RefreshAnimation(); end
+    end
+
+    local function refreshFont()
+        local m = mpModule();
+        if (m and m.RefreshFont) then m:RefreshFont(); end
+    end
+
+    local animationValues = {
+        none = "None (static)",
+        bounce = "Bounce",
+        pulse = "Pulse",
+        fade = "Fade",
+        shake = "Shake",
+        glow = "Glow",
+        heartbeat = "Heartbeat",
+    };
+    local animationSorting = { "none", "bounce", "pulse", "fade", "shake", "glow", "heartbeat" };
+
+    local outlineValues = {
+        [""] = "None",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+        ["OUTLINE, MONOCHROME"] = "Outline + Mono",
+    };
+    local outlineSorting = { "", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "OUTLINE, MONOCHROME" };
+
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+
+    local function getFontValues()
+        local fonts = {};
+        if (LSM) then
+            for _, name in ipairs(LSM:List("font") or {}) do
+                fonts[name] = name;
+            end
+        end
+        if (not fonts["Friz Quadrata TT"]) then
+            fonts["Friz Quadrata TT"] = "Friz Quadrata TT";
+        end
+        return fonts;
+    end
+
+    local function getSoundValues()
+        if (Lantern.utils and Lantern.utils.RegisterMediaSounds) then
+            Lantern.utils.RegisterMediaSounds(LSM);
+        end
+        local sounds = {};
+        if (LSM) then
+            for _, name in ipairs(LSM:List("sound") or {}) do
+                sounds[name] = name;
+            end
+        end
+        if (not sounds["RaidWarning"]) then
+            sounds["RaidWarning"] = "RaidWarning";
+        end
+        return sounds;
+    end
+
+    return {
+        -- Enable
+        moduleToggle("MissingPet", "Enable", "Enable or disable the Missing Pet warning."),
+
+        -----------------------------------------------------------------------
+        -- Warning Settings
+        -----------------------------------------------------------------------
+        { type = "header", text = "Warning Settings" },
+
+        {
+            type = "toggle",
+            label = "Show Missing Warning",
+            desc = "Display a warning when your pet is dismissed or dead.",
+            disabled = isDisabled,
+            get = function() return mpDB().showMissing; end,
+            set = function(val) mpDB().showMissing = val; refreshWarning(); end,
+        },
+        {
+            type = "toggle",
+            label = "Show Passive Warning",
+            desc = "Display a warning when your pet is set to passive mode.",
+            disabled = isDisabled,
+            get = function() return mpDB().showPassive; end,
+            set = function(val) mpDB().showPassive = val; refreshWarning(); end,
+        },
+        {
+            type = "input",
+            label = "Missing Text",
+            desc = "Text to display when your pet is missing.",
+            disabled = isDisabled,
+            get = function() return mpDB().warningText or "Pet Missing!"; end,
+            set = function(val) mpDB().warningText = val; refreshWarning(); end,
+        },
+        {
+            type = "input",
+            label = "Passive Text",
+            desc = "Text to display when your pet is set to passive.",
+            disabled = isDisabled,
+            get = function() return mpDB().passiveText or "Pet is PASSIVE!"; end,
+            set = function(val) mpDB().passiveText = val; refreshWarning(); end,
+        },
+        {
+            type = "color",
+            label = "Missing Color",
+            desc = "Color for the missing pet warning text.",
+            disabled = isDisabled,
+            get = function()
+                local c = mpDB().missingColor;
+                return c.r, c.g, c.b;
+            end,
+            set = function(r, g, b)
+                mpDB().missingColor = { r = r, g = g, b = b };
+                refreshWarning();
+            end,
+        },
+        {
+            type = "color",
+            label = "Passive Color",
+            desc = "Color for the passive pet warning text.",
+            disabled = isDisabled,
+            get = function()
+                local c = mpDB().passiveColor;
+                return c.r, c.g, c.b;
+            end,
+            set = function(r, g, b)
+                mpDB().passiveColor = { r = r, g = g, b = b };
+                refreshWarning();
+            end,
+        },
+        {
+            type = "select",
+            label = "Animation Style",
+            desc = "Choose how the warning text animates.",
+            values = animationValues,
+            sorting = animationSorting,
+            disabled = isDisabled,
+            get = function() return mpDB().animationStyle or "bounce"; end,
+            set = function(val) mpDB().animationStyle = val; refreshAnimation(); end,
+        },
+
+        -----------------------------------------------------------------------
+        -- Font Settings
+        -----------------------------------------------------------------------
+        { type = "header", text = "Font Settings" },
+
+        {
+            type = "select",
+            label = "Font",
+            desc = "Select the font for the warning text.",
+            values = getFontValues,
+            disabled = isDisabled,
+            get = function() return mpDB().font or "Friz Quadrata TT"; end,
+            set = function(val) mpDB().font = val; refreshFont(); end,
+        },
+        {
+            type = "range",
+            label = "Font Size",
+            desc = "Size of the warning text.",
+            min = 12, max = 72, step = 1,
+            disabled = isDisabled,
+            get = function() return mpDB().fontSize or 24; end,
+            set = function(val) mpDB().fontSize = val; refreshFont(); end,
+        },
+        {
+            type = "select",
+            label = "Font Outline",
+            desc = "Outline style for the warning text.",
+            values = outlineValues,
+            sorting = outlineSorting,
+            disabled = isDisabled,
+            get = function() return mpDB().fontOutline or "OUTLINE"; end,
+            set = function(val) mpDB().fontOutline = val; refreshFont(); end,
+        },
+
+        -----------------------------------------------------------------------
+        -- Position
+        -----------------------------------------------------------------------
+        { type = "header", text = "Position" },
+
+        {
+            type = "toggle",
+            label = "Lock Position",
+            desc = "When locked, the warning cannot be moved. Hold Shift to move even when locked.",
+            disabled = isDisabled,
+            get = function() return mpDB().locked; end,
+            set = function(val)
+                mpDB().locked = val;
+                local m = mpModule();
+                if (m and m.UpdateLock) then m:UpdateLock(); end
+            end,
+        },
+        {
+            type = "execute",
+            label = "Reset Position",
+            desc = "Reset the warning frame position to the center of the screen.",
+            disabled = isDisabled,
+            func = function()
+                local m = mpModule();
+                if (m and m.ResetPosition) then m:ResetPosition(); end
+            end,
+        },
+
+        -----------------------------------------------------------------------
+        -- Visibility
+        -----------------------------------------------------------------------
+        { type = "header", text = "Visibility" },
+
+        {
+            type = "toggle",
+            label = "Hide When Mounted",
+            desc = "Hide the warning while mounted, on a taxi, or in a vehicle.",
+            disabled = isDisabled,
+            get = function() return mpDB().hideWhenMounted; end,
+            set = function(val) mpDB().hideWhenMounted = val; refreshWarning(); end,
+        },
+        {
+            type = "toggle",
+            label = "Hide In Rest Zones",
+            desc = "Hide the warning while in a rest zone (cities and inns).",
+            disabled = isDisabled,
+            get = function() return mpDB().hideInRestZone; end,
+            set = function(val) mpDB().hideInRestZone = val; refreshWarning(); end,
+        },
+        {
+            type = "range",
+            label = "Dismount Delay",
+            desc = "Seconds to wait after dismounting before showing warning. Set to 0 to show immediately.",
+            min = 0, max = 10, step = 0.5,
+            disabled = function() return isDisabled() or not mpDB().hideWhenMounted; end,
+            get = function() return mpDB().dismountDelay or 5; end,
+            set = function(val) mpDB().dismountDelay = val; end,
+        },
+
+        -----------------------------------------------------------------------
+        -- Sound
+        -----------------------------------------------------------------------
+        { type = "header", text = "Sound" },
+
+        {
+            type = "toggle",
+            label = "Play Sound",
+            desc = "Play a sound when the warning is displayed.",
+            disabled = isDisabled,
+            get = function() return mpDB().soundEnabled; end,
+            set = function(val) mpDB().soundEnabled = val; end,
+        },
+        {
+            type = "toggle",
+            label = "Sound When Missing",
+            desc = "Play sound when pet is missing.",
+            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+            get = function() return mpDB().soundMissing; end,
+            set = function(val) mpDB().soundMissing = val; end,
+        },
+        {
+            type = "toggle",
+            label = "Sound When Passive",
+            desc = "Play sound when pet is set to passive.",
+            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+            get = function() return mpDB().soundPassive; end,
+            set = function(val) mpDB().soundPassive = val; end,
+        },
+        {
+            type = "toggle",
+            label = "Sound In Combat",
+            desc = "Continue playing sound while in combat. When disabled, sound stops when combat begins.",
+            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+            get = function() return mpDB().soundInCombat; end,
+            set = function(val) mpDB().soundInCombat = val; end,
+        },
+        {
+            type = "toggle",
+            label = "Repeat Sound",
+            desc = "Repeat the sound at regular intervals while the warning is displayed.",
+            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+            get = function() return mpDB().soundRepeat; end,
+            set = function(val) mpDB().soundRepeat = val; end,
+        },
+        {
+            type = "select",
+            label = "Sound",
+            desc = "Select the sound to play.",
+            values = getSoundValues,
+            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+            get = function() return mpDB().soundName or "RaidWarning"; end,
+            set = function(val) mpDB().soundName = val; end,
+        },
+        {
+            type = "range",
+            label = "Repeat Interval",
+            desc = "Seconds between sound repeats.",
+            min = 1, max = 30, step = 1,
+            disabled = function() return isDisabled() or not mpDB().soundEnabled or not mpDB().soundRepeat; end,
+            get = function() return mpDB().soundInterval or 5; end,
+            set = function(val) mpDB().soundInterval = val; end,
+        },
+    };
+end
+
+-------------------------------------------------------------------------------
 -- Splash / Home content
 -------------------------------------------------------------------------------
 
