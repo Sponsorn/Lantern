@@ -1508,8 +1508,8 @@ end
 -------------------------------------------------------------------------------
 
 local GROUP_HEADER_H   = 28;
-local GROUP_ARROW_SIZE = 10;
-local GROUP_ARROW_PAD  = 6;   -- gap between arrow and text
+local GROUP_ARROW_SIZE = 12;
+local GROUP_ARROW_PAD  = 4;   -- gap between arrow and text
 
 local function CreateGroup(parent)
     local w = AcquireWidget("group", parent);
@@ -1520,36 +1520,18 @@ local function CreateGroup(parent)
     frame:SetHeight(GROUP_HEADER_H);
     w.frame = frame;
 
-    -- Arrow (chevron composed of two rotated lines, same technique as dropdown arrow)
-    local arrowWrap = CreateFrame("Frame", nil, frame);
-    arrowWrap:SetSize(GROUP_ARROW_SIZE, GROUP_ARROW_SIZE);
-    arrowWrap:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 6);
-
-    local arrowL = arrowWrap:CreateTexture(nil, "ARTWORK");
-    arrowL:SetSize(6, 1.5);
-    arrowL:SetTexture("Interface\\Buttons\\WHITE8x8");
-    arrowL:SetVertexColor(unpack(T.textDim));
-    arrowWrap._L = arrowL;
-
-    local arrowR = arrowWrap:CreateTexture(nil, "ARTWORK");
-    arrowR:SetSize(6, 1.5);
-    arrowR:SetTexture("Interface\\Buttons\\WHITE8x8");
-    arrowR:SetVertexColor(unpack(T.textDim));
-    arrowWrap._R = arrowR;
-
-    -- Proxy so we can call w._arrow:SetVertexColor()
-    arrowWrap.SetVertexColor = function(self, r, g, b, a)
-        arrowL:SetVertexColor(r, g, b, a or 1);
-        arrowR:SetVertexColor(r, g, b, a or 1);
-    end;
-
-    w._arrow = arrowWrap;
-    w._arrowL = arrowL;
-    w._arrowR = arrowR;
+    -- Arrow (Blizzard atlas: + when collapsed, - when expanded)
+    local arrow = frame:CreateTexture(nil, "ARTWORK");
+    arrow:SetSize(GROUP_ARROW_SIZE, GROUP_ARROW_SIZE);
+    arrow:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 6);
+    arrow:SetAtlas("ui-questtrackerbutton-secondary-expand");
+    arrow:SetDesaturated(true);
+    arrow:SetVertexColor(unpack(T.textDim));
+    w._arrow = arrow;
 
     -- Label
     local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-    text:SetPoint("BOTTOMLEFT", arrowWrap, "BOTTOMRIGHT", GROUP_ARROW_PAD, -1);
+    text:SetPoint("BOTTOMLEFT", arrow, "BOTTOMRIGHT", GROUP_ARROW_PAD, -1);
     text:SetJustifyH("LEFT");
     text:SetTextColor(unpack(T.textBright));
     w._text = text;
@@ -1562,24 +1544,12 @@ local function CreateGroup(parent)
     line:SetColorTexture(unpack(T.divider));
     w._line = line;
 
-    -- Helper: set arrow orientation
+    -- Helper: set arrow atlas based on expanded state
     local function SetArrowExpanded(expanded)
         if (expanded) then
-            -- Down-pointing chevron (V shape)
-            arrowL:ClearAllPoints();
-            arrowL:SetRotation(math.rad(-40));
-            arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
-            arrowR:ClearAllPoints();
-            arrowR:SetRotation(math.rad(40));
-            arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
+            arrow:SetAtlas("ui-questtrackerbutton-secondary-collapse");
         else
-            -- Up-pointing chevron (^ shape)
-            arrowL:ClearAllPoints();
-            arrowL:SetRotation(math.rad(40));
-            arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
-            arrowR:ClearAllPoints();
-            arrowR:SetRotation(math.rad(-40));
-            arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
+            arrow:SetAtlas("ui-questtrackerbutton-secondary-expand");
         end
     end
     w._setArrowExpanded = SetArrowExpanded;
