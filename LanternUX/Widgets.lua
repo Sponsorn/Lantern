@@ -65,6 +65,9 @@ local DESC_PAD_BOT   = 4;
 -- Widget pools
 -------------------------------------------------------------------------------
 
+local dropdownPopup;   -- forward declaration (used by ReleaseAll + Select widget)
+local groupStates = {};    -- per-session expand/collapse state, keyed by "pageKey:groupText"
+local currentPageKey = nil;  -- set by RenderContent so groups know which page they belong to
 local pools = {};
 
 local function AcquireWidget(widgetType, parent)
@@ -118,7 +121,7 @@ end
 
 local function FormatValue(val, isPercent)
     if (isPercent) then
-        return string.format("%d%%", val * 100 + 0.5);
+        return string.format("%d%%", math.floor(val * 100 + 0.5));
     end
     local s = string.format("%.2f", val);
     s = s:gsub("%.?0+$", "");
@@ -705,17 +708,33 @@ local function CreateRange(parent)
         frame:SetScript("OnUpdate", nil);
     end);
 
-    -- Hover on thumb
+    -- Hover on track/thumb
     dragFrame:SetScript("OnEnter", function()
         if (not w._disabled) then
             w._thumbBg:SetColorTexture(unpack(T.thumbHover));
         end
+        ShowDescription(w._label:GetText(), w._desc_text);
     end);
     dragFrame:SetScript("OnLeave", function()
         if (not w._disabled) then
             w._thumbBg:SetColorTexture(unpack(T.thumbBg));
         end
+        ClearDescription();
         -- Don't stop dragging on leave — OnUpdate checks IsMouseButtonDown
+    end);
+
+    -- Mouse wheel to increment/decrement by step
+    dragFrame:EnableMouseWheel(true);
+    dragFrame:SetScript("OnMouseWheel", function(self, delta)
+        if (w._disabled) then return; end
+        local step = w._bigStep or w._step;
+        local newVal = ClampValue(w._value + delta * step, w._min, w._max, w._step);
+        if (newVal ~= w._value) then
+            w._value = newVal;
+            UpdateThumbPosition();
+            if (w._onSet) then w._onSet(newVal); end
+            C_Timer.After(0, RefreshActiveWidgets);
+        end
     end);
 
     RegisterWidget("range", w);
@@ -784,9 +803,6 @@ local SELECT_HEIGHT    = 28;
 local SELECT_BTN_W     = 160;
 local SELECT_BTN_H     = 24;
 local SELECT_ITEM_H    = 24;
-
--- Shared dropdown popup (only one open at a time)
-local dropdownPopup;
 
 local function CloseDropdown()
     if (dropdownPopup) then
@@ -863,6 +879,7 @@ local function OpenDropdown(w)
 
     -- Create/show items
     local y = -4;
+    local maxTextWidth = 0;
     for i, key in ipairs(keys) do
         local item = popup._items[i];
         if (not item) then
@@ -896,6 +913,10 @@ local function OpenDropdown(w)
         item._text:SetText(values[key]);
         item._text:SetTextColor(unpack(T.text));
 
+        -- Track widest item for popup sizing
+        local tw = item._text:GetStringWidth() or 0;
+        if (tw > maxTextWidth) then maxTextWidth = tw; end
+
         -- Highlight current selection
         if (key == w._currentKey) then
             item._text:SetTextColor(unpack(T.accent));
@@ -913,9 +934,10 @@ local function OpenDropdown(w)
         y = y - SELECT_ITEM_H;
     end
 
-    -- Size popup
+    -- Size popup (fit content, at least as wide as the button)
     local popupHeight = math.abs(y) + 8;
-    popup:SetWidth(SELECT_BTN_W);
+    local popupWidth = math.max(SELECT_BTN_W, maxTextWidth + 24);
+    popup:SetWidth(popupWidth);
     popup:SetHeight(popupHeight);
 
     -- Anchor below the select button
@@ -1000,11 +1022,13 @@ local function CreateSelect(parent)
         if (not w._disabled) then
             btn:SetBackdropColor(unpack(T.buttonHover));
         end
+        ShowDescription(w._label:GetText(), w._desc_text);
     end);
     btn:SetScript("OnLeave", function()
         if (not w._disabled) then
             btn:SetBackdropColor(unpack(T.buttonBg));
         end
+        ClearDescription();
     end);
 
     -- Click
@@ -1260,11 +1284,8 @@ local function CreateInput(parent)
         end
     end);
 
-    -- Enter commits and clears focus
+    -- Enter clears focus (commit handled by OnEditFocusLost)
     box:SetScript("OnEnterPressed", function(self)
-        if (w._onSet) then
-            w._onSet(self:GetText());
-        end
         self:ClearFocus();
     end);
 
@@ -1275,6 +1296,12 @@ local function CreateInput(parent)
         end
         self:ClearFocus();
     end);
+
+    -- Hover on editbox (show description when hovering the input field)
+    box:SetScript("OnEnter", function()
+        ShowDescription(w._label:GetText(), w._desc_text);
+    end);
+    box:SetScript("OnLeave", ClearDescription);
 
     -- State
     w._disabled = false;
@@ -1385,11 +1412,13 @@ local function CreateColor(parent)
         if (not w._disabled) then
             border:SetColorTexture(unpack(T.checkHover));
         end
+        ShowDescription(w._label:GetText(), w._desc_text);
     end);
     btn:SetScript("OnLeave", function()
         if (not w._disabled) then
             border:SetColorTexture(unpack(T.checkBorder));
         end
+        ClearDescription();
     end);
 
     -- Click → open native color picker
@@ -1401,19 +1430,25 @@ local function CreateColor(parent)
         info.g = w._g;
         info.b = w._b;
         info.hasOpacity = w._hasAlpha or false;
-        info.opacity = w._a or 1;
+        info.opacity = w._hasAlpha and (1 - (w._a or 1)) or 0;
 
         info.swatchFunc = function()
             local r, g, b = ColorPickerFrame:GetColorRGB();
             w._r, w._g, w._b = r, g, b;
+            if (w._hasAlpha) then
+                w._a = 1 - ColorPickerFrame:GetColorAlpha();
+            end
             w._swatch:SetColorTexture(r, g, b);
-            if (w._onSet) then w._onSet(r, g, b); end
+            if (w._onSet) then w._onSet(r, g, b, w._a); end
         end;
 
         info.cancelFunc = function(prev)
             w._r, w._g, w._b = prev.r, prev.g, prev.b;
+            if (w._hasAlpha) then
+                w._a = 1 - (prev.opacity or 0);
+            end
             w._swatch:SetColorTexture(prev.r, prev.g, prev.b);
-            if (w._onSet) then w._onSet(prev.r, prev.g, prev.b); end
+            if (w._onSet) then w._onSet(prev.r, prev.g, prev.b, w._a); end
         end;
 
         ColorPickerFrame:SetupColorPickerAndShow(info);
@@ -1434,11 +1469,12 @@ local function SetupColor(w, parent, data, contentWidth)
     w._hasAlpha = data.hasAlpha or false;
 
     -- Get current color
-    local r, g, b = 1, 1, 1;
-    if (data.get) then r, g, b = data.get(); end
+    local r, g, b, a = 1, 1, 1, 1;
+    if (data.get) then r, g, b, a = data.get(); end
     w._r = r or 1;
     w._g = g or 1;
     w._b = b or 1;
+    w._a = a or 1;
     w._swatch:SetColorTexture(w._r, w._g, w._b);
 
     -- Description (shown as tooltip)
@@ -1463,6 +1499,146 @@ local function SetupColor(w, parent, data, contentWidth)
         w._border:SetColorTexture(unpack(T.checkBorder));
         w._swatch:SetVertexColor(1, 1, 1, 1);
     end
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
+-- Widget: Group (Collapsible Section)
+-------------------------------------------------------------------------------
+
+local GROUP_HEADER_H   = 28;
+local GROUP_ARROW_SIZE = 10;
+local GROUP_ARROW_PAD  = 6;   -- gap between arrow and text
+
+local function CreateGroup(parent)
+    local w = AcquireWidget("group", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Button", nil, parent);
+    frame:SetHeight(GROUP_HEADER_H);
+    w.frame = frame;
+
+    -- Arrow (chevron composed of two rotated lines, same technique as dropdown arrow)
+    local arrowWrap = CreateFrame("Frame", nil, frame);
+    arrowWrap:SetSize(GROUP_ARROW_SIZE, GROUP_ARROW_SIZE);
+    arrowWrap:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 6);
+
+    local arrowL = arrowWrap:CreateTexture(nil, "ARTWORK");
+    arrowL:SetSize(6, 1.5);
+    arrowL:SetTexture("Interface\\Buttons\\WHITE8x8");
+    arrowL:SetVertexColor(unpack(T.textDim));
+    arrowWrap._L = arrowL;
+
+    local arrowR = arrowWrap:CreateTexture(nil, "ARTWORK");
+    arrowR:SetSize(6, 1.5);
+    arrowR:SetTexture("Interface\\Buttons\\WHITE8x8");
+    arrowR:SetVertexColor(unpack(T.textDim));
+    arrowWrap._R = arrowR;
+
+    -- Proxy so we can call w._arrow:SetVertexColor()
+    arrowWrap.SetVertexColor = function(self, r, g, b, a)
+        arrowL:SetVertexColor(r, g, b, a or 1);
+        arrowR:SetVertexColor(r, g, b, a or 1);
+    end;
+
+    w._arrow = arrowWrap;
+    w._arrowL = arrowL;
+    w._arrowR = arrowR;
+
+    -- Label
+    local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    text:SetPoint("BOTTOMLEFT", arrowWrap, "BOTTOMRIGHT", GROUP_ARROW_PAD, -1);
+    text:SetJustifyH("LEFT");
+    text:SetTextColor(unpack(T.textBright));
+    w._text = text;
+
+    -- Divider line
+    local line = frame:CreateTexture(nil, "ARTWORK");
+    line:SetHeight(1);
+    line:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0);
+    line:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0);
+    line:SetColorTexture(unpack(T.divider));
+    w._line = line;
+
+    -- Helper: set arrow orientation
+    local function SetArrowExpanded(expanded)
+        if (expanded) then
+            -- Down-pointing chevron (V shape)
+            arrowL:ClearAllPoints();
+            arrowL:SetRotation(math.rad(-40));
+            arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
+            arrowR:ClearAllPoints();
+            arrowR:SetRotation(math.rad(40));
+            arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
+        else
+            -- Up-pointing chevron (^ shape)
+            arrowL:ClearAllPoints();
+            arrowL:SetRotation(math.rad(40));
+            arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
+            arrowR:ClearAllPoints();
+            arrowR:SetRotation(math.rad(-40));
+            arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
+        end
+    end
+    w._setArrowExpanded = SetArrowExpanded;
+
+    -- State
+    w._expanded = false;
+
+    -- Hover
+    frame:SetScript("OnEnter", function()
+        w._text:SetTextColor(1, 1, 1, 1);
+        w._arrow:SetVertexColor(unpack(T.textBright));
+        ShowDescription(w._text:GetText(), w._desc_text);
+    end);
+    frame:SetScript("OnLeave", function()
+        w._text:SetTextColor(unpack(T.textBright));
+        w._arrow:SetVertexColor(unpack(T.textDim));
+        ClearDescription();
+    end);
+
+    -- Click to toggle
+    frame:SetScript("OnClick", function()
+        w._expanded = not w._expanded;
+        -- Save state
+        if (w._stateKey) then
+            groupStates[w._stateKey] = w._expanded;
+        end
+        SetArrowExpanded(w._expanded);
+        -- Re-layout the page
+        if (w._reRender) then w._reRender(); end
+    end);
+
+    RegisterWidget("group", w);
+    return w;
+end
+
+local function SetupGroup(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._text:SetText(data.text or "");
+    w._desc_text = data.desc;
+
+    -- State key for per-session memory
+    w._stateKey = (currentPageKey or "") .. ":" .. (data.text or "");
+
+    -- Resolve expanded state: saved > data default > collapsed
+    if (groupStates[w._stateKey] ~= nil) then
+        w._expanded = groupStates[w._stateKey];
+    elseif (data.expanded) then
+        w._expanded = true;
+    else
+        w._expanded = false;
+    end
+
+    -- Arrow orientation
+    w._setArrowExpanded(w._expanded);
+
+    w.height = GROUP_HEADER_H;
+    w.frame:SetHeight(GROUP_HEADER_H);
 
     return w;
 end
@@ -1572,6 +1748,20 @@ local function CreateScrollContainer(parent)
         end);
     end
 
+    function container:UpdateContentHeight(height)
+        self.scrollChild:SetHeight(height);
+        -- Clamp current scroll to new range
+        local visibleHeight = self.scrollFrame:GetHeight();
+        local maxScroll = math.max(0, height - visibleHeight);
+        local current = math.min(self.scrollFrame:GetVerticalScroll(), maxScroll);
+        self.scrollFrame:SetVerticalScroll(current);
+        scrollTarget = current;
+        self.scrollFrame:SetScript("OnUpdate", nil);
+        C_Timer.After(0, function()
+            self:UpdateThumb();
+        end);
+    end
+
     function container:Reset()
         self.scrollFrame:SetVerticalScroll(0);
         scrollTarget = 0;
@@ -1598,10 +1788,16 @@ local widgetFactories = {
     execute     = { create = CreateExecute,  setup = SetupExecute },
     input       = { create = CreateInput,    setup = SetupInput },
     color       = { create = CreateColor,    setup = SetupColor },
+    group       = { create = CreateGroup,   setup = SetupGroup },
 };
 
-local function RenderContent(scrollContainer, options, headerInfo)
+local lastRenderArgs = {};  -- stored for group re-render on expand/collapse
+
+local function RenderContent(scrollContainer, options, headerInfo, pageKey, preserveScroll)
     ReleaseAll();
+
+    currentPageKey = pageKey or "";
+    lastRenderArgs = { scrollContainer = scrollContainer, options = options, headerInfo = headerInfo, pageKey = pageKey };
 
     local parent = scrollContainer.scrollChild;
     local scrollWidth = scrollContainer.scrollFrame:GetWidth();
@@ -1650,44 +1846,69 @@ local function RenderContent(scrollContainer, options, headerInfo)
         y = y - (divW.height or DIVIDER_HEIGHT);
     end
 
-    -- Render each option entry
-    for _, data in ipairs(options) do
-        local widgetType = data.type;
-        local factory = widgetFactories[widgetType];
+    -- Helper: check hidden flag
+    local function isHidden(data)
+        if (not data.hidden) then return false; end
+        if (type(data.hidden) == "function") then return data.hidden(); end
+        return data.hidden;
+    end
 
-        if (factory) then
-            -- Handle hidden
-            local hidden = false;
-            if (data.hidden) then
-                if (type(data.hidden) == "function") then
-                    hidden = data.hidden();
-                else
-                    hidden = data.hidden;
+    -- Helper: render a single widget and advance y
+    local function renderWidget(data)
+        local factory = widgetFactories[data.type];
+        if (not factory or isHidden(data)) then return; end
+
+        local w = factory.create(parent);
+        factory.setup(w, parent, data, contentWidth);
+        w.frame:ClearAllPoints();
+        w.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
+        y = y - (w.height or 20) - WIDGET_GAP;
+
+        -- Group widgets need a re-render callback for expand/collapse
+        if (data.type == "group") then
+            w._reRender = function()
+                local args = lastRenderArgs;
+                if (args.scrollContainer) then
+                    RenderContent(args.scrollContainer, args.options, args.headerInfo, args.pageKey, true);
                 end
-            end
+            end;
 
-            if (not hidden) then
-                local w = factory.create(parent);
-                factory.setup(w, parent, data, contentWidth);
-                w.frame:ClearAllPoints();
-                w.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
-                y = y - (w.height or 20) - WIDGET_GAP;
+            -- If expanded, render children inline
+            if (w._expanded and data.children) then
+                for _, childData in ipairs(data.children) do
+                    if (childData.type ~= "group") then
+                        renderWidget(childData);
+                    end
+                end
             end
         end
     end
 
+    -- Render each option entry
+    for _, data in ipairs(options) do
+        renderWidget(data);
+    end
+
     -- Set total content height
     local totalHeight = math.abs(y) + CONTENT_PAD;
-    scrollContainer:SetContentHeight(totalHeight);
+    if (preserveScroll) then
+        scrollContainer:UpdateContentHeight(totalHeight);
+    else
+        scrollContainer:SetContentHeight(totalHeight);
+    end
+end
+
+local function ResetGroupStates()
+    wipe(groupStates);
 end
 
 -------------------------------------------------------------------------------
 -- Public API
 -------------------------------------------------------------------------------
 
--- Public API
 _G.LanternUX = _G.LanternUX or {};
 LanternUX.RenderContent = RenderContent;
 LanternUX.ReleaseAll = ReleaseAll;
+LanternUX.ResetGroupStates = ResetGroupStates;
 LanternUX.CreateScrollContainer = CreateScrollContainer;
 LanternUX.Theme = T;

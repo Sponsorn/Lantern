@@ -217,353 +217,382 @@ CUSTOM_OPTIONS["cursorRing"] = function()
         -----------------------------------------------------------------------
         -- General
         -----------------------------------------------------------------------
-        { type = "header", text = "General" },
-
         {
-            type = "toggle",
-            label = "Show Out of Combat",
-            desc = "Show the cursor ring outside of combat and instances.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().showOutOfCombat; end,
-            set = function(val)
-                cursorRingDB().showOutOfCombat = val;
-                refreshModule("UpdateVisibility");
-            end,
-        },
-        {
-            type = "range",
-            label = "Combat Opacity",
-            desc = "Ring opacity while in combat or instanced content.",
-            min = 0, max = 1, step = 0.05,
-            isPercent = true,
-            disabled = isDisabled,
-            get = function() return cursorRingDB().opacityInCombat; end,
-            set = function(val)
-                cursorRingDB().opacityInCombat = val;
-                refreshModule("UpdateVisibility");
-            end,
-        },
-        {
-            type = "range",
-            label = "Out of Combat Opacity",
-            desc = "Ring opacity outside of combat.",
-            min = 0, max = 1, step = 0.05,
-            isPercent = true,
-            disabled = isDisabled,
-            get = function() return cursorRingDB().opacityOutOfCombat; end,
-            set = function(val)
-                cursorRingDB().opacityOutOfCombat = val;
-                refreshModule("UpdateVisibility");
-            end,
+            type = "group",
+            text = "General",
+            expanded = true,
+            children = {
+                {
+                    type = "toggle",
+                    label = "Show Out of Combat",
+                    desc = "Show the cursor ring outside of combat and instances.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().showOutOfCombat; end,
+                    set = function(val)
+                        cursorRingDB().showOutOfCombat = val;
+                        refreshModule("UpdateVisibility");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Combat Opacity",
+                    desc = "Ring opacity while in combat or instanced content.",
+                    min = 0, max = 1, step = 0.05,
+                    isPercent = true,
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().opacityInCombat; end,
+                    set = function(val)
+                        cursorRingDB().opacityInCombat = val;
+                        refreshModule("UpdateVisibility");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Out of Combat Opacity",
+                    desc = "Ring opacity outside of combat.",
+                    min = 0, max = 1, step = 0.05,
+                    isPercent = true,
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().opacityOutOfCombat; end,
+                    set = function(val)
+                        cursorRingDB().opacityOutOfCombat = val;
+                        refreshModule("UpdateVisibility");
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Ring 1
         -----------------------------------------------------------------------
-        { type = "header", text = "Ring 1 (Outer)" },
-
         {
-            type = "toggle",
-            label = "Enable Ring 1",
-            desc = "Show the outer ring.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().ring1Enabled; end,
-            set = function(val)
-                cursorRingDB().ring1Enabled = val;
-                refreshModule("UpdateRing", 1);
-                refreshModule("UpdateVisibility");
-            end,
-        },
-        {
-            type = "select",
-            label = "Shape",
-            desc = "Ring shape.",
-            values = shapeValues,
-            sorting = shapeSorting,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
-            get = function() return cursorRingDB().ring1Shape; end,
-            set = function(val)
-                cursorRingDB().ring1Shape = val;
-                refreshModule("UpdateRing", 1);
-                refreshModule("UpdateGCD");
-                refreshModule("UpdateCast");
-            end,
-        },
-        {
-            type = "color",
-            label = "Color",
-            desc = "Ring 1 color.",
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
-            get = function()
-                local c = cursorRingDB().ring1Color;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                cursorRingDB().ring1Color = { r = r, g = g, b = b };
-                refreshModule("UpdateRing", 1);
-            end,
-        },
-        {
-            type = "range",
-            label = "Size",
-            desc = "Ring 1 size in pixels.",
-            min = 16, max = 80, step = 0.01, bigStep = 2,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
-            get = function() return cursorRingDB().ring1Size; end,
-            set = function(val)
-                cursorRingDB().ring1Size = val;
-                refreshModule("UpdateRing", 1);
-                refreshModule("UpdateGCD");
-                refreshModule("UpdateCast");
-            end,
+            type = "group",
+            text = "Ring 1 (Outer)",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Enable Ring 1",
+                    desc = "Show the outer ring.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().ring1Enabled; end,
+                    set = function(val)
+                        cursorRingDB().ring1Enabled = val;
+                        refreshModule("UpdateRing", 1);
+                        refreshModule("UpdateVisibility");
+                    end,
+                },
+                {
+                    type = "select",
+                    label = "Shape",
+                    desc = "Ring shape.",
+                    values = shapeValues,
+                    sorting = shapeSorting,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
+                    get = function() return cursorRingDB().ring1Shape; end,
+                    set = function(val)
+                        cursorRingDB().ring1Shape = val;
+                        refreshModule("UpdateRing", 1);
+                        refreshModule("UpdateGCD");
+                        refreshModule("UpdateCast");
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Color",
+                    desc = "Ring 1 color.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
+                    get = function()
+                        local c = cursorRingDB().ring1Color;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        cursorRingDB().ring1Color = { r = r, g = g, b = b };
+                        refreshModule("UpdateRing", 1);
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Size",
+                    desc = "Ring 1 size in pixels.",
+                    min = 16, max = 80, step = 0.01, bigStep = 2,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
+                    get = function() return cursorRingDB().ring1Size; end,
+                    set = function(val)
+                        cursorRingDB().ring1Size = val;
+                        refreshModule("UpdateRing", 1);
+                        refreshModule("UpdateGCD");
+                        refreshModule("UpdateCast");
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Ring 2
         -----------------------------------------------------------------------
-        { type = "header", text = "Ring 2 (Inner)" },
-
         {
-            type = "toggle",
-            label = "Enable Ring 2",
-            desc = "Show the inner ring.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().ring2Enabled; end,
-            set = function(val)
-                cursorRingDB().ring2Enabled = val;
-                refreshModule("UpdateRing", 2);
-                refreshModule("UpdateVisibility");
-            end,
-        },
-        {
-            type = "select",
-            label = "Shape",
-            desc = "Ring shape.",
-            values = shapeValues,
-            sorting = shapeSorting,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
-            get = function() return cursorRingDB().ring2Shape; end,
-            set = function(val)
-                cursorRingDB().ring2Shape = val;
-                refreshModule("UpdateRing", 2);
-            end,
-        },
-        {
-            type = "color",
-            label = "Color",
-            desc = "Ring 2 color.",
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
-            get = function()
-                local c = cursorRingDB().ring2Color;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                cursorRingDB().ring2Color = { r = r, g = g, b = b };
-                refreshModule("UpdateRing", 2);
-            end,
-        },
-        {
-            type = "range",
-            label = "Size",
-            desc = "Ring 2 size in pixels.",
-            min = 16, max = 80, step = 0.01, bigStep = 2,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
-            get = function() return cursorRingDB().ring2Size; end,
-            set = function(val)
-                cursorRingDB().ring2Size = val;
-                refreshModule("UpdateRing", 2);
-            end,
+            type = "group",
+            text = "Ring 2 (Inner)",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Enable Ring 2",
+                    desc = "Show the inner ring.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().ring2Enabled; end,
+                    set = function(val)
+                        cursorRingDB().ring2Enabled = val;
+                        refreshModule("UpdateRing", 2);
+                        refreshModule("UpdateVisibility");
+                    end,
+                },
+                {
+                    type = "select",
+                    label = "Shape",
+                    desc = "Ring shape.",
+                    values = shapeValues,
+                    sorting = shapeSorting,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
+                    get = function() return cursorRingDB().ring2Shape; end,
+                    set = function(val)
+                        cursorRingDB().ring2Shape = val;
+                        refreshModule("UpdateRing", 2);
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Color",
+                    desc = "Ring 2 color.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
+                    get = function()
+                        local c = cursorRingDB().ring2Color;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        cursorRingDB().ring2Color = { r = r, g = g, b = b };
+                        refreshModule("UpdateRing", 2);
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Size",
+                    desc = "Ring 2 size in pixels.",
+                    min = 16, max = 80, step = 0.01, bigStep = 2,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
+                    get = function() return cursorRingDB().ring2Size; end,
+                    set = function(val)
+                        cursorRingDB().ring2Size = val;
+                        refreshModule("UpdateRing", 2);
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Center Dot
         -----------------------------------------------------------------------
-        { type = "header", text = "Center Dot" },
-
         {
-            type = "toggle",
-            label = "Enable Dot",
-            desc = "Show a small dot at the center of the cursor rings.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().dotEnabled; end,
-            set = function(val)
-                cursorRingDB().dotEnabled = val;
-                refreshModule("UpdateDot");
-                refreshModule("UpdateVisibility");
-            end,
-        },
-        {
-            type = "color",
-            label = "Color",
-            desc = "Dot color.",
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
-            get = function()
-                local c = cursorRingDB().dotColor;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                cursorRingDB().dotColor = { r = r, g = g, b = b };
-                refreshModule("UpdateDot");
-            end,
-        },
-        {
-            type = "range",
-            label = "Size",
-            desc = "Dot size in pixels.",
-            min = 2, max = 24, step = 1,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
-            get = function() return cursorRingDB().dotSize; end,
-            set = function(val)
-                cursorRingDB().dotSize = val;
-                refreshModule("UpdateDot");
-            end,
+            type = "group",
+            text = "Center Dot",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Enable Dot",
+                    desc = "Show a small dot at the center of the cursor rings.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().dotEnabled; end,
+                    set = function(val)
+                        cursorRingDB().dotEnabled = val;
+                        refreshModule("UpdateDot");
+                        refreshModule("UpdateVisibility");
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Color",
+                    desc = "Dot color.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
+                    get = function()
+                        local c = cursorRingDB().dotColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        cursorRingDB().dotColor = { r = r, g = g, b = b };
+                        refreshModule("UpdateDot");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Size",
+                    desc = "Dot size in pixels.",
+                    min = 2, max = 24, step = 1,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
+                    get = function() return cursorRingDB().dotSize; end,
+                    set = function(val)
+                        cursorRingDB().dotSize = val;
+                        refreshModule("UpdateDot");
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Cast Effect
         -----------------------------------------------------------------------
-        { type = "header", text = "Cast Effect" },
-
         {
-            type = "toggle",
-            label = "Enable Cast Effect",
-            desc = "Show a visual effect during spell casting and channeling.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().castEnabled; end,
-            set = function(val)
-                cursorRingDB().castEnabled = val;
-            end,
-        },
-        {
-            type = "select",
-            label = "Style",
-            desc = "Segments: arc lights up progressively. Fill: shape scales from center. Swipe: cooldown sweep (can run simultaneously with GCD).",
-            values = castStyleValues,
-            sorting = castStyleSorting,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
-            get = function() return cursorRingDB().castStyle; end,
-            set = function(val)
-                cursorRingDB().castStyle = val;
-                refreshModule("UpdateCast");
-            end,
-        },
-        {
-            type = "color",
-            label = "Color",
-            desc = "Cast effect color.",
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
-            get = function()
-                local c = cursorRingDB().castColor;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                cursorRingDB().castColor = { r = r, g = g, b = b };
-                refreshModule("UpdateCast");
-            end,
-        },
-        {
-            type = "range",
-            label = "Swipe Offset",
-            desc = "Pixel offset for the cast swipe ring outside the GCD ring. Only applies to Swipe style.",
-            min = 0, max = 32, step = 0.01, bigStep = 0.5,
-            disabled = function() return isDisabled() or (not isPreviewActive() and (not cursorRingDB().castEnabled or cursorRingDB().castStyle ~= "swipe")); end,
-            get = function() return cursorRingDB().castOffset; end,
-            set = function(val)
-                cursorRingDB().castOffset = val;
-                refreshModule("UpdateCast");
-            end,
+            type = "group",
+            text = "Cast Effect",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Enable Cast Effect",
+                    desc = "Show a visual effect during spell casting and channeling.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().castEnabled; end,
+                    set = function(val)
+                        cursorRingDB().castEnabled = val;
+                    end,
+                },
+                {
+                    type = "select",
+                    label = "Style",
+                    desc = "Segments: arc lights up progressively. Fill: shape scales from center. Swipe: cooldown sweep (can run simultaneously with GCD).",
+                    values = castStyleValues,
+                    sorting = castStyleSorting,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
+                    get = function() return cursorRingDB().castStyle; end,
+                    set = function(val)
+                        cursorRingDB().castStyle = val;
+                        refreshModule("UpdateCast");
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Color",
+                    desc = "Cast effect color.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
+                    get = function()
+                        local c = cursorRingDB().castColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        cursorRingDB().castColor = { r = r, g = g, b = b };
+                        refreshModule("UpdateCast");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Swipe Offset",
+                    desc = "Pixel offset for the cast swipe ring outside the GCD ring. Only applies to Swipe style.",
+                    min = 0, max = 32, step = 0.01, bigStep = 0.5,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and (not cursorRingDB().castEnabled or cursorRingDB().castStyle ~= "swipe")); end,
+                    get = function() return cursorRingDB().castOffset; end,
+                    set = function(val)
+                        cursorRingDB().castOffset = val;
+                        refreshModule("UpdateCast");
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- GCD
         -----------------------------------------------------------------------
-        { type = "header", text = "GCD Indicator" },
-
         {
-            type = "toggle",
-            label = "Enable GCD",
-            desc = "Show a cooldown swipe for the global cooldown.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().gcdEnabled; end,
-            set = function(val)
-                cursorRingDB().gcdEnabled = val;
-                refreshModule("SetGCDEnabled", val);
-                refreshModule("UpdateGCD");
-            end,
-        },
-        {
-            type = "color",
-            label = "Color",
-            desc = "GCD swipe color.",
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
-            get = function()
-                local c = cursorRingDB().gcdColor;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                cursorRingDB().gcdColor = { r = r, g = g, b = b };
-                refreshModule("UpdateGCD");
-            end,
-        },
-        {
-            type = "range",
-            label = "Offset",
-            desc = "Pixel offset for the GCD ring outside Ring 1.",
-            min = 0, max = 32, step = 0.01, bigStep = 0.5,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
-            get = function() return cursorRingDB().gcdOffset; end,
-            set = function(val)
-                cursorRingDB().gcdOffset = val;
-                refreshModule("UpdateGCD");
-                refreshModule("UpdateCast");
-            end,
+            type = "group",
+            text = "GCD Indicator",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Enable GCD",
+                    desc = "Show a cooldown swipe for the global cooldown.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().gcdEnabled; end,
+                    set = function(val)
+                        cursorRingDB().gcdEnabled = val;
+                        refreshModule("SetGCDEnabled", val);
+                        refreshModule("UpdateGCD");
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Color",
+                    desc = "GCD swipe color.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
+                    get = function()
+                        local c = cursorRingDB().gcdColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        cursorRingDB().gcdColor = { r = r, g = g, b = b };
+                        refreshModule("UpdateGCD");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Offset",
+                    desc = "Pixel offset for the GCD ring outside Ring 1.",
+                    min = 0, max = 32, step = 0.01, bigStep = 0.5,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
+                    get = function() return cursorRingDB().gcdOffset; end,
+                    set = function(val)
+                        cursorRingDB().gcdOffset = val;
+                        refreshModule("UpdateGCD");
+                        refreshModule("UpdateCast");
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Trail
         -----------------------------------------------------------------------
-        { type = "header", text = "Mouse Trail" },
-
         {
-            type = "toggle",
-            label = "Enable Trail",
-            desc = "Show a fading trail behind the cursor.",
-            disabled = isDisabled,
-            get = function() return cursorRingDB().trailEnabled; end,
-            set = function(val)
-                cursorRingDB().trailEnabled = val;
-                refreshModule("EnsureTrail");
-            end,
-        },
-        {
-            type = "description",
-            text = "The mouse trail may have a noticeable impact on performance, especially on lower-end systems.",
-            fontSize = "small",
-            color = T.textDim,
-        },
-        {
-            type = "color",
-            label = "Color",
-            desc = "Trail color.",
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
-            get = function()
-                local c = cursorRingDB().trailColor;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                cursorRingDB().trailColor = { r = r, g = g, b = b };
-            end,
-        },
-        {
-            type = "range",
-            label = "Duration",
-            desc = "How long trail points last before fading.",
-            min = 0.1, max = 2.0, step = 0.05,
-            disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
-            get = function() return cursorRingDB().trailDuration; end,
-            set = function(val)
-                cursorRingDB().trailDuration = val;
-            end,
+            type = "group",
+            text = "Mouse Trail",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Enable Trail",
+                    desc = "Show a fading trail behind the cursor.",
+                    disabled = isDisabled,
+                    get = function() return cursorRingDB().trailEnabled; end,
+                    set = function(val)
+                        cursorRingDB().trailEnabled = val;
+                        refreshModule("EnsureTrail");
+                    end,
+                },
+                {
+                    type = "description",
+                    text = "The mouse trail may have a noticeable impact on performance, especially on lower-end systems.",
+                    fontSize = "small",
+                    color = T.textDim,
+                },
+                {
+                    type = "color",
+                    label = "Color",
+                    desc = "Trail color.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function()
+                        local c = cursorRingDB().trailColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        cursorRingDB().trailColor = { r = r, g = g, b = b };
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Duration",
+                    desc = "How long trail points last before fading.",
+                    min = 0.1, max = 2.0, step = 0.05,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailDuration; end,
+                    set = function(val)
+                        cursorRingDB().trailDuration = val;
+                    end,
+                },
+            },
         },
     };
 end
@@ -768,234 +797,255 @@ CUSTOM_OPTIONS["missingPet"] = function()
         -----------------------------------------------------------------------
         -- Warning Settings
         -----------------------------------------------------------------------
-        { type = "header", text = "Warning Settings" },
-
         {
-            type = "toggle",
-            label = "Show Missing Warning",
-            desc = "Display a warning when your pet is dismissed or dead.",
-            disabled = isDisabled,
-            get = function() return mpDB().showMissing; end,
-            set = function(val) mpDB().showMissing = val; refreshWarning(); end,
-        },
-        {
-            type = "toggle",
-            label = "Show Passive Warning",
-            desc = "Display a warning when your pet is set to passive mode.",
-            disabled = isDisabled,
-            get = function() return mpDB().showPassive; end,
-            set = function(val) mpDB().showPassive = val; refreshWarning(); end,
-        },
-        {
-            type = "input",
-            label = "Missing Text",
-            desc = "Text to display when your pet is missing.",
-            disabled = isDisabled,
-            get = function() return mpDB().warningText or "Pet Missing!"; end,
-            set = function(val) mpDB().warningText = val; refreshWarning(); end,
-        },
-        {
-            type = "input",
-            label = "Passive Text",
-            desc = "Text to display when your pet is set to passive.",
-            disabled = isDisabled,
-            get = function() return mpDB().passiveText or "Pet is PASSIVE!"; end,
-            set = function(val) mpDB().passiveText = val; refreshWarning(); end,
-        },
-        {
-            type = "color",
-            label = "Missing Color",
-            desc = "Color for the missing pet warning text.",
-            disabled = isDisabled,
-            get = function()
-                local c = mpDB().missingColor;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                mpDB().missingColor = { r = r, g = g, b = b };
-                refreshWarning();
-            end,
-        },
-        {
-            type = "color",
-            label = "Passive Color",
-            desc = "Color for the passive pet warning text.",
-            disabled = isDisabled,
-            get = function()
-                local c = mpDB().passiveColor;
-                return c.r, c.g, c.b;
-            end,
-            set = function(r, g, b)
-                mpDB().passiveColor = { r = r, g = g, b = b };
-                refreshWarning();
-            end,
-        },
-        {
-            type = "select",
-            label = "Animation Style",
-            desc = "Choose how the warning text animates.",
-            values = animationValues,
-            sorting = animationSorting,
-            disabled = isDisabled,
-            get = function() return mpDB().animationStyle or "bounce"; end,
-            set = function(val) mpDB().animationStyle = val; refreshAnimation(); end,
+            type = "group",
+            text = "Warning Settings",
+            expanded = true,
+            children = {
+                {
+                    type = "toggle",
+                    label = "Show Missing Warning",
+                    desc = "Display a warning when your pet is dismissed or dead.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().showMissing; end,
+                    set = function(val) mpDB().showMissing = val; refreshWarning(); end,
+                },
+                {
+                    type = "toggle",
+                    label = "Show Passive Warning",
+                    desc = "Display a warning when your pet is set to passive mode.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().showPassive; end,
+                    set = function(val) mpDB().showPassive = val; refreshWarning(); end,
+                },
+                {
+                    type = "input",
+                    label = "Missing Text",
+                    desc = "Text to display when your pet is missing.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().warningText or "Pet Missing!"; end,
+                    set = function(val) mpDB().warningText = val; refreshWarning(); end,
+                },
+                {
+                    type = "input",
+                    label = "Passive Text",
+                    desc = "Text to display when your pet is set to passive.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().passiveText or "Pet is PASSIVE!"; end,
+                    set = function(val) mpDB().passiveText = val; refreshWarning(); end,
+                },
+                {
+                    type = "color",
+                    label = "Missing Color",
+                    desc = "Color for the missing pet warning text.",
+                    disabled = isDisabled,
+                    get = function()
+                        local c = mpDB().missingColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        mpDB().missingColor = { r = r, g = g, b = b };
+                        refreshWarning();
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Passive Color",
+                    desc = "Color for the passive pet warning text.",
+                    disabled = isDisabled,
+                    get = function()
+                        local c = mpDB().passiveColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        mpDB().passiveColor = { r = r, g = g, b = b };
+                        refreshWarning();
+                    end,
+                },
+                {
+                    type = "select",
+                    label = "Animation Style",
+                    desc = "Choose how the warning text animates.",
+                    values = animationValues,
+                    sorting = animationSorting,
+                    disabled = isDisabled,
+                    get = function() return mpDB().animationStyle or "bounce"; end,
+                    set = function(val) mpDB().animationStyle = val; refreshAnimation(); end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Font Settings
         -----------------------------------------------------------------------
-        { type = "header", text = "Font Settings" },
-
         {
-            type = "select",
-            label = "Font",
-            desc = "Select the font for the warning text.",
-            values = getFontValues,
-            disabled = isDisabled,
-            get = function() return mpDB().font or "Friz Quadrata TT"; end,
-            set = function(val) mpDB().font = val; refreshFont(); end,
-        },
-        {
-            type = "range",
-            label = "Font Size",
-            desc = "Size of the warning text.",
-            min = 12, max = 72, step = 1,
-            disabled = isDisabled,
-            get = function() return mpDB().fontSize or 24; end,
-            set = function(val) mpDB().fontSize = val; refreshFont(); end,
-        },
-        {
-            type = "select",
-            label = "Font Outline",
-            desc = "Outline style for the warning text.",
-            values = outlineValues,
-            sorting = outlineSorting,
-            disabled = isDisabled,
-            get = function() return mpDB().fontOutline or "OUTLINE"; end,
-            set = function(val) mpDB().fontOutline = val; refreshFont(); end,
+            type = "group",
+            text = "Font Settings",
+            children = {
+                {
+                    type = "select",
+                    label = "Font",
+                    desc = "Select the font for the warning text.",
+                    values = getFontValues,
+                    disabled = isDisabled,
+                    get = function() return mpDB().font or "Friz Quadrata TT"; end,
+                    set = function(val) mpDB().font = val; refreshFont(); end,
+                },
+                {
+                    type = "range",
+                    label = "Font Size",
+                    desc = "Size of the warning text.",
+                    min = 12, max = 72, step = 1,
+                    disabled = isDisabled,
+                    get = function() return mpDB().fontSize or 24; end,
+                    set = function(val) mpDB().fontSize = val; refreshFont(); end,
+                },
+                {
+                    type = "select",
+                    label = "Font Outline",
+                    desc = "Outline style for the warning text.",
+                    values = outlineValues,
+                    sorting = outlineSorting,
+                    disabled = isDisabled,
+                    get = function() return mpDB().fontOutline or "OUTLINE"; end,
+                    set = function(val) mpDB().fontOutline = val; refreshFont(); end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Position
         -----------------------------------------------------------------------
-        { type = "header", text = "Position" },
-
         {
-            type = "toggle",
-            label = "Lock Position",
-            desc = "When locked, the warning cannot be moved. Hold Shift to move even when locked.",
-            disabled = isDisabled,
-            get = function() return mpDB().locked; end,
-            set = function(val)
-                mpDB().locked = val;
-                local m = mpModule();
-                if (m and m.UpdateLock) then m:UpdateLock(); end
-            end,
-        },
-        {
-            type = "execute",
-            label = "Reset Position",
-            desc = "Reset the warning frame position to the center of the screen.",
-            disabled = isDisabled,
-            func = function()
-                local m = mpModule();
-                if (m and m.ResetPosition) then m:ResetPosition(); end
-            end,
+            type = "group",
+            text = "Position",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Lock Position",
+                    desc = "When locked, the warning cannot be moved. Hold Shift to move even when locked.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().locked; end,
+                    set = function(val)
+                        mpDB().locked = val;
+                        local m = mpModule();
+                        if (m and m.UpdateLock) then m:UpdateLock(); end
+                    end,
+                },
+                {
+                    type = "execute",
+                    label = "Reset Position",
+                    desc = "Reset the warning frame position to the center of the screen.",
+                    disabled = isDisabled,
+                    func = function()
+                        local m = mpModule();
+                        if (m and m.ResetPosition) then m:ResetPosition(); end
+                    end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Visibility
         -----------------------------------------------------------------------
-        { type = "header", text = "Visibility" },
-
         {
-            type = "toggle",
-            label = "Hide When Mounted",
-            desc = "Hide the warning while mounted, on a taxi, or in a vehicle.",
-            disabled = isDisabled,
-            get = function() return mpDB().hideWhenMounted; end,
-            set = function(val) mpDB().hideWhenMounted = val; refreshWarning(); end,
-        },
-        {
-            type = "toggle",
-            label = "Hide In Rest Zones",
-            desc = "Hide the warning while in a rest zone (cities and inns).",
-            disabled = isDisabled,
-            get = function() return mpDB().hideInRestZone; end,
-            set = function(val) mpDB().hideInRestZone = val; refreshWarning(); end,
-        },
-        {
-            type = "range",
-            label = "Dismount Delay",
-            desc = "Seconds to wait after dismounting before showing warning. Set to 0 to show immediately.",
-            min = 0, max = 10, step = 0.5,
-            disabled = function() return isDisabled() or not mpDB().hideWhenMounted; end,
-            get = function() return mpDB().dismountDelay or 5; end,
-            set = function(val) mpDB().dismountDelay = val; end,
+            type = "group",
+            text = "Visibility",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Hide When Mounted",
+                    desc = "Hide the warning while mounted, on a taxi, or in a vehicle.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().hideWhenMounted; end,
+                    set = function(val) mpDB().hideWhenMounted = val; refreshWarning(); end,
+                },
+                {
+                    type = "toggle",
+                    label = "Hide In Rest Zones",
+                    desc = "Hide the warning while in a rest zone (cities and inns).",
+                    disabled = isDisabled,
+                    get = function() return mpDB().hideInRestZone; end,
+                    set = function(val) mpDB().hideInRestZone = val; refreshWarning(); end,
+                },
+                {
+                    type = "range",
+                    label = "Dismount Delay",
+                    desc = "Seconds to wait after dismounting before showing warning. Set to 0 to show immediately.",
+                    min = 0, max = 10, step = 0.5,
+                    disabled = function() return isDisabled() or not mpDB().hideWhenMounted; end,
+                    get = function() return mpDB().dismountDelay or 5; end,
+                    set = function(val) mpDB().dismountDelay = val; end,
+                },
+            },
         },
 
         -----------------------------------------------------------------------
         -- Sound
         -----------------------------------------------------------------------
-        { type = "header", text = "Sound" },
-
         {
-            type = "toggle",
-            label = "Play Sound",
-            desc = "Play a sound when the warning is displayed.",
-            disabled = isDisabled,
-            get = function() return mpDB().soundEnabled; end,
-            set = function(val) mpDB().soundEnabled = val; end,
-        },
-        {
-            type = "toggle",
-            label = "Sound When Missing",
-            desc = "Play sound when pet is missing.",
-            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
-            get = function() return mpDB().soundMissing; end,
-            set = function(val) mpDB().soundMissing = val; end,
-        },
-        {
-            type = "toggle",
-            label = "Sound When Passive",
-            desc = "Play sound when pet is set to passive.",
-            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
-            get = function() return mpDB().soundPassive; end,
-            set = function(val) mpDB().soundPassive = val; end,
-        },
-        {
-            type = "toggle",
-            label = "Sound In Combat",
-            desc = "Continue playing sound while in combat. When disabled, sound stops when combat begins.",
-            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
-            get = function() return mpDB().soundInCombat; end,
-            set = function(val) mpDB().soundInCombat = val; end,
-        },
-        {
-            type = "toggle",
-            label = "Repeat Sound",
-            desc = "Repeat the sound at regular intervals while the warning is displayed.",
-            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
-            get = function() return mpDB().soundRepeat; end,
-            set = function(val) mpDB().soundRepeat = val; end,
-        },
-        {
-            type = "select",
-            label = "Sound",
-            desc = "Select the sound to play.",
-            values = getSoundValues,
-            disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
-            get = function() return mpDB().soundName or "RaidWarning"; end,
-            set = function(val) mpDB().soundName = val; end,
-        },
-        {
-            type = "range",
-            label = "Repeat Interval",
-            desc = "Seconds between sound repeats.",
-            min = 1, max = 30, step = 1,
-            disabled = function() return isDisabled() or not mpDB().soundEnabled or not mpDB().soundRepeat; end,
-            get = function() return mpDB().soundInterval or 5; end,
-            set = function(val) mpDB().soundInterval = val; end,
+            type = "group",
+            text = "Sound",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Play Sound",
+                    desc = "Play a sound when the warning is displayed.",
+                    disabled = isDisabled,
+                    get = function() return mpDB().soundEnabled; end,
+                    set = function(val) mpDB().soundEnabled = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Sound When Missing",
+                    desc = "Play sound when pet is missing.",
+                    disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+                    get = function() return mpDB().soundMissing; end,
+                    set = function(val) mpDB().soundMissing = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Sound When Passive",
+                    desc = "Play sound when pet is set to passive.",
+                    disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+                    get = function() return mpDB().soundPassive; end,
+                    set = function(val) mpDB().soundPassive = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Sound In Combat",
+                    desc = "Continue playing sound while in combat. When disabled, sound stops when combat begins.",
+                    disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+                    get = function() return mpDB().soundInCombat; end,
+                    set = function(val) mpDB().soundInCombat = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Repeat Sound",
+                    desc = "Repeat the sound at regular intervals while the warning is displayed.",
+                    disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+                    get = function() return mpDB().soundRepeat; end,
+                    set = function(val) mpDB().soundRepeat = val; end,
+                },
+                {
+                    type = "select",
+                    label = "Sound",
+                    desc = "Select the sound to play.",
+                    values = getSoundValues,
+                    disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
+                    get = function() return mpDB().soundName or "RaidWarning"; end,
+                    set = function(val) mpDB().soundName = val; end,
+                },
+                {
+                    type = "range",
+                    label = "Repeat Interval",
+                    desc = "Seconds between sound repeats.",
+                    min = 1, max = 30, step = 1,
+                    disabled = function() return isDisabled() or not mpDB().soundEnabled or not mpDB().soundRepeat; end,
+                    get = function() return mpDB().soundInterval or 5; end,
+                    set = function(val) mpDB().soundInterval = val; end,
+                },
+            },
         },
     };
 end

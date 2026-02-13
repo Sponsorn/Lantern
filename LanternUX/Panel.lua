@@ -202,7 +202,7 @@ function PanelMixin:_ShowContent(key)
         if (page.title) then
             headerInfo = { title = page.title, description = page.description };
         end
-        LanternUX.RenderContent(self._customScroll, options, headerInfo);
+        LanternUX.RenderContent(self._customScroll, options, headerInfo, key);
         return;
     end
 
@@ -237,7 +237,6 @@ function PanelMixin:_BuildSidebar()
     -- Clear existing buttons and headers
     for _, btn in pairs(self._buttons) do
         btn:Hide();
-        btn:SetParent(nil);
     end
     self._buttons = {};
 
@@ -515,6 +514,9 @@ function PanelMixin:_Build()
         if (self_._customScroll) then
             LanternUX.ReleaseAll();
             self_._customScroll.scrollFrame:Hide();
+        end
+        if (LanternUX.ResetGroupStates) then
+            LanternUX.ResetGroupStates();
         end
         if (self_._descPanel) then self_._descPanel:Hide(); end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE or 851);
