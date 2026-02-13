@@ -23,6 +23,7 @@ local T = {
     -- Disabled
     disabled     = { 0.30, 0.30, 0.30, 1.0 },
     disabledText = { 0.40, 0.40, 0.40, 1.0 },
+    disabledBg   = { 0.08, 0.08, 0.08, 1.0 },
     -- Panel shell
     sidebar      = { 0.09, 0.09, 0.10, 1.0 },
     titleBar     = { 0.09, 0.09, 0.10, 1.0 },
@@ -132,7 +133,11 @@ end
 -- Description panel API (hover updates the right-side description pane)
 -------------------------------------------------------------------------------
 
+local descClearTimer;
+
 local function ShowDescription(label, desc)
+    -- Cancel any pending clear so we don't flicker between label and control
+    if (descClearTimer) then descClearTimer:Cancel(); descClearTimer = nil; end
     local dp = _G.LanternUX and _G.LanternUX.descPanel;
     if (not dp or not desc or desc == "") then return; end
     dp._title:SetText(label or "");
@@ -140,10 +145,16 @@ local function ShowDescription(label, desc)
 end
 
 local function ClearDescription()
-    local dp = _G.LanternUX and _G.LanternUX.descPanel;
-    if (not dp) then return; end
-    dp._title:SetText(dp._defaultTitle or "");
-    dp._text:SetText(dp._defaultDesc or "");
+    -- Defer the clear by one frame to prevent flicker when mouse moves
+    -- between a widget's label area and its interactive control
+    if (descClearTimer) then descClearTimer:Cancel(); end
+    descClearTimer = C_Timer.NewTimer(0, function()
+        descClearTimer = nil;
+        local dp = _G.LanternUX and _G.LanternUX.descPanel;
+        if (not dp) then return; end
+        dp._title:SetText(dp._defaultTitle or "");
+        dp._text:SetText(dp._defaultDesc or "");
+    end);
 end
 
 local function SetDefaultDescription(title, desc)
@@ -183,7 +194,7 @@ local function RefreshActiveWidgets()
             local disabled = EvalDisabled(w);
             if (disabled) then
                 w._boxBorder:SetColorTexture(unpack(T.disabled));
-                w._boxInner:SetColorTexture(0.08, 0.08, 0.08, 1.0);
+                w._boxInner:SetColorTexture(unpack(T.disabledBg));
                 w._mark:SetColorTexture(unpack(T.accentDim));
                 w._label:SetTextColor(unpack(T.disabledText));
             else
@@ -231,7 +242,7 @@ local function RefreshActiveWidgets()
             local disabled = EvalDisabled(w);
             if (disabled) then
                 w._label:SetTextColor(unpack(T.disabledText));
-                w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+                w._btn:SetBackdropColor(unpack(T.disabledBg));
                 w._btn:SetBackdropBorderColor(unpack(T.disabled));
                 w._btnText:SetTextColor(unpack(T.disabledText));
                 w._arrow:SetVertexColor(unpack(T.disabled));
@@ -250,7 +261,7 @@ local function RefreshActiveWidgets()
         if (w._inUse) then
             local disabled = EvalDisabled(w);
             if (disabled) then
-                w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+                w._btn:SetBackdropColor(unpack(T.disabledBg));
                 w._btn:SetBackdropBorderColor(unpack(T.disabled));
                 w._btnText:SetTextColor(unpack(T.disabledText));
             else
@@ -270,7 +281,7 @@ local function RefreshActiveWidgets()
             local disabled = EvalDisabled(w);
             if (disabled) then
                 w._label:SetTextColor(unpack(T.disabledText));
-                w._box:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+                w._box:SetBackdropColor(unpack(T.disabledBg));
                 w._box:SetBackdropBorderColor(unpack(T.disabled));
                 w._box:SetTextColor(unpack(T.disabledText));
                 w._box:EnableMouse(false);
@@ -429,7 +440,7 @@ local function SetupToggle(w, parent, data, contentWidth)
 
     if (disabled) then
         w._boxBorder:SetColorTexture(unpack(T.disabled));
-        w._boxInner:SetColorTexture(0.08, 0.08, 0.08, 1.0);
+        w._boxInner:SetColorTexture(unpack(T.disabledBg));
         w._mark:SetColorTexture(unpack(T.accentDim));
         w._label:SetTextColor(unpack(T.disabledText));
     else
@@ -799,10 +810,11 @@ end
 -- Widget: Select (Dropdown)
 -------------------------------------------------------------------------------
 
-local SELECT_HEIGHT    = 28;
-local SELECT_BTN_W     = 160;
-local SELECT_BTN_H     = 24;
-local SELECT_ITEM_H    = 24;
+local SELECT_HEIGHT      = 28;
+local SELECT_BTN_W       = 160;
+local SELECT_BTN_H       = 24;
+local SELECT_ITEM_H      = 24;
+local SELECT_MAX_VISIBLE = 10;   -- max items before scroll kicks in
 
 local function CloseDropdown()
     if (dropdownPopup) then
@@ -846,6 +858,25 @@ local function EnsureDropdownPopup()
         if (f._closeListener) then f._closeListener:Hide(); end
     end);
 
+    -- Scroll frame inside the popup for long lists
+    local scrollFrame = CreateFrame("ScrollFrame", nil, f);
+    scrollFrame:SetPoint("TOPLEFT", 1, -1);
+    scrollFrame:SetPoint("BOTTOMRIGHT", -1, 1);
+    scrollFrame:EnableMouseWheel(true);
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local maxScroll = self._maxScroll or 0;
+        if (maxScroll <= 0) then return; end
+        local current = self:GetVerticalScroll();
+        local newScroll = math.max(0, math.min(maxScroll, current - delta * SELECT_ITEM_H * 2));
+        self:SetVerticalScroll(newScroll);
+    end);
+
+    local scrollChild = CreateFrame("Frame", nil, scrollFrame);
+    scrollChild:SetWidth(1);
+    scrollFrame:SetScrollChild(scrollChild);
+
+    f._scrollFrame = scrollFrame;
+    f._scrollChild = scrollChild;
     f._items = {};
     dropdownPopup = f;
     return f;
@@ -877,13 +908,16 @@ local function OpenDropdown(w)
     -- Hide old items
     for _, item in ipairs(popup._items) do item:Hide(); end
 
+    local scrollChild = popup._scrollChild;
+
     -- Create/show items
     local y = -4;
     local maxTextWidth = 0;
+    local selectedIndex = 0;
     for i, key in ipairs(keys) do
         local item = popup._items[i];
         if (not item) then
-            item = CreateFrame("Button", nil, popup);
+            item = CreateFrame("Button", nil, scrollChild);
             item:SetHeight(SELECT_ITEM_H);
 
             local itemBg = item:CreateTexture(nil, "BACKGROUND");
@@ -906,10 +940,10 @@ local function OpenDropdown(w)
             popup._items[i] = item;
         end
 
-        item:SetParent(popup);
+        item:SetParent(scrollChild);
         item:ClearAllPoints();
-        item:SetPoint("TOPLEFT", popup, "TOPLEFT", 1, y);
-        item:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -1, y);
+        item:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, y);
+        item:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, y);
         item._text:SetText(values[key]);
         item._text:SetTextColor(unpack(T.text));
 
@@ -920,6 +954,7 @@ local function OpenDropdown(w)
         -- Highlight current selection
         if (key == w._currentKey) then
             item._text:SetTextColor(unpack(T.accent));
+            selectedIndex = i;
         end
 
         item:SetScript("OnClick", function()
@@ -934,11 +969,26 @@ local function OpenDropdown(w)
         y = y - SELECT_ITEM_H;
     end
 
-    -- Size popup (fit content, at least as wide as the button)
-    local popupHeight = math.abs(y) + 8;
+    -- Size popup (fit content, cap height for long lists)
+    local totalContentHeight = math.abs(y) + 8;
+    local maxVisibleHeight = SELECT_MAX_VISIBLE * SELECT_ITEM_H + 8;
+    local popupHeight = math.min(totalContentHeight, maxVisibleHeight);
     local popupWidth = math.max(SELECT_BTN_W, maxTextWidth + 24);
     popup:SetWidth(popupWidth);
     popup:SetHeight(popupHeight);
+
+    scrollChild:SetWidth(popupWidth - 2);
+    scrollChild:SetHeight(totalContentHeight);
+
+    -- Set scroll range and scroll selected item into view
+    local maxScroll = math.max(0, totalContentHeight - popupHeight);
+    popup._scrollFrame._maxScroll = maxScroll;
+    if (selectedIndex > 0 and maxScroll > 0) then
+        local selectedY = (selectedIndex - 1) * SELECT_ITEM_H;
+        popup._scrollFrame:SetVerticalScroll(math.min(selectedY, maxScroll));
+    else
+        popup._scrollFrame:SetVerticalScroll(0);
+    end
 
     -- Anchor below the select button
     popup:ClearAllPoints();
@@ -1083,7 +1133,7 @@ local function SetupSelect(w, parent, data, contentWidth)
 
     if (disabled) then
         w._label:SetTextColor(unpack(T.disabledText));
-        w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+        w._btn:SetBackdropColor(unpack(T.disabledBg));
         w._btn:SetBackdropBorderColor(unpack(T.disabled));
         w._btnText:SetTextColor(unpack(T.disabledText));
         w._arrow:SetVertexColor(unpack(T.disabled));
@@ -1208,7 +1258,7 @@ local function SetupExecute(w, parent, data, contentWidth)
     w._disabled = disabled;
 
     if (disabled) then
-        w._btn:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+        w._btn:SetBackdropColor(unpack(T.disabledBg));
         w._btn:SetBackdropBorderColor(unpack(T.disabled));
         w._btnText:SetTextColor(unpack(T.disabledText));
     else
@@ -1337,7 +1387,7 @@ local function SetupInput(w, parent, data, contentWidth)
 
     if (disabled) then
         w._label:SetTextColor(unpack(T.disabledText));
-        w._box:SetBackdropColor(0.08, 0.08, 0.08, 1.0);
+        w._box:SetBackdropColor(unpack(T.disabledBg));
         w._box:SetBackdropBorderColor(unpack(T.disabled));
         w._box:SetTextColor(unpack(T.disabledText));
         w._box:EnableMouse(false);
@@ -1777,7 +1827,7 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
     local y = -CONTENT_PAD;
 
     -- Reset description panel default
-    SetDefaultDescription("", "");
+    SetDefaultDescription("", "Hover over a setting to see its description.");
 
     -- Content header (title + description + divider)
     if (headerInfo and headerInfo.title) then
@@ -1824,15 +1874,27 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
     end
 
     -- Helper: render a single widget and advance y
-    local function renderWidget(data)
+    local GROUP_INDENT = 14;
+    local SECTION_MARGIN = 10;  -- extra top spacing before header/group widgets
+    local widgetCount = 0;
+    local function renderWidget(data, indent)
         local factory = widgetFactories[data.type];
         if (not factory or isHidden(data)) then return; end
 
+        -- Extra top margin before section widgets (header, group) when not the first widget
+        if (widgetCount > 0 and (data.type == "header" or data.type == "group")) then
+            y = y - SECTION_MARGIN;
+        end
+
+        local xOffset = CONTENT_PAD + (indent or 0);
+        local childWidth = contentWidth - (indent or 0);
+
         local w = factory.create(parent);
-        factory.setup(w, parent, data, contentWidth);
+        factory.setup(w, parent, data, childWidth);
         w.frame:ClearAllPoints();
-        w.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
+        w.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, y);
         y = y - (w.height or 20) - WIDGET_GAP;
+        widgetCount = widgetCount + 1;
 
         -- Group widgets need a re-render callback for expand/collapse
         if (data.type == "group") then
@@ -1843,11 +1905,11 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
                 end
             end;
 
-            -- If expanded, render children inline
+            -- If expanded, render children inline (indented)
             if (w._expanded and data.children) then
                 for _, childData in ipairs(data.children) do
                     if (childData.type ~= "group") then
-                        renderWidget(childData);
+                        renderWidget(childData, GROUP_INDENT);
                     end
                 end
             end
