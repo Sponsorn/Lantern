@@ -105,7 +105,7 @@ function Lantern:BuildInterruptTrackerOptions()
     local args = {};
 
     -- Description
-    args.desc = Layout.description(0, "Tracks party member interrupt cooldowns in 5-man dungeons. Passively detects kicks via taint laundering and mob interrupt correlation. Optional addon sync with other Lantern users.");
+    args.desc = Layout.description(0, "Tracks party member interrupt cooldowns in non-raid groups. Passively detects kicks via taint laundering and mob interrupt correlation. Optional addon sync with other Lantern users.");
 
     -- Enable toggle
     args.enabled = {
