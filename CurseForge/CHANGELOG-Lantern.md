@@ -8,8 +8,6 @@
 - Change: Interrupt Tracker title uses Lantern theme color
 - Add: Interrupt Tracker title bar added to minimal mode
 - Remove: Interrupt Tracker frame background behind bars removed for cleaner look
-
-## 0.4.31b - 2026-02-14
 - Fix: Interrupt Tracker frame strata lowered to avoid overlapping other UI elements
 - Change: Interrupt Tracker description updated to reflect non-raid group support
 

@@ -35,6 +35,13 @@ function PanelMixin:AddSection(key, label)
     self._sidebarDirty = true;
 end
 
+function PanelMixin:AddSidebarGroup(key, opts)
+    if (self._sidebarGroupMap[key]) then return; end
+    table.insert(self._sidebarGroups, { key = key, opts = opts });
+    self._sidebarGroupMap[key] = opts;
+    self._sidebarDirty = true;
+end
+
 function PanelMixin:AddPage(key, opts)
     if (self._pageMap[key]) then return; end
     self._pageMap[key] = opts;
@@ -129,6 +136,211 @@ function PanelMixin:_CreateSectionHeader(parent, label, yOffset)
     return text;
 end
 
+function PanelMixin:_GetGroupForPage(pageKey)
+    local page = self._pageMap[pageKey];
+    if (page and page.sidebarGroup and self._sidebarGroupMap[page.sidebarGroup]) then
+        return page.sidebarGroup;
+    end
+    return nil;
+end
+
+function PanelMixin:_CreateSidebarDropdown(parent, groupKey, label, pages, yOffset)
+    local btn = CreateFrame("Button", nil, parent);
+    btn:SetHeight(ITEM_H);
+    btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -yOffset);
+    btn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -1, -yOffset);
+
+    local bg = btn:CreateTexture(nil, "BACKGROUND");
+    bg:SetAllPoints();
+    bg:SetColorTexture(unpack(T.selected));
+    bg:Hide();
+    btn.bg = bg;
+
+    local bar = btn:CreateTexture(nil, "ARTWORK");
+    bar:SetWidth(ACCENT_W);
+    bar:SetPoint("TOPLEFT");
+    bar:SetPoint("BOTTOMLEFT");
+    bar:SetColorTexture(unpack(T.accentBar));
+    bar:Hide();
+    btn.bar = bar;
+
+    local hover = btn:CreateTexture(nil, "HIGHLIGHT");
+    hover:SetAllPoints();
+    hover:SetColorTexture(unpack(T.hover));
+
+    local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
+    text:SetPoint("RIGHT", btn, "RIGHT", -22, 0);
+    text:SetText(label);
+    text:SetTextColor(unpack(T.text));
+    text:SetJustifyH("LEFT");
+    btn.label = text;
+
+    -- Chevron arrow (V shape on right side)
+    local arrowWrap = CreateFrame("Frame", nil, btn);
+    arrowWrap:SetSize(10, 6);
+    arrowWrap:SetPoint("RIGHT", -8, 0);
+
+    local arrowL = arrowWrap:CreateTexture(nil, "ARTWORK");
+    arrowL:SetSize(6, 1.5);
+    arrowL:SetTexture("Interface\\Buttons\\WHITE8x8");
+    arrowL:SetRotation(math.rad(-40));
+    arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
+    arrowL:SetVertexColor(unpack(T.textDim));
+
+    local arrowR = arrowWrap:CreateTexture(nil, "ARTWORK");
+    arrowR:SetSize(6, 1.5);
+    arrowR:SetTexture("Interface\\Buttons\\WHITE8x8");
+    arrowR:SetRotation(math.rad(40));
+    arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
+    arrowR:SetVertexColor(unpack(T.textDim));
+
+    btn._groupKey = groupKey;
+    btn._groupLabel = label;
+    btn._groupPages = pages;
+
+    local self_ = self;
+    btn:SetScript("OnClick", function()
+        if (self_._sidebarPopup and self_._sidebarPopup:IsShown() and self_._sidebarPopup._owner == btn) then
+            self_:_CloseSidebarPopup();
+        else
+            self_:_OpenSidebarPopup(btn);
+        end
+    end);
+
+    self._sidebarDropdowns[groupKey] = btn;
+    return btn;
+end
+
+function PanelMixin:_CloseSidebarPopup()
+    if (self._sidebarPopup) then
+        self._sidebarPopup:Hide();
+        self._sidebarPopup._owner = nil;
+    end
+end
+
+function PanelMixin:_OpenSidebarPopup(dropdownBtn)
+    self:_CloseSidebarPopup();
+
+    if (not self._sidebarPopup) then
+        local popupName = (self._config.name or "LanternUX") .. "SidebarPopup";
+        local popup = CreateFrame("Frame", popupName, self._frame, "BackdropTemplate");
+        popup:SetFrameStrata("TOOLTIP");
+        popup:SetClampedToScreen(true);
+        popup:EnableMouse(true);
+        popup:Hide();
+
+        popup:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        });
+        popup:SetBackdropColor(unpack(T.dropdownBg));
+        popup:SetBackdropBorderColor(unpack(T.border));
+
+        -- ESC to close popup (without closing the panel)
+        table.insert(UISpecialFrames, popupName);
+
+        popup._items = {};
+
+        local self_ = self;
+        popup:SetScript("OnShow", function()
+            if (not popup._closeListener) then
+                popup._closeListener = CreateFrame("Button", nil, UIParent);
+            end
+            popup._closeListener:SetAllPoints(UIParent);
+            popup._closeListener:SetFrameStrata("TOOLTIP");
+            popup._closeListener:SetFrameLevel(popup:GetFrameLevel() - 1);
+            popup._closeListener:Show();
+            popup._closeListener:SetScript("OnClick", function()
+                self_:_CloseSidebarPopup();
+            end);
+        end);
+        popup:SetScript("OnHide", function()
+            if (popup._closeListener) then popup._closeListener:Hide(); end
+        end);
+
+        self._sidebarPopup = popup;
+    end
+
+    local popup = self._sidebarPopup;
+    popup._owner = dropdownBtn;
+
+    local pages = dropdownBtn._groupPages;
+
+    -- Hide existing items
+    for _, item in ipairs(popup._items) do
+        item:Hide();
+    end
+
+    local y = -4;
+    for i, page in ipairs(pages) do
+        local item = popup._items[i];
+        if (not item) then
+            item = CreateFrame("Button", nil, popup);
+            item:SetHeight(ITEM_H);
+
+            local itemBg = item:CreateTexture(nil, "BACKGROUND");
+            itemBg:SetAllPoints();
+            itemBg:SetColorTexture(0, 0, 0, 0);
+            item._bg = itemBg;
+
+            local itemBar = item:CreateTexture(nil, "ARTWORK");
+            itemBar:SetWidth(ACCENT_W);
+            itemBar:SetPoint("TOPLEFT");
+            itemBar:SetPoint("BOTTOMLEFT");
+            itemBar:SetColorTexture(unpack(T.accentBar));
+            itemBar:Hide();
+            item._bar = itemBar;
+
+            local itemText = item:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+            itemText:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
+            itemText:SetJustifyH("LEFT");
+            item._text = itemText;
+
+            local itemHover = item:CreateTexture(nil, "HIGHLIGHT");
+            itemHover:SetAllPoints();
+            itemHover:SetColorTexture(unpack(T.hover));
+
+            popup._items[i] = item;
+        end
+
+        item:SetParent(popup);
+        item:ClearAllPoints();
+        item:SetPoint("TOPLEFT", popup, "TOPLEFT", 0, -y);
+        item:SetPoint("TOPRIGHT", popup, "TOPRIGHT", 0, -y);
+        item._text:SetText(page.label);
+
+        -- Highlight active page
+        if (page.key == self._activeKey) then
+            item._text:SetTextColor(unpack(T.textBright));
+            item._bar:Show();
+            item._bg:SetColorTexture(unpack(T.selected));
+        else
+            item._text:SetTextColor(unpack(T.text));
+            item._bar:Hide();
+            item._bg:SetColorTexture(0, 0, 0, 0);
+        end
+
+        local self_ = self;
+        local pageKey = page.key;
+        item:SetScript("OnClick", function()
+            self_:_CloseSidebarPopup();
+            self_:_SelectItem(pageKey);
+        end);
+
+        item:Show();
+        y = y + ITEM_H;
+    end
+
+    popup:SetHeight(math.abs(y) + 4);
+    popup:ClearAllPoints();
+    popup:SetPoint("TOPLEFT", dropdownBtn, "BOTTOMLEFT", 0, 0);
+    popup:SetPoint("TOPRIGHT", dropdownBtn, "BOTTOMRIGHT", 0, 0);
+
+    popup:Show();
+end
+
 -------------------------------------------------------------------------------
 -- Internal: sidebar selection
 -------------------------------------------------------------------------------
@@ -137,6 +349,7 @@ function PanelMixin:_SelectItem(key)
     if (self._activeKey == key) then return; end
     self._activeKey = key;
 
+    -- Regular sidebar buttons
     for k, btn in pairs(self._buttons) do
         local sel = (k == key);
         if (sel) then
@@ -151,6 +364,26 @@ function PanelMixin:_SelectItem(key)
         end
     end
 
+    -- Sidebar dropdown buttons
+    local activeGroupKey = self:_GetGroupForPage(key);
+    for gKey, btn in pairs(self._sidebarDropdowns) do
+        if (gKey == activeGroupKey) then
+            btn.bg:SetColorTexture(unpack(T.selected));
+            btn.bg:Show();
+            btn.bar:Show();
+            btn.label:SetTextColor(unpack(T.textBright));
+            -- Show the active page's label on the dropdown button
+            local page = self._pageMap[key];
+            btn.label:SetText((page and page.label) or key);
+        else
+            btn.bg:Hide();
+            btn.bar:Hide();
+            btn.label:SetTextColor(unpack(T.text));
+            btn.label:SetText(btn._groupLabel);
+        end
+    end
+
+    self:_CloseSidebarPopup();
     self:_ShowContent(key);
 end
 
@@ -234,11 +467,18 @@ end
 function PanelMixin:_BuildSidebar()
     if (not self._sidebar) then return; end
 
-    -- Clear existing buttons and headers
+    -- Clear existing buttons, dropdown buttons, and headers
     for _, btn in pairs(self._buttons) do
         btn:Hide();
     end
     self._buttons = {};
+
+    for _, btn in pairs(self._sidebarDropdowns) do
+        btn:Hide();
+    end
+    self._sidebarDropdowns = {};
+
+    self:_CloseSidebarPopup();
 
     if (self._sectionHeaders) then
         for _, hdr in ipairs(self._sectionHeaders) do
@@ -250,31 +490,70 @@ function PanelMixin:_BuildSidebar()
     local sidebar = self._sidebar;
     local y = SIDEBAR_PAD_TOP;
 
+    -- Helper: check if a page is assigned to a valid sidebar group
+    local function isGrouped(entry)
+        return entry.opts.sidebarGroup and self._sidebarGroupMap[entry.opts.sidebarGroup];
+    end
+
+    -- Helper: collect pages belonging to a sidebar group
+    local function collectGroupPages(groupKey)
+        local pages = {};
+        for _, entry in ipairs(self._pages) do
+            if (entry.opts.sidebarGroup == groupKey) then
+                table.insert(pages, { key = entry.key, label = entry.opts.label or entry.key });
+            end
+        end
+        return pages;
+    end
+
     -- Pages without a section (appear first, in registration order)
     for _, entry in ipairs(self._pages) do
-        if (not entry.opts.section) then
+        if (not entry.opts.section and not isGrouped(entry)) then
             self:_CreateSidebarButton(sidebar, entry.key, entry.opts.label or entry.key, y);
             y = y + ITEM_H;
         end
     end
 
-    -- Then each section + its pages
+    -- Sidebar groups without a section
+    for _, group in ipairs(self._sidebarGroups) do
+        if (not group.opts.section) then
+            local pages = collectGroupPages(group.key);
+            if (#pages > 0) then
+                self:_CreateSidebarDropdown(sidebar, group.key, group.opts.label or group.key, pages, y);
+                y = y + ITEM_H;
+            end
+        end
+    end
+
+    -- Then each section + its pages + its groups
     for _, sec in ipairs(self._sections) do
         y = y + 4;
         local hdr = self:_CreateSectionHeader(sidebar, sec.label, y);
         table.insert(self._sectionHeaders, hdr);
         y = y + SECTION_H;
 
+        -- Non-grouped pages in this section
         for _, entry in ipairs(self._pages) do
-            if (entry.opts.section == sec.key) then
+            if (entry.opts.section == sec.key and not isGrouped(entry)) then
                 self:_CreateSidebarButton(sidebar, entry.key, entry.opts.label or entry.key, y);
                 y = y + ITEM_H;
+            end
+        end
+
+        -- Sidebar groups in this section
+        for _, group in ipairs(self._sidebarGroups) do
+            if (group.opts.section == sec.key) then
+                local pages = collectGroupPages(group.key);
+                if (#pages > 0) then
+                    self:_CreateSidebarDropdown(sidebar, group.key, group.opts.label or group.key, pages, y);
+                    y = y + ITEM_H;
+                end
             end
         end
     end
 
     -- Select first page if none active, or re-select current
-    if (self._activeKey and self._buttons[self._activeKey]) then
+    if (self._activeKey and (self._buttons[self._activeKey] or self:_GetGroupForPage(self._activeKey))) then
         -- Force re-render by resetting activeKey
         local key = self._activeKey;
         self._activeKey = nil;
@@ -507,6 +786,7 @@ function PanelMixin:_Build()
     end);
 
     frame:SetScript("OnHide", function()
+        self_:_CloseSidebarPopup();
         if (self_._aceContainer) then
             self_._aceContainer:ReleaseChildren();
             self_._aceContainer.frame:Hide();
@@ -539,15 +819,18 @@ end
 
 function LanternUX:CreatePanel(config)
     local panel = setmetatable({
-        _config        = config,
-        _pages         = {},
-        _pageMap       = {},
-        _sections      = {},
-        _sectionMap    = {},
-        _buttons       = {},
-        _frame         = nil,
-        _activeKey     = nil,
-        _sidebarDirty  = true,
+        _config           = config,
+        _pages            = {},
+        _pageMap          = {},
+        _sections         = {},
+        _sectionMap       = {},
+        _sidebarGroups    = {},
+        _sidebarGroupMap  = {},
+        _buttons          = {},
+        _sidebarDropdowns = {},
+        _frame            = nil,
+        _activeKey        = nil,
+        _sidebarDirty     = true,
     }, { __index = PanelMixin });
     return panel;
 end

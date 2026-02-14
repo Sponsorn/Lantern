@@ -932,14 +932,19 @@ local function OpenDropdown(w)
 
             item:SetScript("OnEnter", function(self)
                 self._bg:SetColorTexture(unpack(T.dropdownItem));
+                if (self._owner) then
+                    ShowDescription(self._owner._label:GetText(), self._owner._desc_text);
+                end
             end);
             item:SetScript("OnLeave", function(self)
                 self._bg:SetColorTexture(0, 0, 0, 0);
+                ClearDescription();
             end);
 
             popup._items[i] = item;
         end
 
+        item._owner = w;
         item:SetParent(scrollChild);
         item:ClearAllPoints();
         item:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, y);

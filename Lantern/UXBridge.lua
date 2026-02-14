@@ -25,6 +25,12 @@ local CORE_ORDER = {
     "DeleteConfirm", "DisableAutoAddSpells", "InterruptTracker", "MissingPet",
 };
 
+local QUICK_SETTINGS = {
+    autoQueue = true,
+    deleteConfirm = true,
+    disableAutoAddSpells = true,
+};
+
 -------------------------------------------------------------------------------
 -- Custom option definitions
 -------------------------------------------------------------------------------
@@ -1492,18 +1498,23 @@ loginFrame:SetScript("OnEvent", function()
 
     -- Core modules section
     panel:AddSection("modules", "Modules");
+    panel:AddSidebarGroup("quickSettings", {
+        label   = "Quick Settings",
+        section = "modules",
+    });
     for _, moduleName in ipairs(CORE_ORDER) do
         local mod = Lantern.modules[moduleName];
         if (mod) then
             local key = CORE_KEY[moduleName];
             local optionsFn = CUSTOM_OPTIONS[key];
             panel:AddPage(key, {
-                label       = (mod.opts and mod.opts.title) or moduleName,
-                section     = "modules",
-                title       = (mod.opts and mod.opts.title) or moduleName,
-                description = mod.opts and mod.opts.desc,
-                widgets     = optionsFn or nil,
-                aceConfig   = (not optionsFn) and { appName = "Lantern_General", path = key } or nil,
+                label        = (mod.opts and mod.opts.title) or moduleName,
+                section      = "modules",
+                sidebarGroup = QUICK_SETTINGS[key] and "quickSettings" or nil,
+                title        = (mod.opts and mod.opts.title) or moduleName,
+                description  = mod.opts and mod.opts.desc,
+                widgets      = optionsFn or nil,
+                aceConfig    = (not optionsFn) and { appName = "Lantern_General", path = key } or nil,
             });
         end
     end
