@@ -18,10 +18,10 @@ _launderFrame:SetScript("OnValueChanged", function(_, val)
     _launderResult = val;
 end);
 
-local function LaunderSpellID(taintedID)
+local function Launder(taintedNumber)
     _launderResult = nil;
     _launderFrame:SetValue(0);
-    pcall(_launderFrame.SetValue, _launderFrame, taintedID);
+    pcall(_launderFrame.SetValue, _launderFrame, taintedNumber);
     return _launderResult;
 end
 
@@ -204,7 +204,7 @@ RefreshPartyWatchers = function()
             _partyWatchers[i]:SetScript("OnEvent", function(_, _, _, _, taintedSpellID)
                 local cleanUnit = "party" .. i;
                 local name = UnitName(cleanUnit);
-                local cleanID = LaunderSpellID(taintedSpellID);
+                local cleanID = Launder(taintedSpellID);
                 if (cleanID) then
                     local resolvedID = ST.spellAliases[cleanID] or cleanID;
                     if (ST.spellDB[resolvedID]) then
@@ -223,7 +223,7 @@ RefreshPartyWatchers = function()
                 _petWatchers[i]:SetScript("OnEvent", function(_, _, _, _, taintedSpellID)
                     local ownerUnit = "party" .. i;
                     local name = UnitName(ownerUnit);
-                    local cleanID = LaunderSpellID(taintedSpellID);
+                    local cleanID = Launder(taintedSpellID);
                     if (cleanID) then
                         local resolvedID = ST.spellAliases[cleanID] or cleanID;
                         if (ST.spellDB[resolvedID]) then
@@ -298,27 +298,36 @@ local function UpdateSelfCooldowns()
     for spellID, spellState in pairs(player.spells) do
         if (IsSpellKnown(spellID) or IsPlayerSpell(spellID)) then
             local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, spellID);
-            if (ok and cdInfo and cdInfo.duration and cdInfo.duration > 1.5) then
-                local cdEnd = cdInfo.startTime + cdInfo.duration;
-                spellState.cdEnd = cdEnd;
-                if (spellState.state == "ready" and cdEnd > GetTime()) then
-                    -- Spell is on CD but we missed the cast (e.g., logged in mid-CD)
-                    local spellData = ST.spellDB[spellID];
-                    if (spellData and spellData.duration and spellState.activeEnd > GetTime()) then
-                        spellState.state = "active";
-                    else
-                        spellState.state = "cooldown";
+            if (ok and cdInfo) then
+                -- Launder tainted C API return values through StatusBar
+                local duration  = Launder(cdInfo.duration);
+                local startTime = Launder(cdInfo.startTime);
+                if (duration and startTime and duration > 1.5) then
+                    local cdEnd = startTime + duration;
+                    spellState.cdEnd = cdEnd;
+                    if (spellState.state == "ready" and cdEnd > GetTime()) then
+                        local spellData = ST.spellDB[spellID];
+                        if (spellData and spellData.duration and spellState.activeEnd > GetTime()) then
+                            spellState.state = "active";
+                        else
+                            spellState.state = "cooldown";
+                        end
                     end
                 end
             end
 
             -- Check charges
             local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
-            if (ok2 and chargeInfo and chargeInfo.maxCharges and chargeInfo.maxCharges > 1) then
-                spellState.charges = chargeInfo.currentCharges;
-                spellState.maxCharges = chargeInfo.maxCharges;
-                if (chargeInfo.cooldownStartTime and chargeInfo.cooldownDuration and chargeInfo.cooldownDuration > 0) then
-                    spellState.cdEnd = chargeInfo.cooldownStartTime + chargeInfo.cooldownDuration;
+            if (ok2 and chargeInfo) then
+                local maxCharges = Launder(chargeInfo.maxCharges);
+                if (maxCharges and maxCharges > 1) then
+                    spellState.charges = Launder(chargeInfo.currentCharges) or spellState.charges;
+                    spellState.maxCharges = maxCharges;
+                    local cdStart = Launder(chargeInfo.cooldownStartTime);
+                    local cdDur   = Launder(chargeInfo.cooldownDuration);
+                    if (cdStart and cdDur and cdDur > 0) then
+                        spellState.cdEnd = cdStart + cdDur;
+                    end
                 end
             end
         end
@@ -330,7 +339,8 @@ end
 --
 -- Checks auras on a unit and updates spell states accordingly.
 -- Uses C_UnitAuras.GetPlayerAuraBySpellID for the player (fast path),
--- and AuraUtil.ForEachAura for party members (full scan).
+-- and C_UnitAuras.GetAuraDataByIndex for party members (avoids
+-- AuraUtil.ForEachAura taint crash in Midnight).
 -------------------------------------------------------------------------------
 
 local function CheckUnitBuffs(unit)
@@ -347,19 +357,23 @@ local function CheckUnitBuffs(unit)
             if (unit == "player") then
                 aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID);
             else
-                -- For party members, scan their auras
-                AuraUtil.ForEachAura(unit, "HELPFUL", nil, function(a)
-                    if (a.spellId == spellID) then
-                        aura = a;
-                        return true;  -- stop iteration
+                -- Iterate auras directly to avoid AuraUtil.ForEachAura taint issues
+                for i = 1, 40 do
+                    local data = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL");
+                    if (not data) then break; end
+                    local cleanId = Launder(data.spellId);
+                    if (cleanId == spellID) then
+                        aura = data;
+                        break;
                     end
-                end);
+                end
             end
 
             if (aura) then
                 spellState.state = "active";
-                if (aura.expirationTime and aura.expirationTime > 0) then
-                    spellState.activeEnd = aura.expirationTime;
+                local expiry = Launder(aura.expirationTime);
+                if (expiry and expiry > 0) then
+                    spellState.activeEnd = expiry;
                 else
                     spellState.activeEnd = GetTime() + spellData.duration;
                 end
@@ -623,7 +637,7 @@ function ST:EnableEngine()
 
         if (unit == "pet") then
             -- Pet spells may be tainted
-            local cleanID = LaunderSpellID(spellID);
+            local cleanID = Launder(spellID);
             local matchID = cleanID or spellID;
             local resolvedID = ST.spellAliases[matchID] or matchID;
             if (ST.spellDB[resolvedID]) then

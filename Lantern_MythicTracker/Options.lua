@@ -34,20 +34,23 @@ local SLIDER_HEIGHT = 20;
 -------------------------------------------------------------------------------
 
 local function CreateSectionHeader(parent, text, yOff)
-    local bg = parent:CreateTexture(nil, "BACKGROUND");
-    bg:SetPoint("TOPLEFT", PADDING, yOff);
-    bg:SetPoint("TOPRIGHT", -PADDING, yOff);
-    bg:SetHeight(24);
+    local holder = CreateFrame("Frame", nil, parent);
+    holder:SetPoint("TOPLEFT", PADDING, yOff);
+    holder:SetPoint("TOPRIGHT", -PADDING, yOff);
+    holder:SetHeight(24);
+
+    local bg = holder:CreateTexture(nil, "BACKGROUND");
+    bg:SetAllPoints();
     bg:SetTexture("Interface\\BUTTONS\\WHITE8X8");
     bg:SetVertexColor(unpack(COLOR_SECTION));
 
-    local label = parent:CreateFontString(nil, "OVERLAY");
+    local label = holder:CreateFontString(nil, "OVERLAY");
     label:SetFont(FONT, 13, "OUTLINE");
-    label:SetPoint("LEFT", bg, "LEFT", 8, 0);
+    label:SetPoint("LEFT", 8, 0);
     label:SetTextColor(unpack(COLOR_ACCENT));
     label:SetText(text);
 
-    return yOff - 28;
+    return holder, yOff - 28;
 end
 
 local function CreateCheckbox(parent, xOff, yOff, text, checked, onChange)
@@ -72,14 +75,18 @@ local function CreateCheckbox(parent, xOff, yOff, text, checked, onChange)
 end
 
 local function CreateCycleButton(parent, xOff, yOff, labelText, options, labels, currentValue, onChange)
-    local label = parent:CreateFontString(nil, "OVERLAY");
+    local holder = CreateFrame("Frame", nil, parent);
+    holder:SetPoint("TOPLEFT", xOff, yOff);
+    holder:SetSize(FRAME_WIDTH - PADDING * 2 - xOff + PADDING, ROW_HEIGHT);
+
+    local label = holder:CreateFontString(nil, "OVERLAY");
     label:SetFont(FONT, 11);
-    label:SetPoint("TOPLEFT", xOff, yOff - 3);
+    label:SetPoint("LEFT", 0, 0);
     label:SetTextColor(unpack(COLOR_MUTED));
     label:SetText(labelText);
 
-    local btn = CreateFrame("Button", nil, parent);
-    btn:SetPoint("TOPLEFT", xOff + 70, yOff);
+    local btn = CreateFrame("Button", nil, holder);
+    btn:SetPoint("LEFT", 70, 0);
     btn:SetSize(140, ROW_HEIGHT - 2);
 
     local btnBg = btn:CreateTexture(nil, "BACKGROUND");
@@ -108,36 +115,52 @@ local function CreateCycleButton(parent, xOff, yOff, labelText, options, labels,
         if (onChange) then onChange(currentValue); end
     end);
 
-    return btn;
+    return holder;
 end
 
 local function CreateSlider(parent, xOff, yOff, labelText, minVal, maxVal, step, currentValue, onChange)
-    local label = parent:CreateFontString(nil, "OVERLAY");
+    -- Wrapper frame to contain everything cleanly
+    local holder = CreateFrame("Frame", nil, parent);
+    holder:SetPoint("TOPLEFT", xOff, yOff);
+    holder:SetSize(FRAME_WIDTH - PADDING * 2 - xOff + PADDING, 40);
+
+    local label = holder:CreateFontString(nil, "OVERLAY");
     label:SetFont(FONT, 11);
-    label:SetPoint("TOPLEFT", xOff, yOff - 3);
+    label:SetPoint("TOPLEFT", 0, 0);
     label:SetTextColor(unpack(COLOR_MUTED));
     label:SetText(labelText);
 
-    local slider = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate");
-    slider:SetPoint("TOPLEFT", xOff + 80, yOff - 2);
-    slider:SetSize(140, SLIDER_HEIGHT);
+    local slider = CreateFrame("Slider", nil, holder, "OptionsSliderTemplate");
+    slider:SetPoint("TOPLEFT", 0, -16);
+    slider:SetSize(180, SLIDER_HEIGHT);
     slider:SetMinMaxValues(minVal, maxVal);
     slider:SetValueStep(step or 1);
     slider:SetObeyStepOnDrag(true);
     slider:SetValue(currentValue);
 
-    slider.Text:SetFont(FONT, 10);
-    slider.Text:SetText(math.floor(currentValue));
-    slider.Low:SetText(minVal);
-    slider.High:SetText(maxVal);
+    -- Hide built-in template labels (they overlap with our layout)
+    slider.Text:SetText("");
+    slider.Text:Hide();
+    slider.Low:SetText("");
+    slider.Low:Hide();
+    slider.High:SetText("");
+    slider.High:Hide();
+
+    -- Our own value label
+    local valueText = holder:CreateFontString(nil, "OVERLAY");
+    valueText:SetFont(FONT, 11);
+    valueText:SetPoint("LEFT", slider, "RIGHT", 8, 0);
+    valueText:SetTextColor(unpack(COLOR_LABEL));
+    valueText:SetText(math.floor(currentValue));
+    holder.valueText = valueText;
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5);
-        self.Text:SetText(value);
+        valueText:SetText(value);
         if (onChange) then onChange(value); end
     end);
 
-    return slider;
+    return holder;
 end
 
 local function CreateActionButton(parent, xOff, yOff, text, width, onClick)
@@ -206,7 +229,9 @@ local function BuildCategorySection(content, catKey, yOff)
     end
 
     -- Section header
-    yOff = CreateSectionHeader(content, label, yOff);
+    local header;
+    header, yOff = CreateSectionHeader(content, label, yOff);
+    Track(header);
 
     -- Enable
     Track(CreateCheckbox(content, PADDING + 4, yOff, "Enable", catDB.enabled, function(val)
@@ -252,20 +277,20 @@ local function BuildCategorySection(content, catKey, yOff)
             ST:RefreshBarLayout(catKey);
             ST:RefreshDisplay();
         end));
-        yOff = yOff - 34;
+        yOff = yOff - 44;
 
         Track(CreateSlider(content, PADDING + 4, yOff, "Bar Height", 16, 40, 1, catDB.barHeight, function(val)
             catDB.barHeight = val;
             DestroyAndRefresh();
         end));
-        yOff = yOff - 34;
+        yOff = yOff - 44;
 
     elseif (layout == "icon") then
         Track(CreateSlider(content, PADDING + 4, yOff, "Icon Size", 16, 48, 1, catDB.iconSize, function(val)
             catDB.iconSize = val;
             ST:RefreshIconLayout(catKey);
         end));
-        yOff = yOff - 34;
+        yOff = yOff - 44;
 
         Track(CreateCheckbox(content, PADDING + 4, yOff, "Show Names", catDB.showNames, function(val)
             catDB.showNames = val;
@@ -386,11 +411,11 @@ local function CreateOptionsFrame()
     closeBtn:SetScript("OnLeave", function() closeText:SetTextColor(unpack(COLOR_MUTED)); end);
     closeBtn:SetScript("OnClick", function() frame:Hide(); end);
 
-    -- Content area
+    -- Content area (height managed by BuildContent)
     local content = CreateFrame("Frame", nil, frame);
     content:SetPoint("TOPLEFT", 0, -30);
     content:SetPoint("TOPRIGHT", 0, -30);
-    content:SetHeight(300);
+    content:SetHeight(600);
     frame.content = content;
 
     -- Rebuild content every time the frame is shown

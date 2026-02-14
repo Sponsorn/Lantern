@@ -23,12 +23,6 @@ local function GetFontPath(fontName)
     return "Fonts\\FRIZQT__.TTF";
 end
 
-local function GetClassColor(class)
-    local colors = RAID_CLASS_COLORS[class];
-    if (colors) then return colors.r, colors.g, colors.b; end
-    return 0.5, 0.5, 0.5;
-end
-
 local function FormatTime(seconds)
     if (seconds <= 0) then return ""; end
     if (seconds < 10) then return string.format("%.1f", seconds); end
@@ -289,7 +283,7 @@ local function RenderBarCategory(categoryKey)
                 bar.icon:SetTexture(tex);
             end
 
-            local cr, cg, cb = GetClassColor(entry.class);
+            local cr, cg, cb = ST:GetClassColor(entry.class);
 
             bar.nameText:SetText("|cFFFFFFFF" .. entry.name .. "|r");
 
@@ -529,7 +523,7 @@ local function RenderIconCategory(categoryKey)
         if (showNames and nameIdx <= #display.namePool) then
             local lbl = display.namePool[nameIdx];
             lbl:SetFont(fontPath, 11, outline);
-            local cr, cg, cb = GetClassColor(playerInfo.class);
+            local cr, cg, cb = ST:GetClassColor(playerInfo.class);
             lbl:SetTextColor(cr, cg, cb);
             lbl:SetText(playerInfo.name);
             lbl:ClearAllPoints();

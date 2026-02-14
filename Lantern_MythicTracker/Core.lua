@@ -165,39 +165,46 @@ end
 -------------------------------------------------------------------------------
 
 local Lantern = _G.Lantern;
-if (Lantern and Lantern.NewModule) then
-    -- Running as a Lantern module
-    local module = Lantern:NewModule("MythicTracker", {
-        title = "Mythic+ Tracker",
-        desc = "Tracks party member spell cooldowns (interrupts, defensives, major CDs).",
-        skipOptions = true,
-        defaultEnabled = true,
-    });
+local hasLantern = Lantern and Lantern.NewModule;
 
-    ST.module = module;
+-- Both paths use ADDON_LOADED to ensure all TOC files are loaded first.
+-- Without this, Lantern:RegisterModule() fires OnEnable immediately
+-- (Lantern.ready is already true), but Engine.lua / Display.lua haven't
+-- loaded yet so ST.EnableEngine would be nil.
 
-    function module:OnInit()
+local loader = CreateFrame("Frame");
+loader:RegisterEvent("ADDON_LOADED");
+loader:SetScript("OnEvent", function(self, event, addonName)
+    if (addonName ~= ADDON_NAME) then return; end
+    self:UnregisterEvent("ADDON_LOADED");
+
+    if (hasLantern) then
+        -- Running as a Lantern module
+        local module = Lantern:NewModule("MythicTracker", {
+            title = "Mythic+ Tracker",
+            desc = "Tracks party member spell cooldowns (interrupts, defensives, major CDs).",
+            skipOptions = true,
+            defaultEnabled = true,
+        });
+
+        ST.module = module;
+
+        function module:OnInit()
+            ST:Init();
+        end
+
+        function module:OnEnable()
+            ST:Enable();
+        end
+
+        function module:OnDisable()
+            ST:Disable();
+        end
+
+        Lantern:RegisterModule(module);
+    else
+        -- Standalone mode
         ST:Init();
-    end
-
-    function module:OnEnable()
         ST:Enable();
     end
-
-    function module:OnDisable()
-        ST:Disable();
-    end
-
-    Lantern:RegisterModule(module);
-else
-    -- Standalone mode: bootstrap via ADDON_LOADED
-    local loader = CreateFrame("Frame");
-    loader:RegisterEvent("ADDON_LOADED");
-    loader:SetScript("OnEvent", function(self, event, addonName)
-        if (addonName ~= ADDON_NAME) then return; end
-        self:UnregisterEvent("ADDON_LOADED");
-
-        ST:Init();
-        ST:Enable();
-    end);
-end
+end);

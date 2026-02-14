@@ -13,6 +13,13 @@ Lantern - Mythic+ Tracker passively tracks party member spell cooldowns in Mythi
 *   Shows active buff duration and cooldown remaining
 *   Charge tracking for multi-charge abilities (Survival Instincts, etc.)
 
+### Cooldowns
+
+*   Tracks major offensive cooldowns (Combustion, Metamorphosis, Recklessness, etc.)
+*   Covers all DPS specs with Midnight-accurate spell data
+*   Shows active buff duration and cooldown remaining
+*   Charge tracking for multi-charge abilities (Zenith, etc.)
+
 ### Display Modes
 
 *   **Bar layout**: Class-colored cooldown bars with spell icons and player names

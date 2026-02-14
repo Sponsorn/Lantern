@@ -4,6 +4,7 @@
 - Add: Initial release — party spell tracking for Mythic+ dungeons
 - Add: Interrupt tracking with taint laundering, mob correlation, and addon sync
 - Add: Defensive cooldown tracking with buff duration and charge support
+- Add: Major offensive cooldown tracking (Recklessness, Combustion, Metamorphosis, etc.)
 - Add: Bar display layout with class-colored cooldown bars
 - Add: Icon Grid display layout with cooldown swipes and glow effects
 - Add: Per-category settings (enable, layout, filter, sort, show self, grow direction)

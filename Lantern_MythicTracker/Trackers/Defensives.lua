@@ -2,8 +2,15 @@ local ADDON_NAME, NS = ...;
 local ST = NS.SpellTracker;
 if (not ST) then return; end
 
+-------------------------------------------------------------------------------
+-- Major Defensive Cooldown Database (Midnight / 12.0)
+--
+-- Tracks major defensive cooldowns across all classes for M+ groups.
+-- Each entry follows the same spell record format as interrupts/cooldowns.
+-------------------------------------------------------------------------------
+
 local spells = {
-    -- WARRIOR
+    -- WARRIOR: Shield Wall (Protection)
     {
         id       = 871,
         cd       = 210,
@@ -13,6 +20,7 @@ local spells = {
         specs    = { [73] = true },
         category = "defensive",
     },
+    -- WARRIOR: Die by the Sword (Arms)
     {
         id       = 118038,
         cd       = 120,
@@ -22,6 +30,7 @@ local spells = {
         specs    = { [71] = true },
         category = "defensive",
     },
+    -- WARRIOR: Enraged Regeneration (Fury)
     {
         id       = 184364,
         cd       = 120,
@@ -32,7 +41,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- PALADIN
+    -- PALADIN: Divine Shield
     {
         id       = 642,
         cd       = 300,
@@ -42,6 +51,7 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- PALADIN: Ardent Defender (Protection)
     {
         id       = 31850,
         cd       = 120,
@@ -52,7 +62,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- DEATHKNIGHT
+    -- DEATHKNIGHT: Anti-Magic Shell
     {
         id       = 48707,
         cd       = 60,
@@ -62,6 +72,7 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- DEATHKNIGHT: Icebound Fortitude
     {
         id       = 48792,
         cd       = 180,
@@ -72,7 +83,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- ROGUE
+    -- ROGUE: Cloak of Shadows
     {
         id       = 31224,
         cd       = 120,
@@ -82,6 +93,7 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- ROGUE: Evasion
     {
         id       = 5277,
         cd       = 120,
@@ -92,7 +104,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- MAGE
+    -- MAGE: Ice Block
     {
         id       = 45438,
         cd       = 240,
@@ -103,7 +115,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- HUNTER
+    -- HUNTER: Aspect of the Turtle
     {
         id       = 186265,
         cd       = 180,
@@ -114,7 +126,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- DRUID
+    -- DRUID: Barkskin
     {
         id       = 22812,
         cd       = 60,
@@ -124,6 +136,7 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- DRUID: Survival Instincts (Feral / Guardian)
     {
         id       = 61336,
         cd       = 180,
@@ -134,7 +147,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- MONK
+    -- MONK: Fortifying Brew
     {
         id       = 115203,
         cd       = 180,
@@ -145,7 +158,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- DEMONHUNTER
+    -- DEMONHUNTER: Blur (Havoc)
     {
         id       = 198589,
         cd       = 60,
@@ -155,6 +168,7 @@ local spells = {
         specs    = { [577] = true },
         category = "defensive",
     },
+    -- DEMONHUNTER: Metamorphosis (Vengeance — defensive version)
     {
         id       = 187827,
         cd       = 180,
@@ -165,7 +179,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- PRIEST
+    -- PRIEST: Dispersion (Shadow)
     {
         id       = 47585,
         cd       = 120,
@@ -176,7 +190,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- SHAMAN
+    -- SHAMAN: Astral Shift
     {
         id       = 108271,
         cd       = 120,
@@ -187,7 +201,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- WARLOCK
+    -- WARLOCK: Unending Resolve
     {
         id       = 104773,
         cd       = 180,
@@ -198,7 +212,7 @@ local spells = {
         category = "defensive",
     },
 
-    -- EVOKER
+    -- EVOKER: Obsidian Scales
     {
         id       = 363916,
         cd       = 90,
@@ -221,5 +235,5 @@ ST:RegisterCategory("defensive", {
     spellsPerPlayer   = "all",
     trackBuffDuration = true,
     defaultLayout     = "icon",
-    defaultFilter     = "hide_ready",
+    defaultFilter     = "all",
 });
