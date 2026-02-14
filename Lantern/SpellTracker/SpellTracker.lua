@@ -77,6 +77,8 @@ local CATEGORY_DEFAULTS = {
     iconSize     = 28,
     iconSpacing  = 2,
     showNames    = true,
+    -- Docking
+    dockTo       = nil,
 };
 
 local function getDB()

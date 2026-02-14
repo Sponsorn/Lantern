@@ -615,6 +615,18 @@ local function ShouldBeVisible()
 end
 
 function ST:RefreshDisplay()
+    -- Auto-disable preview when settings panel closes
+    if (ST._previewActive) then
+        local panelOpen = false;
+        if (SettingsPanel and SettingsPanel:IsShown()) then panelOpen = true; end
+        local uxPanel = _G["LanternSettingsPanel"];
+        if (uxPanel and uxPanel:IsShown()) then panelOpen = true; end
+        if (not panelOpen) then
+            ST:DeactivatePreview();
+            return;
+        end
+    end
+
     local show = ShouldBeVisible() or ST._previewActive;
 
     for _, entry in ipairs(self.categories) do
@@ -645,6 +657,8 @@ function ST:RefreshDisplay()
             end
         end
     end
+
+    self:ApplyDocking();
 end
 
 -------------------------------------------------------------------------------
@@ -768,4 +782,116 @@ function ST:ResetPosition(categoryKey)
     display.frame:ClearAllPoints();
     display.frame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
     catDB.position = nil;
+end
+
+-------------------------------------------------------------------------------
+-- Preview Mode
+-------------------------------------------------------------------------------
+
+local PREVIEW_PLAYERS = {
+    { name = "Thralldk",   class = "DEATHKNIGHT" },
+    { name = "Jainalee",   class = "MAGE" },
+    { name = "Sylvanash",  class = "ROGUE" },
+    { name = "Garroshwar", class = "WARRIOR" },
+};
+
+local _previewTimer = nil;
+
+function ST:ActivatePreview()
+    ST._previewActive = true;
+
+    -- Save real tracked players and replace with fake ones
+    ST._savedTrackedPlayers = ST.trackedPlayers;
+    ST.trackedPlayers = {};
+
+    for _, fake in ipairs(PREVIEW_PLAYERS) do
+        local player = { class = fake.class, spec = nil, spells = {} };
+        -- Add spells from all enabled categories for this class
+        for _, entry in ipairs(ST.categories) do
+            if (entry.config.enabled) then
+                local classSpells = ST:GetSpellsForClassAndCategory(fake.class, nil, entry.key);
+                for spellID, spell in pairs(classSpells) do
+                    player.spells[spellID] = {
+                        category   = spell.category,
+                        state      = "ready",
+                        cdEnd      = 0,
+                        activeEnd  = 0,
+                        charges    = spell.charges or 1,
+                        maxCharges = spell.charges or 1,
+                        baseCd     = spell.cd,
+                    };
+                end
+            end
+        end
+        ST.trackedPlayers[fake.name] = player;
+    end
+
+    -- Start simulation ticker
+    if (_previewTimer) then _previewTimer:Cancel(); end
+    _previewTimer = C_Timer.NewTicker(2, function()
+        if (not ST._previewActive) then
+            if (_previewTimer) then _previewTimer:Cancel(); _previewTimer = nil; end
+            return;
+        end
+        local now = GetTime();
+        for _, player in pairs(ST.trackedPlayers) do
+            for spellID, spellState in pairs(player.spells) do
+                if (spellState.state == "ready" and math.random() < 0.3) then
+                    local spellData = ST.spellDB[spellID];
+                    if (spellData and spellData.duration) then
+                        spellState.state = "active";
+                        spellState.activeEnd = now + spellData.duration;
+                        spellState.cdEnd = now + spellState.baseCd;
+                    else
+                        spellState.state = "cooldown";
+                        spellState.cdEnd = now + spellState.baseCd;
+                    end
+                end
+            end
+        end
+    end);
+
+    -- Force display refresh
+    ST:RefreshDisplay();
+end
+
+function ST:DeactivatePreview()
+    ST._previewActive = false;
+    if (_previewTimer) then _previewTimer:Cancel(); _previewTimer = nil; end
+
+    -- Restore real tracked players
+    if (ST._savedTrackedPlayers) then
+        ST.trackedPlayers = ST._savedTrackedPlayers;
+        ST._savedTrackedPlayers = nil;
+    else
+        ST.trackedPlayers = {};
+    end
+
+    ST:RefreshDisplay();
+end
+
+-------------------------------------------------------------------------------
+-- Docking
+-------------------------------------------------------------------------------
+
+function ST:ApplyDocking()
+    for _, entry in ipairs(self.categories) do
+        local key = entry.key;
+        local catDB = self:GetCategoryDB(key);
+        local display = self.displayFrames[key];
+        if (not display or not display.frame) then
+            -- skip, frame not built yet
+        elseif (catDB.dockTo and catDB.dockTo ~= "") then
+            local targetDisplay = self.displayFrames[catDB.dockTo];
+            if (targetDisplay and targetDisplay.frame) then
+                display.frame:ClearAllPoints();
+                display.frame:SetPoint("TOPLEFT", targetDisplay.frame, "BOTTOMLEFT", 0, -4);
+                display.frame:SetMovable(false);
+            end
+        else
+            -- Not docked, restore independent position
+            display.frame:SetMovable(true);
+            RestorePosition(key);
+        end
+    end
 end
