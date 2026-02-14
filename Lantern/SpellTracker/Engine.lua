@@ -36,6 +36,12 @@ end
 -- Self-cast watcher frame (must be at file scope for clean context)
 local _selfFrame = CreateFrame("Frame");
 
+-- Inspect state
+local _inspectPending = {};
+local _inspectInProgress = false;
+local _inspectCurrentUnit = nil;
+local _inspectedNames = {};
+
 -------------------------------------------------------------------------------
 -- Register Player
 --
@@ -270,6 +276,9 @@ local function PruneTrackedPlayers()
     for name in pairs(ST.excludedPlayers) do
         if (not active[name]) then ST.excludedPlayers[name] = nil; end
     end
+    for name in pairs(_inspectedNames) do
+        if (not active[name]) then _inspectedNames[name] = nil; end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -404,6 +413,155 @@ local function OnTick(_, elapsed)
 end
 
 -------------------------------------------------------------------------------
+-- Inspect System
+--
+-- After joining a group, we inspect party members one at a time to
+-- determine their spec (for overrides) and scan talents for CD modifiers.
+-- Uses configID = -1 which is the inspected player's config ID.
+-------------------------------------------------------------------------------
+
+local function ApplyInspectResults(unit)
+    local name = UnitName(unit);
+    if (not name) then return; end
+
+    local player = ST.trackedPlayers[name];
+    if (not player) then
+        _inspectedNames[name] = true;
+        return;
+    end
+
+    local specID = GetInspectSpecialization(unit);
+    if (specID and specID > 0) then
+        player.spec = specID;
+
+        -- Let category hooks decide if this player should be excluded
+        for _, entry in ipairs(ST.categories) do
+            if (entry.config.enabled and entry.config.hooks and entry.config.hooks.shouldExclude) then
+                if (entry.config.hooks.shouldExclude(name, player.class, specID)) then
+                    -- Remove spells from this category only
+                    for spellID, spellState in pairs(player.spells) do
+                        if (spellState.category == entry.key) then
+                            player.spells[spellID] = nil;
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Re-evaluate which spells this player should have based on spec
+        for _, entry in ipairs(ST.categories) do
+            if (entry.config.enabled) then
+                local classSpells = ST:GetSpellsForClassAndCategory(player.class, specID, entry.key);
+                -- Remove spells that don't belong to this spec
+                for spellID, spellState in pairs(player.spells) do
+                    if (spellState.category == entry.key and not classSpells[spellID]) then
+                        player.spells[spellID] = nil;
+                    end
+                end
+                -- Add spec-specific spells
+                for spellID, spell in pairs(classSpells) do
+                    if (not player.spells[spellID]) then
+                        player.spells[spellID] = {
+                            category   = spell.category,
+                            state      = "ready",
+                            cdEnd      = 0,
+                            activeEnd  = 0,
+                            charges    = spell.charges or 1,
+                            maxCharges = spell.charges or 1,
+                            baseCd     = spell.cd,
+                        };
+                    end
+                end
+            end
+        end
+    end
+
+    -- Scan talent tree for CD modifiers
+    local configID = -1;
+    local ok, configInfo = pcall(C_Traits.GetConfigInfo, configID);
+    if (not ok or not configInfo or not configInfo.treeIDs or #configInfo.treeIDs == 0) then
+        _inspectedNames[name] = true;
+        return;
+    end
+
+    local ok2, nodeIDs = pcall(C_Traits.GetTreeNodes, configInfo.treeIDs[1]);
+    if (not ok2 or not nodeIDs) then
+        _inspectedNames[name] = true;
+        return;
+    end
+
+    for _, nodeID in ipairs(nodeIDs) do
+        local ok3, nodeInfo = pcall(C_Traits.GetNodeInfo, configID, nodeID);
+        if (ok3 and nodeInfo and nodeInfo.activeEntry
+            and nodeInfo.activeRank and nodeInfo.activeRank > 0) then
+            local entryID = nodeInfo.activeEntry.entryID;
+            if (entryID) then
+                local ok4, entryInfo = pcall(C_Traits.GetEntryInfo, configID, entryID);
+                if (ok4 and entryInfo and entryInfo.definitionID) then
+                    local ok5, defInfo = pcall(C_Traits.GetDefinitionInfo, entryInfo.definitionID);
+                    if (ok5 and defInfo and defInfo.spellID) then
+                        -- Check talent CD modifiers
+                        for _, talentMod in ipairs(ST.talentModifiers) do
+                            if (talentMod.spellID == defInfo.spellID) then
+                                local spellState = player.spells[talentMod.affectsSpell];
+                                if (spellState) then
+                                    spellState.baseCd = math.max(1, spellState.baseCd - talentMod.cdReduction);
+                                end
+                            end
+                        end
+
+                        -- Check interrupt-specific kick bonuses
+                        if (ST.interruptConfig and ST.interruptConfig.kickBonuses) then
+                            local kickMod = ST.interruptConfig.kickBonuses[defInfo.spellID];
+                            if (kickMod and player.spells) then
+                                -- Store the kick bonus on interrupt spells for this player
+                                for spellID, spellState in pairs(player.spells) do
+                                    if (spellState.category == "interrupts") then
+                                        spellState.kickBonus = kickMod.reduction;
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    _inspectedNames[name] = true;
+end
+
+local function ProcessNextInspect()
+    if (_inspectInProgress) then return; end
+    while (#_inspectPending > 0) do
+        local unit = table.remove(_inspectPending, 1);
+        if (UnitExists(unit) and UnitIsConnected(unit)) then
+            local name = UnitName(unit);
+            if (name and not _inspectedNames[name]) then
+                _inspectInProgress = true;
+                _inspectCurrentUnit = unit;
+                NotifyInspect(unit);
+                return;
+            end
+        end
+    end
+end
+
+local function QueueInspects()
+    _inspectPending = {};
+    for i = 1, 4 do
+        local u = "party" .. i;
+        if (UnitExists(u)) then
+            local name = UnitName(u);
+            if (name and not _inspectedNames[name]) then
+                table.insert(_inspectPending, u);
+            end
+        end
+    end
+    ProcessNextInspect();
+end
+
+-------------------------------------------------------------------------------
 -- Engine Enable / Disable
 --
 -- Called from SpellTracker.lua's OnEnable/OnDisable. Manages event frames,
@@ -423,16 +581,19 @@ function ST:EnableEngine()
     _eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN");
     _eventFrame:RegisterEvent("SPELLS_CHANGED");
     _eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+    _eventFrame:RegisterEvent("INSPECT_READY");
     _eventFrame:RegisterUnitEvent("UNIT_AURA", "player", "party1", "party2", "party3", "party4");
     _eventFrame:SetScript("OnEvent", function(_, event, ...)
         if (event == "GROUP_ROSTER_UPDATE") then
             PruneTrackedPlayers();
             RegisterPartyByClass();
             RefreshPartyWatchers();
+            QueueInspects();
         elseif (event == "PLAYER_ENTERING_WORLD") then
             PruneTrackedPlayers();
             RegisterPartyByClass();
             RefreshPartyWatchers();
+            C_Timer.After(2, QueueInspects);
         elseif (event == "UNIT_PET") then
             RefreshPartyWatchers();
         elseif (event == "SPELL_UPDATE_COOLDOWN") then
@@ -443,6 +604,13 @@ function ST:EnableEngine()
             local unit = ...;
             if (unit) then
                 CheckUnitBuffs(unit);
+            end
+        elseif (event == "INSPECT_READY") then
+            if (_inspectInProgress and _inspectCurrentUnit) then
+                ApplyInspectResults(_inspectCurrentUnit);
+                _inspectInProgress = false;
+                _inspectCurrentUnit = nil;
+                ProcessNextInspect();
             end
         end
     end);
@@ -494,4 +662,9 @@ function ST:DisableEngine()
     ST.trackedPlayers = {};
     ST.excludedPlayers = {};
     ST._recentCasts = {};
+
+    _inspectPending = {};
+    _inspectInProgress = false;
+    _inspectCurrentUnit = nil;
+    _inspectedNames = {};
 end
