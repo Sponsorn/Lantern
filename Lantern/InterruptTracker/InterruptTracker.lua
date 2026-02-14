@@ -754,7 +754,7 @@ local function BuildBarFrame()
     barFrame = CreateFrame("Frame", "LanternInterruptTracker", UIParent);
     barFrame:SetSize(db.barWidth, 200);
     barFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
-    barFrame:SetFrameStrata("HIGH");
+    barFrame:SetFrameStrata("MEDIUM");
     barFrame:SetClampedToScreen(true);
     barFrame:SetMovable(true);
     barFrame:EnableMouse(true);
@@ -879,7 +879,7 @@ local function BuildCompactFrame()
     compactFrame = CreateFrame("Frame", "LanternInterruptTrackerCompact", UIParent);
     compactFrame:SetSize(160, 100);
     compactFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
-    compactFrame:SetFrameStrata("HIGH");
+    compactFrame:SetFrameStrata("MEDIUM");
     compactFrame:SetClampedToScreen(true);
     compactFrame:SetMovable(true);
     compactFrame:EnableMouse(true);
