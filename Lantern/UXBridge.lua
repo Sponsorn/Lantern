@@ -18,11 +18,13 @@ local CORE_KEY = {
     DisableAutoAddSpells = "disableAutoAddSpells",
     InterruptTracker     = "interruptTracker",
     MissingPet           = "missingPet",
+    SpellTracker         = "spellTracker",
 };
 
 local CORE_ORDER = {
     "AutoQuest", "AutoQueue", "CursorRing",
     "DeleteConfirm", "DisableAutoAddSpells", "InterruptTracker", "MissingPet",
+    "SpellTracker",
 };
 
 local QUICK_SETTINGS = {
@@ -378,6 +380,342 @@ CUSTOM_OPTIONS["interruptTracker"] = function()
                 },
             },
         },
+    };
+end
+
+-------------------------------------------------------------------------------
+-- SpellTracker custom options
+-------------------------------------------------------------------------------
+
+CUSTOM_OPTIONS["spellTracker"] = function()
+    local ST = Lantern.SpellTracker;
+    if (not ST) then return {}; end
+
+    local function isDisabled()
+        return not moduleEnabled("SpellTracker");
+    end
+
+    local layoutValues = {
+        bar = "Bar",
+        icon = "Icon Grid",
+    };
+    local layoutSorting = { "bar", "icon" };
+
+    local filterValues = {
+        all = "Show All",
+        hide_ready = "Hide Ready",
+        active_only = "Active Only",
+    };
+    local filterSorting = { "all", "hide_ready", "active_only" };
+
+    local sortModeValues = {
+        remaining = "Lowest Remaining CD",
+        basecd = "Lowest Base CD",
+    };
+    local sortModeSorting = { "remaining", "basecd" };
+
+    local outlineValues = {
+        [""] = "None",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+        ["OUTLINE, MONOCHROME"] = "Outline + Mono",
+    };
+    local outlineSorting = { "", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "OUTLINE, MONOCHROME" };
+
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+    local function getFontValues()
+        local fonts = {};
+        if (LSM) then
+            for _, name in ipairs(LSM:List("font") or {}) do
+                fonts[name] = name;
+            end
+        end
+        if (not fonts["Friz Quadrata TT"]) then
+            fonts["Friz Quadrata TT"] = "Friz Quadrata TT";
+        end
+        return fonts;
+    end
+
+    -- Helper to build per-category settings group
+    local function categoryGroup(catKey, catLabel, defaultLayout)
+        local function catDB() return ST:GetCategoryDB(catKey); end
+        local function isCatDisabled() return isDisabled() or not catDB().enabled; end
+        local function isBarDisabled() return isCatDisabled() or (catDB().layout or defaultLayout) ~= "bar"; end
+        local function isIconDisabled() return isCatDisabled() or (catDB().layout or defaultLayout) ~= "icon"; end
+
+        local function refresh()
+            local layout = catDB().layout or defaultLayout;
+            if (layout == "bar") then
+                ST:RefreshBarLayout(catKey);
+            elseif (layout == "icon") then
+                ST:RefreshIconLayout(catKey);
+            end
+            ST:RefreshDisplay();
+        end
+
+        return {
+            type = "group",
+            text = catLabel,
+            expanded = true,
+            children = {
+                -- Enable
+                {
+                    type = "toggle",
+                    label = "Enable",
+                    desc = "Enable or disable " .. catLabel .. " tracking.",
+                    disabled = isDisabled,
+                    get = function() return catDB().enabled; end,
+                    set = function(val)
+                        catDB().enabled = val;
+                        local cat = ST:GetCategory(catKey);
+                        if (cat) then cat.enabled = val; end
+                        ST:RefreshDisplay();
+                    end,
+                },
+
+                -- Layout
+                {
+                    type = "select",
+                    label = "Layout",
+                    desc = "Bar: cooldown bars with icons and names. Icon Grid: spell icons grouped by player.",
+                    values = layoutValues,
+                    sorting = layoutSorting,
+                    disabled = isCatDisabled,
+                    get = function() return catDB().layout or defaultLayout; end,
+                    set = function(val)
+                        catDB().layout = val;
+                        -- Destroy current display frame so it rebuilds with new layout
+                        if (ST.displayFrames[catKey]) then
+                            ST.displayFrames[catKey].frame:Hide();
+                            ST.displayFrames[catKey] = nil;
+                        end
+                        ST:RefreshDisplay();
+                    end,
+                },
+
+                -- Filter
+                {
+                    type = "select",
+                    label = "Filter",
+                    desc = "Show All: every tracked spell. Hide Ready: only active or on cooldown. Active Only: only currently active spells.",
+                    values = filterValues,
+                    sorting = filterSorting,
+                    disabled = isCatDisabled,
+                    get = function()
+                        local cat = ST:GetCategory(catKey);
+                        return catDB().filter or (cat and cat.defaultFilter) or "all";
+                    end,
+                    set = function(val)
+                        catDB().filter = val;
+                        ST:RefreshDisplay();
+                    end,
+                },
+
+                -- Show Self
+                {
+                    type = "toggle",
+                    label = "Show Self",
+                    desc = "Include your own spells in the display.",
+                    disabled = isCatDisabled,
+                    get = function() return catDB().showSelf; end,
+                    set = function(val)
+                        catDB().showSelf = val;
+                        ST:RefreshDisplay();
+                    end,
+                },
+
+                -- Sort
+                {
+                    type = "select",
+                    label = "Sort By",
+                    desc = "Lowest Remaining CD: spells closest to being ready appear first. Lowest Base CD: shorter cooldowns appear first.",
+                    values = sortModeValues,
+                    sorting = sortModeSorting,
+                    disabled = isCatDisabled,
+                    get = function() return catDB().sortMode; end,
+                    set = function(val)
+                        catDB().sortMode = val;
+                        ST:RefreshDisplay();
+                    end,
+                },
+
+                -- Self On Top
+                {
+                    type = "toggle",
+                    label = "Self Always On Top",
+                    desc = "Always show your own spells at the top, regardless of sort order.",
+                    disabled = isCatDisabled,
+                    get = function() return catDB().selfOnTop; end,
+                    set = function(val)
+                        catDB().selfOnTop = val;
+                        ST:RefreshDisplay();
+                    end,
+                },
+
+                -- Grow Direction
+                {
+                    type = "toggle",
+                    label = "Grow Upward",
+                    desc = "Display grows upward from the anchor point instead of downward.",
+                    disabled = isCatDisabled,
+                    get = function() return catDB().growUp; end,
+                    set = function(val)
+                        catDB().growUp = val;
+                        refresh();
+                    end,
+                },
+
+                -- Preview
+                {
+                    type = "toggle",
+                    label = "Preview",
+                    desc = "Show the tracker with simulated data for positioning and testing.",
+                    disabled = isCatDisabled,
+                    get = function() return ST._previewActive or false; end,
+                    set = function(val)
+                        if (val) then
+                            ST:ActivatePreview();
+                        else
+                            ST:DeactivatePreview();
+                        end
+                    end,
+                },
+
+                -- Bar Settings subgroup
+                {
+                    type = "group",
+                    text = "Bar Settings",
+                    children = {
+                        {
+                            type = "range",
+                            label = "Width",
+                            desc = "Width of the bar display.",
+                            min = 120, max = 400, step = 1,
+                            disabled = isBarDisabled,
+                            get = function() return catDB().barWidth; end,
+                            set = function(val) catDB().barWidth = val; refresh(); end,
+                        },
+                        {
+                            type = "range",
+                            label = "Height",
+                            desc = "Height of each bar.",
+                            min = 16, max = 40, step = 1,
+                            disabled = isBarDisabled,
+                            get = function() return catDB().barHeight; end,
+                            set = function(val) catDB().barHeight = val; refresh(); end,
+                        },
+                        {
+                            type = "range",
+                            label = "Opacity",
+                            desc = "Opacity of the tracker frame.",
+                            min = 0.3, max = 1.0, step = 0.05,
+                            isPercent = true,
+                            disabled = isBarDisabled,
+                            get = function() return catDB().barAlpha; end,
+                            set = function(val) catDB().barAlpha = val; refresh(); end,
+                        },
+                    },
+                },
+
+                -- Icon Settings subgroup
+                {
+                    type = "group",
+                    text = "Icon Settings",
+                    children = {
+                        {
+                            type = "range",
+                            label = "Icon Size",
+                            desc = "Size of each spell icon.",
+                            min = 16, max = 48, step = 1,
+                            disabled = isIconDisabled,
+                            get = function() return catDB().iconSize; end,
+                            set = function(val) catDB().iconSize = val; refresh(); end,
+                        },
+                        {
+                            type = "range",
+                            label = "Spacing",
+                            desc = "Space between icons.",
+                            min = 0, max = 8, step = 1,
+                            disabled = isIconDisabled,
+                            get = function() return catDB().iconSpacing; end,
+                            set = function(val) catDB().iconSpacing = val; refresh(); end,
+                        },
+                        {
+                            type = "toggle",
+                            label = "Show Player Names",
+                            desc = "Show player name headers above each player's icons.",
+                            disabled = isIconDisabled,
+                            get = function() return catDB().showNames; end,
+                            set = function(val) catDB().showNames = val; refresh(); end,
+                        },
+                    },
+                },
+
+                -- Font Settings subgroup
+                {
+                    type = "group",
+                    text = "Font Settings",
+                    children = {
+                        {
+                            type = "select",
+                            label = "Font",
+                            desc = "Font for the tracker text.",
+                            values = getFontValues,
+                            disabled = isCatDisabled,
+                            get = function() return catDB().font or "Friz Quadrata TT"; end,
+                            set = function(val) catDB().font = val; refresh(); end,
+                        },
+                        {
+                            type = "select",
+                            label = "Font Outline",
+                            desc = "Outline style for tracker text.",
+                            values = outlineValues,
+                            sorting = outlineSorting,
+                            disabled = isCatDisabled,
+                            get = function() return catDB().fontOutline or "OUTLINE"; end,
+                            set = function(val) catDB().fontOutline = val; refresh(); end,
+                        },
+                    },
+                },
+
+                -- Position
+                {
+                    type = "group",
+                    text = "Position",
+                    children = {
+                        {
+                            type = "toggle",
+                            label = "Lock Position",
+                            desc = "Prevent dragging. Hold Shift to move when locked.",
+                            disabled = isCatDisabled,
+                            get = function() return catDB().locked; end,
+                            set = function(val)
+                                catDB().locked = val;
+                                refresh();
+                            end,
+                        },
+                        {
+                            type = "execute",
+                            label = "Reset Position",
+                            desc = "Reset frame position to center of screen.",
+                            disabled = isCatDisabled,
+                            func = function()
+                                ST:ResetPosition(catKey);
+                            end,
+                        },
+                    },
+                },
+            },
+        };
+    end
+
+    return {
+        moduleToggle("SpellTracker", "Enable", "Enable or disable the Spell Tracker."),
+
+        -- Per-category settings
+        categoryGroup("interrupts", "Interrupts", "bar"),
+        categoryGroup("defensive", "Defensives", "icon"),
     };
 end
 
