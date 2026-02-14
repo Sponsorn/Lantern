@@ -33,6 +33,9 @@ for i = 1, 4 do
     _petWatchers[i] = CreateFrame("Frame");
 end
 
+-- Self-cast watcher frame (must be at file scope for clean context)
+local _selfFrame = CreateFrame("Frame");
+
 -------------------------------------------------------------------------------
 -- Register Player
 --
@@ -64,6 +67,53 @@ local function RegisterPlayer(name, class)
                         maxCharges = spell.charges or 1,
                         baseCd     = spell.cd,
                     };
+                end
+            end
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Identify Player Spells
+--
+-- Detects the player's current spec and registers all known spells from
+-- enabled categories. Uses untainted APIs (IsSpellKnown, IsPlayerSpell)
+-- since the player's own spell info is always clean.
+-------------------------------------------------------------------------------
+
+local function IdentifyPlayerSpells()
+    local class = ST.playerClass;
+    local name = ST.playerName;
+    if (not class or not name) then return; end
+
+    if (not ST.trackedPlayers[name]) then
+        ST.trackedPlayers[name] = { class = class, spec = nil, spells = {} };
+    end
+    local player = ST.trackedPlayers[name];
+
+    -- Detect current spec
+    local specIndex = GetSpecialization();
+    if (specIndex) then
+        player.spec = GetSpecializationInfo(specIndex);
+    end
+
+    -- Register known spells across all enabled categories
+    for _, entry in ipairs(ST.categories) do
+        if (entry.config.enabled) then
+            local classSpells = ST:GetSpellsForClassAndCategory(class, player.spec, entry.key);
+            for spellID, spell in pairs(classSpells) do
+                if (IsSpellKnown(spellID) or IsSpellKnown(spellID, true) or IsPlayerSpell(spellID)) then
+                    if (not player.spells[spellID]) then
+                        player.spells[spellID] = {
+                            category   = spell.category,
+                            state      = "ready",
+                            cdEnd      = 0,
+                            activeEnd  = 0,
+                            charges    = spell.charges or 1,
+                            maxCharges = spell.charges or 1,
+                            baseCd     = spell.cd,
+                        };
+                    end
                 end
             end
         end
@@ -223,6 +273,96 @@ local function PruneTrackedPlayers()
 end
 
 -------------------------------------------------------------------------------
+-- Self-Cooldown Tracking
+--
+-- Uses C_Spell.GetSpellCooldown for precise timing on the player's own
+-- spells. Party members rely on estimated cooldowns from cast detection,
+-- but the player's own data is accurate from the API.
+-------------------------------------------------------------------------------
+
+local function UpdateSelfCooldowns()
+    local name = ST.playerName;
+    if (not name) then return; end
+    local player = ST.trackedPlayers[name];
+    if (not player) then return; end
+
+    for spellID, spellState in pairs(player.spells) do
+        if (IsSpellKnown(spellID) or IsPlayerSpell(spellID)) then
+            local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, spellID);
+            if (ok and cdInfo and cdInfo.duration and cdInfo.duration > 1.5) then
+                local cdEnd = cdInfo.startTime + cdInfo.duration;
+                spellState.cdEnd = cdEnd;
+                if (spellState.state == "ready" and cdEnd > GetTime()) then
+                    -- Spell is on CD but we missed the cast (e.g., logged in mid-CD)
+                    local spellData = ST.spellDB[spellID];
+                    if (spellData and spellData.duration and spellState.activeEnd > GetTime()) then
+                        spellState.state = "active";
+                    else
+                        spellState.state = "cooldown";
+                    end
+                end
+            end
+
+            -- Check charges
+            local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
+            if (ok2 and chargeInfo and chargeInfo.maxCharges and chargeInfo.maxCharges > 1) then
+                spellState.charges = chargeInfo.currentCharges;
+                spellState.maxCharges = chargeInfo.maxCharges;
+                if (chargeInfo.cooldownStartTime and chargeInfo.cooldownDuration and chargeInfo.cooldownDuration > 0) then
+                    spellState.cdEnd = chargeInfo.cooldownStartTime + chargeInfo.cooldownDuration;
+                end
+            end
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Buff Tracking
+--
+-- Checks auras on a unit and updates spell states accordingly.
+-- Uses C_UnitAuras.GetPlayerAuraBySpellID for the player (fast path),
+-- and AuraUtil.ForEachAura for party members (full scan).
+-------------------------------------------------------------------------------
+
+local function CheckUnitBuffs(unit)
+    local name = UnitName(unit);
+    if (not name) then return; end
+    local player = ST.trackedPlayers[name];
+    if (not player) then return; end
+
+    for spellID, spellState in pairs(player.spells) do
+        local spellData = ST.spellDB[spellID];
+        if (spellData and spellData.duration) then
+            -- Check if the buff is active on this unit
+            local aura = nil;
+            if (unit == "player") then
+                aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID);
+            else
+                -- For party members, scan their auras
+                AuraUtil.ForEachAura(unit, "HELPFUL", nil, function(a)
+                    if (a.spellId == spellID) then
+                        aura = a;
+                        return true;  -- stop iteration
+                    end
+                end);
+            end
+
+            if (aura) then
+                spellState.state = "active";
+                if (aura.expirationTime and aura.expirationTime > 0) then
+                    spellState.activeEnd = aura.expirationTime;
+                else
+                    spellState.activeEnd = GetTime() + spellData.duration;
+                end
+            elseif (spellState.state == "active" and GetTime() >= spellState.activeEnd) then
+                -- Buff faded, transition to cooldown (cdEnd already set from cast)
+                spellState.state = "cooldown";
+            end
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
 -- State Ticker
 --
 -- Runs at 0.1s intervals to transition spell states:
@@ -280,6 +420,10 @@ function ST:EnableEngine()
     _eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
     _eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
     _eventFrame:RegisterEvent("UNIT_PET");
+    _eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN");
+    _eventFrame:RegisterEvent("SPELLS_CHANGED");
+    _eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+    _eventFrame:RegisterUnitEvent("UNIT_AURA", "player", "party1", "party2", "party3", "party4");
     _eventFrame:SetScript("OnEvent", function(_, event, ...)
         if (event == "GROUP_ROSTER_UPDATE") then
             PruneTrackedPlayers();
@@ -291,6 +435,38 @@ function ST:EnableEngine()
             RefreshPartyWatchers();
         elseif (event == "UNIT_PET") then
             RefreshPartyWatchers();
+        elseif (event == "SPELL_UPDATE_COOLDOWN") then
+            UpdateSelfCooldowns();
+        elseif (event == "SPELLS_CHANGED" or event == "PLAYER_SPECIALIZATION_CHANGED") then
+            IdentifyPlayerSpells();
+        elseif (event == "UNIT_AURA") then
+            local unit = ...;
+            if (unit) then
+                CheckUnitBuffs(unit);
+            end
+        end
+    end);
+
+    -- Register self-cast watcher for player and pet casts
+    _selfFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "pet");
+    _selfFrame:SetScript("OnEvent", function(_, _, unit, _, spellID)
+        local name = ST.playerName;
+        if (not name) then return; end
+
+        if (unit == "pet") then
+            -- Pet spells may be tainted
+            local cleanID = LaunderSpellID(spellID);
+            local matchID = cleanID or spellID;
+            local resolvedID = ST.spellAliases[matchID] or matchID;
+            if (ST.spellDB[resolvedID]) then
+                RecordSpellCast("player", resolvedID, name);
+            end
+        else
+            -- Player spells are not tainted
+            local resolvedID = ST.spellAliases[spellID] or spellID;
+            if (ST.spellDB[resolvedID]) then
+                RecordSpellCast("player", resolvedID, name);
+            end
         end
     end);
 
@@ -298,6 +474,7 @@ function ST:EnableEngine()
     _tickerFrame:SetScript("OnUpdate", OnTick);
 
     -- Initial setup
+    IdentifyPlayerSpells();
     RegisterPartyByClass();
     RefreshPartyWatchers();
 end
@@ -305,6 +482,8 @@ end
 function ST:DisableEngine()
     _eventFrame:UnregisterAllEvents();
     _eventFrame:SetScript("OnEvent", nil);
+    _selfFrame:UnregisterAllEvents();
+    _selfFrame:SetScript("OnEvent", nil);
     _tickerFrame:SetScript("OnUpdate", nil);
 
     for i = 1, 4 do
