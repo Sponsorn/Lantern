@@ -91,6 +91,12 @@ local CATEGORY_DEFAULTS = {
     showNames    = true,
     -- Docking
     dockTo       = nil,
+    -- Attached mode (per-player icons on party frames)
+    attachMode    = "free",     -- "free" (floating frames) or "party" (attached to party frames)
+    attachAnchor  = "RIGHT",    -- which side of the party frame to attach to
+    attachOffsetX = 2,          -- horizontal offset from the anchor point
+    attachOffsetY = 0,          -- vertical offset from the anchor point
+    attachGrowDir = "DOWN",     -- direction categories stack: "DOWN" or "RIGHT"
 };
 
 local function getDB()

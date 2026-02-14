@@ -30,24 +30,15 @@ local spells = {
     -- PALADIN
     ---------------------------------------------------------------------------
 
-    -- Avenging Wrath (Retribution — 60s in Midnight)
-    {
-        id       = 31884,
-        cd       = 60,
-        duration = 20,
-        charges  = nil,
-        class    = "PALADIN",
-        specs    = { [70] = true },
-        category = "cooldowns",
-    },
-    -- Avenging Wrath (Holy / Protection — 120s)
+    -- Avenging Wrath (Ret 60s, Holy/Prot 120s)
     {
         id       = 31884,
         cd       = 120,
         duration = 20,
+        cdBySpec = { [70] = 60 },
         charges  = nil,
         class    = "PALADIN",
-        specs    = { [65] = true, [66] = true },
+        specs    = { [65] = true, [66] = true, [70] = true },
         category = "cooldowns",
     },
     -- Aura Mastery (Holy)
@@ -157,9 +148,9 @@ local spells = {
     },
     -- Takedown (Survival — replaces Coordinated Assault in Midnight)
     {
-        id       = 1253862,
+        id       = 1250646,
         cd       = 90,
-        duration = 8,
+        duration = 10,
         charges  = nil,
         class    = "HUNTER",
         specs    = { [255] = true },

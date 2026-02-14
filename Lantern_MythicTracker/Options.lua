@@ -19,11 +19,15 @@ local COLOR_MUTED       = { 0.55, 0.55, 0.55 };
 local COLOR_BTN         = { 0.18, 0.18, 0.18, 1.0 };
 local COLOR_BTN_HOVER   = { 0.25, 0.25, 0.25, 1.0 };
 
--- Layout / filter options
+-- Layout / filter / attach mode options
 local LAYOUT_OPTIONS = { "bar", "icon" };
 local LAYOUT_LABELS  = { bar = "Bar", icon = "Icon Grid" };
 local FILTER_OPTIONS = { "all", "hide_ready", "active_only" };
 local FILTER_LABELS  = { all = "Show All", hide_ready = "Hide Ready", active_only = "Active Only" };
+local ATTACH_MODE_OPTIONS  = { "free", "party" };
+local ATTACH_MODE_LABELS   = { free = "Free Floating", party = "Party Frames" };
+local ATTACH_ANCHOR_OPTIONS = { "RIGHT", "LEFT", "BOTTOM" };
+local ATTACH_ANCHOR_LABELS  = { RIGHT = "Right", LEFT = "Left", BOTTOM = "Bottom" };
 
 local PADDING = 12;
 local ROW_HEIGHT = 26;
@@ -225,6 +229,9 @@ local function BuildCategorySection(content, catKey, yOff)
             if (display.frame) then display.frame:Hide(); display.frame:SetParent(nil); end
             ST.displayFrames[catKey] = nil;
         end
+        if (ST.HideAttachedContainers) then
+            ST:HideAttachedContainers(catKey);
+        end
         ST:RefreshDisplay();
     end
 
@@ -259,6 +266,40 @@ local function BuildCategorySection(content, catKey, yOff)
     end));
     yOff = yOff - ROW_HEIGHT;
 
+    -- Attach Mode cycle
+    local attachMode = catDB.attachMode or "free";
+    Track(CreateCycleButton(content, PADDING + 4, yOff, "Display", ATTACH_MODE_OPTIONS, ATTACH_MODE_LABELS, attachMode, function(val)
+        catDB.attachMode = val;
+        DestroyAndRefresh();
+        -- Rebuild settings frame to show/hide attach-specific controls
+        if (_optionsFrame and _optionsFrame:IsShown()) then
+            _optionsFrame:GetScript("OnShow")(_optionsFrame);
+        end
+    end));
+    yOff = yOff - ROW_HEIGHT;
+
+    -- Attach-specific controls (only visible in party mode)
+    if (attachMode == "party") then
+        local attachAnchor = catDB.attachAnchor or "RIGHT";
+        Track(CreateCycleButton(content, PADDING + 4, yOff, "Anchor", ATTACH_ANCHOR_OPTIONS, ATTACH_ANCHOR_LABELS, attachAnchor, function(val)
+            catDB.attachAnchor = val;
+            ST:RefreshDisplay();
+        end));
+        yOff = yOff - ROW_HEIGHT;
+
+        Track(CreateSlider(content, PADDING + 4, yOff, "Offset X", -50, 50, 1, catDB.attachOffsetX or 2, function(val)
+            catDB.attachOffsetX = val;
+            ST:RefreshDisplay();
+        end));
+        yOff = yOff - 44;
+
+        Track(CreateSlider(content, PADDING + 4, yOff, "Offset Y", -50, 50, 1, catDB.attachOffsetY or 0, function(val)
+            catDB.attachOffsetY = val;
+            ST:RefreshDisplay();
+        end));
+        yOff = yOff - 44;
+    end
+
     -- Show Self + Self On Top (same row)
     Track(CreateCheckbox(content, PADDING + 4, yOff, "Show Self", catDB.showSelf, function(val)
         catDB.showSelf = val;
@@ -270,48 +311,57 @@ local function BuildCategorySection(content, catKey, yOff)
     end));
     yOff = yOff - ROW_HEIGHT;
 
-    -- Layout-specific controls
-    if (layout == "bar") then
-        Track(CreateSlider(content, PADDING + 4, yOff, "Bar Width", 120, 400, 1, catDB.barWidth, function(val)
-            catDB.barWidth = val;
-            ST:RefreshBarLayout(catKey);
-            ST:RefreshDisplay();
-        end));
-        yOff = yOff - 44;
+    -- Layout-specific controls (only relevant in free-floating mode)
+    if (attachMode ~= "party") then
+        if (layout == "bar") then
+            Track(CreateSlider(content, PADDING + 4, yOff, "Bar Width", 120, 400, 1, catDB.barWidth, function(val)
+                catDB.barWidth = val;
+                ST:RefreshBarLayout(catKey);
+                ST:RefreshDisplay();
+            end));
+            yOff = yOff - 44;
 
-        Track(CreateSlider(content, PADDING + 4, yOff, "Bar Height", 16, 40, 1, catDB.barHeight, function(val)
-            catDB.barHeight = val;
-            DestroyAndRefresh();
-        end));
-        yOff = yOff - 44;
+            Track(CreateSlider(content, PADDING + 4, yOff, "Bar Height", 16, 40, 1, catDB.barHeight, function(val)
+                catDB.barHeight = val;
+                DestroyAndRefresh();
+            end));
+            yOff = yOff - 44;
 
-    elseif (layout == "icon") then
-        Track(CreateSlider(content, PADDING + 4, yOff, "Icon Size", 16, 48, 1, catDB.iconSize, function(val)
-            catDB.iconSize = val;
-            ST:RefreshIconLayout(catKey);
-        end));
-        yOff = yOff - 44;
+        elseif (layout == "icon") then
+            Track(CreateSlider(content, PADDING + 4, yOff, "Icon Size", 16, 48, 1, catDB.iconSize, function(val)
+                catDB.iconSize = val;
+                ST:RefreshIconLayout(catKey);
+            end));
+            yOff = yOff - 44;
 
-        Track(CreateCheckbox(content, PADDING + 4, yOff, "Show Names", catDB.showNames, function(val)
-            catDB.showNames = val;
-            ST:RefreshDisplay();
+            Track(CreateCheckbox(content, PADDING + 4, yOff, "Show Names", catDB.showNames, function(val)
+                catDB.showNames = val;
+                ST:RefreshDisplay();
+            end));
+            yOff = yOff - ROW_HEIGHT;
+        end
+
+        -- Lock Position + Reset Position (same row)
+        Track(CreateCheckbox(content, PADDING + 4, yOff, "Lock Position", catDB.locked, function(val)
+            catDB.locked = val;
+            local display = ST.displayFrames[catKey];
+            if (display and display.title) then
+                if (val) then display.title:Hide(); else display.title:Show(); end
+            end
+        end));
+        Track(CreateActionButton(content, PADDING + 180, yOff, "Reset Position", 120, function()
+            ST:ResetPosition(catKey);
+            ST:Print(label .. " position reset.");
         end));
         yOff = yOff - ROW_HEIGHT;
+    else
+        -- Attached mode: icon size slider
+        Track(CreateSlider(content, PADDING + 4, yOff, "Icon Size", 16, 48, 1, catDB.iconSize, function(val)
+            catDB.iconSize = val;
+            ST:RefreshDisplay();
+        end));
+        yOff = yOff - 44;
     end
-
-    -- Lock Position + Reset Position (same row)
-    Track(CreateCheckbox(content, PADDING + 4, yOff, "Lock Position", catDB.locked, function(val)
-        catDB.locked = val;
-        local display = ST.displayFrames[catKey];
-        if (display and display.title) then
-            if (val) then display.title:Hide(); else display.title:Show(); end
-        end
-    end));
-    Track(CreateActionButton(content, PADDING + 180, yOff, "Reset Position", 120, function()
-        ST:ResetPosition(catKey);
-        ST:Print(label .. " position reset.");
-    end));
-    yOff = yOff - ROW_HEIGHT;
 
     -- Spacing between sections
     yOff = yOff - 8;

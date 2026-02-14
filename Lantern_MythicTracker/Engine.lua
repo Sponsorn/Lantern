@@ -43,6 +43,19 @@ local _inspectCurrentUnit = nil;
 local _inspectedNames = {};
 
 -------------------------------------------------------------------------------
+-- CD Resolution
+--
+-- Resolves the effective cooldown for a spell, checking cdBySpec first.
+-------------------------------------------------------------------------------
+
+local function ResolveCd(spell, spec)
+    if (spell.cdBySpec and spec and spell.cdBySpec[spec]) then
+        return spell.cdBySpec[spec];
+    end
+    return spell.cd;
+end
+
+-------------------------------------------------------------------------------
 -- Register Player
 --
 -- Register all spells for a player's class across all enabled categories.
@@ -71,7 +84,7 @@ local function RegisterPlayer(name, class)
                         activeEnd  = 0,
                         charges    = spell.charges or 1,
                         maxCharges = spell.charges or 1,
-                        baseCd     = spell.cd,
+                        baseCd     = ResolveCd(spell, player.spec),
                     };
                 end
             end
@@ -117,7 +130,7 @@ local function IdentifyPlayerSpells()
                             activeEnd  = 0,
                             charges    = spell.charges or 1,
                             maxCharges = spell.charges or 1,
-                            baseCd     = spell.cd,
+                            baseCd     = ResolveCd(spell, player.spec),
                         };
                     end
                 end
@@ -482,8 +495,11 @@ local function ApplyInspectResults(unit)
                             activeEnd  = 0,
                             charges    = spell.charges or 1,
                             maxCharges = spell.charges or 1,
-                            baseCd     = spell.cd,
+                            baseCd     = ResolveCd(spell, specID),
                         };
+                    else
+                        -- Update baseCd now that we know the spec
+                        player.spells[spellID].baseCd = ResolveCd(spell, specID);
                     end
                 end
             end
@@ -596,6 +612,7 @@ function ST:EnableEngine()
     _eventFrame:RegisterEvent("SPELLS_CHANGED");
     _eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
     _eventFrame:RegisterEvent("INSPECT_READY");
+    _eventFrame:RegisterEvent("READY_CHECK");
     _eventFrame:RegisterUnitEvent("UNIT_AURA", "player", "party1", "party2", "party3", "party4");
     _eventFrame:SetScript("OnEvent", function(_, event, ...)
         if (event == "GROUP_ROSTER_UPDATE") then
@@ -619,6 +636,10 @@ function ST:EnableEngine()
             if (unit) then
                 CheckUnitBuffs(unit);
             end
+        elseif (event == "READY_CHECK") then
+            -- Re-inspect all party members on ready check (good time to refresh specs)
+            _inspectedNames = {};
+            QueueInspects();
         elseif (event == "INSPECT_READY") then
             if (_inspectInProgress and _inspectCurrentUnit) then
                 ApplyInspectResults(_inspectCurrentUnit);

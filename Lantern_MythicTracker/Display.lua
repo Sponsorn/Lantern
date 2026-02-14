@@ -31,6 +31,52 @@ local function FormatTime(seconds)
 end
 
 -------------------------------------------------------------------------------
+-- Section 1b: Party frame lookup helpers (for attached mode)
+-------------------------------------------------------------------------------
+
+local function GetPartyMemberFrame(unitToken)
+    local useRaid = EditModeManagerFrame
+        and EditModeManagerFrame.UseRaidStylePartyFrames
+        and EditModeManagerFrame:UseRaidStylePartyFrames();
+
+    if (useRaid) then
+        -- CompactPartyFrame: static frames with .unit property (includes "player")
+        for i = 1, 5 do
+            local frame = _G["CompactPartyFrameMember" .. i];
+            if (frame and frame.unit == unitToken and frame:IsShown()) then
+                return frame;
+            end
+        end
+    else
+        -- Modern PartyFrame: pool-based with .unitToken
+        if (PartyFrame and PartyFrame.MemberFrames) then
+            for _, memberFrame in pairs(PartyFrame.MemberFrames) do
+                if (memberFrame.unitToken == unitToken and memberFrame:IsShown()) then
+                    return memberFrame;
+                end
+            end
+        end
+    end
+    return nil;
+end
+
+local function BuildNameToUnitMap()
+    local map = {};
+    -- Include self (shown in raid-style party frames)
+    if (ST.playerName) then
+        map[ST.playerName] = "player";
+    end
+    for i = 1, 4 do
+        local unit = "party" .. i;
+        if (UnitExists(unit)) then
+            local name = UnitName(unit);
+            if (name) then map[name] = unit; end
+        end
+    end
+    return map;
+end
+
+-------------------------------------------------------------------------------
 -- Section 2: Bar frame creation per category
 -------------------------------------------------------------------------------
 
@@ -601,6 +647,269 @@ local function RenderIconCategory(categoryKey)
 end
 
 -------------------------------------------------------------------------------
+-- Section 4d: Attached mode — per-player containers on party frames
+-------------------------------------------------------------------------------
+
+local ATTACHED_ICON_POOL_SIZE = 8;
+
+ST.attachedContainers = {};  -- [categoryKey][unitToken] = { frame, iconPool = {} }
+
+local function GetOrCreateAttachedContainer(categoryKey, unitToken, parentFrame)
+    if (not ST.attachedContainers[categoryKey]) then
+        ST.attachedContainers[categoryKey] = {};
+    end
+
+    local existing = ST.attachedContainers[categoryKey][unitToken];
+    if (existing and existing.frame) then
+        return existing;
+    end
+
+    local catDB = ST:GetCategoryDB(categoryKey);
+    local iconSize = catDB.iconSize;
+
+    -- Parent to UIParent to avoid secure frame taint
+    local container = CreateFrame("Frame", nil, UIParent);
+    container:SetSize(iconSize, iconSize);
+    container:SetFrameStrata("MEDIUM");
+    container:SetFrameLevel(parentFrame:GetFrameLevel() + 10);
+
+    -- Icon pool
+    local iconPool = {};
+    for i = 1, ATTACHED_ICON_POOL_SIZE do
+        iconPool[i] = CreateSpellIcon(container, iconSize);
+    end
+
+    local entry = {
+        frame    = container,
+        iconPool = iconPool,
+    };
+    ST.attachedContainers[categoryKey][unitToken] = entry;
+    return entry;
+end
+
+local function AnchorAttachedContainer(container, parentFrame, catDB)
+    container.frame:ClearAllPoints();
+    local anchor = catDB.attachAnchor or "RIGHT";
+    local ox = catDB.attachOffsetX or 2;
+    local oy = catDB.attachOffsetY or 0;
+
+    if (anchor == "LEFT") then
+        container.frame:SetPoint("RIGHT", parentFrame, "LEFT", -ox, oy);
+    elseif (anchor == "BOTTOM") then
+        container.frame:SetPoint("TOP", parentFrame, "BOTTOM", ox, -oy);
+    else  -- "RIGHT" (default)
+        container.frame:SetPoint("LEFT", parentFrame, "RIGHT", ox, oy);
+    end
+end
+
+local function RenderAttachedCategory(categoryKey)
+    local catDB = ST:GetCategoryDB(categoryKey);
+    local filter = catDB.filter or (ST:GetCategory(categoryKey) and ST:GetCategory(categoryKey).defaultFilter) or "all";
+    local iconSize = catDB.iconSize;
+    local spacing = catDB.iconSpacing;
+    local nameToUnit = BuildNameToUnitMap();
+    local now = GetTime();
+
+    -- Track which units we rendered so we can hide the rest
+    local renderedUnits = {};
+
+    for playerName, player in pairs(ST.trackedPlayers) do
+        local isSelf = (playerName == ST.playerName);
+        if (isSelf and not catDB.showSelf) then
+            -- skip self
+        else
+            -- Collect this player's spells for this category
+            local spells = {};
+            for spellID, spellState in pairs(player.spells) do
+                if (spellState.category == categoryKey) then
+                    local include = true;
+                    if (filter == "hide_ready" and spellState.state == "ready") then
+                        include = false;
+                    elseif (filter == "active_only" and spellState.state ~= "active") then
+                        include = false;
+                    end
+                    if (include) then
+                        table.insert(spells, {
+                            spellID   = spellID,
+                            state     = spellState.state,
+                            cdEnd     = spellState.cdEnd,
+                            activeEnd = spellState.activeEnd,
+                            baseCd    = spellState.baseCd,
+                        });
+                    end
+                end
+            end
+
+            if (#spells > 0) then
+                local unitToken = nameToUnit[playerName];
+                if (unitToken) then
+                    local partyFrame = GetPartyMemberFrame(unitToken);
+                    if (partyFrame) then
+                        renderedUnits[unitToken] = true;
+                        local container = GetOrCreateAttachedContainer(categoryKey, unitToken, partyFrame);
+
+                        -- Re-anchor (party frames can move)
+                        AnchorAttachedContainer(container, partyFrame, catDB);
+
+                        -- Resize icons to match current setting
+                        for _, ico in ipairs(container.iconPool) do
+                            ico:SetSize(iconSize, iconSize);
+                            ico:Hide();
+                        end
+
+                        -- Render spell icons (grow direction matches anchor side)
+                        local anchor = catDB.attachAnchor or "RIGHT";
+                        local growLeft = (anchor == "LEFT");
+                        local x = 0;
+                        for idx, spell in ipairs(spells) do
+                            if (idx > ATTACHED_ICON_POOL_SIZE) then break; end
+                            local ico = container.iconPool[idx];
+                            ico:ClearAllPoints();
+                            if (growLeft) then
+                                ico:SetPoint("TOPRIGHT", -x, 0);
+                            else
+                                ico:SetPoint("TOPLEFT", x, 0);
+                            end
+
+                            -- Icon texture
+                            local ok, tex = pcall(C_Spell.GetSpellTexture, spell.spellID);
+                            if (ok and tex) then
+                                ico.icon:SetTexture(tex);
+                            end
+
+                            -- State rendering (same logic as RenderIconCategory)
+                            if (spell.state == "ready") then
+                                ico.icon:SetDesaturated(false);
+                                ico.cooldown:Clear();
+                                ico.text:SetText("");
+                                ico.glow:Hide();
+                            elseif (spell.state == "active") then
+                                ico.icon:SetDesaturated(false);
+                                ico.cooldown:Clear();
+                                local remaining = math.max(0, spell.activeEnd - now);
+                                ico.text:SetText(FormatTime(remaining));
+                                ico.text:SetTextColor(1, 0.9, 0.3);
+                                ico.glow:Show();
+                            elseif (spell.state == "cooldown") then
+                                ico.icon:SetDesaturated(true);
+                                local remaining = math.max(0, spell.cdEnd - now);
+                                if (remaining > 0) then
+                                    ico.cooldown:SetCooldown(spell.cdEnd - spell.baseCd, spell.baseCd);
+                                else
+                                    ico.cooldown:Clear();
+                                end
+                                ico.text:SetText(FormatTime(remaining));
+                                ico.text:SetTextColor(1, 1, 1);
+                                ico.glow:Hide();
+                            end
+
+                            ico:Show();
+                            x = x + iconSize + spacing;
+                        end
+
+                        -- Resize container to fit icons
+                        local numIcons = math.min(#spells, ATTACHED_ICON_POOL_SIZE);
+                        if (numIcons > 0) then
+                            container.frame:SetSize(numIcons * (iconSize + spacing) - spacing, iconSize);
+                        end
+                        container.frame:Show();
+                    end
+                end
+            end
+        end
+    end
+
+    -- Hide containers for units no longer shown
+    if (ST.attachedContainers[categoryKey]) then
+        for unitToken, container in pairs(ST.attachedContainers[categoryKey]) do
+            if (not renderedUnits[unitToken] and container.frame) then
+                container.frame:Hide();
+            end
+        end
+    end
+end
+
+local function StackAttachedContainers()
+    -- Collect all attached category keys and group by anchor side
+    local unitContainers = {};  -- [unitToken] = { { categoryKey, container }, ... }
+
+    for _, entry in ipairs(ST.categories) do
+        local key = entry.key;
+        local catDB = ST:GetCategoryDB(key);
+        if (entry.config.enabled and catDB.attachMode == "party" and ST.attachedContainers[key]) then
+            for unitToken, container in pairs(ST.attachedContainers[key]) do
+                if (container.frame and container.frame:IsShown()) then
+                    if (not unitContainers[unitToken]) then
+                        unitContainers[unitToken] = {};
+                    end
+                    table.insert(unitContainers[unitToken], {
+                        key       = key,
+                        container = container,
+                        catDB     = catDB,
+                    });
+                end
+            end
+        end
+    end
+
+    -- Stack containers per unit
+    for unitToken, containers in pairs(unitContainers) do
+        if (#containers > 1) then
+            local partyFrame = GetPartyMemberFrame(unitToken);
+            if (partyFrame) then
+                -- First container anchors to party frame (already done), subsequent stack
+                for i = 2, #containers do
+                    local prev = containers[i - 1];
+                    local curr = containers[i];
+                    local growDir = curr.catDB.attachGrowDir or "DOWN";
+
+                    local anchor = curr.catDB.attachAnchor or "RIGHT";
+                    local sp = curr.catDB.iconSpacing or 2;
+
+                    curr.container.frame:ClearAllPoints();
+                    if (growDir == "RIGHT") then
+                        if (anchor == "LEFT") then
+                            curr.container.frame:SetPoint("TOPRIGHT", prev.container.frame, "TOPLEFT", -sp, 0);
+                        else
+                            curr.container.frame:SetPoint("TOPLEFT", prev.container.frame, "TOPRIGHT", sp, 0);
+                        end
+                    else  -- "DOWN"
+                        if (anchor == "LEFT") then
+                            curr.container.frame:SetPoint("TOPRIGHT", prev.container.frame, "BOTTOMRIGHT", 0, -sp);
+                        else
+                            curr.container.frame:SetPoint("TOPLEFT", prev.container.frame, "BOTTOMLEFT", 0, -sp);
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function HideAttachedContainers(categoryKey)
+    if (categoryKey) then
+        -- Hide containers for a specific category
+        if (ST.attachedContainers[categoryKey]) then
+            for _, container in pairs(ST.attachedContainers[categoryKey]) do
+                if (container.frame) then container.frame:Hide(); end
+            end
+        end
+    else
+        -- Hide all attached containers
+        for key, units in pairs(ST.attachedContainers) do
+            for _, container in pairs(units) do
+                if (container.frame) then container.frame:Hide(); end
+            end
+        end
+    end
+end
+
+-- Expose for external use (Options.lua cleanup)
+function ST:HideAttachedContainers(categoryKey)
+    HideAttachedContainers(categoryKey);
+end
+
+-------------------------------------------------------------------------------
 -- Section 5: Visibility and RefreshDisplay
 -------------------------------------------------------------------------------
 
@@ -624,34 +933,54 @@ function ST:RefreshDisplay()
     end
 
     local show = ShouldBeVisible() or ST._previewActive;
+    local hasAttached = false;
 
     for _, entry in ipairs(self.categories) do
         local key = entry.key;
         local catDB = self:GetCategoryDB(key);
         local layout = catDB.layout or entry.config.defaultLayout or "bar";
+        local attachMode = catDB.attachMode or "free";
 
         if (entry.config.enabled and show) then
-            if (layout == "bar") then
-                BuildBarFrame(key);
+            -- Attached mode: anchor icons to party frames (falls back to free during preview)
+            if (attachMode == "party" and not ST._previewActive) then
+                -- Hide the monolithic free-floating frame
                 local display = self.displayFrames[key];
                 if (display and display.frame) then
-                    display.frame:Show();
+                    display.frame:Hide();
                 end
-                RenderBarCategory(key);
-            elseif (layout == "icon") then
-                BuildIconFrame(key);
-                local display = self.displayFrames[key];
-                if (display and display.frame) then
-                    display.frame:Show();
+                RenderAttachedCategory(key);
+                hasAttached = true;
+            else
+                -- Free-floating mode (or preview fallback)
+                HideAttachedContainers(key);
+                if (layout == "bar") then
+                    BuildBarFrame(key);
+                    local display = self.displayFrames[key];
+                    if (display and display.frame) then
+                        display.frame:Show();
+                    end
+                    RenderBarCategory(key);
+                elseif (layout == "icon") then
+                    BuildIconFrame(key);
+                    local display = self.displayFrames[key];
+                    if (display and display.frame) then
+                        display.frame:Show();
+                    end
+                    RenderIconCategory(key);
                 end
-                RenderIconCategory(key);
             end
         else
             local display = self.displayFrames[key];
             if (display and display.frame) then
                 display.frame:Hide();
             end
+            HideAttachedContainers(key);
         end
+    end
+
+    if (hasAttached) then
+        StackAttachedContainers();
     end
 
     self:ApplyDocking();
@@ -769,6 +1098,7 @@ function ST:HideAllDisplays()
             display.frame:Hide();
         end
     end
+    HideAttachedContainers();
 end
 
 function ST:ResetPosition(categoryKey)
@@ -807,6 +1137,11 @@ function ST:ActivatePreview()
             if (entry.config.enabled) then
                 local classSpells = ST:GetSpellsForClassAndCategory(fake.class, nil, entry.key);
                 for spellID, spell in pairs(classSpells) do
+                    local cd = spell.cd;
+                    if (spell.cdBySpec) then
+                        -- Preview doesn't have real specs, just use default
+                        cd = spell.cd;
+                    end
                     player.spells[spellID] = {
                         category   = spell.category,
                         state      = "ready",
@@ -814,7 +1149,7 @@ function ST:ActivatePreview()
                         activeEnd  = 0,
                         charges    = spell.charges or 1,
                         maxCharges = spell.charges or 1,
-                        baseCd     = spell.cd,
+                        baseCd     = cd,
                     };
                 end
             end
