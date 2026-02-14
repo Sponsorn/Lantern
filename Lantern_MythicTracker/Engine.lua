@@ -5,9 +5,9 @@ if (not ST) then return; end
 -------------------------------------------------------------------------------
 -- Taint Laundering
 --
--- Party member spellIDs arrive tainted in UNIT_SPELLCAST_SUCCEEDED.
--- A StatusBar's OnValueChanged callback receives a clean copy from the
--- C++ engine, which strips taint. We use this to recover the real spellID.
+-- Values from party member events and some C_Spell APIs arrive tainted.
+-- A StatusBar's OnValueChanged callback receives a clean copy because
+-- the widget passes through Blizzard's C++ layer, which strips taint.
 -- These frames MUST be created at file scope (clean load-time context).
 -------------------------------------------------------------------------------
 
