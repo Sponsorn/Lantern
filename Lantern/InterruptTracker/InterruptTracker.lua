@@ -1,6 +1,9 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
+-- Detection approach (taint laundering, mob interrupt correlation, inspect
+-- system) inspired by MythicInterruptTracker by KinderLine.
+
 local utils = Lantern.utils;
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
 
@@ -1291,7 +1294,7 @@ end
 
 local module = Lantern:NewModule("InterruptTracker", {
     title = "Interrupt Tracker",
-    desc = "Tracks party interrupt cooldowns in 5-man dungeons.",
+    desc = "Tracks party member interrupt cooldowns in non-raid groups.",
     skipOptions = true,
     defaultEnabled = false,
 });
