@@ -331,6 +331,282 @@ local function RenderBarCategory(categoryKey)
 end
 
 -------------------------------------------------------------------------------
+-- Section 4b: Icon frame creation per category
+-------------------------------------------------------------------------------
+
+local ICON_POOL_SIZE = 40;  -- max spell icons across all players
+
+local function CreateSpellIcon(parent, size)
+    local frame = CreateFrame("Frame", nil, parent);
+    frame:SetSize(size, size);
+
+    local icon = frame:CreateTexture(nil, "ARTWORK");
+    icon:SetAllPoints();
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92);
+    frame.icon = icon;
+
+    -- Cooldown swipe overlay
+    local cd = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate");
+    cd:SetAllPoints();
+    cd:SetDrawEdge(false);
+    cd:SetHideCountdownNumbers(true);
+    frame.cooldown = cd;
+
+    -- Duration/CD text overlay
+    local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall");
+    text:SetPoint("CENTER", 0, 0);
+    text:SetShadowOffset(1, -1);
+    text:SetShadowColor(0, 0, 0, 1);
+    frame.text = text;
+
+    -- Glow border for active state
+    local glow = frame:CreateTexture(nil, "OVERLAY");
+    glow:SetPoint("TOPLEFT", -2, 2);
+    glow:SetPoint("BOTTOMRIGHT", 2, -2);
+    glow:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+    glow:SetVertexColor(0.9, 0.77, 0.1, 0.6);  -- amber accent
+    glow:Hide();
+    frame.glow = glow;
+
+    frame:Hide();
+    return frame;
+end
+
+local function BuildIconFrame(categoryKey)
+    if (ST.displayFrames[categoryKey]) then return; end
+    local catDB = ST:GetCategoryDB(categoryKey);
+    local cat = ST:GetCategory(categoryKey);
+    local label = cat and cat.label or categoryKey;
+
+    local frame = CreateFrame("Frame", "LanternSpellTracker_" .. categoryKey, UIParent);
+    frame:SetSize(200, 200);
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
+    frame:SetFrameStrata("MEDIUM");
+    frame:SetClampedToScreen(true);
+    frame:SetMovable(true);
+    frame:EnableMouse(true);
+    frame:RegisterForDrag("LeftButton");
+    frame:SetScript("OnDragStart", function(self)
+        if (not catDB.locked or IsShiftKeyDown()) then
+            self:StartMoving();
+        end
+    end);
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing();
+        SavePosition(categoryKey);
+    end);
+
+    -- Title bar
+    local title = CreateFrame("Frame", nil, frame);
+    title:SetHeight(18);
+    title:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2);
+    title:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 2);
+    title:EnableMouse(true);
+    title:RegisterForDrag("LeftButton");
+    title:SetScript("OnDragStart", function() frame:StartMoving(); end);
+    title:SetScript("OnDragStop", function()
+        frame:StopMovingOrSizing();
+        SavePosition(categoryKey);
+    end);
+
+    local titleBg = title:CreateTexture(nil, "BACKGROUND");
+    titleBg:SetAllPoints();
+    titleBg:SetTexture(SOLID);
+    titleBg:SetVertexColor(0.1, 0.1, 0.1, 0.8);
+
+    local titleText = title:CreateFontString(nil, "OVERLAY");
+    titleText:SetFont(GetFontPath(catDB.font), 12, catDB.fontOutline or "OUTLINE");
+    titleText:SetPoint("CENTER", 0, 0);
+    titleText:SetText("|cFFe6c619" .. label .. " (unlocked)|r");
+    title.text = titleText;
+
+    if (catDB.locked) then title:Hide(); end
+
+    -- Pre-create icon pool and name label pool
+    local iconPool = {};
+    for i = 1, ICON_POOL_SIZE do
+        iconPool[i] = CreateSpellIcon(frame, catDB.iconSize);
+    end
+
+    local namePool = {};
+    for i = 1, 5 do
+        local nameLabel = frame:CreateFontString(nil, "OVERLAY");
+        nameLabel:SetFont(GetFontPath(catDB.font), 12, catDB.fontOutline or "OUTLINE");
+        nameLabel:SetJustifyH("LEFT");
+        nameLabel:SetShadowOffset(1, -1);
+        nameLabel:SetShadowColor(0, 0, 0, 1);
+        nameLabel:Hide();
+        namePool[i] = nameLabel;
+    end
+
+    local display = {
+        frame    = frame,
+        title    = title,
+        iconPool = iconPool,
+        namePool = namePool,
+    };
+    ST.displayFrames[categoryKey] = display;
+
+    RestorePosition(categoryKey);
+    frame:Hide();
+end
+
+-------------------------------------------------------------------------------
+-- Section 4c: Render icon mode for a category
+-------------------------------------------------------------------------------
+
+local function RenderIconCategory(categoryKey)
+    local display = ST.displayFrames[categoryKey];
+    if (not display or not display.frame) then return; end
+    if (not display.iconPool) then return; end
+    local catDB = ST:GetCategoryDB(categoryKey);
+    local iconSize = catDB.iconSize;
+    local spacing = catDB.iconSpacing;
+    local showNames = catDB.showNames;
+    local fontPath = GetFontPath(catDB.font);
+    local outline = catDB.fontOutline or "OUTLINE";
+
+    -- Hide everything first
+    for _, ico in ipairs(display.iconPool) do ico:Hide(); end
+    for _, lbl in ipairs(display.namePool) do lbl:Hide(); end
+
+    -- Group entries by player
+    local filter = catDB.filter or (ST:GetCategory(categoryKey) and ST:GetCategory(categoryKey).defaultFilter) or "all";
+    local playerOrder = {};
+    local playerSpells = {};
+    local now = GetTime();
+
+    for playerName, player in pairs(ST.trackedPlayers) do
+        local isSelf = (playerName == ST.playerName);
+        if (isSelf and not catDB.showSelf) then
+            -- skip
+        else
+            local spells = {};
+            for spellID, spellState in pairs(player.spells) do
+                if (spellState.category == categoryKey) then
+                    local include = true;
+                    if (filter == "hide_ready" and spellState.state == "ready") then
+                        include = false;
+                    elseif (filter == "active_only" and spellState.state ~= "active") then
+                        include = false;
+                    end
+                    if (include) then
+                        table.insert(spells, {
+                            spellID = spellID,
+                            state = spellState.state,
+                            cdEnd = spellState.cdEnd,
+                            activeEnd = spellState.activeEnd,
+                            baseCd = spellState.baseCd,
+                        });
+                    end
+                end
+            end
+            if (#spells > 0) then
+                table.insert(playerOrder, { name = playerName, class = player.class, isSelf = isSelf });
+                playerSpells[playerName] = spells;
+            end
+        end
+    end
+
+    -- Sort players: self on top, then alphabetical
+    table.sort(playerOrder, function(a, b)
+        if (catDB.selfOnTop and a.isSelf ~= b.isSelf) then return a.isSelf; end
+        return a.name < b.name;
+    end);
+
+    -- Layout
+    local y = 0;
+    local iconIdx = 1;
+    local nameIdx = 1;
+    local maxWidth = 0;
+    local growUp = catDB.growUp;
+
+    for _, playerInfo in ipairs(playerOrder) do
+        local spells = playerSpells[playerInfo.name];
+        if (not spells) then break; end
+
+        -- Player name header
+        if (showNames and nameIdx <= #display.namePool) then
+            local lbl = display.namePool[nameIdx];
+            lbl:SetFont(fontPath, 11, outline);
+            local cr, cg, cb = GetClassColor(playerInfo.class);
+            lbl:SetTextColor(cr, cg, cb);
+            lbl:SetText(playerInfo.name);
+            lbl:ClearAllPoints();
+            if (growUp) then
+                lbl:SetPoint("BOTTOMLEFT", display.frame, "BOTTOMLEFT", 0, -y);
+            else
+                lbl:SetPoint("TOPLEFT", display.frame, "TOPLEFT", 0, -y);
+            end
+            lbl:Show();
+            nameIdx = nameIdx + 1;
+            y = y + 14;
+        end
+
+        -- Spell icons in a row
+        local x = 0;
+        for _, spell in ipairs(spells) do
+            if (iconIdx > ICON_POOL_SIZE) then break; end
+            local ico = display.iconPool[iconIdx];
+            ico:SetSize(iconSize, iconSize);
+
+            -- Position
+            ico:ClearAllPoints();
+            if (growUp) then
+                ico:SetPoint("BOTTOMLEFT", display.frame, "BOTTOMLEFT", x, -y);
+            else
+                ico:SetPoint("TOPLEFT", display.frame, "TOPLEFT", x, -y);
+            end
+
+            -- Icon texture
+            local ok, tex = pcall(C_Spell.GetSpellTexture, spell.spellID);
+            if (ok and tex) then
+                ico.icon:SetTexture(tex);
+            end
+
+            -- State rendering
+            if (spell.state == "ready") then
+                ico.icon:SetDesaturated(false);
+                ico.cooldown:Clear();
+                ico.text:SetText("");
+                ico.glow:Hide();
+            elseif (spell.state == "active") then
+                ico.icon:SetDesaturated(false);
+                ico.cooldown:Clear();
+                local remaining = math.max(0, spell.activeEnd - now);
+                ico.text:SetText(FormatTime(remaining));
+                ico.text:SetTextColor(1, 0.9, 0.3);
+                ico.glow:Show();
+            elseif (spell.state == "cooldown") then
+                ico.icon:SetDesaturated(true);
+                -- Set cooldown swipe
+                local remaining = math.max(0, spell.cdEnd - now);
+                if (remaining > 0) then
+                    ico.cooldown:SetCooldown(spell.cdEnd - spell.baseCd, spell.baseCd);
+                else
+                    ico.cooldown:Clear();
+                end
+                ico.text:SetText(FormatTime(remaining));
+                ico.text:SetTextColor(1, 1, 1);
+                ico.glow:Hide();
+            end
+
+            ico:Show();
+            iconIdx = iconIdx + 1;
+            x = x + iconSize + spacing;
+        end
+
+        if (x > maxWidth) then maxWidth = x; end
+        y = y + iconSize + spacing + 2;
+    end
+
+    -- Resize frame to fit content
+    if (maxWidth > 0 and y > 0) then
+        display.frame:SetSize(math.max(maxWidth, 100), y);
+    end
+end
+
+-------------------------------------------------------------------------------
 -- Section 5: Visibility and RefreshDisplay
 -------------------------------------------------------------------------------
 
@@ -355,8 +631,12 @@ function ST:RefreshDisplay()
                 end
                 RenderBarCategory(key);
             elseif (layout == "icon") then
-                -- Icon layout (Task 8)
-                -- TODO
+                BuildIconFrame(key);
+                local display = self.displayFrames[key];
+                if (display and display.frame) then
+                    display.frame:Show();
+                end
+                RenderIconCategory(key);
             end
         else
             local display = self.displayFrames[key];
@@ -431,6 +711,42 @@ function ST:RefreshBarLayout(categoryKey)
             bar.cdText:SetFont(fontPath, cdFontSize, outline);
         end
     end
+end
+
+function ST:RefreshIconLayout(categoryKey)
+    local display = self.displayFrames[categoryKey];
+    if (not display or not display.frame) then return; end
+    if (not display.iconPool) then return; end
+    local catDB = self:GetCategoryDB(categoryKey);
+
+    local fontPath = GetFontPath(catDB.font);
+    local outline = catDB.fontOutline or "OUTLINE";
+    local iconSize = catDB.iconSize;
+
+    if (display.title) then
+        local cat = self:GetCategory(categoryKey);
+        local label = cat and cat.label or categoryKey;
+        if (display.title.text) then
+            display.title.text:SetFont(fontPath, 12, outline);
+        end
+        if (catDB.locked) then
+            display.title:Hide();
+        else
+            display.title:Show();
+            display.title.text:SetText("|cFFe6c619" .. label .. " (unlocked)|r");
+        end
+    end
+
+    for _, ico in ipairs(display.iconPool) do
+        ico:SetSize(iconSize, iconSize);
+    end
+
+    for _, lbl in ipairs(display.namePool) do
+        lbl:SetFont(fontPath, 11, outline);
+    end
+
+    -- Re-render to apply new layout
+    RenderIconCategory(categoryKey);
 end
 
 -------------------------------------------------------------------------------
