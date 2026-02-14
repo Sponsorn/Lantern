@@ -667,4 +667,9 @@ function ST:DisableEngine()
     _inspectInProgress = false;
     _inspectCurrentUnit = nil;
     _inspectedNames = {};
+
+    -- Hide all display frames (Display.lua)
+    if (ST.HideAllDisplays) then
+        ST:HideAllDisplays();
+    end
 end
