@@ -621,6 +621,8 @@ function ST:RefreshDisplay()
         if (SettingsPanel and SettingsPanel:IsShown()) then panelOpen = true; end
         local uxPanel = _G["LanternSettingsPanel"];
         if (uxPanel and uxPanel:IsShown()) then panelOpen = true; end
+        local mtPanel = _G["LanternMythicTrackerOptions"];
+        if (mtPanel and mtPanel:IsShown()) then panelOpen = true; end
         if (not panelOpen) then
             ST:DeactivatePreview();
             return;
