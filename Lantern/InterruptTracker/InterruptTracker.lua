@@ -167,7 +167,7 @@ local inspectedNames = {};
 
 -- UI references
 local barFrame, barTitle;
-local compactFrame;
+local compactFrame, compactTitle;
 local barPool = {};
 local compactPool = {};
 local refreshTimer;
@@ -770,18 +770,33 @@ local function BuildBarFrame()
     end);
     barFrame:SetAlpha(db.barAlpha);
 
-    local bg = barFrame:CreateTexture(nil, "BACKGROUND");
-    bg:SetAllPoints();
-    bg:SetTexture(SOLID_TEXTURE);
-    bg:SetVertexColor(0.05, 0.05, 0.05, 0.85);
+    barTitle = CreateFrame("Frame", nil, barFrame);
+    barTitle:SetHeight(18);
+    barTitle:SetPoint("BOTTOMLEFT", barFrame, "TOPLEFT", 0, 2);
+    barTitle:SetPoint("BOTTOMRIGHT", barFrame, "TOPRIGHT", 0, 2);
+    barTitle:EnableMouse(true);
+    barTitle:RegisterForDrag("LeftButton");
+    barTitle:SetScript("OnDragStart", function()
+        barFrame:StartMoving();
+    end);
+    barTitle:SetScript("OnDragStop", function()
+        barFrame:StopMovingOrSizing();
+        SaveBarPosition();
+    end);
 
-    barTitle = barFrame:CreateFontString(nil, "OVERLAY");
-    barTitle:SetFont(GetFontPath(db.font), 12, db.fontOutline or "OUTLINE");
-    barTitle:SetPoint("TOP", 0, -3);
-    barTitle:SetText("|cFF00DDDDInterrupts|r");
+    local barTitleBg = barTitle:CreateTexture(nil, "BACKGROUND");
+    barTitleBg:SetAllPoints();
+    barTitleBg:SetTexture(SOLID_TEXTURE);
+    barTitleBg:SetVertexColor(0.1, 0.1, 0.1, 0.8);
+
+    local barTitleText = barTitle:CreateFontString(nil, "OVERLAY");
+    barTitleText:SetFont(GetFontPath(db.font), 12, db.fontOutline or "OUTLINE");
+    barTitleText:SetPoint("CENTER", 0, 0);
+    barTitleText:SetText("|cFFe6c619Interrupts (unlocked)|r");
+    barTitle.text = barTitleText;
+
     if (db.locked) then barTitle:Hide(); end
 
-    local titleH = (not db.locked) and 20 or 0;
     local bh = math.max(12, db.barHeight);
     local iconSize = bh;
     local barW = math.max(60, db.barWidth - iconSize);
@@ -791,7 +806,7 @@ local function BuildBarFrame()
     for i = 1, 5 do
         local yOff = db.growUp
             and ((i - 1) * (bh + 1))
-            or (-(titleH + (i - 1) * (bh + 1)));
+            or (-((i - 1) * (bh + 1)));
 
         local row = CreateFrame("Frame", nil, barFrame);
         row:SetSize(iconSize + barW, bh);
@@ -811,7 +826,7 @@ local function BuildBarFrame()
         barBg:SetPoint("TOPLEFT", iconSize, 0);
         barBg:SetPoint("BOTTOMRIGHT", 0, 0);
         barBg:SetTexture(SOLID_TEXTURE);
-        barBg:SetVertexColor(0.15, 0.15, 0.15, 0.9);
+        barBg:SetVertexColor(0.15, 0.15, 0.15, 1);
         row.barBg = barBg;
 
         local sb = CreateFrame("StatusBar", nil, row);
@@ -895,6 +910,33 @@ local function BuildCompactFrame()
     end);
     compactFrame:SetAlpha(db.barAlpha);
 
+    compactTitle = CreateFrame("Frame", nil, compactFrame);
+    compactTitle:SetHeight(16);
+    compactTitle:SetPoint("BOTTOMLEFT", compactFrame, "TOPLEFT", 0, 2);
+    compactTitle:SetPoint("BOTTOMRIGHT", compactFrame, "TOPRIGHT", 0, 2);
+    compactTitle:EnableMouse(true);
+    compactTitle:RegisterForDrag("LeftButton");
+    compactTitle:SetScript("OnDragStart", function()
+        compactFrame:StartMoving();
+    end);
+    compactTitle:SetScript("OnDragStop", function()
+        compactFrame:StopMovingOrSizing();
+        SaveCompactPosition();
+    end);
+
+    local compactTitleBg = compactTitle:CreateTexture(nil, "BACKGROUND");
+    compactTitleBg:SetAllPoints();
+    compactTitleBg:SetTexture(SOLID_TEXTURE);
+    compactTitleBg:SetVertexColor(0.1, 0.1, 0.1, 0.8);
+
+    local compactTitleText = compactTitle:CreateFontString(nil, "OVERLAY");
+    compactTitleText:SetFont(GetFontPath(db.font), 11, db.fontOutline or "OUTLINE");
+    compactTitleText:SetPoint("CENTER", 0, 0);
+    compactTitleText:SetText("|cFFe6c619Interrupts (unlocked)|r");
+    compactTitle.text = compactTitleText;
+
+    if (db.locked) then compactTitle:Hide(); end
+
     local rowH = 18;
     for i = 1, 5 do
         local row = CreateFrame("Frame", nil, compactFrame);
@@ -949,7 +991,6 @@ local function RefreshBarLayout()
     local iconSize = bh;
     local barW = math.max(60, db.barWidth - iconSize);
     local showTitle = not db.locked;
-    local titleH = showTitle and 20 or 0;
     local nameFontSize = math.max(9, math.floor(bh * 0.45));
     local cdFontSize = math.max(10, math.floor(bh * 0.55));
 
@@ -957,7 +998,7 @@ local function RefreshBarLayout()
     barFrame:SetAlpha(db.barAlpha);
 
     if (barTitle) then
-        barTitle:SetFont(fontPath, 12, outline);
+        if (barTitle.text) then barTitle.text:SetFont(fontPath, 12, outline); end
         if (showTitle) then barTitle:Show(); else barTitle:Hide(); end
     end
 
@@ -970,7 +1011,7 @@ local function RefreshBarLayout()
             bar:ClearAllPoints();
             local yOff = db.growUp
                 and ((i - 1) * (bh + 1))
-                or (-(titleH + (i - 1) * (bh + 1)));
+                or (-((i - 1) * (bh + 1)));
             if (db.growUp) then
                 bar:SetPoint("BOTTOMLEFT", 0, yOff);
             else
@@ -994,6 +1035,27 @@ local function RefreshBarLayout()
             bar.nameText:SetWidth(barW - 50);
             bar.nameText:SetFont(fontPath, nameFontSize, outline);
             bar.cdText:SetFont(fontPath, cdFontSize, outline);
+        end
+    end
+
+    -- Compact frame title + row repositioning
+    if (compactFrame) then
+        local compactShowTitle = not db.locked;
+        local rowH = 18;
+
+        if (compactTitle) then
+            if (compactTitle.text) then compactTitle.text:SetFont(fontPath, 11, outline); end
+            if (compactShowTitle) then compactTitle:Show(); else compactTitle:Hide(); end
+        end
+
+        for i = 1, 5 do
+            local row = compactPool[i];
+            if (row) then
+                row:ClearAllPoints();
+                row:SetPoint("TOPLEFT", 4, -((i - 1) * rowH + 4));
+                row.nameText:SetFont(fontPath, 11, outline);
+                row.statusText:SetFont(fontPath, 11, outline);
+            end
         end
     end
 end
@@ -1085,7 +1147,6 @@ local function RenderBarMode()
     getDB();
 
     local entries = CollectSortedEntries();
-    local titleH = (not db.locked) and 20 or 0;
     local bh = math.max(12, db.barHeight);
 
     for i = 1, 5 do
@@ -1113,14 +1174,14 @@ local function RenderBarMode()
                 bar.cdBar:SetMinMaxValues(0, entry.baseCd);
                 bar.cdBar:SetValue(entry.remaining);
                 bar.cdBar:SetStatusBarColor(cr, cg, cb, 0.85);
-                bar.barBg:SetVertexColor(cr * 0.25, cg * 0.25, cb * 0.25, 0.9);
+                bar.barBg:SetVertexColor(cr * 0.25, cg * 0.25, cb * 0.25, 1);
                 local fmt = entry.remaining < 5 and "%.1f" or "%.0f";
                 bar.cdText:SetText(string.format(fmt, entry.remaining));
                 bar.cdText:SetTextColor(1, 1, 1);
             else
                 bar.cdBar:SetMinMaxValues(0, 1);
                 bar.cdBar:SetValue(0);
-                bar.barBg:SetVertexColor(cr, cg, cb, 0.85);
+                bar.barBg:SetVertexColor(cr, cg, cb, 1);
                 bar.cdText:SetText("READY");
                 bar.cdText:SetTextColor(0.2, 1.0, 0.2);
             end
@@ -1131,7 +1192,7 @@ local function RenderBarMode()
 
     local numVisible = math.min(#entries, 5);
     if (numVisible > 0) then
-        barFrame:SetHeight(titleH + numVisible * (bh + 1) + 2);
+        barFrame:SetHeight(numVisible * (bh + 1) + 2);
     end
 end
 
