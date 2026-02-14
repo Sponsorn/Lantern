@@ -354,7 +354,7 @@ CUSTOM_OPTIONS["interruptTracker"] = function()
                     desc = "When locked, the frames cannot be moved. Hold Shift to move even when locked.",
                     disabled = isDisabled,
                     get = function() return itDB().locked; end,
-                    set = function(val) itDB().locked = val; end,
+                    set = function(val) itDB().locked = val; refreshModule("RefreshDisplay"); end,
                 },
                 {
                     type = "execute",

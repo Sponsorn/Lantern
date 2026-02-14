@@ -333,6 +333,7 @@ function Lantern:BuildInterruptTrackerOptions()
         get = function() return interruptTrackerDB().locked; end,
         set = function(_, val)
             interruptTrackerDB().locked = val;
+            refreshModule("RefreshDisplay");
         end,
     };
     args.spacerPos = Layout.spacer(21.99);
