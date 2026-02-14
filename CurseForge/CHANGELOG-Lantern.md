@@ -1,7 +1,11 @@
 # Changelog
 
+## 0.4.31b - 2026-02-14
+- Fix: Interrupt Tracker frame strata lowered to avoid overlapping other UI elements
+- Change: Interrupt Tracker description updated to reflect non-raid group support
+
 ## 0.4.31 - 2026-02-14
-- Add: Interrupt Tracker module (disabled by default) - passively tracks party member interrupt cooldowns in 5-man dungeons
+- Add: Interrupt Tracker module (disabled by default) - passively tracks party member interrupt cooldowns in non-raid groups
     - Two display modes: Bar (class-colored cooldown bars with icons) and Minimal (compact rows with icon, name, and status)
     - Passively detects kicks via taint laundering and mob interrupt correlation — no manual setup needed
     - Optional addon sync with other Lantern users for instant party member detection
