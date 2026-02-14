@@ -215,7 +215,7 @@ local function CreateWarningFrame()
     warningFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 200);
     warningFrame:SetFrameStrata("MEDIUM");
     warningFrame:SetFrameLevel(1);
-    warningFrame:EnableMouse(true);
+    warningFrame:EnableMouse(false);
     warningFrame:SetMovable(true);
 
     warningText = warningFrame:CreateFontString(nil, "OVERLAY");
@@ -227,13 +227,10 @@ local function CreateWarningFrame()
     -- Apply font settings
     UpdateWarningFont();
 
-    -- Drag functionality
+    -- Drag functionality (only interactive when unlocked via settings)
     warningFrame:RegisterForDrag("LeftButton");
     warningFrame:SetScript("OnDragStart", function(self)
-        local db = getDB();
-        if (db and (not db.locked or IsShiftKeyDown())) then
-            self:StartMoving();
-        end
+        self:StartMoving();
     end);
     warningFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing();
@@ -264,10 +261,11 @@ local function RestoreFramePosition()
 end
 
 local function UpdateFrameLock()
-    -- Mouse must stay enabled for Shift+drag to work when locked
-    -- The OnDragStart handler controls whether movement is allowed
     if (not warningFrame) then return; end
-    warningFrame:EnableMouse(true);
+    local db = getDB();
+    local locked = db and db.locked;
+    -- Clickthrough when locked, interactive when unlocked (Shift overrides via OnKeyDown)
+    warningFrame:EnableMouse(not locked);
 end
 
 -------------------------------------------------------------------------------
