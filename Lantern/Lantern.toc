@@ -29,6 +29,7 @@ AutoQueue\Options.lua
 CursorRing\Options.lua
 DeleteConfirm\Options.lua
 DisableAutoAddSpells\Options.lua
+InterruptTracker\Options.lua
 MissingPet\Options.lua
 ui.lua
 AutoQuest\AutoQuest.lua
@@ -36,5 +37,6 @@ AutoQueue\AutoQueue.lua
 CursorRing\CursorRing.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
+InterruptTracker\InterruptTracker.lua
 MissingPet\MissingPet.lua
 UXBridge.lua

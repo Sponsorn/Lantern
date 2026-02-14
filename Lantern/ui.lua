@@ -301,6 +301,11 @@ function Lantern:BuildOptions()
                 name = "Disable Auto Add Spells",
                 args = self.BuildDisableAutoAddSpellsOptions and self:BuildDisableAutoAddSpellsOptions() or {},
             },
+            interruptTracker = {
+                type = "group",
+                name = "Interrupt Tracker",
+                args = self.BuildInterruptTrackerOptions and self:BuildInterruptTrackerOptions() or {},
+            },
             missingPet = {
                 type = "group",
                 name = "Missing Pet",
