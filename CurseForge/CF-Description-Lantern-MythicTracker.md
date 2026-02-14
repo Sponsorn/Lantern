@@ -1,3 +1,7 @@
+**Pre-release** — This addon is in early development. Spell data is incomplete and some class/spec combinations may be missing cooldowns. Expect frequent updates as spells are verified and added.
+
+---
+
 Lantern - Mythic+ Tracker passively tracks party member spell cooldowns in Mythic+ dungeons. See at a glance who has their interrupt ready, who just used a defensive, and when everything comes back up.
 
 ### Interrupts

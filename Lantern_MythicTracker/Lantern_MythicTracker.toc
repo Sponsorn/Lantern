@@ -2,7 +2,7 @@
 ## Title: Lantern: Mythic+ Tracker
 ## Notes: Party spell tracking for Mythic+ — interrupts, defensives, and cooldowns.
 ## Author: Dede in-game / Sponsorn on curseforge & github
-## Version: 0.1.0
+## Version: 0.2.0
 ## SavedVariables: LanternMythicTrackerDB
 ## OptionalDeps: Lantern, LanternUX, LibSharedMedia-3.0
 ## DefaultState: enabled
