@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.31 - 2026-02-14
+- Add: Interrupt Tracker module (disabled by default) - passively tracks party member interrupt cooldowns in 5-man dungeons
+    - Two display modes: Bar (class-colored cooldown bars with icons) and Minimal (compact rows with icon, name, and status)
+    - Passively detects kicks via taint laundering and mob interrupt correlation — no manual setup needed
+    - Optional addon sync with other Lantern users for instant party member detection
+    - Inspects party members for spec overrides and talent-based cooldown reductions
+    - Configurable sorting: by remaining cooldown or base cooldown, with option to pin self on top
+    - Customizable bar width, height, opacity, grow direction, font, and font outline
+    - Preview mode with simulated party data for positioning and testing
+    - Separate draggable frames for each display mode with independent saved positions
+
 ## 0.4.30 - 2026-02-11
 - Change: Cursor Ring preview is now a persistent toggle at the top of options for real-time editing
 - Change: Cursor Ring preview continuously loops cast/GCD animations and auto-disables when closing settings
