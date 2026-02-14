@@ -211,3 +211,15 @@ local spells = {
 };
 
 ST:RegisterSpells(spells);
+
+-------------------------------------------------------------------------------
+-- Category Registration
+-------------------------------------------------------------------------------
+
+ST:RegisterCategory("defensive", {
+    label             = "Defensives",
+    spellsPerPlayer   = "all",
+    trackBuffDuration = true,
+    defaultLayout     = "icon",
+    defaultFilter     = "hide_ready",
+});
