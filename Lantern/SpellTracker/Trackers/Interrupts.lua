@@ -244,3 +244,194 @@ ST.interruptConfig = {
         [266] = { spellID = 119914, cd = 30, isPet = true },  -- Demo Warlock: Axe Toss (pet)
     },
 };
+
+-------------------------------------------------------------------------------
+-- Mob Interrupt Correlation
+--
+-- When an enemy's cast is interrupted, we correlate it with the most
+-- recent party member cast (within a 0.5s window) to attribute the kick.
+-------------------------------------------------------------------------------
+
+local function CorrelateInterrupt(unit)
+    if (not ST._recentCasts) then return; end
+    local now = GetTime();
+    local closest, closestDelta = nil, 999;
+
+    for name, ts in pairs(ST._recentCasts) do
+        local delta = now - ts;
+        if (delta > 1.0) then
+            ST._recentCasts[name] = nil;
+        elseif (delta < closestDelta) then
+            closestDelta = delta;
+            closest = name;
+        end
+    end
+
+    if (not closest or closestDelta >= 0.5) then return; end
+
+    local player = ST.trackedPlayers[closest];
+    if (player) then
+        -- Apply on-kick talent bonus if applicable
+        for spellID, spellState in pairs(player.spells) do
+            if (spellState.category == "interrupts" and spellState.kickBonus) then
+                local adjusted = spellState.cdEnd - spellState.kickBonus;
+                spellState.cdEnd = math.max(adjusted, now);
+            end
+        end
+    end
+end
+
+-- Mob interrupt detection frames (file scope for clean context)
+local _mobFrame = CreateFrame("Frame");
+_mobFrame:SetScript("OnEvent", function(_, _, unit)
+    CorrelateInterrupt(unit);
+end);
+
+local _npCastFrames = {};
+local _npFrame = CreateFrame("Frame");
+_npFrame:SetScript("OnEvent", function(_, event, unit)
+    if (event == "NAME_PLATE_UNIT_ADDED") then
+        if (not _npCastFrames[unit]) then
+            _npCastFrames[unit] = CreateFrame("Frame");
+        end
+        _npCastFrames[unit]:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit);
+        _npCastFrames[unit]:SetScript("OnEvent", function(_, _, u)
+            CorrelateInterrupt(u);
+        end);
+    elseif (event == "NAME_PLATE_UNIT_REMOVED") then
+        if (_npCastFrames[unit]) then
+            _npCastFrames[unit]:UnregisterAllEvents();
+        end
+    end
+end);
+
+-------------------------------------------------------------------------------
+-- Communication
+-------------------------------------------------------------------------------
+
+local COMM_PREFIX = "LIT";
+local lastJoinBroadcast = 0;
+
+local function SendMessage(payload)
+    if (IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+        local ok = pcall(C_ChatInfo.SendAddonMessage, COMM_PREFIX, payload, "INSTANCE_CHAT");
+        if (ok) then return; end
+    end
+    if (IsInGroup(LE_PARTY_CATEGORY_HOME)) then
+        local ok = pcall(C_ChatInfo.SendAddonMessage, COMM_PREFIX, payload, "PARTY");
+        if (ok) then return; end
+    end
+end
+
+local function BroadcastJoin()
+    if (not ST.playerClass or not ST.playerName) then return; end
+    local now = GetTime();
+    if (now - lastJoinBroadcast < 3) then return; end
+    lastJoinBroadcast = now;
+
+    -- Find the player's interrupt spell
+    local player = ST.trackedPlayers[ST.playerName];
+    if (not player) then return; end
+    local kickID, kickCd;
+    for spellID, spellState in pairs(player.spells) do
+        if (spellState.category == "interrupts") then
+            kickID = spellID;
+            kickCd = spellState.baseCd;
+            break;
+        end
+    end
+    if (not kickID) then return; end
+
+    SendMessage("J:" .. ST.playerClass .. ":" .. kickID .. ":" .. (kickCd or 15));
+end
+
+local function HandleAddonMessage(event, prefix, message, channel, sender)
+    if (prefix ~= COMM_PREFIX) then return; end
+    local shortName = Ambiguate(sender, "short");
+    if (shortName == ST.playerName) then return; end
+
+    local cmd, arg1, arg2, arg3 = strsplit(":", message);
+
+    if (cmd == "J") then
+        local cls = arg1;
+        local sid = tonumber(arg2);
+        local cd = tonumber(arg3);
+        if (not cls or not sid or not ST.spellDB[sid]) then return; end
+
+        local player = ST.trackedPlayers[shortName];
+        if (not player) then return; end
+
+        -- Update the interrupt spell's baseCd if the remote client reports one
+        local spellState = player.spells[sid];
+        if (spellState and cd and cd > 0) then
+            spellState.baseCd = cd;
+        end
+
+        BroadcastJoin();
+    end
+end
+
+local _commFrame = CreateFrame("Frame");
+_commFrame:SetScript("OnEvent", HandleAddonMessage);
+
+-------------------------------------------------------------------------------
+-- Category Registration
+-------------------------------------------------------------------------------
+
+local interruptConfig = ST.interruptConfig;
+
+ST:RegisterCategory("interrupts", {
+    label             = "Interrupts",
+    spellsPerPlayer   = 1,
+    trackBuffDuration = false,
+    defaultLayout     = "bar",
+    defaultFilter     = "all",
+    hooks = {
+        -- Called by engine when a spell is cast
+        onSpellCast = function(name, spellID, time)
+            -- Record for mob correlation (already handled by engine via _recentCasts)
+        end,
+
+        -- Called by engine during inspect to decide if a player should be excluded
+        shouldExclude = function(name, class, specID)
+            if (interruptConfig.specsWithoutInterrupt[specID]) then
+                return true;
+            end
+            -- Check if healer class without kick
+            local role = nil;
+            for i = 1, 4 do
+                local u = "party" .. i;
+                if (UnitExists(u) and UnitName(u) == name) then
+                    role = UnitGroupRolesAssigned(u);
+                    break;
+                end
+            end
+            if (role == "HEALER" and not interruptConfig.healerHasKick[class]) then
+                return true;
+            end
+            return false;
+        end,
+    },
+});
+
+-------------------------------------------------------------------------------
+-- Lifecycle
+-------------------------------------------------------------------------------
+
+function ST:EnableInterruptTracker()
+    C_ChatInfo.RegisterAddonMessagePrefix(COMM_PREFIX);
+
+    _mobFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "target", "focus");
+    _npFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED");
+    _npFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED");
+    _commFrame:RegisterEvent("CHAT_MSG_ADDON");
+end
+
+function ST:DisableInterruptTracker()
+    _mobFrame:UnregisterAllEvents();
+    _npFrame:UnregisterAllEvents();
+    _commFrame:UnregisterAllEvents();
+    for _, frame in pairs(_npCastFrames) do
+        frame:UnregisterAllEvents();
+    end
+end

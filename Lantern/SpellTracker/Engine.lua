@@ -645,6 +645,9 @@ function ST:EnableEngine()
     IdentifyPlayerSpells();
     RegisterPartyByClass();
     RefreshPartyWatchers();
+
+    -- Enable category-specific trackers
+    if (ST.EnableInterruptTracker) then ST:EnableInterruptTracker(); end
 end
 
 function ST:DisableEngine()
@@ -653,6 +656,9 @@ function ST:DisableEngine()
     _selfFrame:UnregisterAllEvents();
     _selfFrame:SetScript("OnEvent", nil);
     _tickerFrame:SetScript("OnUpdate", nil);
+
+    -- Disable category-specific trackers
+    if (ST.DisableInterruptTracker) then ST:DisableInterruptTracker(); end
 
     for i = 1, 4 do
         _partyWatchers[i]:UnregisterAllEvents();
