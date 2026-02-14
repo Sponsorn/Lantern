@@ -39,4 +39,11 @@ DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
 InterruptTracker\InterruptTracker.lua
 MissingPet\MissingPet.lua
+SpellTracker\SpellTracker.lua
+SpellTracker\SpellData.lua
+SpellTracker\Trackers\Interrupts.lua
+SpellTracker\Trackers\Defensives.lua
+SpellTracker\Engine.lua
+SpellTracker\Display.lua
+SpellTracker\Options.lua
 UXBridge.lua
