@@ -197,6 +197,15 @@ end);
 utils.normalizeRegionCode = normalizeRegionCode;
 utils.GetDailyResetHourCET = GetDailyResetHourCET;
 
+function utils.GetClassColor(classToken)
+    if (not classToken) then return 1, 1, 1; end
+    local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken];
+    if (color) then
+        return color.r, color.g, color.b;
+    end
+    return 1, 1, 1;
+end
+
 -- Input validation helpers
 function utils.ValidateString(str, maxLength)
     if (type(str) ~= "string") then return false; end
