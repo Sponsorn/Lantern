@@ -1,0 +1,16 @@
+## Interface: 120000, 120001
+## Title: Lantern - Mythic+ Tracker
+## Notes: Party spell tracking for Mythic+ — interrupts, defensives, and cooldowns.
+## Author: Dede in-game / Sponsorn on curseforge & github
+## Version: 0.1.0
+## SavedVariables: LanternMythicTrackerDB
+## OptionalDeps: Lantern, LanternUX, LibSharedMedia-3.0
+## DefaultState: enabled
+
+Core.lua
+SpellData.lua
+Trackers\Interrupts.lua
+Trackers\Defensives.lua
+Engine.lua
+Display.lua
+Options.lua
