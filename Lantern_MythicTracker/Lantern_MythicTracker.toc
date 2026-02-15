@@ -2,6 +2,7 @@
 ## Title: Lantern: Mythic+ Tracker
 ## Notes: Party spell tracking for Mythic+ — interrupts, defensives, and cooldowns.
 ## Author: Dede in-game / Sponsorn on curseforge & github
+## X-Credits: Taint laundering technique from ShimmerTracker; interrupt correlation inspired by MythicInterruptTracker by KinderLine
 ## Version: 0.2.0
 ## SavedVariables: LanternMythicTrackerDB
 ## OptionalDeps: Lantern, LibSharedMedia-3.0

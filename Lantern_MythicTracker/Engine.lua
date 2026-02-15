@@ -16,6 +16,9 @@ if (not ST) then return; end
 -- working, party member tracking will degrade (player's own data is
 -- always clean and unaffected).
 --
+-- Taint laundering technique from ShimmerTracker; interrupt correlation
+-- inspired by MythicInterruptTracker by KinderLine.
+--
 -- These frames MUST be created at file scope (clean load-time context).
 -------------------------------------------------------------------------------
 
@@ -340,9 +343,12 @@ local function UpdateSelfCooldowns()
     local now = GetTime();
     for spellID, spellState in pairs(player.spells) do
         if (IsSpellKnown(spellID) or IsPlayerSpell(spellID)) then
-            local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, spellID);
-            if (ok and cdInfo and cdInfo.duration > 1.5) then
-                local cdEnd = cdInfo.startTime + cdInfo.duration;
+            local ok, dur, start = pcall(function()
+                local cdInfo = C_Spell.GetSpellCooldown(spellID);
+                if (cdInfo) then return cdInfo.duration, cdInfo.startTime; end
+            end);
+            if (ok and dur and dur > 1.5) then
+                local cdEnd = start + dur;
                 spellState.cdEnd = cdEnd;
                 if (spellState.state == "ready" and cdEnd > now) then
                     local spellData = ST.spellDB[spellID];
@@ -355,12 +361,15 @@ local function UpdateSelfCooldowns()
             end
 
             -- Check charges
-            local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
-            if (ok2 and chargeInfo and chargeInfo.maxCharges > 1) then
-                spellState.charges = chargeInfo.currentCharges;
-                spellState.maxCharges = chargeInfo.maxCharges;
-                if (chargeInfo.cooldownDuration > 0) then
-                    spellState.cdEnd = chargeInfo.cooldownStartTime + chargeInfo.cooldownDuration;
+            local ok2, curCharges, maxCharges, cdStart, cdDur = pcall(function()
+                local ci = C_Spell.GetSpellCharges(spellID);
+                if (ci) then return ci.currentCharges, ci.maxCharges, ci.cooldownStartTime, ci.cooldownDuration; end
+            end);
+            if (ok2 and maxCharges and maxCharges > 1) then
+                spellState.charges = curCharges;
+                spellState.maxCharges = maxCharges;
+                if (cdDur > 0) then
+                    spellState.cdEnd = cdStart + cdDur;
                 end
             end
         end
@@ -616,6 +625,7 @@ local function ApplyInspectResults(unit)
     end
 
     ScanTalentModifiers(player);
+    ClearInspectPlayer();
     _inspectedNames[name] = true;
 end
 
@@ -679,6 +689,7 @@ function ST:EnableEngine()
     _eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
     _eventFrame:RegisterEvent("INSPECT_READY");
     _eventFrame:RegisterEvent("READY_CHECK");
+    _eventFrame:RegisterEvent("ROLE_CHANGED_INFORM");
     _eventFrame:RegisterUnitEvent("UNIT_AURA", "player", "party1", "party2", "party3", "party4");
     _eventFrame:SetScript("OnEvent", function(_, event, ...)
         if (event == "GROUP_ROSTER_UPDATE") then
@@ -695,8 +706,34 @@ function ST:EnableEngine()
             RefreshPartyWatchers();
         elseif (event == "SPELL_UPDATE_COOLDOWN") then
             UpdateSelfCooldowns();
-        elseif (event == "SPELLS_CHANGED" or event == "PLAYER_SPECIALIZATION_CHANGED") then
+        elseif (event == "SPELLS_CHANGED") then
             IdentifyPlayerSpells();
+        elseif (event == "PLAYER_SPECIALIZATION_CHANGED") then
+            local unit = ...;
+            if (not unit or unit == "player") then
+                IdentifyPlayerSpells();
+            else
+                -- Party member changed spec — clear inspect cache and re-inspect
+                local name = UnitName(unit);
+                if (name) then
+                    _inspectedNames[name] = nil;
+                    local _, cls = UnitClass(unit);
+                    if (cls) then RegisterPlayer(name, cls); end
+                    C_Timer.After(1, QueueInspects);
+                end
+            end
+        elseif (event == "ROLE_CHANGED_INFORM") then
+            -- Re-evaluate exclusions when roles change (e.g. healer swap)
+            for i = 1, 4 do
+                local u = "party" .. i;
+                if (UnitExists(u)) then
+                    local name = UnitName(u);
+                    local player = name and ST.trackedPlayers[name];
+                    if (player and player.spec) then
+                        ApplySpecOverrides(player, name, player.spec);
+                    end
+                end
+            end
         elseif (event == "UNIT_AURA") then
             local unit = ...;
             if (unit) then

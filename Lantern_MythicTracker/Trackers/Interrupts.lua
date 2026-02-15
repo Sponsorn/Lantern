@@ -356,6 +356,23 @@ local function HandleAddonMessage(_, event, prefix, message, channel, sender)
         end
 
         BroadcastJoin();
+
+    elseif (cmd == "C") then
+        -- CAST sync: remote player used their interrupt, start CD immediately
+        local sid = tonumber(arg1);
+        local cd = tonumber(arg2);
+        if (not sid or not cd or cd <= 0) then return; end
+
+        local player = ST.trackedPlayers[shortName];
+        if (not player) then return; end
+
+        local spellState = player.spells[sid];
+        if (spellState and spellState.category == "interrupts") then
+            local now = GetTime();
+            spellState.state = "cooldown";
+            spellState.cdEnd = now + cd;
+            spellState.baseCd = cd;
+        end
     end
 end
 
@@ -384,7 +401,16 @@ ST:RegisterCategory("interrupts", {
 
         -- Called by engine when a spell is cast
         onSpellCast = function(name, spellID, time)
-            -- Record for mob correlation (already handled by engine via _recentCasts)
+            -- Broadcast CD to other addon users when we use our interrupt
+            if (name == ST.playerName) then
+                local player = ST.trackedPlayers[name];
+                if (player) then
+                    local spellState = player.spells[spellID];
+                    if (spellState) then
+                        SendMessage("C:" .. spellID .. ":" .. spellState.baseCd);
+                    end
+                end
+            end
         end,
 
         -- Called by engine during inspect to decide if a player should be excluded
