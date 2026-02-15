@@ -88,7 +88,7 @@ function ST._RenderIconCategory(categoryKey)
     for playerName, player in pairs(ST.trackedPlayers) do
         local isSelf = (playerName == ST.playerName);
         if (not isSelf or catDB.showSelf) then
-            local spells = ST._CollectPlayerCategorySpells(player, categoryKey, filter);
+            local spells = ST._CollectPlayerCategorySpells(player, categoryKey, filter, catDB);
             if (#spells > 0) then
                 table.insert(playerOrder, { name = playerName, class = player.class, isSelf = isSelf });
                 playerSpells[playerName] = spells;

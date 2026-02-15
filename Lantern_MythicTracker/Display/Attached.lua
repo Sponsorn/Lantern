@@ -71,7 +71,7 @@ function ST._RenderAttachedCategory(categoryKey)
             -- skip self
         else
             -- Collect this player's spells for this category
-            local spells = ST._CollectPlayerCategorySpells(player, categoryKey, filter);
+            local spells = ST._CollectPlayerCategorySpells(player, categoryKey, filter, catDB);
 
             if (#spells > 0) then
                 local unitToken = nameToUnit[playerName];

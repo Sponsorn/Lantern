@@ -86,6 +86,36 @@ local spells = {
         specs    = { [252] = true },
         category = "cooldowns",
     },
+    -- Empower Rune Weapon (Frost)
+    {
+        id       = 47568,
+        cd       = 120,
+        duration = 20,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = { [251] = true },
+        category = "cooldowns",
+    },
+    -- Abomination Limb
+    {
+        id       = 383269,
+        cd       = 120,
+        duration = 12,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = nil,
+        category = "cooldowns",
+    },
+    -- Gorefiend's Grasp (Blood)
+    {
+        id       = 108199,
+        cd       = 120,
+        duration = nil,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = { [250] = true },
+        category = "cooldowns",
+    },
 
     ---------------------------------------------------------------------------
     -- ROGUE
@@ -369,6 +399,16 @@ local spells = {
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = { [577] = true },
+        category = "cooldowns",
+    },
+    -- Void Metamorphosis (Devourer — no fixed CD, triggered by 50 soul fragments)
+    {
+        id       = 1217605,
+        cd       = 120,
+        duration = nil,
+        charges  = nil,
+        class    = "DEMONHUNTER",
+        specs    = { [1480] = true },
         category = "cooldowns",
     },
 

@@ -423,6 +423,10 @@ local function CheckUnitBuffs(unit)
         -- Player aura queries are clean (no unwrapping needed)
         for spellID in pairs(durationSpells) do
             local aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID);
+            if (not aura) then
+                -- Also check debuffs (for passive procs like Purgatory)
+                aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID, "HARMFUL");
+            end
             if (aura) then
                 activeAuras[spellID] = aura.expirationTime;
             end
@@ -437,6 +441,15 @@ local function CheckUnitBuffs(unit)
                 activeAuras[cleanId] = Unwrap(data.expirationTime);
             end
         end
+        -- Also check debuffs (for passive procs like Purgatory)
+        for i = 1, 40 do
+            local data = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL");
+            if (not data) then break; end
+            local cleanId = Unwrap(data.spellId);
+            if (cleanId and durationSpells[cleanId] and not activeAuras[cleanId]) then
+                activeAuras[cleanId] = Unwrap(data.expirationTime);
+            end
+        end
     end
 
     -- Update spell states
@@ -444,6 +457,11 @@ local function CheckUnitBuffs(unit)
         local spellState = player.spells[spellID];
         local expiry = activeAuras[spellID];
         if (expiry) then
+            -- If transitioning to active from a passive proc (no cast event),
+            -- set cdEnd so it goes to cooldown properly after the aura fades.
+            if (spellState.state ~= "active" and spellState.cdEnd <= now) then
+                spellState.cdEnd = now + spellState.baseCd;
+            end
             spellState.state = "active";
             if (expiry > 0) then
                 spellState.activeEnd = expiry;

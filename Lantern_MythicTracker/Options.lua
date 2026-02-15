@@ -32,6 +32,27 @@ local ATTACH_ANCHOR_LABELS  = { RIGHT = "Right", LEFT = "Left", BOTTOM = "Bottom
 local PADDING = 12;
 local ROW_HEIGHT = 26;
 local SLIDER_HEIGHT = 20;
+local TAB_BAR_HEIGHT = 26;
+
+-- Active tab state
+local _activeTab = "settings";  -- "settings" or "spells"
+
+-- Class display names (WoW token -> readable name)
+local CLASS_DISPLAY_NAMES = {
+    WARRIOR     = "Warrior",
+    PALADIN     = "Paladin",
+    HUNTER      = "Hunter",
+    ROGUE       = "Rogue",
+    PRIEST      = "Priest",
+    DEATHKNIGHT = "Death Knight",
+    SHAMAN      = "Shaman",
+    MAGE        = "Mage",
+    WARLOCK     = "Warlock",
+    MONK        = "Monk",
+    DRUID       = "Druid",
+    DEMONHUNTER = "Demon Hunter",
+    EVOKER      = "Evoker",
+};
 
 -------------------------------------------------------------------------------
 -- Widget Helpers (file-local factories)
@@ -258,7 +279,7 @@ local function BuildCategorySection(content, catKey, yOff)
         DestroyAndRefresh();
         -- Rebuild settings frame to show/hide layout-specific controls
         if (_optionsFrame and _optionsFrame:IsShown()) then
-            _optionsFrame:GetScript("OnShow")(_optionsFrame);
+            BuildContent();
         end
     end));
     yOff = yOff - ROW_HEIGHT;
@@ -277,7 +298,7 @@ local function BuildCategorySection(content, catKey, yOff)
         DestroyAndRefresh();
         -- Rebuild settings frame to show/hide attach-specific controls
         if (_optionsFrame and _optionsFrame:IsShown()) then
-            _optionsFrame:GetScript("OnShow")(_optionsFrame);
+            BuildContent();
         end
     end));
     yOff = yOff - ROW_HEIGHT;
@@ -381,6 +402,74 @@ local function BuildCategorySection(content, catKey, yOff)
     return yOff;
 end
 
+local function BuildSpellsTab(content, yOff)
+    for _, entry in ipairs(ST.categories) do
+        local catKey = entry.key;
+        local cat = ST:GetCategory(catKey);
+        local catDB = ST:GetCategoryDB(catKey);
+
+        -- Category header
+        local header;
+        header, yOff = CreateSectionHeader(content, cat.label or catKey, yOff);
+        Track(header);
+
+        -- Collect all spells for this category, sorted by class then spell name
+        local spells = ST:GetSpellsForCategory(catKey);
+        local sorted = {};
+        for id, spell in pairs(spells) do
+            table.insert(sorted, {
+                id    = id,
+                class = spell.class,
+                name  = C_Spell.GetSpellName(id) or ("Spell " .. id),
+            });
+        end
+        table.sort(sorted, function(a, b)
+            if (a.class ~= b.class) then return a.class < b.class; end
+            return a.name < b.name;
+        end);
+
+        local currentClass = nil;
+        for _, spell in ipairs(sorted) do
+            -- Class subheader when class changes
+            if (spell.class ~= currentClass) then
+                currentClass = spell.class;
+                local classLabel = content:CreateFontString(nil, "OVERLAY");
+                classLabel:SetFont(FONT, 11);
+                classLabel:SetPoint("TOPLEFT", PADDING + 8, yOff);
+                local cr, cg, cb = ST:GetClassColor(currentClass);
+                classLabel:SetTextColor(cr, cg, cb);
+                classLabel:SetText(CLASS_DISPLAY_NAMES[currentClass] or currentClass);
+                Track(classLabel);
+                yOff = yOff - 16;
+            end
+
+            -- Spell row: icon + checkbox
+            local isEnabled = not catDB.disabledSpells[spell.id];
+
+            local ico = content:CreateTexture(nil, "ARTWORK");
+            ico:SetSize(16, 16);
+            ico:SetPoint("TOPLEFT", PADDING + 12, yOff - 3);
+            ico:SetTexture(ST._GetSpellTexture(spell.id));
+            ico:SetTexCoord(0.08, 0.92, 0.08, 0.92);
+            Track(ico);
+
+            local spellID = spell.id;
+            Track(CreateCheckbox(content, PADDING + 30, yOff, spell.name, isEnabled, function(val)
+                if (val) then
+                    catDB.disabledSpells[spellID] = nil;
+                else
+                    catDB.disabledSpells[spellID] = true;
+                end
+                ST:RefreshDisplay();
+            end));
+            yOff = yOff - 22;
+        end
+
+        yOff = yOff - 8;
+    end
+    return yOff;
+end
+
 local function BuildContent()
     if (not _optionsFrame) then return; end
     local content = _optionsFrame.content;
@@ -392,33 +481,39 @@ local function BuildContent()
 
     local yOff = -8;
 
-    for _, entry in ipairs(ST.categories) do
-        yOff = BuildCategorySection(content, entry.key, yOff);
-    end
+    if (_activeTab == "spells") then
+        yOff = BuildSpellsTab(content, yOff);
+        yOff = yOff - PADDING;
+    else
+        for _, entry in ipairs(ST.categories) do
+            yOff = BuildCategorySection(content, entry.key, yOff);
+        end
 
-    -- Preview button
-    yOff = yOff - 4;
-    local previewLabel = ST._previewActive and "Disable Preview" or "Toggle Preview";
-    Track(CreateActionButton(content, PADDING, yOff, previewLabel, FRAME_WIDTH - (PADDING * 2), function()
-        if (ST._previewActive) then
-            ST:DeactivatePreview();
-            ST:Print("Preview disabled.");
-        else
-            ST:ActivatePreview();
-            ST:Print("Preview enabled.");
-        end
-        -- Rebuild to update button text
-        if (_optionsFrame and _optionsFrame:IsShown()) then
-            _optionsFrame:GetScript("OnShow")(_optionsFrame);
-        end
-    end));
-    yOff = yOff - ROW_HEIGHT - PADDING;
+        -- Preview button
+        yOff = yOff - 4;
+        local previewLabel = ST._previewActive and "Disable Preview" or "Toggle Preview";
+        Track(CreateActionButton(content, PADDING, yOff, previewLabel, FRAME_WIDTH - (PADDING * 2), function()
+            if (ST._previewActive) then
+                ST:DeactivatePreview();
+                ST:Print("Preview disabled.");
+            else
+                ST:ActivatePreview();
+                ST:Print("Preview enabled.");
+            end
+            -- Rebuild to update button text
+            if (_optionsFrame and _optionsFrame:IsShown()) then
+                BuildContent();
+            end
+        end));
+        yOff = yOff - ROW_HEIGHT - PADDING;
+    end
 
     -- Resize content and cap frame height (scroll handles overflow)
     local contentHeight = math.abs(yOff);
     content:SetHeight(contentHeight);
     local maxFrameHeight = 600;
-    _optionsFrame:SetHeight(math.min(30 + contentHeight + 4, maxFrameHeight));
+    local headerHeight = 30 + TAB_BAR_HEIGHT;
+    _optionsFrame:SetHeight(math.min(headerHeight + contentHeight + 4, maxFrameHeight));
 
     -- Restore scroll position (clamped to new content bounds)
     if (_optionsFrame.scrollFrame) then
@@ -484,9 +579,94 @@ local function CreateOptionsFrame()
     closeBtn:SetScript("OnLeave", function() closeText:SetTextColor(unpack(COLOR_MUTED)); end);
     closeBtn:SetScript("OnClick", function() frame:Hide(); end);
 
+    -- Tab bar
+    local tabBar = CreateFrame("Frame", nil, frame);
+    tabBar:SetHeight(TAB_BAR_HEIGHT);
+    tabBar:SetPoint("TOPLEFT", 0, -30);
+    tabBar:SetPoint("TOPRIGHT", 0, -30);
+
+    local tabBarBg = tabBar:CreateTexture(nil, "BACKGROUND");
+    tabBarBg:SetAllPoints();
+    tabBarBg:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+    tabBarBg:SetVertexColor(0.10, 0.10, 0.10, 1);
+
+    -- Divider line under tab bar
+    local tabDivider = tabBar:CreateTexture(nil, "BORDER");
+    tabDivider:SetHeight(1);
+    tabDivider:SetPoint("BOTTOMLEFT", 0, 0);
+    tabDivider:SetPoint("BOTTOMRIGHT", 0, 0);
+    tabDivider:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+    tabDivider:SetVertexColor(0.2, 0.2, 0.2, 1);
+
+    local TABS = {
+        { key = "settings", label = "Settings" },
+        { key = "spells",   label = "Spells" },
+    };
+
+    local tabButtons = {};
+
+    local function UpdateTabAppearance()
+        for _, tb in ipairs(tabButtons) do
+            if (tb.key == _activeTab) then
+                tb.text:SetTextColor(unpack(COLOR_ACCENT));
+                tb.underline:Show();
+            else
+                tb.text:SetTextColor(unpack(COLOR_MUTED));
+                tb.underline:Hide();
+            end
+        end
+    end
+
+    local tabWidth = math.floor(FRAME_WIDTH / #TABS);
+    for i, tabInfo in ipairs(TABS) do
+        local tabBtn = CreateFrame("Button", nil, tabBar);
+        tabBtn:SetSize(tabWidth, TAB_BAR_HEIGHT);
+        tabBtn:SetPoint("TOPLEFT", (i - 1) * tabWidth, 0);
+        tabBtn.key = tabInfo.key;
+
+        local tabText = tabBtn:CreateFontString(nil, "OVERLAY");
+        tabText:SetFont(FONT, 11);
+        tabText:SetPoint("CENTER", 0, 1);
+        tabText:SetText(tabInfo.label);
+        tabBtn.text = tabText;
+
+        -- Active indicator underline
+        local underline = tabBtn:CreateTexture(nil, "OVERLAY");
+        underline:SetHeight(2);
+        underline:SetPoint("BOTTOMLEFT", 8, 0);
+        underline:SetPoint("BOTTOMRIGHT", -8, 0);
+        underline:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+        underline:SetVertexColor(unpack(COLOR_ACCENT));
+        underline:Hide();
+        tabBtn.underline = underline;
+
+        tabBtn:SetScript("OnEnter", function()
+            if (tabBtn.key ~= _activeTab) then
+                tabText:SetTextColor(unpack(COLOR_LABEL));
+            end
+        end);
+        tabBtn:SetScript("OnLeave", function()
+            if (tabBtn.key ~= _activeTab) then
+                tabText:SetTextColor(unpack(COLOR_MUTED));
+            end
+        end);
+        tabBtn:SetScript("OnClick", function()
+            if (_activeTab ~= tabBtn.key) then
+                _activeTab = tabBtn.key;
+                UpdateTabAppearance();
+                BuildContent();
+            end
+        end);
+
+        table.insert(tabButtons, tabBtn);
+    end
+
+    UpdateTabAppearance();
+    frame.tabButtons = tabButtons;
+
     -- Scrollable content area
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame);
-    scrollFrame:SetPoint("TOPLEFT", 0, -30);
+    scrollFrame:SetPoint("TOPLEFT", 0, -(30 + TAB_BAR_HEIGHT));
     scrollFrame:SetPoint("BOTTOMRIGHT", 0, 0);
     scrollFrame:EnableMouseWheel(true);
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)

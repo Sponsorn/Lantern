@@ -82,6 +82,76 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- DEATHKNIGHT: Anti-Magic Zone
+    {
+        id       = 51052,
+        cd       = 120,
+        duration = 8,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = nil,
+        category = "defensive",
+    },
+    -- DEATHKNIGHT: Lichborne
+    {
+        id       = 49039,
+        cd       = 120,
+        duration = 10,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = nil,
+        category = "defensive",
+    },
+    -- DEATHKNIGHT: Death Pact
+    {
+        id       = 48743,
+        cd       = 120,
+        duration = nil,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = nil,
+        category = "defensive",
+    },
+    -- DEATHKNIGHT: Vampiric Blood (Blood)
+    {
+        id       = 55233,
+        cd       = 90,
+        duration = 12,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = { [250] = true },
+        category = "defensive",
+    },
+    -- DEATHKNIGHT: Dancing Rune Weapon (Blood)
+    {
+        id       = 49028,
+        cd       = 120,
+        duration = 8,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = { [250] = true },
+        category = "defensive",
+    },
+    -- DEATHKNIGHT: Tombstone (Blood)
+    {
+        id       = 219809,
+        cd       = 60,
+        duration = 8,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = { [250] = true },
+        category = "defensive",
+    },
+    -- DEATHKNIGHT: Purgatory (Blood — passive cheat death, detected via debuff aura)
+    {
+        id       = 114556,
+        cd       = 600,
+        duration = 4,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = { [250] = true },
+        category = "defensive",
+    },
 
     -- ROGUE: Cloak of Shadows
     {
@@ -158,14 +228,14 @@ local spells = {
         category = "defensive",
     },
 
-    -- DEMONHUNTER: Blur (Havoc)
+    -- DEMONHUNTER: Blur (Havoc / Devourer)
     {
         id       = 198589,
         cd       = 60,
         duration = 10,
         charges  = nil,
         class    = "DEMONHUNTER",
-        specs    = { [577] = true },
+        specs    = { [577] = true, [1480] = true },
         category = "defensive",
     },
     -- DEMONHUNTER: Metamorphosis (Vengeance — defensive version)

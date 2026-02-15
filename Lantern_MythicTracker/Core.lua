@@ -128,6 +128,7 @@ function ST:GetCategoryDB(categoryKey)
     for k, v in pairs(CATEGORY_DEFAULTS) do
         if (catDB[k] == nil) then catDB[k] = v; end
     end
+    if (not catDB.disabledSpells) then catDB.disabledSpells = {}; end
     return catDB;
 end
 
