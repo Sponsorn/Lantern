@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.33 - 2026-02-15
+- Fix: MissingPet warning text is now clickthrough when locked
+- Change: Interrupt Tracker preview uses original character names
+- Change: Interrupt Tracker default position moved to avoid overlapping the options panel
+
 ## 0.4.32 - 2026-02-14
 - Fix: Interrupt Tracker title bar no longer shifts bars when toggling lock
 - Fix: Interrupt Tracker lock toggle now properly refreshes the display

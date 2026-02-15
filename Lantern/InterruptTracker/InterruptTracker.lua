@@ -744,7 +744,7 @@ local function RestoreBarPosition()
     if (not barFrame or not db or not db.barPosition) then return; end
     local p = db.barPosition;
     barFrame:ClearAllPoints();
-    barFrame:SetPoint(p.point or "CENTER", UIParent, p.relativePoint or "CENTER", p.x or 0, p.y or -150);
+    barFrame:SetPoint(p.point or "CENTER", UIParent, p.relativePoint or "CENTER", p.x or 400, p.y or 0);
 end
 
 local function BuildBarFrame()
@@ -753,7 +753,7 @@ local function BuildBarFrame()
 
     barFrame = CreateFrame("Frame", "LanternInterruptTracker", UIParent);
     barFrame:SetSize(db.barWidth, 200);
-    barFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
+    barFrame:SetPoint("CENTER", UIParent, "CENTER", 400, 0);
     barFrame:SetFrameStrata("MEDIUM");
     barFrame:SetClampedToScreen(true);
     barFrame:SetMovable(true);
@@ -884,7 +884,7 @@ local function RestoreCompactPosition()
     if (not compactFrame or not db or not db.minimalPosition) then return; end
     local p = db.minimalPosition;
     compactFrame:ClearAllPoints();
-    compactFrame:SetPoint(p.point or "CENTER", UIParent, p.relativePoint or "CENTER", p.x or 0, p.y or -150);
+    compactFrame:SetPoint(p.point or "CENTER", UIParent, p.relativePoint or "CENTER", p.x or 400, p.y or 0);
 end
 
 local function BuildCompactFrame()
@@ -893,7 +893,7 @@ local function BuildCompactFrame()
 
     compactFrame = CreateFrame("Frame", "LanternInterruptTrackerCompact", UIParent);
     compactFrame:SetSize(160, 100);
-    compactFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
+    compactFrame:SetPoint("CENTER", UIParent, "CENTER", 400, 0);
     compactFrame:SetFrameStrata("MEDIUM");
     compactFrame:SetClampedToScreen(true);
     compactFrame:SetMovable(true);
@@ -1304,10 +1304,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Thralldk",   class = "DEATHKNIGHT", spellID = 47528,  baseCd = 15 },
-    { name = "Jainalee",   class = "MAGE",        spellID = 2139,   baseCd = 24 },
-    { name = "Sylvanash",  class = "ROGUE",       spellID = 1766,   baseCd = 15 },
-    { name = "Garroshwar", class = "WARRIOR",     spellID = 6552,   baseCd = 15 },
+    { name = "Korvas",     class = "DEMONHUNTER", spellID = 183752, baseCd = 15 },
+    { name = "Brightwing", class = "DRUID",       spellID = 106839, baseCd = 15 },
+    { name = "Drakthul",   class = "DEATHKNIGHT", spellID = 47528,  baseCd = 15 },
+    { name = "Zulara",     class = "SHAMAN",      spellID = 57994,  baseCd = 12 },
 };
 
 local function ActivatePreview()
@@ -1578,7 +1578,7 @@ end
 function module:ResetBarPosition()
     if (barFrame) then
         barFrame:ClearAllPoints();
-        barFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
+        barFrame:SetPoint("CENTER", UIParent, "CENTER", 400, 0);
         db.barPosition = nil;
     end
 end
@@ -1586,7 +1586,7 @@ end
 function module:ResetCompactPosition()
     if (compactFrame) then
         compactFrame:ClearAllPoints();
-        compactFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
+        compactFrame:SetPoint("CENTER", UIParent, "CENTER", 400, 0);
         db.minimalPosition = nil;
     end
 end
