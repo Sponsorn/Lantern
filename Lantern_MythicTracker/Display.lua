@@ -463,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Emberthal",  class = "EVOKER",  spec = 1467 },  -- Devastation
-    { name = "Azurathel",  class = "EVOKER",  spec = 1468 },  -- Preservation
-    { name = "Nozdormu",   class = "EVOKER",  spec = 1473 },  -- Augmentation
-    { name = "Zulara",     class = "SHAMAN",  spec = 264 },   -- Restoration
+    { name = "Turalyon",   class = "PALADIN",  spec = 66 },   -- Protection
+    { name = "Yrel",       class = "PALADIN",  spec = 65 },   -- Holy
+    { name = "Arthas",     class = "PALADIN",  spec = 70 },   -- Retribution
+    { name = "Zulara",     class = "SHAMAN",   spec = 264 },  -- Restoration
 };
 
 local _previewTimer = nil;

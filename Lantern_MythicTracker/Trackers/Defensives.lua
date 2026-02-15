@@ -61,6 +61,26 @@ local spells = {
         specs    = { [66] = true },
         category = "defensive",
     },
+    -- PALADIN: Guardian of Ancient Kings (Protection)
+    {
+        id       = 86659,
+        cd       = 180,
+        duration = 8,
+        charges  = nil,
+        class    = "PALADIN",
+        specs    = { [66] = true },
+        category = "defensive",
+    },
+    -- PALADIN: Blessing of Protection
+    {
+        id       = 1022,
+        cd       = 300,
+        duration = 10,
+        charges  = nil,
+        class    = "PALADIN",
+        specs    = nil,
+        category = "defensive",
+    },
 
     -- DEATHKNIGHT: Anti-Magic Shell
     {

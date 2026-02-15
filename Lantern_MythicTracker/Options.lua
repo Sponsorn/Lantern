@@ -454,7 +454,7 @@ local function BuildSpellsTab(content, yOff)
             Track(ico);
 
             local spellID = spell.id;
-            Track(CreateCheckbox(content, PADDING + 30, yOff, spell.name, isEnabled, function(val)
+            Track(CreateCheckbox(content, PADDING + 30, yOff, spell.name .. "  |cFF888888(" .. spell.id .. ")|r", isEnabled, function(val)
                 if (val) then
                     catDB.disabledSpells[spellID] = nil;
                 else

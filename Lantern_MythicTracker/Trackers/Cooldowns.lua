@@ -51,6 +51,26 @@ local spells = {
         specs    = { [65] = true },
         category = "cooldowns",
     },
+    -- Lay on Hands
+    {
+        id       = 633,
+        cd       = 420,
+        duration = nil,
+        charges  = nil,
+        class    = "PALADIN",
+        specs    = nil,
+        category = "cooldowns",
+    },
+    -- Blessing of Sacrifice
+    {
+        id       = 6940,
+        cd       = 120,
+        duration = 12,
+        charges  = nil,
+        class    = "PALADIN",
+        specs    = nil,
+        category = "cooldowns",
+    },
 
     ---------------------------------------------------------------------------
     -- DEATHKNIGHT
