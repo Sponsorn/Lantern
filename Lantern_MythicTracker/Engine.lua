@@ -39,14 +39,19 @@ local function Unwrap(secretValue)
     return _unwrapResult;
 end
 
+local _unwrapWarned = false;
+
 local function ValidateUnwrap()
     local test = Unwrap(47528);
     if (test ~= 47528) then
         _unwrapWorks = false;
-        if (ST.Print) then
+        if (not _unwrapWarned and ST.Print) then
+            _unwrapWarned = true;
             ST:Print("|cFFFF6600Warning:|r Secret value unwrapping is no longer working. "
                 .. "Party member tracking may be inaccurate.");
         end
+    else
+        _unwrapWorks = true;
     end
 end
 
@@ -732,8 +737,9 @@ end
 local _eventFrame = CreateFrame("Frame");
 
 function ST:EnableEngine()
-    -- Verify unwrapping still works (Blizzard may patch this in future)
+    -- Verify unwrapping still works (Blizzard may patch this at any time)
     ValidateUnwrap();
+    C_Timer.NewTicker(300, ValidateUnwrap);
 
     -- Register party change events
     _eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
