@@ -1,8 +1,5 @@
 # Changelog
 
-## 0.4.34 - 2026-02-15
-- Remove: Interrupt Tracker module (replaced by Mythic+ Tracker addon)
-
 ## 0.4.33 - 2026-02-15
 - Fix: MissingPet warning text is now clickthrough when locked
 - Change: Interrupt Tracker preview uses original character names
