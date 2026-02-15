@@ -275,16 +275,17 @@ _mobFrame:SetScript("OnEvent", function(_, _, unit)
 end);
 
 local _npCastFrames = {};
+local function OnNameplateCastInterrupted(_, _, u)
+    CorrelateInterrupt(u);
+end
 local _npFrame = CreateFrame("Frame");
 _npFrame:SetScript("OnEvent", function(_, event, unit)
     if (event == "NAME_PLATE_UNIT_ADDED") then
         if (not _npCastFrames[unit]) then
             _npCastFrames[unit] = CreateFrame("Frame");
+            _npCastFrames[unit]:SetScript("OnEvent", OnNameplateCastInterrupted);
         end
         _npCastFrames[unit]:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit);
-        _npCastFrames[unit]:SetScript("OnEvent", function(_, _, u)
-            CorrelateInterrupt(u);
-        end);
     elseif (event == "NAME_PLATE_UNIT_REMOVED") then
         if (_npCastFrames[unit]) then
             _npCastFrames[unit]:UnregisterAllEvents();

@@ -147,7 +147,7 @@ function ST._RenderBarCategory(categoryKey)
             if (entry.state == "ready") then
                 bar.cdBar:SetMinMaxValues(0, 1);
                 bar.cdBar:SetValue(0);
-                bar.barBg:SetVertexColor(cr * 0.4, cg * 0.4, cb * 0.4, 1);
+                bar.barBg:SetVertexColor(cr * 0.6, cg * 0.6, cb * 0.6, 1);
                 bar.cdText:SetText("READY");
                 bar.cdText:SetTextColor(0.2, 1.0, 0.2);
             elseif (entry.state == "active") then
@@ -162,8 +162,8 @@ function ST._RenderBarCategory(categoryKey)
             elseif (entry.state == "cooldown") then
                 bar.cdBar:SetMinMaxValues(0, entry.baseCd);
                 bar.cdBar:SetValue(entry.remaining);
-                bar.cdBar:SetStatusBarColor(cr, cg, cb);
-                bar.barBg:SetVertexColor(cr * 0.25, cg * 0.25, cb * 0.25, 1);
+                bar.cdBar:SetStatusBarColor(cr * 0.5, cg * 0.5, cb * 0.5);
+                bar.barBg:SetVertexColor(cr * 0.15, cg * 0.15, cb * 0.15, 1);
                 bar.cdText:SetText(ST._FormatTime(entry.remaining));
                 bar.cdText:SetTextColor(1, 1, 1);
             end
@@ -208,7 +208,9 @@ function ST:RefreshBarLayout(categoryKey)
             display.title:Hide();
         else
             display.title:Show();
-            display.title.text:SetText("|cFFe6c619" .. label .. " (unlocked)|r");
+            local attachMode = catDB.attachMode or "free";
+            local suffix = (attachMode == "party") and " (party frames preview)" or " (unlocked)";
+            display.title.text:SetText("|cFFe6c619" .. label .. suffix .. "|r");
         end
     end
 

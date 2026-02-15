@@ -187,7 +187,9 @@ function ST:RefreshIconLayout(categoryKey)
             display.title:Hide();
         else
             display.title:Show();
-            display.title.text:SetText("|cFFe6c619" .. label .. " (unlocked)|r");
+            local attachMode = catDB.attachMode or "free";
+            local suffix = (attachMode == "party") and " (party frames preview)" or " (unlocked)";
+            display.title.text:SetText("|cFFe6c619" .. label .. suffix .. "|r");
         end
     end
 

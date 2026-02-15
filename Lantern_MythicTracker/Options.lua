@@ -284,6 +284,14 @@ local function BuildCategorySection(content, catKey, yOff)
 
     -- Attach-specific controls (only visible in party mode)
     if (attachMode == "party") then
+        local hint = content:CreateFontString(nil, "OVERLAY");
+        hint:SetFont(FONT, 10);
+        hint:SetPoint("TOPLEFT", PADDING + 4, yOff);
+        hint:SetTextColor(0.6, 0.6, 0.6);
+        hint:SetText("Open Edit Mode (Game Menu) to preview attached icons");
+        Track(hint);
+        yOff = yOff - ROW_HEIGHT;
+
         local attachAnchor = catDB.attachAnchor or "RIGHT";
         Track(CreateCycleButton(content, PADDING + 4, yOff, "Anchor", ATTACH_ANCHOR_OPTIONS, ATTACH_ANCHOR_LABELS, attachAnchor, function(val)
             catDB.attachAnchor = val;
@@ -424,7 +432,7 @@ local function CreateOptionsFrame()
 
     local frame = CreateFrame("Frame", FRAME_NAME, UIParent, "BackdropTemplate");
     frame:SetSize(FRAME_WIDTH, 400);
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 50);
+    frame:SetPoint("CENTER", UIParent, "CENTER", 300, 50);
     frame:SetFrameStrata("DIALOG");
     frame:SetClampedToScreen(true);
     frame:SetMovable(true);
@@ -532,6 +540,9 @@ SlashCmdList["LANTERNMYTHICTRACKER"] = function(msg)
             ST:DeactivatePreview();
             ST:Print("Preview disabled.");
         else
+            -- Open options frame first (preview auto-deactivates if panel isn't visible)
+            local frame = CreateOptionsFrame();
+            if (not frame:IsShown()) then frame:Show(); end
             ST:ActivatePreview();
             ST:Print("Preview enabled.");
         end

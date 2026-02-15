@@ -231,6 +231,32 @@ end
 -- Unwraps the secret spellID before matching against the spell database.
 -------------------------------------------------------------------------------
 
+local function OnPartySpellCast(self, _, _, _, taintedSpellID)
+    local name = UnitName(self.unit);
+    local cleanID = Unwrap(taintedSpellID);
+    if (cleanID) then
+        local resolvedID = ST.spellAliases[cleanID] or cleanID;
+        if (ST.spellDB[resolvedID]) then
+            RecordSpellCast(self.unit, cleanID, name);
+        elseif (name) then
+            ST._recentCasts[name] = GetTime();
+        end
+    end
+end
+
+local function OnPetSpellCast(self, _, _, _, taintedSpellID)
+    local name = UnitName(self.ownerUnit);
+    local cleanID = Unwrap(taintedSpellID);
+    if (cleanID) then
+        local resolvedID = ST.spellAliases[cleanID] or cleanID;
+        if (ST.spellDB[resolvedID]) then
+            RecordSpellCast(self.ownerUnit, cleanID, name);
+        elseif (name) then
+            ST._recentCasts[name] = GetTime();
+        end
+    end
+end
+
 local RefreshPartyWatchers;
 
 RefreshPartyWatchers = function()
@@ -240,38 +266,15 @@ RefreshPartyWatchers = function()
 
         local unit = "party" .. i;
         if (UnitExists(unit)) then
+            _partyWatchers[i].unit = unit;
             _partyWatchers[i]:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit);
-            _partyWatchers[i]:SetScript("OnEvent", function(_, _, _, _, taintedSpellID)
-                local cleanUnit = "party" .. i;
-                local name = UnitName(cleanUnit);
-                local cleanID = Unwrap(taintedSpellID);
-                if (cleanID) then
-                    local resolvedID = ST.spellAliases[cleanID] or cleanID;
-                    if (ST.spellDB[resolvedID]) then
-                        RecordSpellCast(cleanUnit, cleanID, name);
-                    elseif (name) then
-                        -- Track recent cast even if not a tracked spell (for interrupt correlation)
-                        ST._recentCasts[name] = GetTime();
-                    end
-                end
-            end);
+            _partyWatchers[i]:SetScript("OnEvent", OnPartySpellCast);
 
             local petUnit = "partypet" .. i;
             if (UnitExists(petUnit)) then
+                _petWatchers[i].ownerUnit = unit;
                 _petWatchers[i]:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", petUnit);
-                _petWatchers[i]:SetScript("OnEvent", function(_, _, _, _, taintedSpellID)
-                    local ownerUnit = "party" .. i;
-                    local name = UnitName(ownerUnit);
-                    local cleanID = Unwrap(taintedSpellID);
-                    if (cleanID) then
-                        local resolvedID = ST.spellAliases[cleanID] or cleanID;
-                        if (ST.spellDB[resolvedID]) then
-                            RecordSpellCast(ownerUnit, cleanID, name);
-                        elseif (name) then
-                            ST._recentCasts[name] = GetTime();
-                        end
-                    end
-                end);
+                _petWatchers[i]:SetScript("OnEvent", OnPetSpellCast);
             end
         end
     end

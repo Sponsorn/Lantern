@@ -29,6 +29,9 @@ end
 ST.displayFrames = {};      -- categoryKey -> { frame, title, barPool/iconPool/namePool }
 ST.attachedContainers = {}; -- [categoryKey][unitToken] = { frame, iconPool = {} }
 
+-- Preview state (declared early so functions below can capture the upvalues)
+local _previewNameToUnit = {};   -- fake.name -> unit token during preview
+
 -------------------------------------------------------------------------------
 -- Shared helpers (exported for sub-files)
 -------------------------------------------------------------------------------
@@ -269,7 +272,9 @@ function ST._CreateTitleBar(frame, categoryKey, catDB)
     local titleText = title:CreateFontString(nil, "OVERLAY");
     titleText:SetFont(ST._GetFontPath(catDB.font), 12, catDB.fontOutline or "OUTLINE");
     titleText:SetPoint("CENTER", 0, 0);
-    titleText:SetText("|cFFe6c619" .. label .. " (unlocked)|r");
+    local attachMode = catDB.attachMode or "free";
+    local suffix = (attachMode == "party") and " (party frames preview)" or " (unlocked)";
+    titleText:SetText("|cFFe6c619" .. label .. suffix .. "|r");
     title.text = titleText;
 
     if (catDB.locked) then title:Hide(); end
@@ -282,6 +287,23 @@ end
 -------------------------------------------------------------------------------
 
 function ST._GetPartyMemberFrame(unitToken)
+    -- During preview, find visible party frames by slot index
+    -- Edit Mode shows CompactPartyFrameMembers with "player" as unit for all slots
+    if (ST._previewActive) then
+        local slot = tonumber(unitToken:match("^previewslot(%d+)$"));
+        if (slot) then
+            -- Try raid-style CompactPartyFrame members
+            local frame = _G["CompactPartyFrameMember" .. slot];
+            if (frame and frame:IsShown()) then return frame; end
+            -- Try non-raid-style PartyFrame members
+            if (PartyFrame and PartyFrame.MemberFrames) then
+                local mf = PartyFrame.MemberFrames[slot];
+                if (mf and mf:IsShown()) then return mf; end
+            end
+        end
+        return nil;
+    end
+
     local useRaid = EditModeManagerFrame
         and EditModeManagerFrame.UseRaidStylePartyFrames
         and EditModeManagerFrame:UseRaidStylePartyFrames();
@@ -308,6 +330,14 @@ function ST._GetPartyMemberFrame(unitToken)
 end
 
 function ST._BuildNameToUnitMap()
+    -- During preview, map fake players to visible party frame slots
+    if (ST._previewActive) then
+        if (next(_previewNameToUnit)) then
+            return _previewNameToUnit;
+        end
+        return {};
+    end
+
     local map = {};
     -- Include self (shown in raid-style party frames)
     if (ST.playerName) then
@@ -356,8 +386,8 @@ function ST:RefreshDisplay()
         local attachMode = catDB.attachMode or "free";
 
         if (entry.config.enabled and show) then
-            -- Attached mode: anchor icons to party frames (falls back to free during preview)
-            if (attachMode == "party" and not ST._previewActive) then
+            -- Attached mode: anchor icons to party frames (uses fake frames during preview)
+            if (attachMode == "party") then
                 -- Hide the monolithic free-floating frame
                 local display = self.displayFrames[key];
                 if (display and display.frame) then
@@ -435,6 +465,46 @@ local PREVIEW_PLAYERS = {
 
 local _previewTimer = nil;
 
+-- Scan for visible party frames and map fake player names to slot tokens
+local function BuildPreviewPartyMapping()
+    wipe(_previewNameToUnit);
+
+    -- Count visible party frame slots
+    local visibleSlots = {};
+    for i = 1, 5 do
+        local frame = _G["CompactPartyFrameMember" .. i];
+        if (frame and frame:IsShown()) then
+            table.insert(visibleSlots, i);
+        end
+    end
+    -- Fallback: check non-raid-style PartyFrame
+    if (#visibleSlots == 0 and PartyFrame and PartyFrame.MemberFrames) then
+        for idx, mf in pairs(PartyFrame.MemberFrames) do
+            if (mf and mf:IsShown()) then
+                table.insert(visibleSlots, idx);
+            end
+        end
+    end
+
+    -- Map fake players to visible slots (as many as we have)
+    local allNames = {};
+    -- Self player first
+    local playerName = ST.playerName or UnitName("player");
+    if (playerName) then
+        table.insert(allNames, playerName);
+    end
+    for _, fake in ipairs(PREVIEW_PLAYERS) do
+        table.insert(allNames, fake.name);
+    end
+
+    for i, slot in ipairs(visibleSlots) do
+        local name = allNames[i];
+        if (name) then
+            _previewNameToUnit[name] = "previewslot" .. slot;
+        end
+    end
+end
+
 function ST:ActivatePreview()
     ST._previewActive = true;
 
@@ -444,16 +514,10 @@ function ST:ActivatePreview()
 
     for _, fake in ipairs(PREVIEW_PLAYERS) do
         local player = { class = fake.class, spec = nil, spells = {} };
-        -- Add spells from all enabled categories for this class
         for _, entry in ipairs(ST.categories) do
             if (entry.config.enabled) then
                 local classSpells = ST:GetSpellsForClassAndCategory(fake.class, nil, entry.key);
                 for spellID, spell in pairs(classSpells) do
-                    local cd = spell.cd;
-                    if (spell.cdBySpec) then
-                        -- Preview doesn't have real specs, just use default
-                        cd = spell.cd;
-                    end
                     player.spells[spellID] = {
                         category   = spell.category,
                         state      = "ready",
@@ -461,12 +525,36 @@ function ST:ActivatePreview()
                         activeEnd  = 0,
                         charges    = spell.charges or 1,
                         maxCharges = spell.charges or 1,
-                        baseCd     = cd,
+                        baseCd     = spell.cd,
                     };
                 end
             end
         end
         ST.trackedPlayers[fake.name] = player;
+    end
+
+    -- Also add self player for attached mode preview
+    local playerName = ST.playerName or UnitName("player");
+    local playerClass = ST.playerClass or select(2, UnitClass("player"));
+    if (playerName and playerClass) then
+        local selfPlayer = { class = playerClass, spec = nil, spells = {} };
+        for _, entry in ipairs(ST.categories) do
+            if (entry.config.enabled) then
+                local classSpells = ST:GetSpellsForClassAndCategory(playerClass, nil, entry.key);
+                for spellID, spell in pairs(classSpells) do
+                    selfPlayer.spells[spellID] = {
+                        category   = spell.category,
+                        state      = "ready",
+                        cdEnd      = 0,
+                        activeEnd  = 0,
+                        charges    = spell.charges or 1,
+                        maxCharges = spell.charges or 1,
+                        baseCd     = spell.cd,
+                    };
+                end
+            end
+        end
+        ST.trackedPlayers[playerName] = selfPlayer;
     end
 
     -- Start simulation ticker
@@ -476,6 +564,9 @@ function ST:ActivatePreview()
             if (_previewTimer) then _previewTimer:Cancel(); _previewTimer = nil; end
             return;
         end
+        -- Refresh party frame mapping (Edit Mode frames may appear/disappear)
+        BuildPreviewPartyMapping();
+
         local now = GetTime();
         for _, player in pairs(ST.trackedPlayers) do
             for spellID, spellState in pairs(player.spells) do
@@ -492,7 +583,12 @@ function ST:ActivatePreview()
                 end
             end
         end
+        -- Re-render (engine OnUpdate doesn't run during solo preview)
+        ST:RefreshDisplay();
     end);
+
+    -- Build initial party frame mapping
+    BuildPreviewPartyMapping();
 
     -- Force display refresh
     ST:RefreshDisplay();
@@ -501,6 +597,7 @@ end
 function ST:DeactivatePreview()
     ST._previewActive = false;
     if (_previewTimer) then _previewTimer:Cancel(); _previewTimer = nil; end
+    wipe(_previewNameToUnit);
 
     -- Restore real tracked players
     if (ST._savedTrackedPlayers) then
@@ -532,11 +629,8 @@ function ST:ApplyDocking()
                 display.frame:SetMovable(false);
             end
         else
-            -- Not docked, restore independent position
+            -- Not docked, just ensure movable
             display.frame:SetMovable(true);
-            if (not display.frame.IsMoving or not display.frame:IsMoving()) then
-                ST._RestorePosition(key);
-            end
         end
     end
 end

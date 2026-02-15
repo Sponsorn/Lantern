@@ -1,6 +1,8 @@
-**Pre-release** — This addon is in early development. Spell data is incomplete and some class/spec combinations may be missing cooldowns. Expect frequent updates as spells are verified and added.
+<span style="color:#e03e2d"><strong>Pre-release</strong> - This addon is in early development.</span> Spell data is incomplete and some class/spec combinations may be missing cooldowns. Expect frequent updates as spells are verified and added. You can still use it, but expect lua errors and missing spells.
 
----
+<span style="color:#e03e2d"><strong>Note:</strong></span> The "Party Frames" display mode currently only works with Blizzard's default raid-style party frames. Custom party frame addons (ElvUI, VuhDo, Grid2, etc.) are not supported yet. Open Edit Mode (Game Menu) and then type `/lmt preview` to preview attached icons on party frames.
+
+***
 
 Lantern - Mythic+ Tracker passively tracks party member spell cooldowns in Mythic+ dungeons. See at a glance who has their interrupt ready, who just used a defensive, and when everything comes back up.
 
