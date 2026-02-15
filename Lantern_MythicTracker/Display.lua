@@ -260,8 +260,13 @@ function ST._CreateTitleBar(frame, categoryKey, catDB)
 
     local title = CreateFrame("Frame", ST._FrameName("TitleBar"), frame);
     title:SetHeight(18);
-    title:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2);
-    title:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 2);
+    if (catDB.growUp) then
+        title:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, -2);
+        title:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", 0, -2);
+    else
+        title:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2);
+        title:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 2);
+    end
     title:EnableMouse(true);
     title:RegisterForDrag("LeftButton");
     title:SetScript("OnDragStart", function() frame:StartMoving(); end);
@@ -634,7 +639,11 @@ function ST:ApplyDocking()
             local targetDisplay = self.displayFrames[catDB.dockTo];
             if (targetDisplay and targetDisplay.frame) then
                 display.frame:ClearAllPoints();
-                display.frame:SetPoint("TOPLEFT", targetDisplay.frame, "BOTTOMLEFT", 0, -4);
+                if (catDB.growUp) then
+                    display.frame:SetPoint("BOTTOMLEFT", targetDisplay.frame, "TOPLEFT", 0, 4);
+                else
+                    display.frame:SetPoint("TOPLEFT", targetDisplay.frame, "BOTTOMLEFT", 0, -4);
+                end
                 display.frame:SetMovable(false);
             end
         else

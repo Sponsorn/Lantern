@@ -763,11 +763,24 @@ function ST:EnableEngine()
             C_Timer.After(5, function() RegisterPartyByClass(); QueueInspects(); end);
             C_Timer.After(10, function() RegisterPartyByClass(); QueueInspects(); end);
         elseif (event == "UNIT_PET") then
+            local unit = ...;
             RefreshPartyWatchers();
+            if (not unit or unit == "player") then
+                -- Own pet changed — re-scan spells with retries (pet spellbook loads slowly)
+                IdentifyPlayerSpells();
+                C_Timer.After(0.5, IdentifyPlayerSpells);
+                C_Timer.After(1.5, IdentifyPlayerSpells);
+                C_Timer.After(3.0, IdentifyPlayerSpells);
+            end
         elseif (event == "SPELL_UPDATE_COOLDOWN") then
             UpdateSelfCooldowns();
         elseif (event == "SPELLS_CHANGED") then
             IdentifyPlayerSpells();
+            -- Warlock pet spellbook may not be ready yet — retry
+            if (ST.playerClass == "WARLOCK") then
+                C_Timer.After(1.5, IdentifyPlayerSpells);
+                C_Timer.After(3.0, IdentifyPlayerSpells);
+            end
         elseif (event == "PLAYER_SPECIALIZATION_CHANGED") then
             local unit = ...;
             if (not unit or unit == "player") then

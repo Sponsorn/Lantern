@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 - 2026-02-15
+- Add: Grow direction setting (Down / Up) as a cycle button in category options
+- Fix: Title bar and docking now respect grow direction (title below frame when growing up, docking stacks upward)
+- Fix: Pet spell detection — re-scans spells when pet changes (Warlock Spell Lock, Hunter pet abilities)
+- Fix: Options panel crash when changing layout or display mode (BuildContent reference error)
+
 ## 0.4.0 - 2026-02-15
 - Add: Per-spell enable/disable toggles in the new "Spells" tab (uncheck individual spells to hide them)
 - Add: Tab bar in options panel to switch between Settings and Spells views

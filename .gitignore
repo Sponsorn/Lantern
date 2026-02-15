@@ -15,3 +15,6 @@ desktop.ini
 # Release
 *.zip
 release/
+
+# Notes
+TODO.md

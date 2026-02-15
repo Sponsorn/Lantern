@@ -28,6 +28,8 @@ local ATTACH_MODE_OPTIONS  = { "free", "party" };
 local ATTACH_MODE_LABELS   = { free = "Free Floating", party = "Party Frames" };
 local ATTACH_ANCHOR_OPTIONS = { "RIGHT", "LEFT", "BOTTOM" };
 local ATTACH_ANCHOR_LABELS  = { RIGHT = "Right", LEFT = "Left", BOTTOM = "Bottom" };
+local GROW_DIR_OPTIONS = { "down", "up" };
+local GROW_DIR_LABELS  = { down = "Down", up = "Up" };
 
 local PADDING = 12;
 local ROW_HEIGHT = 26;
@@ -232,6 +234,8 @@ local function Track(widget)
     return widget;
 end
 
+local BuildContent;
+
 local function BuildCategorySection(content, catKey, yOff)
     local cat = ST:GetCategory(catKey);
     if (not cat) then return yOff; end
@@ -375,6 +379,14 @@ local function BuildCategorySection(content, catKey, yOff)
             yOff = yOff - ROW_HEIGHT;
         end
 
+        -- Grow Direction
+        local growDir = catDB.growUp and "up" or "down";
+        Track(CreateCycleButton(content, PADDING + 4, yOff, "Grow", GROW_DIR_OPTIONS, GROW_DIR_LABELS, growDir, function(val)
+            catDB.growUp = (val == "up");
+            DestroyAndRefresh();
+        end));
+        yOff = yOff - ROW_HEIGHT;
+
         -- Lock Position + Reset Position (same row)
         Track(CreateCheckbox(content, PADDING + 4, yOff, "Lock Position", catDB.locked, function(val)
             catDB.locked = val;
@@ -470,7 +482,7 @@ local function BuildSpellsTab(content, yOff)
     return yOff;
 end
 
-local function BuildContent()
+BuildContent = function()
     if (not _optionsFrame) then return; end
     local content = _optionsFrame.content;
 
