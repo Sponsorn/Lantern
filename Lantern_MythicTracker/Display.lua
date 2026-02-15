@@ -463,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Garona",     class = "ROGUE",   spec = 259 },  -- Assassination
-    { name = "Mathias",    class = "ROGUE",   spec = 260 },  -- Outlaw
-    { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
+    { name = "Nobundo",    class = "SHAMAN",  spec = 262 },  -- Elemental
+    { name = "Rehgar",     class = "SHAMAN",  spec = 263 },  -- Enhancement
     { name = "Zulara",     class = "SHAMAN",  spec = 264 },  -- Restoration
+    { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
 };
 
 local _previewTimer = nil;
@@ -524,6 +524,7 @@ function ST:ActivatePreview()
             if (entry.config.enabled) then
                 local classSpells = ST:GetSpellsForClassAndCategory(fake.class, fake.spec, entry.key);
                 for spellID, spell in pairs(classSpells) do
+                    local cd = (spell.cdBySpec and fake.spec and spell.cdBySpec[fake.spec]) or spell.cd;
                     player.spells[spellID] = {
                         category   = spell.category,
                         state      = "ready",
@@ -531,7 +532,7 @@ function ST:ActivatePreview()
                         activeEnd  = 0,
                         charges    = spell.charges or 1,
                         maxCharges = spell.charges or 1,
-                        baseCd     = spell.cd,
+                        baseCd     = cd,
                     };
                 end
             end
@@ -549,6 +550,7 @@ function ST:ActivatePreview()
             if (entry.config.enabled) then
                 local classSpells = ST:GetSpellsForClassAndCategory(playerClass, playerSpec, entry.key);
                 for spellID, spell in pairs(classSpells) do
+                    local cd = (spell.cdBySpec and playerSpec and spell.cdBySpec[playerSpec]) or spell.cd;
                     selfPlayer.spells[spellID] = {
                         category   = spell.category,
                         state      = "ready",
@@ -556,7 +558,7 @@ function ST:ActivatePreview()
                         activeEnd  = 0,
                         charges    = spell.charges or 1,
                         maxCharges = spell.charges or 1,
-                        baseCd     = spell.cd,
+                        baseCd     = cd,
                     };
                 end
             end

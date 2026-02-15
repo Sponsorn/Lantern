@@ -340,6 +340,16 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- SHAMAN: Earth Elemental (emergency tank / survivability with Primordial Bond)
+    {
+        id       = 198103,
+        cd       = 180,
+        duration = 30,
+        charges  = nil,
+        class    = "SHAMAN",
+        specs    = nil,
+        category = "defensive",
+    },
 
     -- WARLOCK: Unending Resolve
     {

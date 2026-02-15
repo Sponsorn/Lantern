@@ -603,9 +603,9 @@ local spells = {
     },
     -- Doom Winds (Enhancement — choice node with Ascendance)
     {
-        id       = 335902,
+        id       = 384352,
         cd       = 60,
-        duration = 12,
+        duration = 8,
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [263] = true },
