@@ -224,6 +224,16 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- MAGE: Greater Invisibility
+    {
+        id       = 110959,
+        cd       = 120,
+        duration = 20,
+        charges  = nil,
+        class    = "MAGE",
+        specs    = nil,
+        category = "defensive",
+    },
 
     -- HUNTER: Aspect of the Turtle
     {
@@ -286,6 +296,16 @@ local spells = {
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = { [581] = true },
+        category = "defensive",
+    },
+    -- DEMONHUNTER: Darkness (group avoidance)
+    {
+        id       = 196718,
+        cd       = 300,
+        duration = 8,
+        charges  = nil,
+        class    = "DEMONHUNTER",
+        specs    = nil,
         category = "defensive",
     },
 

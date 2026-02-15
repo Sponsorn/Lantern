@@ -83,7 +83,7 @@ ST:RegisterSpells({
     -- Mage: Counterspell
     {
         id       = 2139,
-        cd       = 24,
+        cd       = 25,
         duration = nil,
         charges  = nil,
         class    = "MAGE",

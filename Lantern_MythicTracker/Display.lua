@@ -463,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Saurfang",   class = "WARRIOR",  spec = 71 },   -- Arms
-    { name = "Garrosh",    class = "WARRIOR",  spec = 72 },   -- Fury
-    { name = "Varian",     class = "WARRIOR",  spec = 73 },   -- Protection
-    { name = "Zulara",     class = "SHAMAN",   spec = 264 },  -- Restoration
+    { name = "Jaina",      class = "MAGE",    spec = 62 },   -- Arcane
+    { name = "Khadgar",    class = "MAGE",    spec = 63 },   -- Fire
+    { name = "Thalyssra",  class = "MAGE",    spec = 64 },   -- Frost
+    { name = "Zulara",     class = "SHAMAN",  spec = 264 },  -- Restoration
 };
 
 local _previewTimer = nil;

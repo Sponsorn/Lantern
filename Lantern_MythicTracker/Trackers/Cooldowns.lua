@@ -471,6 +471,26 @@ local spells = {
         specs    = { [1480] = true },
         category = "cooldowns",
     },
+    -- The Hunt (Havoc)
+    {
+        id       = 370965,
+        cd       = 90,
+        duration = nil,
+        charges  = nil,
+        class    = "DEMONHUNTER",
+        specs    = { [577] = true },
+        category = "cooldowns",
+    },
+    -- The Hunt (Devourer)
+    {
+        id       = 1246167,
+        cd       = 90,
+        duration = nil,
+        charges  = nil,
+        class    = "DEMONHUNTER",
+        specs    = { [1480] = true },
+        category = "cooldowns",
+    },
 
     ---------------------------------------------------------------------------
     -- PRIEST
