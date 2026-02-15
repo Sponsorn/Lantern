@@ -26,10 +26,17 @@ local FILTER_OPTIONS = { "all", "hide_ready", "active_only" };
 local FILTER_LABELS  = { all = "Show All", hide_ready = "Hide Ready", active_only = "Active Only" };
 local ATTACH_MODE_OPTIONS  = { "free", "party" };
 local ATTACH_MODE_LABELS   = { free = "Free Floating", party = "Party Frames" };
-local ATTACH_ANCHOR_OPTIONS = { "RIGHT", "LEFT", "BOTTOM" };
-local ATTACH_ANCHOR_LABELS  = { RIGHT = "Right", LEFT = "Left", BOTTOM = "Bottom" };
+local ATTACH_ANCHOR_OPTIONS = { "RIGHT", "LEFT", "TOP", "BOTTOM", "TOPRIGHT", "TOPLEFT", "BOTTOMRIGHT", "BOTTOMLEFT" };
+local ATTACH_ANCHOR_LABELS  = {
+    RIGHT = "Right", LEFT = "Left", TOP = "Top", BOTTOM = "Bottom",
+    TOPRIGHT = "Top Right", TOPLEFT = "Top Left", BOTTOMRIGHT = "Bottom Right", BOTTOMLEFT = "Bottom Left",
+};
 local GROW_DIR_OPTIONS = { "down", "up" };
 local GROW_DIR_LABELS  = { down = "Down", up = "Up" };
+local ATTACH_GROW_OPTIONS = { "auto", "left", "right", "up", "down" };
+local ATTACH_GROW_LABELS  = { auto = "Auto", left = "Left", right = "Right", up = "Up", down = "Down" };
+local ORIENTATION_OPTIONS = { "horizontal", "vertical" };
+local ORIENTATION_LABELS  = { horizontal = "Horizontal", vertical = "Vertical" };
 
 local PADDING = 12;
 local ROW_HEIGHT = 26;
@@ -101,7 +108,7 @@ local function CreateCheckbox(parent, xOff, yOff, text, checked, onChange)
     return cb;
 end
 
-local function CreateCycleButton(parent, xOff, yOff, labelText, options, labels, currentValue, onChange)
+local function CreateDropdown(parent, xOff, yOff, labelText, options, labels, currentValue, onChange)
     local holder = CreateFrame("Frame", nil, parent);
     holder:SetPoint("TOPLEFT", xOff, yOff);
     holder:SetSize(FRAME_WIDTH - PADDING * 2 - xOff + PADDING, ROW_HEIGHT);
@@ -123,23 +130,35 @@ local function CreateCycleButton(parent, xOff, yOff, labelText, options, labels,
 
     local btnText = btn:CreateFontString(nil, "OVERLAY");
     btnText:SetFont(FONT, 11);
-    btnText:SetPoint("CENTER", 0, 0);
+    btnText:SetPoint("LEFT", 6, 0);
     btnText:SetTextColor(unpack(COLOR_LABEL));
     btnText:SetText(labels[currentValue] or currentValue);
     btn.text = btnText;
+
+    -- Arrow indicator
+    local arrow = btn:CreateFontString(nil, "OVERLAY");
+    arrow:SetFont(FONT, 9);
+    arrow:SetPoint("RIGHT", -6, 0);
+    arrow:SetTextColor(unpack(COLOR_MUTED));
+    arrow:SetText("v");
 
     btn:SetScript("OnEnter", function() btnBg:SetVertexColor(unpack(COLOR_BTN_HOVER)); end);
     btn:SetScript("OnLeave", function() btnBg:SetVertexColor(unpack(COLOR_BTN)); end);
 
     btn:SetScript("OnClick", function()
-        local currentIdx = 1;
-        for i, opt in ipairs(options) do
-            if (opt == currentValue) then currentIdx = i; break; end
-        end
-        local nextIdx = (currentIdx % #options) + 1;
-        currentValue = options[nextIdx];
-        btnText:SetText(labels[currentValue] or currentValue);
-        if (onChange) then onChange(currentValue); end
+        MenuUtil.CreateContextMenu(btn, function(_, rootDescription)
+            for _, opt in ipairs(options) do
+                local text = labels[opt] or opt;
+                rootDescription:CreateRadio(text,
+                    function() return currentValue == opt; end,
+                    function()
+                        currentValue = opt;
+                        btnText:SetText(text);
+                        if (onChange) then onChange(opt); end
+                    end
+                );
+            end
+        end);
     end);
 
     return holder;
@@ -278,7 +297,7 @@ local function BuildCategorySection(content, catKey, yOff)
     yOff = yOff - ROW_HEIGHT;
 
     -- Layout cycle
-    Track(CreateCycleButton(content, PADDING + 4, yOff, "Layout", LAYOUT_OPTIONS, LAYOUT_LABELS, layout, function(val)
+    Track(CreateDropdown(content, PADDING + 4, yOff, "Layout", LAYOUT_OPTIONS, LAYOUT_LABELS, layout, function(val)
         catDB.layout = val;
         DestroyAndRefresh();
         -- Rebuild settings frame to show/hide layout-specific controls
@@ -289,7 +308,7 @@ local function BuildCategorySection(content, catKey, yOff)
     yOff = yOff - ROW_HEIGHT;
 
     -- Filter cycle
-    Track(CreateCycleButton(content, PADDING + 4, yOff, "Filter", FILTER_OPTIONS, FILTER_LABELS, filter, function(val)
+    Track(CreateDropdown(content, PADDING + 4, yOff, "Filter", FILTER_OPTIONS, FILTER_LABELS, filter, function(val)
         catDB.filter = val;
         ST:RefreshDisplay();
     end));
@@ -297,7 +316,7 @@ local function BuildCategorySection(content, catKey, yOff)
 
     -- Attach Mode cycle
     local attachMode = catDB.attachMode or "free";
-    Track(CreateCycleButton(content, PADDING + 4, yOff, "Display", ATTACH_MODE_OPTIONS, ATTACH_MODE_LABELS, attachMode, function(val)
+    Track(CreateDropdown(content, PADDING + 4, yOff, "Display", ATTACH_MODE_OPTIONS, ATTACH_MODE_LABELS, attachMode, function(val)
         catDB.attachMode = val;
         DestroyAndRefresh();
         -- Rebuild settings frame to show/hide attach-specific controls
@@ -318,9 +337,20 @@ local function BuildCategorySection(content, catKey, yOff)
         yOff = yOff - ROW_HEIGHT;
 
         local attachAnchor = catDB.attachAnchor or "RIGHT";
-        Track(CreateCycleButton(content, PADDING + 4, yOff, "Anchor", ATTACH_ANCHOR_OPTIONS, ATTACH_ANCHOR_LABELS, attachAnchor, function(val)
+        Track(CreateDropdown(content, PADDING + 4, yOff, "Anchor", ATTACH_ANCHOR_OPTIONS, ATTACH_ANCHOR_LABELS, attachAnchor, function(val)
             catDB.attachAnchor = val;
-            ST:RefreshDisplay();
+            catDB.attachGrow = nil;  -- reset to auto when anchor changes
+            DestroyAndRefresh();
+            if (_optionsFrame and _optionsFrame:IsShown()) then
+                BuildContent();
+            end
+        end));
+        yOff = yOff - ROW_HEIGHT;
+
+        local attachGrow = catDB.attachGrow or "auto";
+        Track(CreateDropdown(content, PADDING + 4, yOff, "Grow", ATTACH_GROW_OPTIONS, ATTACH_GROW_LABELS, attachGrow, function(val)
+            catDB.attachGrow = (val == "auto") and nil or val;
+            DestroyAndRefresh();
         end));
         yOff = yOff - ROW_HEIGHT;
 
@@ -332,6 +362,18 @@ local function BuildCategorySection(content, catKey, yOff)
 
         Track(CreateSlider(content, PADDING + 4, yOff, "Offset Y", -50, 50, 1, catDB.attachOffsetY or 0, function(val)
             catDB.attachOffsetY = val;
+            ST:RefreshDisplay();
+        end));
+        yOff = yOff - 44;
+
+        Track(CreateDropdown(content, PADDING + 4, yOff, "Orientation", ORIENTATION_OPTIONS, ORIENTATION_LABELS, catDB.attachOrientation or "horizontal", function(val)
+            catDB.attachOrientation = val;
+            ST:RefreshDisplay();
+        end));
+        yOff = yOff - ROW_HEIGHT;
+
+        Track(CreateSlider(content, PADDING + 4, yOff, "Icons Per Row", 1, 8, 1, catDB.attachMaxPerRow or 6, function(val)
+            catDB.attachMaxPerRow = val;
             ST:RefreshDisplay();
         end));
         yOff = yOff - 44;
@@ -381,7 +423,7 @@ local function BuildCategorySection(content, catKey, yOff)
 
         -- Grow Direction
         local growDir = catDB.growUp and "up" or "down";
-        Track(CreateCycleButton(content, PADDING + 4, yOff, "Grow", GROW_DIR_OPTIONS, GROW_DIR_LABELS, growDir, function(val)
+        Track(CreateDropdown(content, PADDING + 4, yOff, "Grow", GROW_DIR_OPTIONS, GROW_DIR_LABELS, growDir, function(val)
             catDB.growUp = (val == "up");
             DestroyAndRefresh();
         end));

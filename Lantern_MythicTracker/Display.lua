@@ -468,10 +468,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Anduin",     class = "PRIEST",  spec = 256 },  -- Discipline
-    { name = "Velen",      class = "PRIEST",  spec = 257 },  -- Holy
-    { name = "Natalie",    class = "PRIEST",  spec = 258 },  -- Shadow
-    { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
+    { name = "Thrall",     class = "SHAMAN",       spec = 263 },  -- Enhancement
+    { name = "Jaina",      class = "MAGE",         spec = 63  },  -- Fire
+    { name = "Valeera",    class = "ROGUE",        spec = 261 },  -- Subtlety
+    { name = "Anduin",     class = "PRIEST",       spec = 256 },  -- Discipline
 };
 
 local _previewTimer = nil;

@@ -1,5 +1,18 @@
 # Changelog
 
+****
+## <span style="color:#E03E2D;">**I cannot stress this enough, this will break. Have fun while it lasts.**</span>
+****
+
+## 0.4.2 - 2026-02-15
+- Add: Explicit grow direction setting for party frame icons (Left, Right, Up, Down, Auto)
+- Add: Orientation setting (Horizontal/Vertical) and Icons Per Row for party frame attached mode
+- Add: All 8 anchor points for party frame attachment (was only Right, Left, Bottom)
+- Change: Options dropdowns now use context menus instead of cycle buttons
+- Change: Offsets no longer flip signs based on anchor — positive X always means right, positive Y always means up
+- Change: Preview players updated to show more class diversity (Shaman, Mage, Rogue, Priest)
+- Fix: Categories with different grow directions no longer interfere when stacking on the same anchor
+
 ## 0.4.1 - 2026-02-15
 - Add: Grow direction setting (Down / Up) as a cycle button in category options
 - Fix: Title bar and docking now respect grow direction (title below frame when growing up, docking stacks upward)

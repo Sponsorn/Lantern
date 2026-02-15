@@ -8,8 +8,8 @@ TODO
 - crafting orders: save last crafting cost known across warband into tooltip
 - warband: fix characters screen showing unknown character after name-realm
 - warband/warbank: fix proper cast bar instead of yank
-
-
+- cursorring: when installing the addon, disabled states are not read correctly
+- mythictracker: starting position for preview is under options menu, and preview closes with options
 
 ----
 - UX plan: ~\.claude\plans\snazzy-swimming-wave.md

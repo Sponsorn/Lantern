@@ -95,9 +95,11 @@ local CATEGORY_DEFAULTS = {
     -- Attached mode (per-player icons on party frames)
     attachMode    = "free",     -- "free" (floating frames) or "party" (attached to party frames)
     attachAnchor  = "RIGHT",    -- which side of the party frame to attach to
+    attachGrow    = nil,        -- nil = auto from anchor; "left"/"right"/"up"/"down"
     attachOffsetX = 2,          -- horizontal offset from the anchor point
     attachOffsetY = 0,          -- vertical offset from the anchor point
-    attachGrowDir = "DOWN",     -- direction categories stack: "DOWN" or "RIGHT"
+    attachOrientation = "horizontal", -- "horizontal" (rows) or "vertical" (columns)
+    attachMaxPerRow = 6,        -- max icons per row/column before wrapping
 };
 
 local function getDB()
