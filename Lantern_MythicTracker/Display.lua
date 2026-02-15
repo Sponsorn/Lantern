@@ -93,7 +93,7 @@ function ST._ApplyIconState(ico, state, spellID, cdEnd, activeEnd, baseCd, now)
     end
 end
 
-function ST._CollectPlayerCategorySpells(player, categoryKey, filter)
+function ST._CollectPlayerCategorySpells(player, categoryKey, filter, catDB)
     local spells = {};
     for spellID, spellState in pairs(player.spells) do
         if (spellState.category == categoryKey) then
@@ -101,6 +101,9 @@ function ST._CollectPlayerCategorySpells(player, categoryKey, filter)
             if (filter == "hide_ready" and spellState.state == "ready") then
                 include = false;
             elseif (filter == "active_only" and spellState.state ~= "active") then
+                include = false;
+            end
+            if (include and catDB and catDB.disabledSpells[spellID]) then
                 include = false;
             end
             if (include) then
@@ -139,6 +142,9 @@ function ST._CollectSortedEntries(categoryKey)
                     if (filter == "hide_ready" and spellState.state == "ready") then
                         include = false;
                     elseif (filter == "active_only" and spellState.state ~= "active") then
+                        include = false;
+                    end
+                    if (include and catDB.disabledSpells[spellID]) then
                         include = false;
                     end
 
@@ -457,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Korvas",     class = "DEMONHUNTER" },
-    { name = "Brightwing", class = "DRUID" },
-    { name = "Drakthul",   class = "DEATHKNIGHT" },
-    { name = "Zulara",     class = "SHAMAN" },
+    { name = "Korvas",     class = "DEMONHUNTER",  spec = 577 },  -- Havoc
+    { name = "Brightwing", class = "DRUID",         spec = 105 },  -- Restoration
+    { name = "Drakthul",   class = "DEATHKNIGHT",   spec = 250 },  -- Blood
+    { name = "Zulara",     class = "SHAMAN",        spec = 264 },  -- Restoration
 };
 
 local _previewTimer = nil;
@@ -513,10 +519,10 @@ function ST:ActivatePreview()
     ST.trackedPlayers = {};
 
     for _, fake in ipairs(PREVIEW_PLAYERS) do
-        local player = { class = fake.class, spec = nil, spells = {} };
+        local player = { class = fake.class, spec = fake.spec, spells = {} };
         for _, entry in ipairs(ST.categories) do
             if (entry.config.enabled) then
-                local classSpells = ST:GetSpellsForClassAndCategory(fake.class, nil, entry.key);
+                local classSpells = ST:GetSpellsForClassAndCategory(fake.class, fake.spec, entry.key);
                 for spellID, spell in pairs(classSpells) do
                     player.spells[spellID] = {
                         category   = spell.category,
@@ -536,11 +542,12 @@ function ST:ActivatePreview()
     -- Also add self player for attached mode preview
     local playerName = ST.playerName or UnitName("player");
     local playerClass = ST.playerClass or select(2, UnitClass("player"));
+    local playerSpec = GetSpecializationInfo(GetSpecialization() or 0) or nil;
     if (playerName and playerClass) then
-        local selfPlayer = { class = playerClass, spec = nil, spells = {} };
+        local selfPlayer = { class = playerClass, spec = playerSpec, spells = {} };
         for _, entry in ipairs(ST.categories) do
             if (entry.config.enabled) then
-                local classSpells = ST:GetSpellsForClassAndCategory(playerClass, nil, entry.key);
+                local classSpells = ST:GetSpellsForClassAndCategory(playerClass, playerSpec, entry.key);
                 for spellID, spell in pairs(classSpells) do
                     selfPlayer.spells[spellID] = {
                         category   = spell.category,
