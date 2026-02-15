@@ -321,7 +321,7 @@ local spells = {
     -- DRUID
     ---------------------------------------------------------------------------
 
-    -- Celestial Alignment / Incarnation (Balance — 15s in Midnight)
+    -- Celestial Alignment (Balance)
     {
         id       = 194223,
         cd       = 180,
@@ -331,7 +331,17 @@ local spells = {
         specs    = { [102] = true },
         category = "cooldowns",
     },
-    -- Berserk (Feral — 15s in Midnight)
+    -- Incarnation: Chosen of Elune (Balance — replaces Celestial Alignment, choice node with Convoke)
+    {
+        id       = 102560,
+        cd       = 180,
+        duration = 20,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = { [102] = true },
+        category = "cooldowns",
+    },
+    -- Berserk (Feral)
     {
         id       = 106951,
         cd       = 180,
@@ -339,6 +349,36 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [103] = true },
+        category = "cooldowns",
+    },
+    -- Incarnation: Avatar of Ashamane (Feral — replaces Berserk, choice node with Convoke)
+    {
+        id       = 102543,
+        cd       = 180,
+        duration = 20,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = { [103] = true },
+        category = "cooldowns",
+    },
+    -- Berserk (Guardian)
+    {
+        id       = 50334,
+        cd       = 180,
+        duration = 15,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = { [104] = true },
+        category = "cooldowns",
+    },
+    -- Incarnation: Guardian of Ursoc (Guardian — replaces Berserk, choice node with Convoke)
+    {
+        id       = 102558,
+        cd       = 180,
+        duration = 30,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = { [104] = true },
         category = "cooldowns",
     },
     -- Tranquility (Restoration)
@@ -361,14 +401,14 @@ local spells = {
         specs    = { [105] = true },
         category = "cooldowns",
     },
-    -- Convoke the Spirits (Restoration)
+    -- Convoke the Spirits (all specs — choice node with Incarnation)
     {
-        id       = 323764,
+        id       = 391528,
         cd       = 60,
         duration = 4,
         charges  = nil,
         class    = "DRUID",
-        specs    = { [105] = true },
+        specs    = nil,
         category = "cooldowns",
     },
     -- Ironbark (Restoration — external)

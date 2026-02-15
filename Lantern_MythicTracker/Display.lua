@@ -463,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Chen",       class = "MONK",    spec = 268 },  -- Brewmaster
-    { name = "Taran Zhu",  class = "MONK",    spec = 269 },  -- Windwalker
-    { name = "Mistweavr",  class = "MONK",    spec = 270 },  -- Mistweaver
-    { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
+    { name = "Elune",      class = "DRUID",   spec = 102 },  -- Balance
+    { name = "Broll",      class = "DRUID",   spec = 103 },  -- Feral
+    { name = "Ursoc",      class = "DRUID",   spec = 104 },  -- Guardian
+    { name = "Cenarius",   class = "DRUID",   spec = 105 },  -- Restoration
 };
 
 local _previewTimer = nil;
