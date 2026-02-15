@@ -745,6 +745,7 @@ function ST:EnableEngine()
     _eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
     _eventFrame:RegisterEvent("INSPECT_READY");
     _eventFrame:RegisterEvent("READY_CHECK");
+    _eventFrame:RegisterEvent("CHALLENGE_MODE_START");
     _eventFrame:RegisterEvent("ROLE_CHANGED_INFORM");
     _eventFrame:RegisterUnitEvent("UNIT_AURA", "player", "party1", "party2", "party3", "party4");
     _eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -801,6 +802,9 @@ function ST:EnableEngine()
         elseif (event == "READY_CHECK") then
             -- Re-inspect all party members on ready check (good time to refresh specs)
             _inspectedNames = {};
+            QueueInspects();
+        elseif (event == "CHALLENGE_MODE_START") then
+            -- Inspect any party members we haven't inspected yet
             QueueInspects();
         elseif (event == "INSPECT_READY") then
             if (_inspectInProgress and _inspectCurrentUnit) then

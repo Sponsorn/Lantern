@@ -596,6 +596,46 @@ local spells = {
         specs    = { [1468] = true },
         category = "cooldowns",
     },
+    -- Tip the Scales
+    {
+        id       = 370553,
+        cd       = 120,
+        duration = nil,
+        charges  = nil,
+        class    = "EVOKER",
+        specs    = nil,
+        category = "cooldowns",
+    },
+    -- Breath of Eons (Augmentation)
+    {
+        id       = 403631,
+        cd       = 120,
+        duration = 10,
+        charges  = nil,
+        class    = "EVOKER",
+        specs    = { [1473] = true },
+        category = "cooldowns",
+    },
+    -- Dream Flight (Preservation — choice node with Stasis)
+    {
+        id       = 359816,
+        cd       = 120,
+        duration = nil,
+        charges  = nil,
+        class    = "EVOKER",
+        specs    = { [1468] = true },
+        category = "cooldowns",
+    },
+    -- Stasis (Preservation — choice node with Dream Flight)
+    {
+        id       = 370537,
+        cd       = 90,
+        duration = nil,
+        charges  = nil,
+        class    = "EVOKER",
+        specs    = { [1468] = true },
+        category = "cooldowns",
+    },
 };
 
 ST:RegisterSpells(spells);

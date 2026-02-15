@@ -292,6 +292,16 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- EVOKER: Zephyr (group AoE damage reduction)
+    {
+        id       = 374227,
+        cd       = 120,
+        duration = 8,
+        charges  = nil,
+        class    = "EVOKER",
+        specs    = nil,
+        category = "defensive",
+    },
 };
 
 ST:RegisterSpells(spells);

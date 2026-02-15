@@ -463,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Korvas",     class = "DEMONHUNTER",  spec = 577 },  -- Havoc
-    { name = "Brightwing", class = "DRUID",         spec = 105 },  -- Restoration
-    { name = "Drakthul",   class = "DEATHKNIGHT",   spec = 250 },  -- Blood
-    { name = "Zulara",     class = "SHAMAN",        spec = 264 },  -- Restoration
+    { name = "Emberthal",  class = "EVOKER",  spec = 1467 },  -- Devastation
+    { name = "Azurathel",  class = "EVOKER",  spec = 1468 },  -- Preservation
+    { name = "Nozdormu",   class = "EVOKER",  spec = 1473 },  -- Augmentation
+    { name = "Zulara",     class = "SHAMAN",  spec = 264 },   -- Restoration
 };
 
 local _previewTimer = nil;
