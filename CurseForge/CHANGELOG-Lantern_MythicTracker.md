@@ -1,15 +1,29 @@
 # Changelog
 
-## 0.2.1
+## 0.3.0 - 2026-02-15
+- Add: Class-colored bar backgrounds with state-dependent brightness (ready, cooldown, active)
+- Add: Border glow on active spell icons (replaces yellow overlay)
+- Add: Preview mode now uses real Edit Mode party frames for attached layout
+- Add: `/lmt preview` opens the options panel automatically
+- Add: Addon sync broadcasts cooldown info when you use your interrupt
+- Add: Re-inspect party members when they change spec
+- Add: Re-evaluate tracker exclusions when party roles change
+- Add: Staggered inspect attempts for queued dungeons (2s, 5s, 10s after zone-in)
+- Add: Inspect retries (up to 3 attempts) when spec data is unavailable
+- Add: Edit Mode hint text in options for attached layout preview
+- Fix: Spec-restricted spells no longer show before inspect completes
+- Fix: Warlock interrupts now correctly filter by spec (Spell Lock vs Axe Toss)
+- Fix: Pet spell detection for Warlock Felhunter and similar pet casters
+- Fix: Frame mover bounce-back when dragging (ApplyDocking no longer interrupts drags)
+- Fix: Secret value errors in self-cooldown tracking
+- Fix: Memory leak from closures created on every roster or nameplate update
+- Fix: Options panel repositioned to avoid overlapping Edit Mode HUD
+- Fix: Inspect cleanup with ClearInspectPlayer() after each scan
 - Change: Split display code into separate files for bars, icons, and attached mode
-- Change: Bar height slider now resizes bars live without flicker
+- Change: Bar height slider resizes bars live without frame rebuild
 - Change: Options panel preserves scroll position when settings change
-- Change: Improved inspect reliability with timeout for unresponsive players
-- Chore: Extract shared display helpers (title bar, spell icons, position persistence)
-- Chore: Split inspect processing into smaller functions
-- Chore: Extract interrupt correlation timing constants
-- Chore: Clean up nameplate frames on tracker disable
-- Chore: Remove unused category metadata
+- Chore: All frames named for /fstack debugging
+- Chore: Added credits for ShimmerTracker and MythicInterruptTracker
 
 ## 0.2.0 - 2026-02-14
 - Add: Attach spell icons to Blizzard party frames (per-player icon mode, like OmniCD)
