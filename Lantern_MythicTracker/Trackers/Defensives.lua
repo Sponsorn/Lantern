@@ -235,6 +235,16 @@ local spells = {
         category = "defensive",
     },
 
+    -- HUNTER: Survival of the Fittest (Lone Wolf — no pet version)
+    {
+        id       = 281195,
+        cd       = 180,
+        duration = 6,
+        charges  = nil,
+        class    = "HUNTER",
+        specs    = nil,
+        category = "defensive",
+    },
     -- HUNTER: Aspect of the Turtle
     {
         id       = 186265,

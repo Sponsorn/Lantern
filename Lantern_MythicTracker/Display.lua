@@ -463,9 +463,9 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Jaina",      class = "MAGE",    spec = 62 },   -- Arcane
-    { name = "Khadgar",    class = "MAGE",    spec = 63 },   -- Fire
-    { name = "Thalyssra",  class = "MAGE",    spec = 64 },   -- Frost
+    { name = "Rexxar",     class = "HUNTER",  spec = 253 },  -- Beast Mastery
+    { name = "Sylvanas",   class = "HUNTER",  spec = 254 },  -- Marksmanship
+    { name = "Halduron",   class = "HUNTER",  spec = 255 },  -- Survival
     { name = "Zulara",     class = "SHAMAN",  spec = 264 },  -- Restoration
 };
 
