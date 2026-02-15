@@ -463,9 +463,9 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Rexxar",     class = "HUNTER",  spec = 253 },  -- Beast Mastery
-    { name = "Sylvanas",   class = "HUNTER",  spec = 254 },  -- Marksmanship
-    { name = "Halduron",   class = "HUNTER",  spec = 255 },  -- Survival
+    { name = "Garona",     class = "ROGUE",   spec = 259 },  -- Assassination
+    { name = "Mathias",    class = "ROGUE",   spec = 260 },  -- Outlaw
+    { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
     { name = "Zulara",     class = "SHAMAN",  spec = 264 },  -- Restoration
 };
 

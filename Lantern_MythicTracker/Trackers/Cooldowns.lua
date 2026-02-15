@@ -181,24 +181,24 @@ local spells = {
     -- ROGUE
     ---------------------------------------------------------------------------
 
-    -- Adrenaline Rush (Outlaw — 15s duration in Midnight)
+    -- Adrenaline Rush (Outlaw)
     {
         id       = 13750,
         cd       = 180,
-        duration = 15,
+        duration = 19,
         charges  = nil,
         class    = "ROGUE",
         specs    = { [260] = true },
         category = "cooldowns",
     },
-    -- Shadow Blades (all specs in Midnight — 90s/16s)
+    -- Shadow Blades (Subtlety)
     {
         id       = 121471,
         cd       = 90,
         duration = 16,
         charges  = nil,
         class    = "ROGUE",
-        specs    = nil,
+        specs    = { [261] = true },
         category = "cooldowns",
     },
     -- Deathmark (Assassination)
