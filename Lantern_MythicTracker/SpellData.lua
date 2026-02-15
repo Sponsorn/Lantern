@@ -39,7 +39,8 @@ function ST:GetSpellsForClassAndCategory(class, spec, categoryKey)
     local result = {};
     for id, spell in pairs(self.spellDB) do
         if (spell.category == categoryKey and spell.class == class) then
-            if (not spell.specs or not spec or spell.specs[spec]) then
+            -- If spell has spec restrictions, only include when spec is known and matches
+            if (not spell.specs or (spec and spell.specs[spec])) then
                 result[id] = spell;
             end
         end

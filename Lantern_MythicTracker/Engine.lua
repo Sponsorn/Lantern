@@ -66,6 +66,8 @@ local _inspectPending = {};
 local _inspectInProgress = false;
 local _inspectCurrentUnit = nil;
 local _inspectedNames = {};
+local _inspectRetries = {};    -- name -> retry count
+local MAX_INSPECT_RETRIES = 3;
 
 -------------------------------------------------------------------------------
 -- CD Resolution
@@ -323,6 +325,9 @@ local function PruneTrackedPlayers()
     for name in pairs(_inspectedNames) do
         if (not active[name]) then _inspectedNames[name] = nil; end
     end
+    for name in pairs(_inspectRetries) do
+        if (not active[name]) then _inspectRetries[name] = nil; end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -343,33 +348,36 @@ local function UpdateSelfCooldowns()
     local now = GetTime();
     for spellID, spellState in pairs(player.spells) do
         if (IsSpellKnown(spellID) or IsPlayerSpell(spellID)) then
-            local ok, dur, start = pcall(function()
-                local cdInfo = C_Spell.GetSpellCooldown(spellID);
-                if (cdInfo) then return cdInfo.duration, cdInfo.startTime; end
-            end);
-            if (ok and dur and dur > 1.5) then
-                local cdEnd = start + dur;
-                spellState.cdEnd = cdEnd;
-                if (spellState.state == "ready" and cdEnd > now) then
-                    local spellData = ST.spellDB[spellID];
-                    if (spellData and spellData.duration and spellState.activeEnd > now) then
-                        spellState.state = "active";
-                    else
-                        spellState.state = "cooldown";
+            local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, spellID);
+            if (ok and cdInfo) then
+                local dur = Unwrap(cdInfo.duration);
+                local start = Unwrap(cdInfo.startTime);
+                if (dur and start and dur > 1.5) then
+                    local cdEnd = start + dur;
+                    spellState.cdEnd = cdEnd;
+                    if (spellState.state == "ready" and cdEnd > now) then
+                        local spellData = ST.spellDB[spellID];
+                        if (spellData and spellData.duration and spellState.activeEnd > now) then
+                            spellState.state = "active";
+                        else
+                            spellState.state = "cooldown";
+                        end
                     end
                 end
             end
 
             -- Check charges
-            local ok2, curCharges, maxCharges, cdStart, cdDur = pcall(function()
-                local ci = C_Spell.GetSpellCharges(spellID);
-                if (ci) then return ci.currentCharges, ci.maxCharges, ci.cooldownStartTime, ci.cooldownDuration; end
-            end);
-            if (ok2 and maxCharges and maxCharges > 1) then
-                spellState.charges = curCharges;
-                spellState.maxCharges = maxCharges;
-                if (cdDur > 0) then
-                    spellState.cdEnd = cdStart + cdDur;
+            local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
+            if (ok2 and chargeInfo) then
+                local maxCh = Unwrap(chargeInfo.maxCharges);
+                if (maxCh and maxCh > 1) then
+                    spellState.charges = Unwrap(chargeInfo.currentCharges) or spellState.charges;
+                    spellState.maxCharges = maxCh;
+                    local cdDur = Unwrap(chargeInfo.cooldownDuration);
+                    local cdStart = Unwrap(chargeInfo.cooldownStartTime);
+                    if (cdDur and cdStart and cdDur > 0) then
+                        spellState.cdEnd = cdStart + cdDur;
+                    end
                 end
             end
         end
@@ -622,11 +630,27 @@ local function ApplyInspectResults(unit)
     if (specID and specID > 0) then
         player.spec = specID;
         ApplySpecOverrides(player, name, specID);
+        ScanTalentModifiers(player);
+        ClearInspectPlayer();
+        _inspectedNames[name] = true;
+        _inspectRetries[name] = nil;
+    else
+        -- Spec not available yet — retry if under limit
+        ClearInspectPlayer();
+        local retries = (_inspectRetries[name] or 0) + 1;
+        _inspectRetries[name] = retries;
+        if (retries < MAX_INSPECT_RETRIES) then
+            C_Timer.After(1, function()
+                if (not _inspectedNames[name]) then
+                    table.insert(_inspectPending, unit);
+                    ProcessNextInspect();
+                end
+            end);
+        else
+            -- Give up, mark as inspected to stop retrying
+            _inspectedNames[name] = true;
+        end
     end
-
-    ScanTalentModifiers(player);
-    ClearInspectPlayer();
-    _inspectedNames[name] = true;
 end
 
 local function ProcessNextInspect()
@@ -644,6 +668,15 @@ local function ProcessNextInspect()
                     if (_inspectInProgress and _inspectCurrentUnit == unit) then
                         _inspectInProgress = false;
                         _inspectCurrentUnit = nil;
+                        -- Re-queue for retry if under limit
+                        local n = UnitName(unit);
+                        if (n and not _inspectedNames[n]) then
+                            local retries = (_inspectRetries[n] or 0) + 1;
+                            _inspectRetries[n] = retries;
+                            if (retries < MAX_INSPECT_RETRIES) then
+                                table.insert(_inspectPending, unit);
+                            end
+                        end
                         ProcessNextInspect();
                     end
                 end);
@@ -660,7 +693,11 @@ local function QueueInspects()
         if (UnitExists(u)) then
             local name = UnitName(u);
             if (name and not _inspectedNames[name]) then
-                table.insert(_inspectPending, u);
+                -- Skip players whose spec is already known
+                local player = ST.trackedPlayers[name];
+                if (not player or not player.spec) then
+                    table.insert(_inspectPending, u);
+                end
             end
         end
     end
@@ -683,6 +720,7 @@ function ST:EnableEngine()
     -- Register party change events
     _eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
     _eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
+    _eventFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
     _eventFrame:RegisterEvent("UNIT_PET");
     _eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN");
     _eventFrame:RegisterEvent("SPELLS_CHANGED");
@@ -697,11 +735,14 @@ function ST:EnableEngine()
             RegisterPartyByClass();
             RefreshPartyWatchers();
             QueueInspects();
-        elseif (event == "PLAYER_ENTERING_WORLD") then
+        elseif (event == "PLAYER_ENTERING_WORLD" or event == "LOADING_SCREEN_DISABLED") then
             PruneTrackedPlayers();
             RegisterPartyByClass();
             RefreshPartyWatchers();
-            C_Timer.After(2, QueueInspects);
+            -- Staggered inspect attempts — party members may still be loading
+            C_Timer.After(2, function() RegisterPartyByClass(); QueueInspects(); end);
+            C_Timer.After(5, function() RegisterPartyByClass(); QueueInspects(); end);
+            C_Timer.After(10, function() RegisterPartyByClass(); QueueInspects(); end);
         elseif (event == "UNIT_PET") then
             RefreshPartyWatchers();
         elseif (event == "SPELL_UPDATE_COOLDOWN") then
@@ -811,6 +852,7 @@ function ST:DisableEngine()
     _inspectInProgress = false;
     _inspectCurrentUnit = nil;
     _inspectedNames = {};
+    _inspectRetries = {};
 
     -- Hide all display frames (Display.lua)
     if (ST.HideAllDisplays) then
