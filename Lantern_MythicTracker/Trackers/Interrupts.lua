@@ -130,54 +130,45 @@ ST:RegisterSpells({
         specs    = nil,
         category = "interrupts",
     },
-    -- Shaman: Wind Shear
+    -- Shaman: Wind Shear (12s base, 30s for Resto)
     {
         id       = 57994,
         cd       = 12,
+        cdBySpec = { [264] = 30 },
         duration = nil,
         charges  = nil,
         class    = "SHAMAN",
         specs    = nil,
         category = "interrupts",
     },
-    -- Warlock: Spell Lock (Felhunter)
+    -- Warlock: Spell Lock (Felhunter — Affliction / Destruction)
     {
         id       = 19647,
         cd       = 24,
         duration = nil,
         charges  = nil,
         class    = "WARLOCK",
-        specs    = nil,
+        specs    = { [265] = true, [267] = true },
         category = "interrupts",
     },
-    -- Warlock: Spell Lock (Felhunter alt ID)
+    -- Warlock: Spell Lock (Felhunter alt ID — Affliction / Destruction)
     {
         id       = 132409,
         cd       = 24,
         duration = nil,
         charges  = nil,
         class    = "WARLOCK",
-        specs    = nil,
+        specs    = { [265] = true, [267] = true },
         category = "interrupts",
     },
-    -- Warlock: Axe Toss (Felguard)
+    -- Warlock: Axe Toss (Felguard — Demonology)
     {
         id       = 119914,
         cd       = 30,
         duration = nil,
         charges  = nil,
         class    = "WARLOCK",
-        specs    = nil,
-        category = "interrupts",
-    },
-    -- Warlock: Fel Ravager (Felguard ability)
-    {
-        id       = 1276467,
-        cd       = 25,
-        duration = nil,
-        charges  = nil,
-        class    = "WARLOCK",
-        specs    = nil,
+        specs    = { [266] = true },
         category = "interrupts",
     },
     -- Warrior: Pummel
@@ -208,7 +199,7 @@ ST:RegisterTalentModifiers({
 -------------------------------------------------------------------------------
 
 ST:RegisterSpellAliases({
-    [1276467] = 132409,  -- Fel Ravager -> Spell Lock (Felhunter alt ID)
+    [1276467] = 119914,  -- Fel Ravager -> Axe Toss (both Felguard abilities)
 });
 
 -------------------------------------------------------------------------------
@@ -235,13 +226,6 @@ ST.interruptConfig = {
     -- Talents that reduce cooldown only on a successful interrupt
     kickBonuses = {
         [378848] = { reduction = 3 },  -- Coldthirst (DK)
-    },
-
-    -- Spec-specific interrupt overrides (specID -> override)
-    specOverrides = {
-        [255] = { spellID = 187707, cd = 15 },                -- Survival Hunter: Muzzle
-        [264] = { spellID = 57994,  cd = 30 },                -- Resto Shaman: Wind Shear at 30s
-        [266] = { spellID = 119914, cd = 30, isPet = true },  -- Demo Warlock: Axe Toss (pet)
     },
 };
 

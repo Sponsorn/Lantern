@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+- Change: Split display code into separate files for bars, icons, and attached mode
+- Change: Bar height slider now resizes bars live without flicker
+- Change: Options panel preserves scroll position when settings change
+- Change: Improved inspect reliability with timeout for unresponsive players
+- Chore: Extract shared display helpers (title bar, spell icons, position persistence)
+- Chore: Split inspect processing into smaller functions
+- Chore: Extract interrupt correlation timing constants
+- Chore: Clean up nameplate frames on tracker disable
+- Chore: Remove unused category metadata
+
 ## 0.2.0 - 2026-02-14
 - Add: Attach spell icons to Blizzard party frames (per-player icon mode, like OmniCD)
 - Add: Anchor direction (Right, Left, Bottom) with X/Y offset sliders
