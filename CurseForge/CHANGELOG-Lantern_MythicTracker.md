@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.4.0 - 2026-02-15
+- Add: Per-spell enable/disable toggles in the new "Spells" tab (uncheck individual spells to hide them)
+- Add: Tab bar in options panel to switch between Settings and Spells views
+- Add: Spell IDs shown next to spell names in the Spells tab
+- Add: Passive cheat death detection via debuff aura tracking (Purgatory)
+- Add: Inspect party on M+ dungeon start (CHALLENGE_MODE_START) for uninspected players
+- Add: Comprehensive spell database expansion for all 13 classes:
+  - Death Knight: Anti-Magic Zone, Lichborne, Death Pact, Vampiric Blood, Dancing Rune Weapon, Tombstone, Purgatory, Empower Rune Weapon, Abomination Limb, Gorefiend's Grasp
+  - Demon Hunter: Darkness, The Hunt (Havoc/Devourer variants)
+  - Druid: Berserk (Guardian), Incarnation variants for Balance/Feral/Guardian, Convoke the Spirits (all specs)
+  - Evoker: Zephyr, Tip the Scales, Breath of Eons, Dream Flight, Stasis
+  - Hunter: Survival of the Fittest (Lone Wolf)
+  - Mage: Greater Invisibility
+  - Monk: Dampen Harm, Touch of Death, Invoke Niuzao, Invoke Chi-Ji
+  - Paladin: Guardian of Ancient Kings, Blessing of Protection, Lay on Hands, Blessing of Sacrifice
+  - Priest: Desperate Prayer, Vampiric Embrace, Symbol of Hope
+  - Shaman: Earth Elemental
+  - Warrior: Rallying Cry, Last Stand, Avatar, Thunderous Roar, Ravager, Champion's Spear
+- Fix: Preview mode now correctly resolves spec-specific cooldowns (cdBySpec)
+- Fix: Mistweaver Monk excluded from interrupt tracking (no Spear Hand Strike)
+- Fix: Convoke the Spirits spell ID updated to talent version (391528)
+- Fix: Doom Winds spell ID updated (384352) and duration corrected
+- Fix: Counterspell base CD corrected to 25s
+- Fix: Ice Block base CD corrected to 240s (4 min)
+- Fix: Silence base CD updated to 30s for Midnight
+- Fix: Dispersion base CD updated to 90s for Midnight
+- Fix: Adrenaline Rush duration corrected to 19s
+- Fix: Shadow Blades restricted to Subtlety only
+- Fix: Invoke Xuen CD corrected to 96s (Conduit of Celestials)
+- Fix: Ultimate Penitence duration corrected to 4.3s
+
 ## 0.3.0 - 2026-02-15
 - Add: Class-colored bar backgrounds with state-dependent brightness (ready, cooldown, active)
 - Add: Border glow on active spell icons (replaces yellow overlay)

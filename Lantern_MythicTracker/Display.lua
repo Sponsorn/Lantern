@@ -463,10 +463,10 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Elune",      class = "DRUID",   spec = 102 },  -- Balance
-    { name = "Broll",      class = "DRUID",   spec = 103 },  -- Feral
-    { name = "Ursoc",      class = "DRUID",   spec = 104 },  -- Guardian
-    { name = "Cenarius",   class = "DRUID",   spec = 105 },  -- Restoration
+    { name = "Anduin",     class = "PRIEST",  spec = 256 },  -- Discipline
+    { name = "Velen",      class = "PRIEST",  spec = 257 },  -- Holy
+    { name = "Natalie",    class = "PRIEST",  spec = 258 },  -- Shadow
+    { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
 };
 
 local _previewTimer = nil;

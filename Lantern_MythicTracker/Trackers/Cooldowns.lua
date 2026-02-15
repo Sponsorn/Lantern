@@ -616,6 +616,16 @@ local spells = {
         specs    = { [257] = true },
         category = "cooldowns",
     },
+    -- Symbol of Hope (Holy — party CD recovery + mana)
+    {
+        id       = 64901,
+        cd       = 180,
+        duration = 4,
+        charges  = nil,
+        class    = "PRIEST",
+        specs    = { [257] = true },
+        category = "cooldowns",
+    },
     -- Rapture (Discipline)
     {
         id       = 47536,
@@ -650,7 +660,7 @@ local spells = {
     {
         id       = 421453,
         cd       = 240,
-        duration = 6,
+        duration = 4.3,
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },

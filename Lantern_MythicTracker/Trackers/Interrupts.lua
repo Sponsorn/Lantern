@@ -113,7 +113,7 @@ ST:RegisterSpells({
     -- Priest: Silence (Shadow only)
     {
         id       = 15487,
-        cd       = 45,
+        cd       = 30,
         duration = nil,
         charges  = nil,
         class    = "PRIEST",

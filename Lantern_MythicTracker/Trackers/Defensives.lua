@@ -332,8 +332,28 @@ local spells = {
     -- PRIEST: Dispersion (Shadow)
     {
         id       = 47585,
-        cd       = 120,
+        cd       = 90,
         duration = 6,
+        charges  = nil,
+        class    = "PRIEST",
+        specs    = { [258] = true },
+        category = "defensive",
+    },
+    -- PRIEST: Desperate Prayer (all specs — +25% max HP self-heal)
+    {
+        id       = 19236,
+        cd       = 90,
+        duration = 10,
+        charges  = nil,
+        class    = "PRIEST",
+        specs    = nil,
+        category = "defensive",
+    },
+    -- PRIEST: Vampiric Embrace (Shadow — group sustain heal)
+    {
+        id       = 15286,
+        cd       = 120,
+        duration = 12,
         charges  = nil,
         class    = "PRIEST",
         specs    = { [258] = true },
