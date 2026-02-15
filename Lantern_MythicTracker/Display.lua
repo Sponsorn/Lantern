@@ -463,9 +463,9 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Nobundo",    class = "SHAMAN",  spec = 262 },  -- Elemental
-    { name = "Rehgar",     class = "SHAMAN",  spec = 263 },  -- Enhancement
-    { name = "Zulara",     class = "SHAMAN",  spec = 264 },  -- Restoration
+    { name = "Chen",       class = "MONK",    spec = 268 },  -- Brewmaster
+    { name = "Taran Zhu",  class = "MONK",    spec = 269 },  -- Windwalker
+    { name = "Mistweavr",  class = "MONK",    spec = 270 },  -- Mistweaver
     { name = "Valeera",    class = "ROGUE",   spec = 261 },  -- Subtlety
 };
 

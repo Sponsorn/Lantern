@@ -216,6 +216,7 @@ ST.interruptConfig = {
         [257] = true,  -- Holy Priest
         [105] = true,  -- Restoration Druid
         [65]  = true,  -- Holy Paladin
+        [270] = true,  -- Mistweaver Monk
     },
 
     -- Healer specs that keep their interrupt

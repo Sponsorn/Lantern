@@ -386,6 +386,26 @@ local spells = {
     -- MONK
     ---------------------------------------------------------------------------
 
+    -- Touch of Death (all specs)
+    {
+        id       = 322109,
+        cd       = 180,
+        duration = nil,
+        charges  = nil,
+        class    = "MONK",
+        specs    = nil,
+        category = "cooldowns",
+    },
+    -- Invoke Niuzao, the Black Ox (Brewmaster)
+    {
+        id       = 132578,
+        cd       = 120,
+        duration = 25,
+        charges  = nil,
+        class    = "MONK",
+        specs    = { [268] = true },
+        category = "cooldowns",
+    },
     -- Zenith (Windwalker — replaces Storm, Earth, and Fire in Midnight)
     {
         id       = 1249625,
@@ -396,10 +416,10 @@ local spells = {
         specs    = { [269] = true },
         category = "cooldowns",
     },
-    -- Invoke Xuen, the White Tiger (Windwalker)
+    -- Invoke Xuen, the White Tiger (Windwalker — Conduit of the Celestials hero talent)
     {
         id       = 123904,
-        cd       = 120,
+        cd       = 96,
         duration = 20,
         charges  = nil,
         class    = "MONK",
@@ -429,6 +449,16 @@ local spells = {
     -- Invoke Yu'lon, the Jade Serpent (Mistweaver)
     {
         id       = 322118,
+        cd       = 120,
+        duration = 25,
+        charges  = nil,
+        class    = "MONK",
+        specs    = { [270] = true },
+        category = "cooldowns",
+    },
+    -- Invoke Chi-Ji, the Red Crane (Mistweaver — choice node with Yu'lon)
+    {
+        id       = 325197,
         cd       = 120,
         duration = 25,
         charges  = nil,

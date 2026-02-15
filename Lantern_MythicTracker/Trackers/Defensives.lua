@@ -287,6 +287,16 @@ local spells = {
         specs    = nil,
         category = "defensive",
     },
+    -- MONK: Dampen Harm (20-50% DR based on hit size)
+    {
+        id       = 122278,
+        cd       = 120,
+        duration = 10,
+        charges  = nil,
+        class    = "MONK",
+        specs    = nil,
+        category = "defensive",
+    },
 
     -- DEMONHUNTER: Blur (Havoc / Devourer)
     {
