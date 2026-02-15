@@ -16,6 +16,12 @@ ST._BAR_POOL_SIZE           = 20;  -- max rows per category (5 players * up to 4
 ST._ICON_POOL_SIZE          = 40;  -- max spell icons across all players
 ST._ATTACHED_ICON_POOL_SIZE = 8;   -- max icons per player per category in attached mode
 
+local _frameID = 0;
+function ST._FrameName(tag)
+    _frameID = _frameID + 1;
+    return "LMT_" .. tag .. "_" .. _frameID;
+end
+
 -------------------------------------------------------------------------------
 -- Display frame storage
 -------------------------------------------------------------------------------
@@ -203,7 +209,7 @@ end
 -------------------------------------------------------------------------------
 
 function ST._CreateSpellIcon(parent, size)
-    local frame = CreateFrame("Frame", nil, parent);
+    local frame = CreateFrame("Frame", ST._FrameName("SpellIcon"), parent);
     frame:SetSize(size, size);
 
     local icon = frame:CreateTexture(nil, "ARTWORK");
@@ -212,7 +218,7 @@ function ST._CreateSpellIcon(parent, size)
     frame.icon = icon;
 
     -- Cooldown swipe overlay
-    local cd = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate");
+    local cd = CreateFrame("Cooldown", ST._FrameName("IconCooldown"), frame, "CooldownFrameTemplate");
     cd:SetAllPoints();
     cd:SetDrawEdge(false);
     cd:SetHideCountdownNumbers(true);
@@ -225,12 +231,13 @@ function ST._CreateSpellIcon(parent, size)
     text:SetShadowColor(0, 0, 0, 1);
     frame.text = text;
 
-    -- Glow border for active state
-    local glow = frame:CreateTexture(nil, "OVERLAY");
+    -- Border glow for active state
+    local glow = CreateFrame("Frame", ST._FrameName("IconGlow"), frame, "BackdropTemplate");
     glow:SetPoint("TOPLEFT", -2, 2);
     glow:SetPoint("BOTTOMRIGHT", 2, -2);
-    glow:SetTexture(ST._SOLID);
-    glow:SetVertexColor(0.9, 0.77, 0.1, 0.6);  -- amber accent
+    glow:SetFrameLevel(frame:GetFrameLevel() + 2);
+    glow:SetBackdrop({ edgeFile = ST._SOLID, edgeSize = 2 });
+    glow:SetBackdropBorderColor(0.9, 0.77, 0.1, 1);
     glow:Hide();
     frame.glow = glow;
 
@@ -242,7 +249,7 @@ function ST._CreateTitleBar(frame, categoryKey, catDB)
     local cat = ST:GetCategory(categoryKey);
     local label = cat and cat.label or categoryKey;
 
-    local title = CreateFrame("Frame", nil, frame);
+    local title = CreateFrame("Frame", ST._FrameName("TitleBar"), frame);
     title:SetHeight(18);
     title:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2);
     title:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 2);
@@ -527,7 +534,9 @@ function ST:ApplyDocking()
         else
             -- Not docked, restore independent position
             display.frame:SetMovable(true);
-            ST._RestorePosition(key);
+            if (not display.frame.IsMoving or not display.frame:IsMoving()) then
+                ST._RestorePosition(key);
+            end
         end
     end
 end

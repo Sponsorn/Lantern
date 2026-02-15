@@ -20,7 +20,7 @@ function ST._GetOrCreateAttachedContainer(categoryKey, unitToken, parentFrame)
     local iconSize = catDB.iconSize;
 
     -- Parent to UIParent to avoid secure frame taint
-    local container = CreateFrame("Frame", nil, UIParent);
+    local container = CreateFrame("Frame", ST._FrameName("AttachedContainer"), UIParent);
     container:SetSize(iconSize, iconSize);
     container:SetFrameStrata("MEDIUM");
     container:SetFrameLevel(parentFrame:GetFrameLevel() + 10);

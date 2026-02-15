@@ -47,7 +47,7 @@ function ST._BuildBarFrame(categoryKey)
             and ((i - 1) * (bh + 1))
             or (-((i - 1) * (bh + 1)));
 
-        local row = CreateFrame("Frame", nil, frame);
+        local row = CreateFrame("Frame", ST._FrameName("BarRow"), frame);
         row:SetSize(iconSize + barW, bh);
         if (catDB.growUp) then
             row:SetPoint("BOTTOMLEFT", 0, yOff);
@@ -68,7 +68,7 @@ function ST._BuildBarFrame(categoryKey)
         barBg:SetVertexColor(0.15, 0.15, 0.15, 1);
         row.barBg = barBg;
 
-        local sb = CreateFrame("StatusBar", nil, row);
+        local sb = CreateFrame("StatusBar", ST._FrameName("BarStatus"), row);
         sb:SetPoint("TOPLEFT", iconSize, 0);
         sb:SetPoint("BOTTOMRIGHT", 0, 0);
         sb:SetStatusBarTexture(ST._SOLID);
@@ -78,7 +78,7 @@ function ST._BuildBarFrame(categoryKey)
         sb:SetFrameLevel(row:GetFrameLevel() + 1);
         row.cdBar = sb;
 
-        local overlay = CreateFrame("Frame", nil, row);
+        local overlay = CreateFrame("Frame", ST._FrameName("BarOverlay"), row);
         overlay:SetPoint("TOPLEFT", iconSize, 0);
         overlay:SetPoint("BOTTOMRIGHT", 0, 0);
         overlay:SetFrameLevel(sb:GetFrameLevel() + 1);
@@ -145,27 +145,24 @@ function ST._RenderBarCategory(categoryKey)
             bar.nameText:SetText("|cFFFFFFFF" .. entry.name .. "|r");
 
             if (entry.state == "ready") then
-                -- Green bar, "READY"
                 bar.cdBar:SetMinMaxValues(0, 1);
                 bar.cdBar:SetValue(0);
-                bar.barBg:SetVertexColor(0.2, 0.8, 0.2, 1);
+                bar.barBg:SetVertexColor(cr * 0.4, cg * 0.4, cb * 0.4, 1);
                 bar.cdText:SetText("READY");
                 bar.cdText:SetTextColor(0.2, 1.0, 0.2);
             elseif (entry.state == "active") then
-                -- Accent amber bar, duration countdown
                 local spellData = ST.spellDB[entry.spellID];
                 local totalDur = spellData and spellData.duration or 1;
                 bar.cdBar:SetMinMaxValues(0, totalDur);
                 bar.cdBar:SetValue(entry.remaining);
-                bar.cdBar:SetStatusBarColor(0.9, 0.77, 0.1, 0.85);  -- amber accent
-                bar.barBg:SetVertexColor(0.22, 0.19, 0.03, 1);
+                bar.cdBar:SetStatusBarColor(0.9, 0.77, 0.1);
+                bar.barBg:SetVertexColor(cr * 0.25, cg * 0.25, cb * 0.25, 1);
                 bar.cdText:SetText(ST._FormatTime(entry.remaining));
                 bar.cdText:SetTextColor(1, 0.9, 0.3);
             elseif (entry.state == "cooldown") then
-                -- Class-colored bar, CD countdown
                 bar.cdBar:SetMinMaxValues(0, entry.baseCd);
                 bar.cdBar:SetValue(entry.remaining);
-                bar.cdBar:SetStatusBarColor(cr, cg, cb, 0.85);
+                bar.cdBar:SetStatusBarColor(cr, cg, cb);
                 bar.barBg:SetVertexColor(cr * 0.25, cg * 0.25, cb * 0.25, 1);
                 bar.cdText:SetText(ST._FormatTime(entry.remaining));
                 bar.cdText:SetTextColor(1, 1, 1);
