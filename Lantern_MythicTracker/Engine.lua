@@ -3,26 +3,48 @@ local ST = NS.SpellTracker;
 if (not ST) then return; end
 
 -------------------------------------------------------------------------------
--- Taint Laundering
+-- Secret Value Unwrapping
 --
--- Values from party member events and some C_Spell APIs arrive tainted.
--- A StatusBar's OnValueChanged callback receives a clean copy because
--- the widget passes through Blizzard's C++ layer, which strips taint.
+-- In Patch 12.0.0, Blizzard introduced "secret values" that restrict addon
+-- access to party member spell data (spellIDs, aura data, etc.) during
+-- combat and M+ keys. A StatusBar's OnValueChanged callback receives a
+-- clean copy because the C++ widget layer re-reads the value from internal
+-- storage and passes it to Lua, bypassing the secret wrapper.
+--
+-- This technique was discovered by the WoW addon community. Blizzard has
+-- stated they may close workarounds in future patches. If this stops
+-- working, party member tracking will degrade (player's own data is
+-- always clean and unaffected).
+--
 -- These frames MUST be created at file scope (clean load-time context).
 -------------------------------------------------------------------------------
 
-local _launderResult = nil;
-local _launderFrame = CreateFrame("StatusBar");
-_launderFrame:SetMinMaxValues(0, 9999999);
-_launderFrame:SetScript("OnValueChanged", function(_, val)
-    _launderResult = val;
+local _unwrapResult = nil;
+local _unwrapFrame = CreateFrame("StatusBar");
+_unwrapFrame:SetMinMaxValues(0, 9999999);
+_unwrapFrame:SetScript("OnValueChanged", function(_, val)
+    _unwrapResult = val;
 end);
 
-local function Launder(taintedNumber)
-    _launderResult = nil;
-    _launderFrame:SetValue(0);
-    pcall(_launderFrame.SetValue, _launderFrame, taintedNumber);
-    return _launderResult;
+local _unwrapWorks = true;
+
+local function Unwrap(secretValue)
+    if (not _unwrapWorks) then return secretValue; end
+    _unwrapResult = nil;
+    _unwrapFrame:SetValue(0);
+    pcall(_unwrapFrame.SetValue, _unwrapFrame, secretValue);
+    return _unwrapResult;
+end
+
+local function ValidateUnwrap()
+    local test = Unwrap(47528);
+    if (test ~= 47528) then
+        _unwrapWorks = false;
+        if (ST.Print) then
+            ST:Print("|cFFFF6600Warning:|r Secret value unwrapping is no longer working. "
+                .. "Party member tracking may be inaccurate.");
+        end
+    end
 end
 
 -- Pre-created watcher frames for party units (must be at file scope)
@@ -170,9 +192,15 @@ local function RecordSpellCast(unit, spellID, name)
     -- Handle charges
     if (spellState.maxCharges > 1) then
         spellState.charges = math.max(0, spellState.charges - 1);
-        if (spellState.charges == 0) then
-            spellState.state = "cooldown";
+        -- Start recharge timer if not already running
+        if (spellState.cdEnd <= now) then
             spellState.cdEnd = now + spellState.baseCd;
+        end
+        if (spellData.duration) then
+            spellState.state = "active";
+            spellState.activeEnd = now + spellData.duration;
+        elseif (spellState.charges == 0) then
+            spellState.state = "cooldown";
         end
     else
         -- Single charge: go to active or cooldown
@@ -187,7 +215,6 @@ local function RecordSpellCast(unit, spellID, name)
     end
 
     -- Record cast time for interrupt correlation (used by interrupt tracker hooks)
-    if (not ST._recentCasts) then ST._recentCasts = {}; end
     ST._recentCasts[name] = now;
 
     -- Call category hooks
@@ -201,7 +228,7 @@ end
 -- Refresh Party Watchers
 --
 -- Re-registers UNIT_SPELLCAST_SUCCEEDED on party and pet unit frames.
--- Launders the tainted spellID before matching against the spell database.
+-- Unwraps the secret spellID before matching against the spell database.
 -------------------------------------------------------------------------------
 
 local RefreshPartyWatchers;
@@ -217,14 +244,13 @@ RefreshPartyWatchers = function()
             _partyWatchers[i]:SetScript("OnEvent", function(_, _, _, _, taintedSpellID)
                 local cleanUnit = "party" .. i;
                 local name = UnitName(cleanUnit);
-                local cleanID = Launder(taintedSpellID);
+                local cleanID = Unwrap(taintedSpellID);
                 if (cleanID) then
                     local resolvedID = ST.spellAliases[cleanID] or cleanID;
                     if (ST.spellDB[resolvedID]) then
                         RecordSpellCast(cleanUnit, cleanID, name);
                     elseif (name) then
                         -- Track recent cast even if not a tracked spell (for interrupt correlation)
-                        if (not ST._recentCasts) then ST._recentCasts = {}; end
                         ST._recentCasts[name] = GetTime();
                     end
                 end
@@ -236,13 +262,12 @@ RefreshPartyWatchers = function()
                 _petWatchers[i]:SetScript("OnEvent", function(_, _, _, _, taintedSpellID)
                     local ownerUnit = "party" .. i;
                     local name = UnitName(ownerUnit);
-                    local cleanID = Launder(taintedSpellID);
+                    local cleanID = Unwrap(taintedSpellID);
                     if (cleanID) then
                         local resolvedID = ST.spellAliases[cleanID] or cleanID;
                         if (ST.spellDB[resolvedID]) then
                             RecordSpellCast(ownerUnit, cleanID, name);
                         elseif (name) then
-                            if (not ST._recentCasts) then ST._recentCasts = {}; end
                             ST._recentCasts[name] = GetTime();
                         end
                     end
@@ -298,8 +323,9 @@ end
 -- Self-Cooldown Tracking
 --
 -- Uses C_Spell.GetSpellCooldown for precise timing on the player's own
--- spells. Party members rely on estimated cooldowns from cast detection,
--- but the player's own data is accurate from the API.
+-- spells. Player data is exempt from secret values (Blizzard confirmed
+-- "the player's own spellcasts will no longer be secret, even in combat"),
+-- so no unwrapping is needed here.
 -------------------------------------------------------------------------------
 
 local function UpdateSelfCooldowns()
@@ -308,39 +334,30 @@ local function UpdateSelfCooldowns()
     local player = ST.trackedPlayers[name];
     if (not player) then return; end
 
+    local now = GetTime();
     for spellID, spellState in pairs(player.spells) do
         if (IsSpellKnown(spellID) or IsPlayerSpell(spellID)) then
             local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, spellID);
-            if (ok and cdInfo) then
-                -- Launder tainted C API return values through StatusBar
-                local duration  = Launder(cdInfo.duration);
-                local startTime = Launder(cdInfo.startTime);
-                if (duration and startTime and duration > 1.5) then
-                    local cdEnd = startTime + duration;
-                    spellState.cdEnd = cdEnd;
-                    if (spellState.state == "ready" and cdEnd > GetTime()) then
-                        local spellData = ST.spellDB[spellID];
-                        if (spellData and spellData.duration and spellState.activeEnd > GetTime()) then
-                            spellState.state = "active";
-                        else
-                            spellState.state = "cooldown";
-                        end
+            if (ok and cdInfo and cdInfo.duration > 1.5) then
+                local cdEnd = cdInfo.startTime + cdInfo.duration;
+                spellState.cdEnd = cdEnd;
+                if (spellState.state == "ready" and cdEnd > now) then
+                    local spellData = ST.spellDB[spellID];
+                    if (spellData and spellData.duration and spellState.activeEnd > now) then
+                        spellState.state = "active";
+                    else
+                        spellState.state = "cooldown";
                     end
                 end
             end
 
             -- Check charges
             local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
-            if (ok2 and chargeInfo) then
-                local maxCharges = Launder(chargeInfo.maxCharges);
-                if (maxCharges and maxCharges > 1) then
-                    spellState.charges = Launder(chargeInfo.currentCharges) or spellState.charges;
-                    spellState.maxCharges = maxCharges;
-                    local cdStart = Launder(chargeInfo.cooldownStartTime);
-                    local cdDur   = Launder(chargeInfo.cooldownDuration);
-                    if (cdStart and cdDur and cdDur > 0) then
-                        spellState.cdEnd = cdStart + cdDur;
-                    end
+            if (ok2 and chargeInfo and chargeInfo.maxCharges > 1) then
+                spellState.charges = chargeInfo.currentCharges;
+                spellState.maxCharges = chargeInfo.maxCharges;
+                if (chargeInfo.cooldownDuration > 0) then
+                    spellState.cdEnd = chargeInfo.cooldownStartTime + chargeInfo.cooldownDuration;
                 end
             end
         end
@@ -354,6 +371,10 @@ end
 -- Uses C_UnitAuras.GetPlayerAuraBySpellID for the player (fast path),
 -- and C_UnitAuras.GetAuraDataByIndex for party members (avoids
 -- AuraUtil.ForEachAura taint crash in Midnight).
+--
+-- Party member aura iteration uses a single pass: iterate auras once,
+-- unwrap each spellId, and look it up in the tracked set. This is
+-- O(auras) instead of O(spells * auras).
 -------------------------------------------------------------------------------
 
 local function CheckUnitBuffs(unit)
@@ -362,38 +383,56 @@ local function CheckUnitBuffs(unit)
     local player = ST.trackedPlayers[name];
     if (not player) then return; end
 
+    -- Collect spells that have durations (need buff checking)
+    local durationSpells;
     for spellID, spellState in pairs(player.spells) do
         local spellData = ST.spellDB[spellID];
         if (spellData and spellData.duration) then
-            -- Check if the buff is active on this unit
-            local aura = nil;
-            if (unit == "player") then
-                aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID);
-            else
-                -- Iterate auras directly to avoid AuraUtil.ForEachAura taint issues
-                for i = 1, 40 do
-                    local data = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL");
-                    if (not data) then break; end
-                    local cleanId = Launder(data.spellId);
-                    if (cleanId == spellID) then
-                        aura = data;
-                        break;
-                    end
-                end
-            end
+            if (not durationSpells) then durationSpells = {}; end
+            durationSpells[spellID] = true;
+        end
+    end
+    if (not durationSpells) then return; end
 
+    local now = GetTime();
+    local isPlayer = (unit == "player");
+
+    -- Build active aura lookup (spellID -> expirationTime)
+    local activeAuras = {};
+    if (isPlayer) then
+        -- Player aura queries are clean (no unwrapping needed)
+        for spellID in pairs(durationSpells) do
+            local aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID);
             if (aura) then
-                spellState.state = "active";
-                local expiry = Launder(aura.expirationTime);
-                if (expiry and expiry > 0) then
-                    spellState.activeEnd = expiry;
-                else
-                    spellState.activeEnd = GetTime() + spellData.duration;
-                end
-            elseif (spellState.state == "active" and GetTime() >= spellState.activeEnd) then
-                -- Buff faded, transition to cooldown (cdEnd already set from cast)
-                spellState.state = "cooldown";
+                activeAuras[spellID] = aura.expirationTime;
             end
+        end
+    else
+        -- Single pass over party member auras, unwrap once per aura
+        for i = 1, 40 do
+            local data = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL");
+            if (not data) then break; end
+            local cleanId = Unwrap(data.spellId);
+            if (cleanId and durationSpells[cleanId]) then
+                activeAuras[cleanId] = Unwrap(data.expirationTime);
+            end
+        end
+    end
+
+    -- Update spell states
+    for spellID in pairs(durationSpells) do
+        local spellState = player.spells[spellID];
+        local expiry = activeAuras[spellID];
+        if (expiry) then
+            spellState.state = "active";
+            if (expiry > 0) then
+                spellState.activeEnd = expiry;
+            else
+                spellState.activeEnd = now + ST.spellDB[spellID].duration;
+            end
+        elseif (spellState.state == "active" and now >= spellState.activeEnd) then
+            -- Buff faded, transition to cooldown (cdEnd already set from cast)
+            spellState.state = "cooldown";
         end
     end
 end
@@ -419,15 +458,28 @@ local function OnTick(_, elapsed)
     for _, player in pairs(ST.trackedPlayers) do
         for spellID, s in pairs(player.spells) do
             if (s.state == "active" and now >= s.activeEnd) then
-                s.state = "cooldown";
+                if (s.maxCharges > 1 and s.charges > 0) then
+                    s.state = "ready";
+                else
+                    s.state = "cooldown";
+                end
             end
             if (s.state == "cooldown" and now >= s.cdEnd) then
-                s.state = "ready";
-                s.cdEnd = 0;
-                s.activeEnd = 0;
-                local spellData = ST.spellDB[spellID];
-                if (spellData and spellData.charges) then
-                    s.charges = s.maxCharges;
+                if (s.maxCharges > 1) then
+                    s.charges = s.charges + 1;
+                    if (s.charges >= s.maxCharges) then
+                        s.state = "ready";
+                        s.cdEnd = 0;
+                        s.activeEnd = 0;
+                    else
+                        -- More charges to recharge
+                        s.state = "ready";
+                        s.cdEnd = now + s.baseCd;
+                    end
+                else
+                    s.state = "ready";
+                    s.cdEnd = 0;
+                    s.activeEnd = 0;
                 end
             end
         end
@@ -447,76 +499,61 @@ end
 -- Uses configID = -1 which is the inspected player's config ID.
 -------------------------------------------------------------------------------
 
-local function ApplyInspectResults(unit)
-    local name = UnitName(unit);
-    if (not name) then return; end
-
-    local player = ST.trackedPlayers[name];
-    if (not player) then
-        _inspectedNames[name] = true;
-        return;
-    end
-
-    local specID = GetInspectSpecialization(unit);
-    if (specID and specID > 0) then
-        player.spec = specID;
-
-        -- Let category hooks decide if this player should be excluded
-        for _, entry in ipairs(ST.categories) do
-            if (entry.config.enabled and entry.config.hooks and entry.config.hooks.shouldExclude) then
-                if (entry.config.hooks.shouldExclude(name, player.class, specID)) then
-                    -- Remove spells from this category only
-                    for spellID, spellState in pairs(player.spells) do
-                        if (spellState.category == entry.key) then
-                            player.spells[spellID] = nil;
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Re-evaluate which spells this player should have based on spec
-        for _, entry in ipairs(ST.categories) do
-            if (entry.config.enabled) then
-                local classSpells = ST:GetSpellsForClassAndCategory(player.class, specID, entry.key);
-                -- Remove spells that don't belong to this spec
+local function ApplySpecOverrides(player, name, specID)
+    -- Let category hooks decide if this player should be excluded
+    for _, entry in ipairs(ST.categories) do
+        if (entry.config.enabled and entry.config.hooks and entry.config.hooks.shouldExclude) then
+            if (entry.config.hooks.shouldExclude(name, player.class, specID)) then
+                -- Remove spells from this category only
                 for spellID, spellState in pairs(player.spells) do
-                    if (spellState.category == entry.key and not classSpells[spellID]) then
+                    if (spellState.category == entry.key) then
                         player.spells[spellID] = nil;
                     end
                 end
-                -- Add spec-specific spells
-                for spellID, spell in pairs(classSpells) do
-                    if (not player.spells[spellID]) then
-                        player.spells[spellID] = {
-                            category   = spell.category,
-                            state      = "ready",
-                            cdEnd      = 0,
-                            activeEnd  = 0,
-                            charges    = spell.charges or 1,
-                            maxCharges = spell.charges or 1,
-                            baseCd     = ResolveCd(spell, specID),
-                        };
-                    else
-                        -- Update baseCd now that we know the spec
-                        player.spells[spellID].baseCd = ResolveCd(spell, specID);
-                    end
-                end
             end
         end
     end
 
-    -- Scan talent tree for CD modifiers
+    -- Re-evaluate which spells this player should have based on spec
+    for _, entry in ipairs(ST.categories) do
+        if (entry.config.enabled) then
+            local classSpells = ST:GetSpellsForClassAndCategory(player.class, specID, entry.key);
+            -- Remove spells that don't belong to this spec
+            for spellID, spellState in pairs(player.spells) do
+                if (spellState.category == entry.key and not classSpells[spellID]) then
+                    player.spells[spellID] = nil;
+                end
+            end
+            -- Add spec-specific spells
+            for spellID, spell in pairs(classSpells) do
+                if (not player.spells[spellID]) then
+                    player.spells[spellID] = {
+                        category   = spell.category,
+                        state      = "ready",
+                        cdEnd      = 0,
+                        activeEnd  = 0,
+                        charges    = spell.charges or 1,
+                        maxCharges = spell.charges or 1,
+                        baseCd     = ResolveCd(spell, specID),
+                    };
+                else
+                    -- Update baseCd now that we know the spec
+                    player.spells[spellID].baseCd = ResolveCd(spell, specID);
+                end
+            end
+        end
+    end
+end
+
+local function ScanTalentModifiers(player)
     local configID = -1;
     local ok, configInfo = pcall(C_Traits.GetConfigInfo, configID);
     if (not ok or not configInfo or not configInfo.treeIDs or #configInfo.treeIDs == 0) then
-        _inspectedNames[name] = true;
         return;
     end
 
     local ok2, nodeIDs = pcall(C_Traits.GetTreeNodes, configInfo.treeIDs[1]);
     if (not ok2 or not nodeIDs) then
-        _inspectedNames[name] = true;
         return;
     end
 
@@ -557,7 +594,25 @@ local function ApplyInspectResults(unit)
             end
         end
     end
+end
 
+local function ApplyInspectResults(unit)
+    local name = UnitName(unit);
+    if (not name) then return; end
+
+    local player = ST.trackedPlayers[name];
+    if (not player) then
+        _inspectedNames[name] = true;
+        return;
+    end
+
+    local specID = GetInspectSpecialization(unit);
+    if (specID and specID > 0) then
+        player.spec = specID;
+        ApplySpecOverrides(player, name, specID);
+    end
+
+    ScanTalentModifiers(player);
     _inspectedNames[name] = true;
 end
 
@@ -571,6 +626,14 @@ local function ProcessNextInspect()
                 _inspectInProgress = true;
                 _inspectCurrentUnit = unit;
                 NotifyInspect(unit);
+                -- Timeout: if INSPECT_READY never fires, unblock after 5s
+                C_Timer.After(5, function()
+                    if (_inspectInProgress and _inspectCurrentUnit == unit) then
+                        _inspectInProgress = false;
+                        _inspectCurrentUnit = nil;
+                        ProcessNextInspect();
+                    end
+                end);
                 return;
             end
         end
@@ -601,8 +664,8 @@ end
 local _eventFrame = CreateFrame("Frame");
 
 function ST:EnableEngine()
-    -- Initialize recent casts table
-    ST._recentCasts = {};
+    -- Verify unwrapping still works (Blizzard may patch this in future)
+    ValidateUnwrap();
 
     -- Register party change events
     _eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
@@ -658,7 +721,7 @@ function ST:EnableEngine()
 
         if (unit == "pet") then
             -- Pet spells may be tainted
-            local cleanID = Launder(spellID);
+            local cleanID = Unwrap(spellID);
             local matchID = cleanID or spellID;
             local resolvedID = ST.spellAliases[matchID] or matchID;
             if (ST.spellDB[resolvedID]) then

@@ -232,7 +232,6 @@ ST:RegisterSpells(spells);
 
 ST:RegisterCategory("defensive", {
     label             = "Defensives",
-    spellsPerPlayer   = "all",
     trackBuffDuration = true,
     defaultLayout     = "icon",
     defaultFilter     = "all",

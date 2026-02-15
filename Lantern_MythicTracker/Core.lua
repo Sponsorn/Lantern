@@ -14,6 +14,7 @@ ST.categoryMap = {};      -- key -> config
 -- Tracked player data
 ST.trackedPlayers = {};   -- "Name-Realm" -> { class, spec, spells = { [spellID] = state } }
 ST.excludedPlayers = {};  -- "Name-Realm" -> true
+ST._recentCasts = {};     -- "Name" -> GetTime() of last cast (for interrupt correlation)
 
 -- Player info
 ST.playerClass = nil;

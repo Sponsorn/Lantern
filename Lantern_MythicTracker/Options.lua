@@ -244,6 +244,10 @@ local function BuildCategorySection(content, catKey, yOff)
     Track(CreateCheckbox(content, PADDING + 4, yOff, "Enable", catDB.enabled, function(val)
         catDB.enabled = val;
         cat.enabled = val;
+        if (cat.hooks) then
+            if (val and cat.hooks.onEnable) then cat.hooks.onEnable(); end
+            if (not val and cat.hooks.onDisable) then cat.hooks.onDisable(); end
+        end
         ST:RefreshDisplay();
     end));
     yOff = yOff - ROW_HEIGHT;
@@ -323,7 +327,8 @@ local function BuildCategorySection(content, catKey, yOff)
 
             Track(CreateSlider(content, PADDING + 4, yOff, "Bar Height", 16, 40, 1, catDB.barHeight, function(val)
                 catDB.barHeight = val;
-                DestroyAndRefresh();
+                ST:RefreshBarLayout(catKey);
+                ST:RefreshDisplay();
             end));
             yOff = yOff - 44;
 
@@ -372,6 +377,9 @@ local function BuildContent()
     if (not _optionsFrame) then return; end
     local content = _optionsFrame.content;
 
+    -- Save scroll position before rebuild
+    local scrollPos = _optionsFrame.scrollFrame and _optionsFrame.scrollFrame:GetVerticalScroll() or 0;
+
     DestroyContent();
 
     local yOff = -8;
@@ -398,10 +406,17 @@ local function BuildContent()
     end));
     yOff = yOff - ROW_HEIGHT - PADDING;
 
-    -- Resize frame to fit content
+    -- Resize content and cap frame height (scroll handles overflow)
     local contentHeight = math.abs(yOff);
     content:SetHeight(contentHeight);
-    _optionsFrame:SetHeight(30 + contentHeight + 4);
+    local maxFrameHeight = 600;
+    _optionsFrame:SetHeight(math.min(30 + contentHeight + 4, maxFrameHeight));
+
+    -- Restore scroll position (clamped to new content bounds)
+    if (_optionsFrame.scrollFrame) then
+        local maxScroll = math.max(0, contentHeight - _optionsFrame.scrollFrame:GetHeight());
+        _optionsFrame.scrollFrame:SetVerticalScroll(math.min(scrollPos, maxScroll));
+    end
 end
 
 local function CreateOptionsFrame()
@@ -461,12 +476,25 @@ local function CreateOptionsFrame()
     closeBtn:SetScript("OnLeave", function() closeText:SetTextColor(unpack(COLOR_MUTED)); end);
     closeBtn:SetScript("OnClick", function() frame:Hide(); end);
 
-    -- Content area (height managed by BuildContent)
-    local content = CreateFrame("Frame", nil, frame);
-    content:SetPoint("TOPLEFT", 0, -30);
-    content:SetPoint("TOPRIGHT", 0, -30);
-    content:SetHeight(600);
+    -- Scrollable content area
+    local scrollFrame = CreateFrame("ScrollFrame", nil, frame);
+    scrollFrame:SetPoint("TOPLEFT", 0, -30);
+    scrollFrame:SetPoint("BOTTOMRIGHT", 0, 0);
+    scrollFrame:EnableMouseWheel(true);
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local current = self:GetVerticalScroll();
+        local child = self:GetScrollChild();
+        if (not child) then return; end
+        local maxScroll = math.max(0, child:GetHeight() - self:GetHeight());
+        local newScroll = math.max(0, math.min(current - (delta * 30), maxScroll));
+        self:SetVerticalScroll(newScroll);
+    end);
+
+    local content = CreateFrame("Frame", nil, scrollFrame);
+    content:SetSize(FRAME_WIDTH, 1);
+    scrollFrame:SetScrollChild(content);
     frame.content = content;
+    frame.scrollFrame = scrollFrame;
 
     -- Rebuild content every time the frame is shown
     frame:SetScript("OnShow", function()

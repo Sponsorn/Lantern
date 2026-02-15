@@ -249,8 +249,11 @@ ST.interruptConfig = {
 -- Mob Interrupt Correlation
 --
 -- When an enemy's cast is interrupted, we correlate it with the most
--- recent party member cast (within a 0.5s window) to attribute the kick.
+-- recent party member cast (within a short window) to attribute the kick.
 -------------------------------------------------------------------------------
+
+local CORRELATE_WINDOW = 0.5;   -- max seconds between cast and interrupt to attribute
+local RECENT_CAST_TTL  = 1.0;   -- seconds before a recent cast entry expires
 
 local function CorrelateInterrupt(unit)
     if (not ST._recentCasts) then return; end
@@ -259,7 +262,7 @@ local function CorrelateInterrupt(unit)
 
     for name, ts in pairs(ST._recentCasts) do
         local delta = now - ts;
-        if (delta > 1.0) then
+        if (delta > RECENT_CAST_TTL) then
             ST._recentCasts[name] = nil;
         elseif (delta < closestDelta) then
             closestDelta = delta;
@@ -267,7 +270,7 @@ local function CorrelateInterrupt(unit)
         end
     end
 
-    if (not closest or closestDelta >= 0.5) then return; end
+    if (not closest or closestDelta >= CORRELATE_WINDOW) then return; end
 
     local player = ST.trackedPlayers[closest];
     if (player) then
@@ -345,7 +348,7 @@ local function BroadcastJoin()
     SendMessage("J:" .. ST.playerClass .. ":" .. kickID .. ":" .. (kickCd or 15));
 end
 
-local function HandleAddonMessage(event, prefix, message, channel, sender)
+local function HandleAddonMessage(_, event, prefix, message, channel, sender)
     if (prefix ~= COMM_PREFIX) then return; end
     local shortName = Ambiguate(sender, "short");
     if (shortName == ST.playerName) then return; end
@@ -382,11 +385,18 @@ local interruptConfig = ST.interruptConfig;
 
 ST:RegisterCategory("interrupts", {
     label             = "Interrupts",
-    spellsPerPlayer   = 1,
     trackBuffDuration = false,
     defaultLayout     = "bar",
     defaultFilter     = "all",
     hooks = {
+        -- Lifecycle hooks for enabling/disabling the interrupt tracker
+        onEnable = function()
+            if (ST.EnableInterruptTracker) then ST:EnableInterruptTracker(); end
+        end,
+        onDisable = function()
+            if (ST.DisableInterruptTracker) then ST:DisableInterruptTracker(); end
+        end,
+
         -- Called by engine when a spell is cast
         onSpellCast = function(name, spellID, time)
             -- Record for mob correlation (already handled by engine via _recentCasts)
@@ -434,4 +444,5 @@ function ST:DisableInterruptTracker()
     for _, frame in pairs(_npCastFrames) do
         frame:UnregisterAllEvents();
     end
+    wipe(_npCastFrames);
 end

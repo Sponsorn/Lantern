@@ -566,7 +566,6 @@ ST:RegisterSpells(spells);
 
 ST:RegisterCategory("cooldowns", {
     label             = "Cooldowns",
-    spellsPerPlayer   = "all",
     trackBuffDuration = true,
     defaultLayout     = "icon",
     defaultFilter     = "all",

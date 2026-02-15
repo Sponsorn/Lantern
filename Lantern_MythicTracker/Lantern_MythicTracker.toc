@@ -4,7 +4,7 @@
 ## Author: Dede in-game / Sponsorn on curseforge & github
 ## Version: 0.2.0
 ## SavedVariables: LanternMythicTrackerDB
-## OptionalDeps: Lantern, LanternUX, LibSharedMedia-3.0
+## OptionalDeps: Lantern, LibSharedMedia-3.0
 ## DefaultState: enabled
 
 Core.lua
@@ -15,4 +15,7 @@ Trackers\Defensives.lua
 Trackers\Cooldowns.lua
 Engine.lua
 Display.lua
+Display\Bar.lua
+Display\Icon.lua
+Display\Attached.lua
 Options.lua
