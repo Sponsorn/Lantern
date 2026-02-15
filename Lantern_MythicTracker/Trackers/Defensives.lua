@@ -40,6 +40,26 @@ local spells = {
         specs    = { [72] = true },
         category = "defensive",
     },
+    -- WARRIOR: Rallying Cry (group HP increase)
+    {
+        id       = 97462,
+        cd       = 180,
+        duration = 10,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = nil,
+        category = "defensive",
+    },
+    -- WARRIOR: Last Stand
+    {
+        id       = 12975,
+        cd       = 180,
+        duration = 8,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = nil,
+        category = "defensive",
+    },
 
     -- PALADIN: Divine Shield
     {

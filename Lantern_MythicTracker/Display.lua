@@ -463,9 +463,9 @@ end
 -------------------------------------------------------------------------------
 
 local PREVIEW_PLAYERS = {
-    { name = "Turalyon",   class = "PALADIN",  spec = 66 },   -- Protection
-    { name = "Yrel",       class = "PALADIN",  spec = 65 },   -- Holy
-    { name = "Arthas",     class = "PALADIN",  spec = 70 },   -- Retribution
+    { name = "Saurfang",   class = "WARRIOR",  spec = 71 },   -- Arms
+    { name = "Garrosh",    class = "WARRIOR",  spec = 72 },   -- Fury
+    { name = "Varian",     class = "WARRIOR",  spec = 73 },   -- Protection
     { name = "Zulara",     class = "SHAMAN",   spec = 264 },  -- Restoration
 };
 

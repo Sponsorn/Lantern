@@ -25,6 +25,46 @@ local spells = {
         specs    = { [72] = true },
         category = "cooldowns",
     },
+    -- Avatar
+    {
+        id       = 107574,
+        cd       = 90,
+        duration = 20,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = nil,
+        category = "cooldowns",
+    },
+    -- Thunderous Roar
+    {
+        id       = 384318,
+        cd       = 90,
+        duration = nil,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = nil,
+        category = "cooldowns",
+    },
+    -- Ravager (Arms / Protection)
+    {
+        id       = 228920,
+        cd       = 90,
+        duration = 12,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = { [71] = true, [73] = true },
+        category = "cooldowns",
+    },
+    -- Champion's Spear
+    {
+        id       = 376079,
+        cd       = 90,
+        duration = nil,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = nil,
+        category = "cooldowns",
+    },
 
     ---------------------------------------------------------------------------
     -- PALADIN
