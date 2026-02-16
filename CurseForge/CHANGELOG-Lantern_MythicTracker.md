@@ -4,13 +4,25 @@
 ## <span style="color:#E03E2D;">**I cannot stress this enough, this will break. Have fun while it lasts.**</span>
 ****
 
+## 0.4.3 - 2026-02-16
+- Fix: Updated interrupt database for Midnight — Preservation Evoker, Holy Paladin, Mistweaver Monk, and Restoration Druid no longer have interrupts
+- Fix: Evoker Quell cooldown corrected to 20s (18s for Augmentation) and restricted to Devastation/Augmentation
+- Fix: Monk Spear Hand Strike restricted to Windwalker/Brewmaster
+- Fix: Paladin Rebuke restricted to Protection/Retribution
+- Fix: Warlock Axe Toss now uses correct pet spell ID (89766) with Command Demon alias
+- Fix: Fel Ravager no longer incorrectly triggers Axe Toss cooldown
+- Fix: Talent modifier system now supports percentage-based CD reductions (Honed Reflexes)
+- Change: Updated talent modifiers — Quick Witted (Mage, -5s Counterspell), Honed Reflexes (Warrior, -10% Pummel)
+- Add: Kick bonus for Authoritative Rebuke (Prot Paladin, -1s Rebuke) and Light of the Sun (Balance Druid, -15s Solar Beam)
+
 ## 0.4.2 - 2026-02-15
+This version fixes the icons when using horizontal orientation party frames in about the same janky way the unwrap works, but at least they don't stack any more, not sure if I will cover any other addon frames, depends on how long it takes for blizzard to fix this, let me know in comments if you truly miss some port.
 - Add: Explicit grow direction setting for party frame icons (Left, Right, Up, Down, Auto)
 - Add: Orientation setting (Horizontal/Vertical) and Icons Per Row for party frame attached mode
 - Add: All 8 anchor points for party frame attachment (was only Right, Left, Bottom)
 - Change: Options dropdowns now use context menus instead of cycle buttons
 - Change: Offsets no longer flip signs based on anchor — positive X always means right, positive Y always means up
-- Change: Preview players updated to show more class diversity (Shaman, Mage, Rogue, Priest)
+- Change: edit mode -> /lmt preview players updated to show more class diversity (Shaman, Mage, Rogue, Priest)
 - Fix: Categories with different grow directions no longer interfere when stacking on the same anchor
 
 ## 0.4.1 - 2026-02-15

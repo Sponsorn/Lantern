@@ -50,14 +50,15 @@ ST:RegisterSpells({
         specs    = { [102] = true },
         category = "interrupts",
     },
-    -- Evoker: Quell
+    -- Evoker: Quell (Devastation / Augmentation only; Preservation lost it in 12.0)
     {
         id       = 351338,
-        cd       = 40,
+        cd       = 20,
+        cdBySpec = { [1473] = 18 },
         duration = nil,
         charges  = nil,
         class    = "EVOKER",
-        specs    = nil,
+        specs    = { [1467] = true, [1473] = true },
         category = "interrupts",
     },
     -- Hunter: Counter Shot (BM / MM)
@@ -90,24 +91,24 @@ ST:RegisterSpells({
         specs    = nil,
         category = "interrupts",
     },
-    -- Monk: Spear Hand Strike
+    -- Monk: Spear Hand Strike (Windwalker / Brewmaster; Mistweaver lost it in 12.0)
     {
         id       = 116705,
         cd       = 15,
         duration = nil,
         charges  = nil,
         class    = "MONK",
-        specs    = nil,
+        specs    = { [269] = true, [268] = true },
         category = "interrupts",
     },
-    -- Paladin: Rebuke
+    -- Paladin: Rebuke (Protection / Retribution; Holy lost it in 12.0)
     {
         id       = 96231,
         cd       = 15,
         duration = nil,
         charges  = nil,
         class    = "PALADIN",
-        specs    = nil,
+        specs    = { [66] = true, [70] = true },
         category = "interrupts",
     },
     -- Priest: Silence (Shadow only)
@@ -163,7 +164,7 @@ ST:RegisterSpells({
     },
     -- Warlock: Axe Toss (Felguard — Demonology)
     {
-        id       = 119914,
+        id       = 89766,
         cd       = 30,
         duration = nil,
         charges  = nil,
@@ -188,10 +189,10 @@ ST:RegisterSpells({
 -------------------------------------------------------------------------------
 
 ST:RegisterTalentModifiers({
-    -- Lone Survivor (Hunter): reduces Counter Shot CD by 2s
-    { spellID = 388039, affectsSpell = 147362, cdReduction = 2 },
-    -- Imposing Presence (Evoker): reduces Quell CD by 20s
-    { spellID = 371016, affectsSpell = 351338, cdReduction = 20 },
+    -- Quick Witted (Mage): reduces Counterspell CD by 5s
+    { spellID = 382297, affectsSpell = 2139, cdReduction = 5 },
+    -- Honed Reflexes (Warrior): reduces Pummel CD by 10%
+    { spellID = 391271, affectsSpell = 6552, cdReductionPct = 0.10 },
 });
 
 -------------------------------------------------------------------------------
@@ -199,7 +200,7 @@ ST:RegisterTalentModifiers({
 -------------------------------------------------------------------------------
 
 ST:RegisterSpellAliases({
-    [1276467] = 119914,  -- Fel Ravager -> Axe Toss (both Felguard abilities)
+    [119914]  = 89766,   -- Axe Toss (Command Demon) -> Axe Toss (pet)
 });
 
 -------------------------------------------------------------------------------
@@ -212,11 +213,12 @@ ST:RegisterSpellAliases({
 ST.interruptConfig = {
     -- Specs that lose their interrupt entirely
     specsWithoutInterrupt = {
-        [256] = true,  -- Discipline Priest
-        [257] = true,  -- Holy Priest
-        [105] = true,  -- Restoration Druid
-        [65]  = true,  -- Holy Paladin
-        [270] = true,  -- Mistweaver Monk
+        [256]  = true,  -- Discipline Priest
+        [257]  = true,  -- Holy Priest
+        [105]  = true,  -- Restoration Druid (lost Skull Bash in 12.0)
+        [65]   = true,  -- Holy Paladin (lost Rebuke in 12.0)
+        [270]  = true,  -- Mistweaver Monk (lost Spear Hand Strike in 12.0)
+        [1468] = true,  -- Preservation Evoker (lost Quell in 12.0)
     },
 
     -- Healer specs that keep their interrupt
@@ -226,7 +228,9 @@ ST.interruptConfig = {
 
     -- Talents that reduce cooldown only on a successful interrupt
     kickBonuses = {
-        [378848] = { reduction = 3 },  -- Coldthirst (DK)
+        [378848] = { reduction = 3 },   -- Coldthirst (DK): Mind Freeze -3s
+        [469886] = { reduction = 1 },   -- Authoritative Rebuke (Prot Paladin): Rebuke -1s
+        [202918] = { reduction = 15 },  -- Light of the Sun (Balance Druid): Solar Beam -15s
     },
 };
 

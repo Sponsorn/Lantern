@@ -169,6 +169,7 @@ local function IdentifyPlayerSpells()
             end
         end
     end
+
 end
 
 -------------------------------------------------------------------------------
@@ -615,7 +616,11 @@ local function ScanTalentModifiers(player)
                             if (talentMod.spellID == defInfo.spellID) then
                                 local spellState = player.spells[talentMod.affectsSpell];
                                 if (spellState) then
-                                    spellState.baseCd = math.max(1, spellState.baseCd - talentMod.cdReduction);
+                                    if (talentMod.cdReductionPct) then
+                                        spellState.baseCd = math.max(1, spellState.baseCd * (1 - talentMod.cdReductionPct));
+                                    elseif (talentMod.cdReduction) then
+                                        spellState.baseCd = math.max(1, spellState.baseCd - talentMod.cdReduction);
+                                    end
                                 end
                             end
                         end
