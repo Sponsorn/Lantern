@@ -7,3 +7,4 @@
 
 Widgets.lua
 Panel.lua
+Search.lua

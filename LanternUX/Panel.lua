@@ -47,6 +47,7 @@ function PanelMixin:AddPage(key, opts)
     self._pageMap[key] = opts;
     table.insert(self._pages, { key = key, opts = opts });
     self._sidebarDirty = true;
+    if (self._OnPageAdded) then self:_OnPageAdded(); end
 end
 
 function PanelMixin:Show()
@@ -136,6 +137,8 @@ function PanelMixin:_CreateSectionHeader(parent, label, yOffset)
     return text;
 end
 
+local GROUP_CHILD_PAD = 12;  -- extra left indent for child items
+
 function PanelMixin:_GetGroupForPage(pageKey)
     local page = self._pageMap[pageKey];
     if (page and page.sidebarGroup and self._sidebarGroupMap[page.sidebarGroup]) then
@@ -144,7 +147,7 @@ function PanelMixin:_GetGroupForPage(pageKey)
     return nil;
 end
 
-function PanelMixin:_CreateSidebarDropdown(parent, groupKey, label, pages, yOffset)
+function PanelMixin:_CreateSidebarGroupHeader(parent, groupKey, label, yOffset)
     local btn = CreateFrame("Button", nil, parent);
     btn:SetHeight(ITEM_H);
     btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -yOffset);
@@ -171,174 +174,81 @@ function PanelMixin:_CreateSidebarDropdown(parent, groupKey, label, pages, yOffs
     local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
     text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
     text:SetPoint("RIGHT", btn, "RIGHT", -22, 0);
+
+    -- Arrow on the right (matches Widgets.lua group style)
+    local arrow = btn:CreateTexture(nil, "ARTWORK");
+    arrow:SetSize(10, 10);
+    arrow:SetPoint("RIGHT", -8, 0);
+    arrow:SetAtlas("ui-questtrackerbutton-secondary-expand");
+    arrow:SetDesaturated(true);
+    arrow:SetVertexColor(unpack(T.textDim));
+    btn._arrow = arrow;
     text:SetText(label);
     text:SetTextColor(unpack(T.text));
     text:SetJustifyH("LEFT");
     btn.label = text;
 
-    -- Chevron arrow (V shape on right side)
-    local arrowWrap = CreateFrame("Frame", nil, btn);
-    arrowWrap:SetSize(10, 6);
-    arrowWrap:SetPoint("RIGHT", -8, 0);
-
-    local arrowL = arrowWrap:CreateTexture(nil, "ARTWORK");
-    arrowL:SetSize(6, 1.5);
-    arrowL:SetTexture("Interface\\Buttons\\WHITE8x8");
-    arrowL:SetRotation(math.rad(-40));
-    arrowL:SetPoint("CENTER", arrowWrap, "CENTER", -2, 0);
-    arrowL:SetVertexColor(unpack(T.textDim));
-
-    local arrowR = arrowWrap:CreateTexture(nil, "ARTWORK");
-    arrowR:SetSize(6, 1.5);
-    arrowR:SetTexture("Interface\\Buttons\\WHITE8x8");
-    arrowR:SetRotation(math.rad(40));
-    arrowR:SetPoint("CENTER", arrowWrap, "CENTER", 2, 0);
-    arrowR:SetVertexColor(unpack(T.textDim));
-
     btn._groupKey = groupKey;
-    btn._groupLabel = label;
-    btn._groupPages = pages;
 
     local self_ = self;
     btn:SetScript("OnClick", function()
-        if (self_._sidebarPopup and self_._sidebarPopup:IsShown() and self_._sidebarPopup._owner == btn) then
-            self_:_CloseSidebarPopup();
-        else
-            self_:_OpenSidebarPopup(btn);
-        end
+        self_._expandedGroups[groupKey] = not self_._expandedGroups[groupKey];
+        self_._sidebarDirty = true;
+        self_:_BuildSidebar();
+        self_._sidebarDirty = false;
     end);
 
     self._sidebarDropdowns[groupKey] = btn;
     return btn;
 end
 
-function PanelMixin:_CloseSidebarPopup()
-    if (self._sidebarPopup) then
-        self._sidebarPopup:Hide();
-        self._sidebarPopup._owner = nil;
+function PanelMixin:_UpdateGroupChevron(btn, expanded)
+    if (not btn._arrow) then return; end
+    if (expanded) then
+        btn._arrow:SetAtlas("ui-questtrackerbutton-secondary-collapse");
+    else
+        btn._arrow:SetAtlas("ui-questtrackerbutton-secondary-expand");
     end
 end
 
-function PanelMixin:_OpenSidebarPopup(dropdownBtn)
-    self:_CloseSidebarPopup();
+function PanelMixin:_CreateSidebarChildButton(parent, key, label, yOffset)
+    local btn = CreateFrame("Button", nil, parent);
+    btn:SetHeight(ITEM_H);
+    btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -yOffset);
+    btn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -1, -yOffset);
 
-    if (not self._sidebarPopup) then
-        local popupName = (self._config.name or "LanternUX") .. "SidebarPopup";
-        local popup = CreateFrame("Frame", popupName, self._frame, "BackdropTemplate");
-        popup:SetFrameStrata("TOOLTIP");
-        popup:SetClampedToScreen(true);
-        popup:EnableMouse(true);
-        popup:Hide();
+    local bg = btn:CreateTexture(nil, "BACKGROUND");
+    bg:SetAllPoints();
+    bg:SetColorTexture(unpack(T.selected));
+    bg:Hide();
+    btn.bg = bg;
 
-        popup:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-        });
-        popup:SetBackdropColor(unpack(T.dropdownBg));
-        popup:SetBackdropBorderColor(unpack(T.border));
+    local bar = btn:CreateTexture(nil, "ARTWORK");
+    bar:SetWidth(ACCENT_W);
+    bar:SetPoint("TOPLEFT");
+    bar:SetPoint("BOTTOMLEFT");
+    bar:SetColorTexture(unpack(T.accentBar));
+    bar:Hide();
+    btn.bar = bar;
 
-        -- ESC to close popup (without closing the panel)
-        table.insert(UISpecialFrames, popupName);
+    local hover = btn:CreateTexture(nil, "HIGHLIGHT");
+    hover:SetAllPoints();
+    hover:SetColorTexture(unpack(T.hover));
 
-        popup._items = {};
+    local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W + GROUP_CHILD_PAD, 0);
+    text:SetText(label);
+    text:SetTextColor(unpack(T.text));
+    text:SetJustifyH("LEFT");
+    btn.label = text;
 
-        local self_ = self;
-        popup:SetScript("OnShow", function()
-            if (not popup._closeListener) then
-                popup._closeListener = CreateFrame("Button", nil, UIParent);
-            end
-            popup._closeListener:SetAllPoints(UIParent);
-            popup._closeListener:SetFrameStrata("TOOLTIP");
-            popup._closeListener:SetFrameLevel(popup:GetFrameLevel() - 1);
-            popup._closeListener:Show();
-            popup._closeListener:SetScript("OnClick", function()
-                self_:_CloseSidebarPopup();
-            end);
-        end);
-        popup:SetScript("OnHide", function()
-            if (popup._closeListener) then popup._closeListener:Hide(); end
-        end);
+    local self_ = self;
+    btn:SetScript("OnClick", function()
+        self_:_SelectItem(key);
+    end);
 
-        self._sidebarPopup = popup;
-    end
-
-    local popup = self._sidebarPopup;
-    popup._owner = dropdownBtn;
-
-    local pages = dropdownBtn._groupPages;
-
-    -- Hide existing items
-    for _, item in ipairs(popup._items) do
-        item:Hide();
-    end
-
-    local y = -4;
-    for i, page in ipairs(pages) do
-        local item = popup._items[i];
-        if (not item) then
-            item = CreateFrame("Button", nil, popup);
-            item:SetHeight(ITEM_H);
-
-            local itemBg = item:CreateTexture(nil, "BACKGROUND");
-            itemBg:SetAllPoints();
-            itemBg:SetColorTexture(0, 0, 0, 0);
-            item._bg = itemBg;
-
-            local itemBar = item:CreateTexture(nil, "ARTWORK");
-            itemBar:SetWidth(ACCENT_W);
-            itemBar:SetPoint("TOPLEFT");
-            itemBar:SetPoint("BOTTOMLEFT");
-            itemBar:SetColorTexture(unpack(T.accentBar));
-            itemBar:Hide();
-            item._bar = itemBar;
-
-            local itemText = item:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-            itemText:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
-            itemText:SetJustifyH("LEFT");
-            item._text = itemText;
-
-            local itemHover = item:CreateTexture(nil, "HIGHLIGHT");
-            itemHover:SetAllPoints();
-            itemHover:SetColorTexture(unpack(T.hover));
-
-            popup._items[i] = item;
-        end
-
-        item:SetParent(popup);
-        item:ClearAllPoints();
-        item:SetPoint("TOPLEFT", popup, "TOPLEFT", 0, -y);
-        item:SetPoint("TOPRIGHT", popup, "TOPRIGHT", 0, -y);
-        item._text:SetText(page.label);
-
-        -- Highlight active page
-        if (page.key == self._activeKey) then
-            item._text:SetTextColor(unpack(T.textBright));
-            item._bar:Show();
-            item._bg:SetColorTexture(unpack(T.selected));
-        else
-            item._text:SetTextColor(unpack(T.text));
-            item._bar:Hide();
-            item._bg:SetColorTexture(0, 0, 0, 0);
-        end
-
-        local self_ = self;
-        local pageKey = page.key;
-        item:SetScript("OnClick", function()
-            self_:_CloseSidebarPopup();
-            self_:_SelectItem(pageKey);
-        end);
-
-        item:Show();
-        y = y + ITEM_H;
-    end
-
-    popup:SetHeight(math.abs(y) + 4);
-    popup:ClearAllPoints();
-    popup:SetPoint("TOPLEFT", dropdownBtn, "BOTTOMLEFT", 0, 0);
-    popup:SetPoint("TOPRIGHT", dropdownBtn, "BOTTOMRIGHT", 0, 0);
-
-    popup:Show();
+    self._buttons[key] = btn;
+    return btn;
 end
 
 -------------------------------------------------------------------------------
@@ -349,7 +259,20 @@ function PanelMixin:_SelectItem(key)
     if (self._activeKey == key) then return; end
     self._activeKey = key;
 
-    -- Regular sidebar buttons
+    -- If a sidebar button is clicked during search, exit search mode
+    if (self._ExitSearchOnSelect) then self:_ExitSearchOnSelect(); end
+
+    -- Auto-expand the group containing the selected page
+    local activeGroupKey = self:_GetGroupForPage(key);
+    if (activeGroupKey and not self._expandedGroups[activeGroupKey]) then
+        self._expandedGroups[activeGroupKey] = true;
+        self._sidebarDirty = true;
+        self:_BuildSidebar();
+        self._sidebarDirty = false;
+        return;  -- _BuildSidebar re-selects the active key
+    end
+
+    -- Regular sidebar buttons (includes child buttons)
     for k, btn in pairs(self._buttons) do
         local sel = (k == key);
         if (sel) then
@@ -364,26 +287,20 @@ function PanelMixin:_SelectItem(key)
         end
     end
 
-    -- Sidebar dropdown buttons
-    local activeGroupKey = self:_GetGroupForPage(key);
+    -- Group headers: highlight if a child is active
     for gKey, btn in pairs(self._sidebarDropdowns) do
         if (gKey == activeGroupKey) then
             btn.bg:SetColorTexture(unpack(T.selected));
             btn.bg:Show();
             btn.bar:Show();
             btn.label:SetTextColor(unpack(T.textBright));
-            -- Show the active page's label on the dropdown button
-            local page = self._pageMap[key];
-            btn.label:SetText((page and page.label) or key);
         else
             btn.bg:Hide();
             btn.bar:Hide();
             btn.label:SetTextColor(unpack(T.text));
-            btn.label:SetText(btn._groupLabel);
         end
     end
 
-    self:_CloseSidebarPopup();
     self:_ShowContent(key);
 end
 
@@ -391,12 +308,9 @@ end
 -- Internal: content switching
 -------------------------------------------------------------------------------
 
-function PanelMixin:_ShowContent(key)
-    -- Hide all content types
+function PanelMixin:_HideAllContent()
     if (self._splashFrames) then
-        for _, sf in pairs(self._splashFrames) do
-            sf:Hide();
-        end
+        for _, sf in pairs(self._splashFrames) do sf:Hide(); end
     end
     if (self._aceContainer and self._aceContainer.frame) then
         self._aceContainer.frame:Hide();
@@ -406,6 +320,10 @@ function PanelMixin:_ShowContent(key)
         LanternUX.ReleaseAll();
     end
     if (self._descPanel) then self._descPanel:Hide(); end
+end
+
+function PanelMixin:_ShowContent(key)
+    self:_HideAllContent();
 
     local page = self._pageMap[key];
     if (not page) then return; end
@@ -436,6 +354,9 @@ function PanelMixin:_ShowContent(key)
             headerInfo = { title = page.title, description = page.description };
         end
         LanternUX.RenderContent(self._customScroll, options, headerInfo, key);
+
+        -- Search: scroll to widget if requested
+        if (self._ConsumeScrollToWidget) then self:_ConsumeScrollToWidget(); end
         return;
     end
 
@@ -467,7 +388,7 @@ end
 function PanelMixin:_BuildSidebar()
     if (not self._sidebar) then return; end
 
-    -- Clear existing buttons, dropdown buttons, and headers
+    -- Clear existing buttons, group headers, and section headers
     for _, btn in pairs(self._buttons) do
         btn:Hide();
     end
@@ -478,8 +399,6 @@ function PanelMixin:_BuildSidebar()
     end
     self._sidebarDropdowns = {};
 
-    self:_CloseSidebarPopup();
-
     if (self._sectionHeaders) then
         for _, hdr in ipairs(self._sectionHeaders) do
             hdr:Hide();
@@ -488,7 +407,7 @@ function PanelMixin:_BuildSidebar()
     self._sectionHeaders = {};
 
     local sidebar = self._sidebar;
-    local y = SIDEBAR_PAD_TOP;
+    local y = (self._sidebarTopOffset or 0) + SIDEBAR_PAD_TOP;
 
     -- Helper: check if a page is assigned to a valid sidebar group
     local function isGrouped(entry)
@@ -506,6 +425,24 @@ function PanelMixin:_BuildSidebar()
         return pages;
     end
 
+    -- Helper: render a sidebar group (header + expandable children)
+    local function renderGroup(groupKey, label)
+        local pages = collectGroupPages(groupKey);
+        if (#pages == 0) then return; end
+
+        local hdr = self:_CreateSidebarGroupHeader(sidebar, groupKey, label, y);
+        local expanded = self._expandedGroups[groupKey];
+        self:_UpdateGroupChevron(hdr, expanded);
+        y = y + ITEM_H;
+
+        if (expanded) then
+            for _, page in ipairs(pages) do
+                self:_CreateSidebarChildButton(sidebar, page.key, page.label, y);
+                y = y + ITEM_H;
+            end
+        end
+    end
+
     -- Pages without a section (appear first, in registration order)
     for _, entry in ipairs(self._pages) do
         if (not entry.opts.section and not isGrouped(entry)) then
@@ -517,11 +454,7 @@ function PanelMixin:_BuildSidebar()
     -- Sidebar groups without a section
     for _, group in ipairs(self._sidebarGroups) do
         if (not group.opts.section) then
-            local pages = collectGroupPages(group.key);
-            if (#pages > 0) then
-                self:_CreateSidebarDropdown(sidebar, group.key, group.opts.label or group.key, pages, y);
-                y = y + ITEM_H;
-            end
+            renderGroup(group.key, group.opts.label or group.key);
         end
     end
 
@@ -543,11 +476,7 @@ function PanelMixin:_BuildSidebar()
         -- Sidebar groups in this section
         for _, group in ipairs(self._sidebarGroups) do
             if (group.opts.section == sec.key) then
-                local pages = collectGroupPages(group.key);
-                if (#pages > 0) then
-                    self:_CreateSidebarDropdown(sidebar, group.key, group.opts.label or group.key, pages, y);
-                    y = y + ITEM_H;
-                end
+                renderGroup(group.key, group.opts.label or group.key);
             end
         end
     end
@@ -700,6 +629,9 @@ function PanelMixin:_Build()
 
     self._sidebar = sidebar;
 
+    -- Hook: search input (added by Search.lua)
+    if (self._BuildSearchInput) then self:_BuildSearchInput(sidebar); end
+
     ---------------------------------------------------------------------------
     -- Content area
     ---------------------------------------------------------------------------
@@ -786,7 +718,6 @@ function PanelMixin:_Build()
     end);
 
     frame:SetScript("OnHide", function()
-        self_:_CloseSidebarPopup();
         if (self_._aceContainer) then
             self_._aceContainer:ReleaseChildren();
             self_._aceContainer.frame:Hide();
@@ -799,6 +730,8 @@ function PanelMixin:_Build()
             LanternUX.ResetGroupStates();
         end
         if (self_._descPanel) then self_._descPanel:Hide(); end
+        -- Hook: reset search state (added by Search.lua)
+        if (self_._ResetSearchState) then self_:_ResetSearchState(); end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE or 851);
         -- Notify pages of hide (e.g., CursorRing preview cleanup)
         if (self_._activeKey) then
@@ -817,6 +750,8 @@ end
 -- Factory
 -------------------------------------------------------------------------------
 
+LanternUX._PanelMixin = PanelMixin;
+
 function LanternUX:CreatePanel(config)
     local panel = setmetatable({
         _config           = config,
@@ -828,9 +763,13 @@ function LanternUX:CreatePanel(config)
         _sidebarGroupMap  = {},
         _buttons          = {},
         _sidebarDropdowns = {},
+        _expandedGroups   = {},
         _frame            = nil,
         _activeKey        = nil,
         _sidebarDirty     = true,
+        -- Search state (managed by Search.lua via mixin hooks):
+        -- _searchActive, _preSearchKey, _searchIndex, _searchIndexDirty,
+        -- _searchInput, _searchDebounce, _scrollToWidget, _sidebarTopOffset
     }, { __index = PanelMixin });
     return panel;
 end

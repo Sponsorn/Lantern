@@ -1669,6 +1669,83 @@ local function SetupGroup(w, parent, data, contentWidth)
 end
 
 -------------------------------------------------------------------------------
+-- Widget: Search Result (clickable row for search results)
+-------------------------------------------------------------------------------
+
+local SEARCH_RESULT_H = 32;
+
+local function CreateSearchResult(parent)
+    local w = AcquireWidget("searchResult", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Button", nil, parent);
+    frame:SetHeight(SEARCH_RESULT_H);
+    w.frame = frame;
+
+    -- Hover highlight background
+    local bg = frame:CreateTexture(nil, "BACKGROUND");
+    bg:SetAllPoints();
+    bg:SetColorTexture(0, 0, 0, 0);
+    w._bg = bg;
+
+    -- Label (left)
+    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    label:SetPoint("LEFT", frame, "LEFT", 0, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    w._label = label;
+
+    -- Breadcrumb (right, dim)
+    local breadcrumb = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+    breadcrumb:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
+    breadcrumb:SetJustifyH("RIGHT");
+    breadcrumb:SetTextColor(unpack(T.textDim));
+    w._breadcrumb = breadcrumb;
+
+    -- Hover
+    frame:SetScript("OnEnter", function()
+        bg:SetColorTexture(unpack(T.hover));
+        w._label:SetTextColor(unpack(T.textBright));
+        ShowDescription(w._label:GetText(), w._desc_text);
+    end);
+    frame:SetScript("OnLeave", function()
+        bg:SetColorTexture(0, 0, 0, 0);
+        w._label:SetTextColor(unpack(T.text));
+        ClearDescription();
+    end);
+
+    -- Click
+    frame:SetScript("OnClick", function()
+        if (w._onClick) then w._onClick(); end
+    end);
+
+    RegisterWidget("searchResult", w);
+    return w;
+end
+
+local function SetupSearchResult(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    w._label:SetText(data.label or "");
+    w._breadcrumb:SetText(data.breadcrumb or "");
+    w._desc_text = data.desc;
+    w._onClick = data.onClick;
+
+    -- Ensure label doesn't overlap breadcrumb
+    local breadcrumbWidth = w._breadcrumb:GetStringWidth() or 0;
+    w._label:ClearAllPoints();
+    w._label:SetPoint("LEFT", w.frame, "LEFT", 0, 0);
+    w._label:SetPoint("RIGHT", w.frame, "RIGHT", -(breadcrumbWidth + 12), 0);
+
+    w.frame:SetHeight(SEARCH_RESULT_H);
+    w.height = SEARCH_RESULT_H;
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
 -- Scroll container
 -------------------------------------------------------------------------------
 
@@ -1787,6 +1864,16 @@ local function CreateScrollContainer(parent)
         end);
     end
 
+    function container:ScrollToY(targetY)
+        local visibleHeight = self.scrollFrame:GetHeight();
+        local contentHeight = self.scrollChild:GetHeight();
+        local maxScroll = math.max(0, contentHeight - visibleHeight);
+        -- Position target at ~30% from top of visible area
+        local desired = math.max(0, targetY - visibleHeight * 0.3);
+        scrollTarget = math.min(desired, maxScroll);
+        self.scrollFrame:SetScript("OnUpdate", OnUpdate_SmoothScroll);
+    end
+
     function container:Reset()
         self.scrollFrame:SetVerticalScroll(0);
         scrollTarget = 0;
@@ -1803,23 +1890,28 @@ end
 -------------------------------------------------------------------------------
 
 local widgetFactories = {
-    toggle      = { create = CreateToggle,   setup = SetupToggle },
-    label       = { create = CreateLabel,    setup = SetupLabel },
-    description = { create = CreateLabel,    setup = SetupLabel },
-    header      = { create = CreateHeader,   setup = SetupHeader },
-    divider     = { create = CreateDivider,  setup = SetupDivider },
-    range       = { create = CreateRange,    setup = SetupRange },
-    select      = { create = CreateSelect,   setup = SetupSelect },
-    execute     = { create = CreateExecute,  setup = SetupExecute },
-    input       = { create = CreateInput,    setup = SetupInput },
-    color       = { create = CreateColor,    setup = SetupColor },
-    group       = { create = CreateGroup,   setup = SetupGroup },
+    toggle       = { create = CreateToggle,        setup = SetupToggle },
+    label        = { create = CreateLabel,         setup = SetupLabel },
+    description  = { create = CreateLabel,         setup = SetupLabel },
+    header       = { create = CreateHeader,        setup = SetupHeader },
+    divider      = { create = CreateDivider,       setup = SetupDivider },
+    range        = { create = CreateRange,         setup = SetupRange },
+    select       = { create = CreateSelect,        setup = SetupSelect },
+    execute      = { create = CreateExecute,       setup = SetupExecute },
+    input        = { create = CreateInput,         setup = SetupInput },
+    color        = { create = CreateColor,         setup = SetupColor },
+    group        = { create = CreateGroup,         setup = SetupGroup },
+    searchResult = { create = CreateSearchResult,  setup = SetupSearchResult },
 };
 
 local lastRenderArgs = {};  -- stored for group re-render on expand/collapse
+local widgetPositionMap = {};  -- tracks Y positions of widgets for scroll-to-widget
+-- NOTE: widgetPositionMap is shared by reference (LanternUX.widgetPositionMap).
+-- Always use wipe() to clear it — never reassign to a new table.
 
 local function RenderContent(scrollContainer, options, headerInfo, pageKey, preserveScroll)
     ReleaseAll();
+    wipe(widgetPositionMap);
 
     currentPageKey = pageKey or "";
     lastRenderArgs = { scrollContainer = scrollContainer, options = options, headerInfo = headerInfo, pageKey = pageKey };
@@ -1882,7 +1974,7 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
     local GROUP_INDENT = 14;
     local SECTION_MARGIN = 10;  -- extra top spacing before header/group widgets
     local widgetCount = 0;
-    local function renderWidget(data, indent)
+    local function renderWidget(data, indent, groupPath)
         local factory = widgetFactories[data.type];
         if (not factory or isHidden(data)) then return; end
 
@@ -1898,6 +1990,14 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
         factory.setup(w, parent, data, childWidth);
         w.frame:ClearAllPoints();
         w.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, y);
+
+        -- Track widget position for scroll-to-widget
+        local widgetLabel = data.label or data.text or "";
+        if (widgetLabel ~= "") then
+            local widgetKey = (groupPath or "") .. ":" .. widgetLabel;
+            widgetPositionMap[widgetKey] = math.abs(y);
+        end
+
         y = y - (w.height or 20) - WIDGET_GAP;
         widgetCount = widgetCount + 1;
 
@@ -1912,9 +2012,10 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
 
             -- If expanded, render children inline (indented)
             if (w._expanded and data.children) then
+                local childGroupPath = (data.text or "");
                 for _, childData in ipairs(data.children) do
                     if (childData.type ~= "group") then
-                        renderWidget(childData, GROUP_INDENT);
+                        renderWidget(childData, GROUP_INDENT, childGroupPath);
                     end
                 end
             end
@@ -1923,7 +2024,7 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
 
     -- Render each option entry
     for _, data in ipairs(options) do
-        renderWidget(data);
+        renderWidget(data, nil, nil);
     end
 
     -- Set total content height
@@ -1939,6 +2040,12 @@ local function ResetGroupStates()
     wipe(groupStates);
 end
 
+local function ExpandGroups(pageKey, groupTexts)
+    for _, text in ipairs(groupTexts) do
+        groupStates[(pageKey or "") .. ":" .. text] = true;
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Public API
 -------------------------------------------------------------------------------
@@ -1947,5 +2054,7 @@ _G.LanternUX = _G.LanternUX or {};
 LanternUX.RenderContent = RenderContent;
 LanternUX.ReleaseAll = ReleaseAll;
 LanternUX.ResetGroupStates = ResetGroupStates;
+LanternUX.ExpandGroups = ExpandGroups;
 LanternUX.CreateScrollContainer = CreateScrollContainer;
+LanternUX.widgetPositionMap = widgetPositionMap;
 LanternUX.Theme = T;
