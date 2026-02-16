@@ -16,7 +16,7 @@ if (not ST) then return; end
 -- working, party member tracking will degrade (player's own data is
 -- always clean and unaffected).
 --
--- Taint laundering technique from ShimmerTracker; interrupt correlation
+-- Taint laundering technique from ShimmerTracker by Aryella; interrupt correlation
 -- inspired by MythicInterruptTracker by KinderLine.
 --
 -- These frames MUST be created at file scope (clean load-time context).

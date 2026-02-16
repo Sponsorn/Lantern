@@ -1,8 +1,17 @@
-<span style="color:#e03e2d"><strong>__Note on blizzard__</strong> - This addon is using a method to track spells in a way Blizzard did not intend them to be visible, __it will__ get patched, it can be hot fixed, it will break. Addon is functional in the current implementation but some timers are incorrect.</span>
+<span style="color:#e03e2d"><strong><span style="text-decoration:underline">Note on blizzard</span></strong> - This addon is using a method to track spells in a way Blizzard did not intend them to be visible, <span style="text-decoration:underline">it will</span> get patched, it can be hot fixed, it will break. Addon is functional in the current implementation but some timers are incorrect.</span>
 
 <span style="color:#e03e2d"><strong>Pre-release</strong> - This addon is in early development.</span> Spell data is incomplete and some class/spec combinations may be missing cooldowns. Expect frequent updates as spells are verified and added. You can still use it, but expect lua errors and missing spells.
 
-<span style="color:#e03e2d"><strong>Note:</strong></span> The "Party Frames" display mode currently only works with Blizzard's default raid-style party frames. Custom party frame addons (ElvUI, VuhDo, Grid2, etc.) are not supported yet. Open Edit Mode (Game Menu) and then type `/lmt preview` to preview attached icons on party frames.
+<span style="color:#e03e2d"><strong>Note:</strong></span> The "Party Frames" display mode currently only works with Blizzard's default raid-style party frames. Custom party frame addons (ElvUI, Danders, etc.) are not supported yet. Open Edit Mode (Game Menu) and then type `/lmt preview` to preview attached icons on party frames.
+
+***
+
+Credits (also available in toc and engine.lua): Taint laundering technique from ShimmerTracker by Aryella; interrupt correlation inspired by MythicInterruptTracker by KinderLine
+
+***
+
+<span style="color:#e03e2d">This addon is provided as-is with no guarantees.</span> Use at your own risk. The author is not responsible for any issues that may arise from using it.
+(curseforge already covers this part, but writing it here as well so it is easier to find)
 
 ***
 
@@ -48,4 +57,9 @@ Works as a fully standalone addon — no dependencies required. If you have [Lan
 
 #### Configuration
 
-Type `/lmt` to open the settings frame. Use `/lmt preview` to toggle preview mode, `/lmt lock` to lock frame positions, and `/lmt reset` to reset positions.
+Type `/lmt` to open the settings frame. Use `/lmt preview` to toggle preview mode (open edit mode before writing the command to see party frame anchors in action), `/lmt lock` to lock frame positions, and `/lmt reset` to reset positions.
+
+***
+
+<span style="color:#e03e2d">This addon is provided as-is with no guarantees.</span> Use at your own risk. The author is not responsible for any issues that may arise from using it.
+(curseforge already covers this part, but writing it here as well so it is easier to find)
