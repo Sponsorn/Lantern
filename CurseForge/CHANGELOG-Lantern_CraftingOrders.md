@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.8 - 2026-02-18
+- Fix: Work order notifications not working on non-English game clients (GitHub issue #3)
+
 ## 0.4.7b - 2026-02-01
 - Fix zip file not extracting as folder on macOS/Linux (GitHub issue #2)
 

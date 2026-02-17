@@ -276,23 +276,14 @@ function CraftingOrders:OutputMessage(msg)
 end
 
 local function getPersonalOrderCount()
-    if (not C_CraftingOrders) then return nil; end
-    if (C_CraftingOrders.GetPersonalOrderCounts) then
-        local count, _ = C_CraftingOrders.GetPersonalOrderCounts();
-        if (type(count) == "number") then
-            return count;
-        end
-        if (type(count) == "table") then
-            return count.total or count.numOrders or count.count or count.open or count[1];
-        end
+    if (not C_CraftingOrders or not C_CraftingOrders.GetPersonalOrdersInfo) then return nil; end
+    local infos = C_CraftingOrders.GetPersonalOrdersInfo();
+    if (type(infos) ~= "table") then return nil; end
+    local total = 0;
+    for _, info in ipairs(infos) do
+        total = total + (info.numPersonalOrders or 0);
     end
-    if (C_CraftingOrders.GetPersonalOrders) then
-        local orders = C_CraftingOrders.GetPersonalOrders();
-        if (type(orders) == "table") then
-            return #orders;
-        end
-    end
-    return nil;
+    return total;
 end
 
 local function formatWhisperMessage(template, order)
@@ -348,13 +339,8 @@ function CraftingOrders:HandlePlacement()
     local form = frame.Form;
     if (not form.order or not form.transaction or not form.PaymentContainer) then return; end
 
-    local isGuild = isGuildOrderType(form.order.orderType);
-    if (not isGuild) then
-        local dropdown = form.OrderRecipientDropdown;
-        local text = dropdown and dropdown.GetText and dropdown:GetText() or "";
-        if (text ~= "Guild Order") then
-            return;
-        end
+    if (not isGuildOrderType(form.order.orderType)) then
+        return;
     end
 
     local recipeID = form.transaction.GetRecipeID and form.transaction:GetRecipeID() or nil;
@@ -437,8 +423,11 @@ function CraftingOrders:HandleFulfillResponse(...)
         return;
     end
 
+    -- Save partial info for the system message fallback handler
     self._awaitingFulfill = true;
     self._awaitDeadline = GetTime() + 3;
+    self._awaitFulfillWho = who;
+    self._awaitFulfillTip = tipCopper;
 end
 
 function CraftingOrders:HandleSystemMessage(msg)
@@ -449,59 +438,36 @@ function CraftingOrders:HandleSystemMessage(msg)
     end
 
     local text = tostring(msg or "");
-    local orderType = text:match("filled a%s+(%a+)%s+crafting order");
-    if (not orderType) then return; end
 
-    if (orderType:lower() ~= "guild") then
-        self._awaitingFulfill = false;
-        return;
-    end
-
+    -- Extract item link (locale-independent: uses escape sequences)
     local itemLink = text:match("(|c%x+|Hitem:.-|h%[.-%]|h|r)");
     if (not itemLink) then
         local bracketed = text:match("%[(.-)%]");
         if (bracketed) then itemLink = "[" .. bracketed .. "]"; end
     end
 
-    local who = text:match("for%s+(.+)%s+and%s+earned");
-    if (who) then
-        who = stripRealm(who:gsub("%s+$", ""));
-    end
+    -- If no item link found, this isn't a crafting order message
+    if (not itemLink) then return; end
 
-    local commissionText = text:match("earned a%s+(.+)%s+commission");
-    local tipCopper = 0;
-    if (commissionText) then
-        local digits = commissionText:gsub("[^%d]", "");
-        tipCopper = (tonumber(digits) or 0) * 10000;
-    end
+    -- Extract copper amount from any |cffffffff<amount>|r money string, or fallback to
+    -- the saved order info. Commission details may not be parseable across locales.
+    local tipCopper = self._awaitFulfillTip or 0;
 
-    local msg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, who, tipCopper);
+    local fmtMsg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, self._awaitFulfillWho, tipCopper);
     if (self.db.debugGuild) then
-        Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
+        Lantern:Print("Crafting Orders: would have sent: " .. tostring(fmtMsg));
     else
-        sendGuildMessage(msg);
+        sendGuildMessage(fmtMsg);
     end
     self._awaitingFulfill = false;
-end
-
-function CraftingOrders:HandlePersonalOrderMessage(msg)
-    if (not self.db or not self.db.notifyPersonal) then return; end
-    if (not self._personalCountAvailable) then
-        if (type(msg) == "string" and msg:find("received a new Personal Crafting Order", 1, true)) then
-            self:OutputMessage(formatPersonalOrderMessage());
-            playPersonalSound(self);
-        end
-    end
+    self._awaitFulfillWho = nil;
+    self._awaitFulfillTip = nil;
 end
 
 function CraftingOrders:HandlePersonalOrderCountUpdate()
     if (not self.db or not self.db.notifyPersonal) then return; end
     local count = getPersonalOrderCount();
-    if (type(count) ~= "number") then
-        self._personalCountAvailable = false;
-        return;
-    end
-    self._personalCountAvailable = true;
+    if (type(count) ~= "number") then return; end
     if (self._personalCount ~= nil and count > self._personalCount) then
         self:OutputMessage(formatPersonalOrderMessage());
         playPersonalSound(self);
@@ -936,7 +902,6 @@ function CraftingOrders:OnEnable()
     self._awaitingFulfill = false;
     self._awaitDeadline = 0;
     self._personalCount = getPersonalOrderCount();
-    self._personalCountAvailable = self._personalCount ~= nil;
     self:EnsureWhisperButton();
     self:UpdateWhisperButton();
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", function()
@@ -959,7 +924,6 @@ function CraftingOrders:OnEnable()
     self.addon:ModuleRegisterEvent(self, "CHAT_MSG_SYSTEM", function(_, _, msg)
         if (IsInInstance()) then return; end
         self:HandleSystemMessage(msg);
-        self:HandlePersonalOrderMessage(msg);
     end);
     -- Hook ProfessionsFrame to create button when it becomes available
     if (ProfessionsFrame and ProfessionsFrame.HookScript) then
@@ -973,6 +937,8 @@ end
 function CraftingOrders:OnDisable()
     self._awaitingFulfill = false;
     self._awaitDeadline = 0;
+    self._awaitFulfillWho = nil;
+    self._awaitFulfillTip = nil;
 end
 
 -------------------------------------------------------------------------------
