@@ -914,6 +914,8 @@ local panel = LanternUX:CreatePanel({
     version = C_AddOns and C_AddOns.GetAddOnMetadata("Lantern", "Version") or "",
 });
 
+Lantern._uxPanel = panel;
+
 -------------------------------------------------------------------------------
 -- AutoQuest custom options
 -------------------------------------------------------------------------------
@@ -1532,11 +1534,24 @@ loginFrame:SetScript("OnEvent", function()
         panel:AddSection("addons", "Addons");
         for _, moduleName in ipairs(external) do
             local mod = Lantern.modules[moduleName];
-            panel:AddPage("module_" .. moduleName, {
-                label     = (mod.opts and mod.opts.title) or moduleName,
-                section   = "addons",
-                aceConfig = { appName = "module_" .. moduleName },
-            });
+            if (mod.uxPages) then
+                local groupKey = "addon_" .. moduleName:lower();
+                panel:AddSidebarGroup(groupKey, {
+                    label   = (mod.opts and mod.opts.title) or moduleName,
+                    section = "addons",
+                });
+                for _, pageInfo in ipairs(mod.uxPages) do
+                    pageInfo.opts.section = "addons";
+                    pageInfo.opts.sidebarGroup = groupKey;
+                    panel:AddPage(pageInfo.key, pageInfo.opts);
+                end
+            else
+                panel:AddPage("module_" .. moduleName, {
+                    label     = (mod.opts and mod.opts.title) or moduleName,
+                    section   = "addons",
+                    aceConfig = { appName = "module_" .. moduleName },
+                });
+            end
         end
     end
 end);

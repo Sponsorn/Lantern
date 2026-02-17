@@ -80,6 +80,13 @@ function PanelMixin:SelectPage(key)
     self:_SelectItem(key);
 end
 
+function PanelMixin:RefreshCurrentPage()
+    local key = self._activeKey;
+    if (not key) then return; end
+    self._activeKey = nil;
+    self:_SelectItem(key);
+end
+
 function PanelMixin:GetFrame()
     return self._frame;
 end

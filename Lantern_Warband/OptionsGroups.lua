@@ -324,25 +324,7 @@ function Warband:BuildGroupsOptions(groupsArgs, refreshOptions)
 
         -- Add character members to this group's options
         if (group.members and #group.members > 0) then
-            -- Helper function to format time ago
-            local function formatTimeAgo(timestamp)
-                if (not timestamp) then return "Never"; end
-                local now = time();
-                local diff = now - timestamp;
-
-                if (diff < 60) then
-                    return "Just now";
-                elseif (diff < 3600) then
-                    local mins = math.floor(diff / 60);
-                    return mins .. "m ago";
-                elseif (diff < 86400) then
-                    local hours = math.floor(diff / 3600);
-                    return hours .. "h ago";
-                else
-                    local days = math.floor(diff / 86400);
-                    return days .. "d ago";
-                end
-            end
+            local formatTimeAgo = utils.formatTimeAgo;
 
             -- Build member table header
             groupsArgs[groupKey].args.memberTableHeader = {
