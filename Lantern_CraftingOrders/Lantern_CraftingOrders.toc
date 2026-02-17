@@ -5,6 +5,8 @@
 ## Version: 0.4.7b
 ## IconTexture: Interface\AddOns\Lantern_CraftingOrders\Media\Images\Icons\lantern-co-icon64.blp
 ## Dependencies: Lantern
+## OptionalDeps: LanternUX
 ## DefaultState: enabled
 
 CraftingOrders.lua
+WidgetOptions.lua

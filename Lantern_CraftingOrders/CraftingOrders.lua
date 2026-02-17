@@ -975,4 +975,15 @@ function CraftingOrders:OnDisable()
     self._awaitDeadline = 0;
 end
 
+-------------------------------------------------------------------------------
+-- Expose helpers for WidgetOptions.lua (avoids duplication)
+-------------------------------------------------------------------------------
+
+CraftingOrders._getSoundValues = getSoundValues;
+CraftingOrders._getFontValues = GetFontValues;
+CraftingOrders._getOutlineValues = GetOutlineValues;
+CraftingOrders._buildGuildPreview = buildGuildPreview;
+CraftingOrders._playPersonalSound = function() playPersonalSound(CraftingOrders); end;
+CraftingOrders._formatPersonalOrderMessage = formatPersonalOrderMessage;
+
 Lantern:RegisterModule(CraftingOrders);
