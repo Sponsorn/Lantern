@@ -1,16 +1,15 @@
-LanternUX is a standalone settings panel framework for WoW addon developers. No dependencies -- drop it in and create polished settings panels without AceConfig or AceGUI.
+LanternUX is a standalone settings panel framework for WoW addon developers. No dependencies -- drop it in and create polished settings panels.
 
 ### Features
 
-*   **Dark monochrome theme** inspired by Linear -- near-black backgrounds with muted lavender accents
+*   **Dark monochrome theme** inspired by Linear - near-black backgrounds with muted lavender accents
 *   **15 built-in widget types**: toggle, range (slider), select (dropdown), input (text field), color picker, execute (button), label, header, description, divider, collapsible group, label with action button, item row, drop slot, search result
 *   **Sidebar navigation** with sections, collapsible groups, and accent-highlighted selection
 *   **Widget search** with real-time filtering and jump-to-widget
 *   **Description panel** that shows contextual help on widget hover
 *   **Smooth scrolling** with easing and fade overlays
 *   **Widget pooling** for efficient memory reuse across page switches
-*   **AceConfig fallback** -- mix custom widget pages with AceConfig pages in the same panel
-*   **Multiple page types**: widget-based, custom frame, or AceConfig
+*   **Multiple page types**: widget-based or custom frame
 
 ### Quick Start
 
@@ -39,7 +38,7 @@ panel:Toggle()
 
 *   `LanternUX:CreatePanel(config)` -- create a panel (name, title, icon, version)
 *   `panel:AddSection(key, label)` -- add a sidebar section header
-*   `panel:AddPage(key, opts)` -- add a page (widgets, frame, or aceConfig)
+*   `panel:AddPage(key, opts)` -- add a page (widgets or custom frame)
 *   `panel:AddSidebarGroup(key, opts)` -- add a collapsible sidebar group
 *   `panel:Show()` / `panel:Hide()` / `panel:Toggle()`
 *   `panel:SelectPage(key)` -- navigate to a page

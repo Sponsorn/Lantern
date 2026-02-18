@@ -8,6 +8,13 @@ local SCROLL_STEP           = 40;
 local SCROLL_BLEND          = 0.15;
 local SCROLL_SNAP_THRESHOLD = 0.5;
 
+-- Scrollbar auto-hide
+local SCROLLBAR_FADE_DELAY = 1.0;
+local SCROLLBAR_FADE_BLEND = 0.12;
+local SCROLLBAR_FADE_SNAP  = 0.02;
+
+local T = LanternUX.Theme;
+
 local scrollCounter = 0;
 local function NextScrollName(prefix)
     scrollCounter = scrollCounter + 1;
@@ -43,14 +50,6 @@ local function CreateScrollContainer(parent)
         container:UpdateThumb();
     end
 
-    -- Mouse wheel scrolling
-    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local maxScroll = self:GetVerticalScrollRange();
-        scrollTarget = scrollTarget - (delta * SCROLL_STEP);
-        scrollTarget = math.max(0, math.min(scrollTarget, maxScroll));
-        self:SetScript("OnUpdate", OnUpdate_SmoothScroll);
-    end);
-
     -- Scrollbar track (wider hit area for clicking, narrow visual)
     local track = CreateFrame("Frame", NextScrollName("LUX_ScrollTrack_"), scrollFrame);
     track:SetWidth(12);
@@ -62,7 +61,7 @@ local function CreateScrollContainer(parent)
     trackBg:SetPoint("TOP");
     trackBg:SetPoint("BOTTOM");
     trackBg:SetPoint("RIGHT", -2, 0);
-    trackBg:SetColorTexture(0.14, 0.14, 0.16, 0.3);
+    trackBg:SetColorTexture(unpack(T.scrollTrack));
     track:Hide();
 
     -- Scrollbar thumb (wider hit area, narrow visual)
@@ -75,10 +74,61 @@ local function CreateScrollContainer(parent)
     thumbBg:SetPoint("TOP");
     thumbBg:SetPoint("BOTTOM");
     thumbBg:SetPoint("RIGHT", -2, 0);
-    thumbBg:SetColorTexture(0.40, 0.40, 0.44, 0.6);
+    thumbBg:SetColorTexture(unpack(T.scrollThumb));
     thumb:Hide();
 
+    ---------------------------------------------------------------------------
+    -- Scrollbar fade state
+    ---------------------------------------------------------------------------
+
+    local scrollbarAlpha = 0;
+    local scrollbarTarget = 0;
+    local scrollbarFadeTimer = nil;
+    local contentNeedsScroll = false;
+
+    local function OnUpdate_ScrollbarFade(_, elapsed)
+        local step = math.min(1, SCROLLBAR_FADE_BLEND * elapsed * 60);
+        scrollbarAlpha = scrollbarAlpha + (scrollbarTarget - scrollbarAlpha) * step;
+        if (math.abs(scrollbarAlpha - scrollbarTarget) < SCROLLBAR_FADE_SNAP) then
+            scrollbarAlpha = scrollbarTarget;
+            track:SetScript("OnUpdate", nil);
+            if (scrollbarAlpha <= 0) then
+                track:Hide();
+                thumb:Hide();
+            end
+        end
+        track:SetAlpha(scrollbarAlpha);
+        thumb:SetAlpha(scrollbarAlpha);
+    end
+
+    local function ShowScrollbar()
+        if (not contentNeedsScroll) then return; end
+        scrollbarTarget = 1;
+        -- Cancel any pending fade timer
+        if (scrollbarFadeTimer) then scrollbarFadeTimer:Cancel(); scrollbarFadeTimer = nil; end
+        -- Show at current alpha if hidden
+        if (not track:IsShown()) then
+            scrollbarAlpha = 0;
+            track:SetAlpha(0);
+            thumb:SetAlpha(0);
+            track:Show();
+            thumb:Show();
+        end
+        -- Start fade-in animation
+        track:SetScript("OnUpdate", OnUpdate_ScrollbarFade);
+        -- Schedule fade-out after delay
+        scrollbarFadeTimer = C_Timer.NewTimer(SCROLLBAR_FADE_DELAY, function()
+            scrollbarFadeTimer = nil;
+            scrollbarTarget = 0;
+            track:SetScript("OnUpdate", OnUpdate_ScrollbarFade);
+        end);
+    end
+    container.ShowScrollbar = ShowScrollbar;
+
+    ---------------------------------------------------------------------------
     -- Thumb drag
+    ---------------------------------------------------------------------------
+
     local isDragging = false;
     local dragStartY, dragStartScroll;
 
@@ -87,18 +137,30 @@ local function CreateScrollContainer(parent)
         isDragging = true;
         dragStartY = select(2, GetCursorPosition()) / UIParent:GetEffectiveScale();
         dragStartScroll = scrollFrame:GetVerticalScroll();
+        -- Keep scrollbar visible during drag
+        if (scrollbarFadeTimer) then scrollbarFadeTimer:Cancel(); scrollbarFadeTimer = nil; end
+        scrollbarTarget = 1;
+        scrollbarAlpha = 1;
+        track:SetAlpha(1);
+        thumb:SetAlpha(1);
+        track:SetScript("OnUpdate", nil);
     end);
 
     thumb:SetScript("OnMouseUp", function()
         isDragging = false;
+        ShowScrollbar();  -- restart fade timer
     end);
 
     -- Also stop drag if mouse is released outside the thumb
     scrollFrame:HookScript("OnMouseUp", function()
-        isDragging = false;
+        if (isDragging) then
+            isDragging = false;
+            ShowScrollbar();
+        end
     end);
     track:SetScript("OnMouseUp", function()
         isDragging = false;
+        ShowScrollbar();
     end);
 
     thumb:SetScript("OnUpdate", function()
@@ -116,6 +178,15 @@ local function CreateScrollContainer(parent)
         container:UpdateThumb();
     end);
 
+    -- Mouse wheel scrolling
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local maxScroll = self:GetVerticalScrollRange();
+        scrollTarget = scrollTarget - (delta * SCROLL_STEP);
+        scrollTarget = math.max(0, math.min(scrollTarget, maxScroll));
+        self:SetScript("OnUpdate", OnUpdate_SmoothScroll);
+        ShowScrollbar();
+    end);
+
     -- Track click to jump
     track:SetScript("OnMouseDown", function(_, button)
         if (button ~= "LeftButton") then return; end
@@ -128,6 +199,7 @@ local function CreateScrollContainer(parent)
         local scrollRange = scrollFrame:GetVerticalScrollRange();
         scrollTarget = clickRatio * scrollRange;
         scrollFrame:SetScript("OnUpdate", OnUpdate_SmoothScroll);
+        ShowScrollbar();
     end);
 
     container.scrollFrame = scrollFrame;
@@ -140,13 +212,18 @@ local function CreateScrollContainer(parent)
         local contentHeight = self.scrollChild:GetHeight();
 
         if (contentHeight <= visibleHeight or contentHeight <= 0) then
+            -- No scrolling needed — hide immediately
+            contentNeedsScroll = false;
+            if (scrollbarFadeTimer) then scrollbarFadeTimer:Cancel(); scrollbarFadeTimer = nil; end
+            scrollbarTarget = 0;
+            scrollbarAlpha = 0;
             self.track:Hide();
             self.thumb:Hide();
+            self.track:SetScript("OnUpdate", nil);
             return;
         end
 
-        self.track:Show();
-        self.thumb:Show();
+        contentNeedsScroll = true;
 
         local trackHeight = self.track:GetHeight();
         local thumbHeight = math.max(20, (visibleHeight / contentHeight) * trackHeight);
@@ -166,9 +243,20 @@ local function CreateScrollContainer(parent)
         self.scrollFrame:SetVerticalScroll(0);
         scrollTarget = 0;
         self.scrollFrame:SetScript("OnUpdate", nil);
+        -- Reset fade state
+        if (scrollbarFadeTimer) then scrollbarFadeTimer:Cancel(); scrollbarFadeTimer = nil; end
+        scrollbarTarget = 0;
+        scrollbarAlpha = 0;
+        self.track:Hide();
+        self.thumb:Hide();
+        self.track:SetScript("OnUpdate", nil);
         -- Defer thumb update to next frame (dimensions need to settle)
         C_Timer.After(0, function()
             self:UpdateThumb();
+            -- Show scrollbar briefly if content is scrollable
+            if (contentNeedsScroll) then
+                ShowScrollbar();
+            end
         end);
     end
 
@@ -194,14 +282,21 @@ local function CreateScrollContainer(parent)
         local desired = math.max(0, targetY - visibleHeight * 0.3);
         scrollTarget = math.min(desired, maxScroll);
         self.scrollFrame:SetScript("OnUpdate", OnUpdate_SmoothScroll);
+        ShowScrollbar();
     end
 
     function container:Reset()
         self.scrollFrame:SetVerticalScroll(0);
         scrollTarget = 0;
         self.scrollFrame:SetScript("OnUpdate", nil);
+        -- Reset fade state
+        if (scrollbarFadeTimer) then scrollbarFadeTimer:Cancel(); scrollbarFadeTimer = nil; end
+        contentNeedsScroll = false;
+        scrollbarTarget = 0;
+        scrollbarAlpha = 0;
         self.track:Hide();
         self.thumb:Hide();
+        self.track:SetScript("OnUpdate", nil);
     end
 
     function container:RestoreScroll(pos)
@@ -212,6 +307,9 @@ local function CreateScrollContainer(parent)
         self.scrollFrame:SetScript("OnUpdate", nil);
         C_Timer.After(0, function()
             self:UpdateThumb();
+            if (contentNeedsScroll) then
+                ShowScrollbar();
+            end
         end);
     end
 

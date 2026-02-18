@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.34 - 2026-02-18
+- Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
+- Remove: Dropped AceConfig, AceGUI, and AceEvent library dependencies
+- Change: LanternUX is now a required dependency (previously optional)
+- Change: Blizzard Settings entry (ESC > Options > Addons > Lantern) replaced with a simple splash screen and "Open Settings" button
+
 ## 0.4.33 - 2026-02-15
 - Fix: MissingPet warning text is now clickthrough when locked
 - Change: Interrupt Tracker preview uses original character names

@@ -134,6 +134,52 @@ local function SetupDivider(w, parent, data, contentWidth)
 end
 
 -------------------------------------------------------------------------------
+-- Internal widget: Card background (for group children)
+-------------------------------------------------------------------------------
+
+local CARD_PAD = 10;  -- Padding around children
+
+local cardPool = {};
+
+local function AcquireCard(parent)
+    for _, c in ipairs(cardPool) do
+        if (not c._inUse) then
+            c._inUse = true;
+            c.frame:SetParent(parent);
+            c.frame:Show();
+            return c;
+        end
+    end
+
+    local c = {};
+    local frame = CreateFrame("Frame", NextName("LUX_Card_"), parent, "BackdropTemplate");
+    frame:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets   = { left = 3, right = 3, top = 3, bottom = 3 },
+    });
+    frame:SetBackdropColor(unpack(T.cardBg));
+    frame:SetBackdropBorderColor(unpack(T.cardBorder));
+    c.frame = frame;
+    c._inUse = true;
+    table.insert(cardPool, c);
+    return c;
+end
+
+local function ReleaseCards()
+    for _, c in ipairs(cardPool) do
+        c._inUse = false;
+        c.frame:Hide();
+        c.frame:ClearAllPoints();
+    end
+end
+
+_W.AcquireCard = AcquireCard;
+_W.ReleaseCards = ReleaseCards;
+_W.CARD_PAD = CARD_PAD;
+
+-------------------------------------------------------------------------------
 -- Register
 -------------------------------------------------------------------------------
 

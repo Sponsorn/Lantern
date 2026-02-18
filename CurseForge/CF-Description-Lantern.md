@@ -20,6 +20,10 @@ The framework is module-based, so additional features can be plugged in later wi
 
 *   Crafting Orders additions: Maybe stats to see what people are requesting in trade chat to be able to make decisions on which profession trees to pick.
 
+#### Requirements
+
+*   [LanternUX](https://www.curseforge.com/wow/addons/lanternux) (settings panel framework)
+
 <div><h4>Configuration</h4></div>
 
-Click on minimap button or open the game’s Options → AddOns → Lantern → General Options. Each module has an enable toggle and a short description.
+Click the minimap button, type `/lantern`, or open Options → AddOns → Lantern and click "Open Settings". Each module has an enable toggle and its own settings page.

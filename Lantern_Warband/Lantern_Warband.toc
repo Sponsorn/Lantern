@@ -4,17 +4,13 @@
 ## Author: Dede in-game / Sponsorn on curseforge & github
 ## Version: 0.3.1
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
-## Dependencies: Lantern
-## OptionalDeps: LanternUX
+## Dependencies: Lantern, LanternUX
 ## SavedVariables: LanternWarbandDB
 ## DefaultState: enabled
 
 Warband.lua
 Options.lua
-OptionsGroups.lua
 WidgetOptions.lua
-Warehousing\Options.lua
 Warehousing\Data.lua
 Warehousing\Engine.lua
 Warehousing\UI.lua
-Warehousing\Settings.lua

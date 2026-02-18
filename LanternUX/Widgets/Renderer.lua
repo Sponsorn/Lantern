@@ -10,7 +10,7 @@ local SetDefaultDescription = _W.SetDefaultDescription;
 -------------------------------------------------------------------------------
 
 local CONTENT_PAD    = 20;
-local WIDGET_GAP     = 6;
+local WIDGET_GAP     = 8;
 local DIVIDER_HEIGHT = 16;
 
 -------------------------------------------------------------------------------
@@ -30,6 +30,7 @@ end
 
 local function RenderContent(scrollContainer, options, headerInfo, pageKey, preserveScroll)
     ReleaseAll();
+    if (_W.ReleaseCards) then _W.ReleaseCards(); end
     wipe(_W.widgetPositionMap);
 
     _W.currentPageKey = pageKey or "";
@@ -43,7 +44,7 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
     local y = -CONTENT_PAD;
 
     -- Reset description panel default
-    SetDefaultDescription("", "Hover over a setting to see its description.");
+    SetDefaultDescription("", "");
 
     -- Content header (title + description + divider)
     if (headerInfo and headerInfo.title) then
@@ -81,12 +82,12 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
         dividerFactory.setup(divW, parent, {}, contentWidth);
         divW.frame:ClearAllPoints();
         divW.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD, y);
-        y = y - (divW.height or DIVIDER_HEIGHT);
+        y = y - (divW.height or DIVIDER_HEIGHT) - 8;
     end
 
     -- Render widgets
     local GROUP_INDENT = 14;
-    local SECTION_MARGIN = 10;
+    local SECTION_MARGIN = 16;
     local widgetCount = 0;
 
     local function renderWidget(data, indent, groupPath)
@@ -125,13 +126,26 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
                 end
             end;
 
-            -- If expanded, render children inline (indented)
+            -- If expanded, render children inline (indented) with card background
             if (w._expanded and data.children) then
+                local cardStartY = y;
                 local childGroupPath = (data.text or "");
                 for _, childData in ipairs(data.children) do
                     if (childData.type ~= "group") then
                         renderWidget(childData, GROUP_INDENT, childGroupPath);
                     end
+                end
+                -- Create card background behind children
+                local cardH = math.abs(cardStartY - y);
+                if (cardH > 0 and _W.AcquireCard) then
+                    local cardPad = _W.CARD_PAD or 10;
+                    local cardTopPad = 6;
+                    local cardBotPad = 4;
+                    local card = _W.AcquireCard(parent);
+                    card.frame:ClearAllPoints();
+                    card.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD + GROUP_INDENT - cardPad, cardStartY + cardTopPad);
+                    card.frame:SetSize(contentWidth - GROUP_INDENT + cardPad * 2, cardH + cardTopPad + cardBotPad);
+                    card.frame:SetFrameLevel(parent:GetFrameLevel());
                 end
             end
         end

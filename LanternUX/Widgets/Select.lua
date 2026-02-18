@@ -14,9 +14,9 @@ local NextName = _W.NextName;
 -- Constants
 -------------------------------------------------------------------------------
 
-local SELECT_HEIGHT      = 28;
+local SELECT_HEIGHT      = 32;
 local SELECT_BTN_W       = 160;
-local SELECT_BTN_H       = 24;
+local SELECT_BTN_H       = 28;
 local SELECT_ITEM_H      = 24;
 local SELECT_MAX_VISIBLE = 10;
 local SCROLLBAR_W        = 10;
@@ -95,7 +95,7 @@ local function EnsureDropdownPopup()
     trackBg:SetPoint("TOP");
     trackBg:SetPoint("BOTTOM");
     trackBg:SetPoint("RIGHT", -1, 0);
-    trackBg:SetColorTexture(0.14, 0.14, 0.16, 0.3);
+    trackBg:SetColorTexture(unpack(T.scrollTrack));
     track:Hide();
 
     -- Scrollbar thumb
@@ -108,7 +108,7 @@ local function EnsureDropdownPopup()
     thumbBg:SetPoint("TOP");
     thumbBg:SetPoint("BOTTOM");
     thumbBg:SetPoint("RIGHT", -1, 0);
-    thumbBg:SetColorTexture(0.40, 0.40, 0.44, 0.6);
+    thumbBg:SetColorTexture(unpack(T.scrollThumb));
     thumb:Hide();
 
     -- Thumb position updater

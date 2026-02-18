@@ -406,60 +406,10 @@ end
 -- Register the module
 Lantern:RegisterModule(Warband);
 
--- Listen for our own ADDON_LOADED to refresh options after SavedVariables load
-local frame = CreateFrame("Frame");
+-- Listen for our own ADDON_LOADED to initialize database after SavedVariables load
+local frame = CreateFrame("Frame", "LanternWarband_LoadFrame");
 frame:RegisterEvent("ADDON_LOADED");
 frame:SetScript("OnEvent", function(_, event, addonName)
     if (addonName ~= ADDON_NAME) then return; end
-
-    -- SavedVariables are now loaded, initialize database
     ensureDB(Warband);
-
-    -- Small delay to refresh the options UI
-    C_Timer.After(0.1, function()
-        if (not Warband or not Warband.GetOptions) then
-            return;
-        end
-
-        local AceConfig = LibStub and LibStub("AceConfig-3.0", true);
-        local AceConfigRegistry = LibStub and LibStub("AceConfigRegistry-3.0", true);
-
-        if (not AceConfig or not AceConfigRegistry) then
-            return;
-        end
-
-        local key = "module_Warband";
-        local newOptions = Warband:GetOptions();
-
-        -- Build the wrapped group
-        local group = {
-            type = "group",
-            name = "Warband",
-            childGroups = "tree",
-            args = {
-                enabled = {
-                    order = 0,
-                    type = "toggle",
-                    name = "Enable",
-                    width = "full",
-                    get = function() return Warband.enabled; end,
-                    set = function(_, val)
-                        if (val) then
-                            Lantern:EnableModule("Warband");
-                        else
-                            Lantern:DisableModule("Warband");
-                        end
-                    end,
-                },
-            },
-        };
-
-        -- Merge new options
-        for k, v in pairs(newOptions) do
-            group.args[k] = v;
-        end
-
-        AceConfig:RegisterOptionsTable(key, group);
-        AceConfigRegistry:NotifyChange(key);
-    end);
 end);

@@ -176,6 +176,10 @@ end
 local function StartSoundTimer(state)
     StopSoundTimer();
 
+    -- Suppress sound until pet system has initialized (prevents false
+    -- alarms on login before the pet has had a chance to load).
+    if (not module._petSystemReady) then return; end
+
     local db = getDB();
     if (not db or not db.soundEnabled) then return; end
 
@@ -603,7 +607,12 @@ function module:OnEnable()
         end);
     end
 
-    -- Initial update
+    -- On login, suppress sound until the pet system signals readiness
+    -- (UNIT_PET fires) or a fallback timeout expires.  Mid-session enable
+    -- skips the suppression since the pet system is already active.
+    self._petSystemReady = self._worldReady or false;
+
+    -- Initial update (visual only on login — sound gated by _petSystemReady)
     UpdatePetStatus();
 end
 
@@ -638,6 +647,9 @@ end
 
 function module:OnUnitPet(event, unit)
     if (unit == "player") then
+        if (not self._petSystemReady) then
+            self._petSystemReady = true;
+        end
         UpdatePetStatus();
     end
 end
@@ -653,13 +665,25 @@ function module:OnPetBarUpdate()
 end
 
 function module:OnPlayerEnteringWorld()
+    self._worldReady = true;
     -- Short delay to let pet state and fonts settle
     C_Timer.After(0.5, function()
         if (module.enabled) then
-            UpdateWarningFont(); -- Refresh font in case other addons registered fonts
+            UpdateWarningFont();
             UpdatePetStatus();
         end
     end);
+    -- Fallback: if UNIT_PET never fires (pet genuinely missing), enable
+    -- sound after 10 seconds so the warning isn't permanently silent.
+    if (not self._petSystemReady) then
+        C_Timer.After(10, function()
+            if (module.enabled and not module._petSystemReady) then
+                module._petSystemReady = true;
+                currentState = nil; -- Force full re-evaluation with sound
+                UpdatePetStatus();
+            end
+        end);
+    end
 end
 
 function module:OnMountChanged()

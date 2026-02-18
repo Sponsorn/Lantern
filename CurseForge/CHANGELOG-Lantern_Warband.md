@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 - 2026-02-18
+- Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
+- Remove: Old warehousing settings panel replaced by LanternUX Warehousing page
+- Change: Warehousing Settings button now opens the main settings panel
+- Change: LanternUX is now a required dependency (previously optional)
+
 ## 0.3.1 - 2026-02-11
 - Change: Warehousing engine now uses event-driven move confirmation instead of polling, for faster and more reliable item transfers
 - Change: Full-stack deposits use Blizzard's deposit API for improved reliability and automatic stacking

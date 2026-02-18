@@ -180,13 +180,14 @@ local function personalWidgets()
         {
             type = "select",
             label = "Sound",
-            desc = "Sound to play when a personal crafting order is received.",
+            desc = "Sound to play when a personal crafting order is received. Click the speaker icon to preview.",
             values = CraftingOrders._getSoundValues,
             disabled = soundDisabled,
             get = function() return db.personalSoundName or "Lantern: Auction Window Open"; end,
             set = function(val)
                 db.personalSoundName = val;
             end,
+            preview = CraftingOrders._previewSound,
         },
 
         -----------------------------------------------------------------------

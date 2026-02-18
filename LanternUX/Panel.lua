@@ -4,9 +4,6 @@ local LanternUX = _G.LanternUX;
 local T = LanternUX and LanternUX.Theme;
 if (not T) then return; end
 
-local AceGUI = LibStub and LibStub("AceGUI-3.0", true);
-local AceConfigDialog = LibStub and LibStub("AceConfigDialog-3.0", true);
-
 -------------------------------------------------------------------------------
 -- Layout constants
 -------------------------------------------------------------------------------
@@ -17,10 +14,11 @@ local SIDEBAR_W       = 200;
 local TITLE_H         = 42;
 local ITEM_H          = 30;
 local SECTION_H       = 30;
-local ACCENT_W        = 3;
+local ACCENT_W        = 4;
 local ITEM_PAD_LEFT   = 14;
 local SIDEBAR_PAD_TOP = 8;
 local DESC_PANEL_W    = 220;
+local PAGE_FADE_SPEED = 8;   -- Lerp multiplier (~100-120ms to reach full alpha)
 
 local panelFrameCounter = 0;
 local function NextPanelName(prefix)
@@ -107,6 +105,23 @@ end
 
 function PanelMixin:GetFrame()
     return self._frame;
+end
+
+function PanelMixin:_FadeInContent(target)
+    if (not self._fadeHelper) then return; end
+    target:SetAlpha(0);
+    local alpha = 0;
+    self._fadeHelper:SetScript("OnUpdate", function(_, elapsed)
+        alpha = alpha + PAGE_FADE_SPEED * elapsed;
+        if (alpha >= 1) then
+            target:SetAlpha(1);
+            self._fadeHelper:SetScript("OnUpdate", nil);
+            self._fadeHelper:Hide();
+            return;
+        end
+        target:SetAlpha(alpha);
+    end);
+    self._fadeHelper:Show();
 end
 
 -------------------------------------------------------------------------------
@@ -198,11 +213,11 @@ function PanelMixin:_CreateSidebarGroupHeader(parent, groupKey, label, yOffset)
 
     local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
     text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
-    text:SetPoint("RIGHT", btn, "RIGHT", -22, 0);
+    text:SetPoint("RIGHT", btn, "RIGHT", -26, 0);
 
     -- Arrow on the right (matches Widgets/Group.lua style)
     local arrow = btn:CreateTexture(nil, "ARTWORK");
-    arrow:SetSize(10, 10);
+    arrow:SetSize(14, 14);
     arrow:SetPoint("RIGHT", -8, 0);
     arrow:SetAtlas("ui-questtrackerbutton-secondary-expand");
     arrow:SetDesaturated(true);
@@ -334,11 +349,13 @@ end
 -------------------------------------------------------------------------------
 
 function PanelMixin:_HideAllContent()
+    -- Stop any running page fade
+    if (self._fadeHelper) then
+        self._fadeHelper:SetScript("OnUpdate", nil);
+        self._fadeHelper:Hide();
+    end
     if (self._splashFrames) then
         for _, sf in pairs(self._splashFrames) do sf:Hide(); end
-    end
-    if (self._aceContainer and self._aceContainer.frame) then
-        self._aceContainer.frame:Hide();
     end
     if (self._customScroll) then
         self._customScroll.scrollFrame:Hide();
@@ -360,6 +377,7 @@ function PanelMixin:_ShowContent(key)
             self._splashFrames[key] = page.frame(self._content);
         end
         self._splashFrames[key]:Show();
+        self:_FadeInContent(self._splashFrames[key]);
         -- Call onShow callback if present
         if (page.onShow) then page.onShow(); end
         return;
@@ -379,31 +397,13 @@ function PanelMixin:_ShowContent(key)
             headerInfo = { title = page.title, description = page.description };
         end
         LanternUX.RenderContent(self._customScroll, options, headerInfo, key);
+        self:_FadeInContent(self._customScroll.scrollFrame);
 
         -- Search: scroll to widget if requested
         if (self._ConsumeScrollToWidget) then self:_ConsumeScrollToWidget(); end
         return;
     end
 
-    -- AceConfig fallback page
-    if (page.aceConfig and self._aceContainer and AceConfigDialog) then
-        self._aceContainer.frame:Show();
-        local aceConfig = page.aceConfig;
-        C_Timer.After(0, function()
-            if (not self._aceContainer or not self._aceContainer.frame:IsShown()) then return; end
-            if (aceConfig.path) then
-                AceConfigDialog:Open(aceConfig.appName, self._aceContainer, aceConfig.path);
-            else
-                AceConfigDialog:Open(aceConfig.appName, self._aceContainer);
-            end
-            C_Timer.After(0, function()
-                if (self._aceContainer and self._aceContainer.DoLayout) then
-                    self._aceContainer:DoLayout();
-                end
-            end);
-        end);
-        return;
-    end
 end
 
 -------------------------------------------------------------------------------
@@ -485,7 +485,7 @@ function PanelMixin:_BuildSidebar()
 
     -- Then each section + its pages + its groups
     for _, sec in ipairs(self._sections) do
-        y = y + 4;
+        y = y + 10;
         local hdr = self:_CreateSectionHeader(sidebar, sec.label, y);
         table.insert(self._sectionHeaders, hdr);
         y = y + SECTION_H;
@@ -780,18 +780,6 @@ function PanelMixin:_Build()
     descPanel:Hide();
     self._descPanel = descPanel;
 
-    -- AceGUI container for AceConfig fallback pages
-    if (AceGUI and AceConfigDialog) then
-        local aceContainer = AceGUI:Create("SimpleGroup");
-        aceContainer:SetLayout("Fill");
-        aceContainer.frame:SetParent(content);
-        aceContainer.frame:ClearAllPoints();
-        aceContainer.frame:SetPoint("TOPLEFT", content, "TOPLEFT", 4, -4);
-        aceContainer.frame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -4, 4);
-        aceContainer.frame:Hide();
-        self._aceContainer = aceContainer;
-    end
-
     -- Custom scroll container for widget-based pages
     if (LanternUX and LanternUX.CreateScrollContainer) then
         local customScroll = LanternUX.CreateScrollContainer(content);
@@ -802,6 +790,11 @@ function PanelMixin:_Build()
         customScroll.scrollFrame:Hide();
         self._customScroll = customScroll;
     end
+
+    -- Fade helper frame (drives page transition fade-in)
+    local fadeHelper = CreateFrame("Frame", config.name .. "_FadeHelper", content);
+    fadeHelper:Hide();
+    self._fadeHelper = fadeHelper;
 
     ---------------------------------------------------------------------------
     -- Lifecycle
@@ -823,10 +816,6 @@ function PanelMixin:_Build()
     end);
 
     frame:SetScript("OnHide", function()
-        if (self_._aceContainer) then
-            self_._aceContainer:ReleaseChildren();
-            self_._aceContainer.frame:Hide();
-        end
         if (self_._customScroll) then
             LanternUX.ReleaseAll();
             self_._customScroll.scrollFrame:Hide();

@@ -8,7 +8,7 @@ _G.LanternUX = _G.LanternUX or {};
 
 local T = {
     -- Core
-    bg           = { 0.06, 0.06, 0.07, 0.95 },
+    bg           = { 0.06, 0.06, 0.07, 1.0 },
     border       = { 0.18, 0.18, 0.20, 1.0 },
     text         = { 0.72, 0.72, 0.72, 1.0 },
     textBright   = { 1.0,  1.0,  1.0,  1.0 },
@@ -22,6 +22,19 @@ local T = {
     checkBorder  = { 0.35, 0.35, 0.38, 1.0 },
     checkInner   = { 0.10, 0.10, 0.12, 1.0 },
     checkHover   = { 0.42, 0.42, 0.45, 1.0 },
+    -- Toggle switch
+    toggleTrack     = { 0.20, 0.20, 0.22, 1.0 },
+    toggleTrackOn   = { 0.88, 0.56, 0.18, 0.85 },
+    toggleThumb     = { 0.60, 0.60, 0.62, 1.0 },
+    toggleThumbOn   = { 1.0,  1.0,  1.0,  1.0 },
+    toggleTrackDis  = { 0.15, 0.15, 0.17, 1.0 },
+    toggleThumbDis  = { 0.35, 0.35, 0.37, 1.0 },
+    -- Scrollbar
+    scrollTrack     = { 0.14, 0.14, 0.16, 0.3 },
+    scrollThumb     = { 0.40, 0.40, 0.44, 0.6 },
+    -- Section cards
+    cardBg          = { 1.0, 1.0, 1.0, 0.035 },
+    cardBorder      = { 1.0, 1.0, 1.0, 0.10 },
     -- Disabled
     disabled     = { 0.30, 0.30, 0.30, 1.0 },
     disabledText = { 0.45, 0.45, 0.45, 1.0 },
@@ -112,6 +125,7 @@ local function ReleaseAll()
     for _, pool in pairs(pools) do
         for _, w in ipairs(pool) do
             w._inUse = false;
+            w.frame:SetScript("OnUpdate", nil);
             w.frame:Hide();
             w.frame:ClearAllPoints();
         end

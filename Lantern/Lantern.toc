@@ -5,14 +5,11 @@
 ## Version: 0.4.33
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
 ## SavedVariables: LanternDB
-## OptionalDeps: LanternUX
+## Dependencies: LanternUX
 ## DefaultState: enabled
 
 Libs\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
-Libs\AceEvent-3.0\AceEvent-3.0.xml
-Libs\AceGUI-3.0\AceGUI-3.0.xml
-Libs\AceConfig-3.0\AceConfig-3.0.xml
 Libs\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0.lua
 Libs\LibSink-2.0\LibSink-2.0\LibSink-2.0.lua
@@ -20,17 +17,8 @@ Libs\LibSharedMedia-3.0\lib.xml
 Libs\LibDDI-1.0\lib.xml
 
 Utils\Utils.lua
-Utils\UI.lua
-Utils\OptionsLayout.lua
 Utils\TextAnimations.lua
 core.lua
-AutoQuest\Options.lua
-AutoQueue\Options.lua
-CursorRing\Options.lua
-DeleteConfirm\Options.lua
-DisableAutoAddSpells\Options.lua
-InterruptTracker\Options.lua
-MissingPet\Options.lua
 ui.lua
 AutoQuest\AutoQuest.lua
 AutoQueue\AutoQueue.lua

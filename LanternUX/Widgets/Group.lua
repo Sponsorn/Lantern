@@ -13,7 +13,7 @@ local NextName = _W.NextName;
 -------------------------------------------------------------------------------
 
 local GROUP_HEADER_H   = 28;
-local GROUP_ARROW_SIZE = 12;
+local GROUP_ARROW_SIZE = 14;
 local GROUP_ARROW_PAD  = 4;
 
 -------------------------------------------------------------------------------

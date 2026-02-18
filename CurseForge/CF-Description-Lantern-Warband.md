@@ -19,3 +19,8 @@ Lantern: Warband helps you organize characters and automate gold/item management
 *   UI panel anchored to the bank frame with per-group deposit and restock buttons
 *   Batch processing with progress bar for efficient bulk item moves
 *   Remembers panel state and group selection per character
+
+#### Requirements
+
+*   [Lantern](https://www.curseforge.com/wow/addons/lantern-qol)
+*   [LanternUX](https://www.curseforge.com/wow/addons/lanternux) (settings panel framework)

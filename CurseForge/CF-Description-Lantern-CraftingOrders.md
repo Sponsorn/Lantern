@@ -7,3 +7,8 @@ Everything is possible to turn off.
 *   Quality of life: optional "Complete + Whisper" button to finish a personal order and auto-whisper the customer with a custom message.
 
 Designed to be small, robust, and compatible with the default UI.
+
+#### Requirements
+
+*   [Lantern](https://www.curseforge.com/wow/addons/lantern-qol)
+*   [LanternUX](https://www.curseforge.com/wow/addons/lanternux) (settings panel framework)

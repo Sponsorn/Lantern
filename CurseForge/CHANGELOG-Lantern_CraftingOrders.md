@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.9 - 2026-02-18
+- Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
+- Change: LanternUX is now a required dependency (previously optional)
+
 ## 0.4.8 - 2026-02-18
 - Fix: Work order notifications not working on non-English game clients (GitHub issue #3)
 

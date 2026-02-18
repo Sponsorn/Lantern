@@ -390,7 +390,10 @@ local function CreatePanel()
     settingsBtn:SetFrameLevel(1020);
     settingsBtn:SetText("Settings");
     settingsBtn:SetScript("OnClick", function()
-        WarehousingUI:ToggleSettingsPanel();
+        Lantern:OpenOptions();
+        if (Lantern._uxPanel) then
+            Lantern._uxPanel:SelectPage("warband_warehousing");
+        end
     end);
     settingsBtn:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_TOP");
@@ -521,7 +524,6 @@ local function CreatePanel()
 
     panel = frame;
 
-    -- Export panel reference for Settings.lua
     WarehousingUI._panel = panel;
 
     return frame;
@@ -584,7 +586,6 @@ local function PopulatePanel()
     end
 end
 
--- Export PopulatePanel for Settings.lua
 WarehousingUI._populatePanel = PopulatePanel;
 
 function WarehousingUI:ShowPanel()
@@ -699,7 +700,5 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         if (panel) then
             panel:Hide();
         end
-        -- Clear settings state when bank closes
-        WarehousingUI:ClearSettingsState();
     end
 end);

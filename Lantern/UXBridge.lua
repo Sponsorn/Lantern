@@ -1070,10 +1070,14 @@ CUSTOM_OPTIONS["autoQuest"] = function()
     });
 
     ---------------------------------------------------------------------------
+    -- Divider between toggles and lists
+    ---------------------------------------------------------------------------
+    table.insert(widgets, { type = "divider" });
+
+    ---------------------------------------------------------------------------
     -- Blocked NPCs
     ---------------------------------------------------------------------------
     local d = db();
-    table.insert(widgets, { type = "header", text = "Blocked NPCs" });
     table.insert(widgets, {
         type = "description",
         text = "Note: other quest automation addons (QuickQuest, Plumber, etc.) may bypass the blocklist.",
@@ -1133,11 +1137,13 @@ CUSTOM_OPTIONS["autoQuest"] = function()
     end
     table.sort(npcKeys);
 
+    -- Blocked NPCs group with count
+    local npcGroupChildren = {};
     if (#npcKeys == 0) then
         local emptyMsg = (showAllNPCs or npcFilterZone == "")
             and "No NPCs are blocked."
             or ("No NPCs are blocked in " .. (npcFilterZone or "") .. ".");
-        table.insert(widgets, {
+        table.insert(npcGroupChildren, {
             type = "description",
             text = emptyMsg,
             fontSize = "small",
@@ -1145,7 +1151,7 @@ CUSTOM_OPTIONS["autoQuest"] = function()
         });
     else
         for _, key in ipairs(npcKeys) do
-            table.insert(widgets, {
+            table.insert(npcGroupChildren, {
                 type = "label_action",
                 text = key,
                 buttonLabel = "Remove",
@@ -1159,6 +1165,13 @@ CUSTOM_OPTIONS["autoQuest"] = function()
             });
         end
     end
+    table.insert(widgets, {
+        type = "group",
+        text = "Blocked NPCs (" .. #npcKeys .. ")",
+        expanded = true,
+        stateKey = "blockedNPCs",
+        children = npcGroupChildren,
+    });
 
     ---------------------------------------------------------------------------
     -- Blocked Quests
@@ -1220,7 +1233,7 @@ CUSTOM_OPTIONS["autoQuest"] = function()
         });
     else
         -- Group by NPC name
-        local groups = {};
+        local questGroups = {};
         for _, entry in ipairs(filteredEntries) do
             local npcName = entry.npcKey;
             if (npcName and npcName:find(" %-%s")) then
@@ -1229,23 +1242,16 @@ CUSTOM_OPTIONS["autoQuest"] = function()
             if (not npcName or npcName == "") then
                 npcName = "Unknown NPC";
             end
-            groups[npcName] = groups[npcName] or {};
-            table.insert(groups[npcName], entry);
+            questGroups[npcName] = questGroups[npcName] or {};
+            table.insert(questGroups[npcName], entry);
         end
 
         local npcNames = {};
-        for npcName in pairs(groups) do table.insert(npcNames, npcName); end
+        for npcName in pairs(questGroups) do table.insert(npcNames, npcName); end
         table.sort(npcNames);
 
         for _, npcName in ipairs(npcNames) do
-            table.insert(widgets, {
-                type = "label",
-                text = npcName,
-                fontSize = "medium",
-                color = T.textBright,
-            });
-
-            local group = groups[npcName];
+            local group = questGroups[npcName];
             table.sort(group, function(a, b)
                 local aName = a.name or "";
                 local bName = b.name or "";
@@ -1257,6 +1263,7 @@ CUSTOM_OPTIONS["autoQuest"] = function()
                 return tostring(a.id) < tostring(b.id);
             end);
 
+            local questChildren = {};
             for _, entry in ipairs(group) do
                 local label;
                 if (type(entry.name) == "string" and entry.name ~= "") then
@@ -1264,7 +1271,7 @@ CUSTOM_OPTIONS["autoQuest"] = function()
                 else
                     label = string.format("Quest ID: %s", tostring(entry.id));
                 end
-                table.insert(widgets, {
+                table.insert(questChildren, {
                     type = "label_action",
                     text = label,
                     buttonLabel = "Remove",
@@ -1282,23 +1289,25 @@ CUSTOM_OPTIONS["autoQuest"] = function()
                     end,
                 });
             end
+
+            table.insert(widgets, {
+                type = "group",
+                text = npcName .. " (" .. #group .. ")",
+                expanded = true,
+                stateKey = "questNpc:" .. npcName,
+                children = questChildren,
+            });
         end
     end
 
     ---------------------------------------------------------------------------
     -- Recent Automated Quests
     ---------------------------------------------------------------------------
-    table.insert(widgets, { type = "header", text = "Recent automated quests" });
-    table.insert(widgets, {
-        type = "description",
-        text = "Your 5 most recent automated quests. Use the button to block a quest from future automation.",
-        fontSize = "small",
-        color = T.textDim,
-    });
-
     local recentList = d.recentAutomated or {};
+    local recentChildren = {};
+
     if (#recentList == 0) then
-        table.insert(widgets, {
+        table.insert(recentChildren, {
             type = "description",
             text = "No automated quests yet.",
             fontSize = "small",
@@ -1313,12 +1322,11 @@ CUSTOM_OPTIONS["autoQuest"] = function()
                     label = string.format("%s (ID: %s)", label, tostring(entry.questID));
                 end
                 local alreadyBlocked = entry.questID and isQuestBlockedById(entry.questID);
-                local npcDesc = entry.npcKey and ("NPC: " .. entry.npcKey) or nil;
-                table.insert(widgets, {
+                table.insert(recentChildren, {
                     type = "label_action",
                     text = label,
                     buttonLabel = alreadyBlocked and "Blocked" or "Block Quest",
-                    desc = npcDesc or "Block this quest from future automation.",
+                    desc = "Block this quest from future automation.",
                     disabled = function() return isDisabled() or alreadyBlocked; end,
                     func = function()
                         if (entry.questID) then
@@ -1335,9 +1343,27 @@ CUSTOM_OPTIONS["autoQuest"] = function()
                         end
                     end,
                 });
+                -- Show NPC info inline below the quest entry
+                if (entry.npcKey) then
+                    table.insert(recentChildren, {
+                        type = "description",
+                        text = "NPC: " .. entry.npcKey,
+                        fontSize = "small",
+                        color = T.textDim,
+                    });
+                end
             end
         end
     end
+
+    local recentCount = math.min(#recentList, 5);
+    table.insert(widgets, {
+        type = "group",
+        text = "Recent automated quests (" .. recentCount .. ")",
+        expanded = true,
+        stateKey = "recentQuests",
+        children = recentChildren,
+    });
 
     return widgets;
 end
