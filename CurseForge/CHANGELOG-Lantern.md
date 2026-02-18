@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.4.34 - 2026-02-18
+- Fix: Missing Pet no longer plays false alarm sounds on login before the pet has loaded
 - Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
 - Remove: Dropped AceConfig, AceGUI, and AceEvent library dependencies
 - Change: LanternUX is now a required dependency (previously optional)
