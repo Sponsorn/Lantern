@@ -94,6 +94,8 @@ end
 -- Populates ST.trackedPlayers with per-spell state entries.
 -------------------------------------------------------------------------------
 
+local ScanTalentModifiers;  -- forward declaration (defined after inspect logic)
+
 local function RegisterPlayer(name, class)
     if (ST.excludedPlayers[name]) then return; end
 
@@ -164,12 +166,23 @@ local function IdentifyPlayerSpells()
                             maxCharges = spell.charges or 1,
                             baseCd     = ResolveCd(spell, player.spec),
                         };
+                    else
+                        -- Reset baseCd and charges to DB defaults before re-scanning talents
+                        local spellState = player.spells[spellID];
+                        spellState.baseCd = ResolveCd(spell, player.spec);
+                        spellState.maxCharges = spell.charges or 1;
+                        spellState.charges = math.min(spellState.charges, spellState.maxCharges);
                     end
                 end
             end
         end
     end
 
+    -- Scan own talents for CD modifiers and charge increases
+    local selfConfigID = C_ClassTalents.GetActiveConfigID();
+    if (selfConfigID) then
+        ScanTalentModifiers(player, selfConfigID);
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -354,6 +367,27 @@ local function UpdateSelfCooldowns()
     local now = GetTime();
     for spellID, spellState in pairs(player.spells) do
         if (IsSpellKnown(spellID) or IsPlayerSpell(spellID)) then
+            -- Check charges first (multi-charge spells report a recharge
+            -- timer via GetSpellCooldown even when charges are available)
+            local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
+            if (ok2 and chargeInfo) then
+                local maxCh = Unwrap(chargeInfo.maxCharges);
+                if (maxCh and maxCh > 1) then
+                    local curCh = Unwrap(chargeInfo.currentCharges);
+                    spellState.charges = curCh or spellState.charges;
+                    spellState.maxCharges = maxCh;
+                    local cdDur = Unwrap(chargeInfo.cooldownDuration);
+                    local cdStart = Unwrap(chargeInfo.cooldownStartTime);
+                    if (cdDur and cdStart and cdDur > 0) then
+                        spellState.cdEnd = cdStart + cdDur;
+                    end
+                    -- Restore "ready" when a charge becomes available again
+                    if (curCh and curCh > 0 and spellState.state == "cooldown") then
+                        spellState.state = "ready";
+                    end
+                end
+            end
+
             local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, spellID);
             if (ok and cdInfo) then
                 local dur = Unwrap(cdInfo.duration);
@@ -362,27 +396,18 @@ local function UpdateSelfCooldowns()
                     local cdEnd = start + dur;
                     spellState.cdEnd = cdEnd;
                     if (spellState.state == "ready" and cdEnd > now) then
-                        local spellData = ST.spellDB[spellID];
-                        if (spellData and spellData.duration and spellState.activeEnd > now) then
-                            spellState.state = "active";
+                        -- Multi-charge spells: recharge timer looks like a CD
+                        -- but the spell is still usable if charges remain
+                        if (spellState.maxCharges > 1 and spellState.charges > 0) then
+                            -- Don't override — spell is usable
                         else
-                            spellState.state = "cooldown";
+                            local spellData = ST.spellDB[spellID];
+                            if (spellData and spellData.duration and spellState.activeEnd > now) then
+                                spellState.state = "active";
+                            else
+                                spellState.state = "cooldown";
+                            end
                         end
-                    end
-                end
-            end
-
-            -- Check charges
-            local ok2, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID);
-            if (ok2 and chargeInfo) then
-                local maxCh = Unwrap(chargeInfo.maxCharges);
-                if (maxCh and maxCh > 1) then
-                    spellState.charges = Unwrap(chargeInfo.currentCharges) or spellState.charges;
-                    spellState.maxCharges = maxCh;
-                    local cdDur = Unwrap(chargeInfo.cooldownDuration);
-                    local cdStart = Unwrap(chargeInfo.cooldownStartTime);
-                    if (cdDur and cdStart and cdDur > 0) then
-                        spellState.cdEnd = cdStart + cdDur;
                     end
                 end
             end
@@ -525,6 +550,15 @@ local function OnTick(_, elapsed)
                     s.cdEnd = 0;
                     s.activeEnd = 0;
                 end
+            -- Multi-charge: recharge remaining charges while spell is usable
+            elseif (s.state == "ready" and s.maxCharges > 1
+                    and s.charges < s.maxCharges and s.cdEnd > 0 and now >= s.cdEnd) then
+                s.charges = s.charges + 1;
+                if (s.charges >= s.maxCharges) then
+                    s.cdEnd = 0;
+                else
+                    s.cdEnd = now + s.baseCd;
+                end
             end
         end
     end
@@ -589,8 +623,8 @@ local function ApplySpecOverrides(player, name, specID)
     end
 end
 
-local function ScanTalentModifiers(player)
-    local configID = -1;
+ScanTalentModifiers = function(player, configID)
+    configID = configID or -1;
     local ok, configInfo = pcall(C_Traits.GetConfigInfo, configID);
     if (not ok or not configInfo or not configInfo.treeIDs or #configInfo.treeIDs == 0) then
         return;
@@ -616,10 +650,15 @@ local function ScanTalentModifiers(player)
                             if (talentMod.spellID == defInfo.spellID) then
                                 local spellState = player.spells[talentMod.affectsSpell];
                                 if (spellState) then
+                                    local rank = (talentMod.perRank and nodeInfo.activeRank) or 1;
                                     if (talentMod.cdReductionPct) then
-                                        spellState.baseCd = math.max(1, spellState.baseCd * (1 - talentMod.cdReductionPct));
+                                        spellState.baseCd = math.max(1, spellState.baseCd * (1 - talentMod.cdReductionPct * rank));
                                     elseif (talentMod.cdReduction) then
-                                        spellState.baseCd = math.max(1, spellState.baseCd - talentMod.cdReduction);
+                                        spellState.baseCd = math.max(1, spellState.baseCd - talentMod.cdReduction * rank);
+                                    end
+                                    if (talentMod.chargeIncrease) then
+                                        spellState.maxCharges = (spellState.maxCharges or 1) + talentMod.chargeIncrease;
+                                        spellState.charges = math.min((spellState.charges or 1) + talentMod.chargeIncrease, spellState.maxCharges);
                                     end
                                 end
                             end

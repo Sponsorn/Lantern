@@ -4,6 +4,34 @@
 ## <span style="color:#E03E2D;">**I cannot stress this enough, this will break. Have fun while it lasts.**</span>
 ****
 
+## 0.4.4 - 2026-02-18
+- Fix: Removed Tombstone from Death Knight defensives (removed in Midnight)
+- Fix: Corrected Lichborne base cooldown to 90s
+- Add: Death Knight defensive talent modifiers — Anti-Magic Barrier (AMS -20s), Assimilation (AMZ -60s), Insatiable Blade (DRW -30s), Unholy Endurance (Lichborne -30s), Death's Messenger (Lichborne -30s)
+- Add: Warrior defensive talent modifiers — Honed Reflexes (Die by the Sword/Enraged Regeneration/Shield Wall -10%), Defender's Aegis (Shield Wall -60s +1 charge)
+- Fix: Corrected Paladin Ardent Defender base cooldown to 90s (was 120s)
+- Add: Paladin Blessing of Spellwarding (204018) to defensive tracker (choice node with Blessing of Protection)
+- Add: Paladin defensive talent modifiers — Unbreakable Spirit (Divine Shield/Ardent Defender -30%), Uther's Counsel (Divine Shield/BoP/Spellwarding -15%), Improved BoP (BoP/Spellwarding -60s), Empyrean Authority (Guardian of Ancient Kings +1 charge)
+- Add: Talent modifier system now supports charge increases (e.g. Defender's Aegis granting +1 Shield Wall charge)
+- Fix: Multi-charge spells (Survival Instincts, Shield Wall with Defender's Aegis) now correctly show as ready when charges are available instead of showing as on cooldown
+- Note: Red Thirst (Vampiric Blood) and Bloody Fortitude (Icebound Fortitude) are proc-based cooldown reductions that cannot be tracked as static modifiers
+- Note: Anger Management (Shield Wall CD per rage spent) and Impenetrable Wall (Shield Slam reduces Shield Wall CD) are proc-based and cannot be tracked as static modifiers
+- Add: Mage defensive talent modifiers — Master of Escape (Greater Invisibility -60s), Winter's Protection (Ice Block -30s per rank), Permafrost Bauble (Ice Block -30s)
+- Add: Talent modifier system now supports multi-rank talents (e.g. Winter's Protection with 2 ranks)
+- Add: Hunter defensive talent modifiers — Born To Be Wild (Aspect of the Turtle -15s per rank), Improved Aspect of the Turtle (-30s), Padded Armor (Survival of the Fittest +1 charge)
+- Add: Druid defensive talent modifiers — Survival of the Fittest (Barkskin/Survival Instincts -12% per rank, Guardian)
+- Remove: Dampen Harm from Monk defensives (removed in Midnight)
+- Add: Monk defensive talent modifiers — Expeditious Fortification (Fortifying Brew -30s)
+- Add: Demon Hunter defensive talent modifiers — Pitch Black (Darkness -120s), Demonic Resilience (Blur +1 charge)
+- Add: Priest defensive talent modifiers — Intangibility (Dispersion -30s), Angel's Mercy (Desperate Prayer -20s)
+- Add: Shaman defensive talent modifiers — Planes Traveler (Astral Shift -30s)
+- Add: Warlock defensive talent modifiers — Dark Accord (Unending Resolve -45s)
+- Add: Evoker defensive talent modifiers — Obsidian Bulwark (Obsidian Scales +1 charge), Interwoven Threads (Obsidian Scales -10%, Augmentation)
+- Fix: Player's own talent modifiers (CD reductions, charge increases) now apply correctly — previously only worked for inspected party members
+- Fix: Added Survival of the Fittest (264735) for Hunters with pets — previously only tracked the Lone Wolf version (281195)
+- Fix: Multi-charge spells now correctly return to "ready" when a charge recharges from cooldown state
+- Fix: Party member multi-charge spells now correctly recharge remaining charges while the spell is usable
+
 ## 0.4.3 - 2026-02-16
 - Fix: Updated interrupt database for Midnight — Preservation Evoker, Holy Paladin, Mistweaver Monk, and Restoration Druid no longer have interrupts
 - Fix: Evoker Quell cooldown corrected to 20s (18s for Augmentation) and restricted to Devastation/Augmentation

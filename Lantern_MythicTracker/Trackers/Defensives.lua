@@ -74,7 +74,7 @@ local spells = {
     -- PALADIN: Ardent Defender (Protection)
     {
         id       = 31850,
-        cd       = 120,
+        cd       = 90,
         duration = 8,
         charges  = nil,
         class    = "PALADIN",
@@ -99,6 +99,16 @@ local spells = {
         charges  = nil,
         class    = "PALADIN",
         specs    = nil,
+        category = "defensive",
+    },
+    -- PALADIN: Blessing of Spellwarding (Protection — choice node with BoP)
+    {
+        id       = 204018,
+        cd       = 300,
+        duration = 10,
+        charges  = nil,
+        class    = "PALADIN",
+        specs    = { [66] = true },
         category = "defensive",
     },
 
@@ -135,7 +145,7 @@ local spells = {
     -- DEATHKNIGHT: Lichborne
     {
         id       = 49039,
-        cd       = 120,
+        cd       = 90,
         duration = 10,
         charges  = nil,
         class    = "DEATHKNIGHT",
@@ -166,16 +176,6 @@ local spells = {
     {
         id       = 49028,
         cd       = 120,
-        duration = 8,
-        charges  = nil,
-        class    = "DEATHKNIGHT",
-        specs    = { [250] = true },
-        category = "defensive",
-    },
-    -- DEATHKNIGHT: Tombstone (Blood)
-    {
-        id       = 219809,
-        cd       = 60,
         duration = 8,
         charges  = nil,
         class    = "DEATHKNIGHT",
@@ -235,6 +235,16 @@ local spells = {
         category = "defensive",
     },
 
+    -- HUNTER: Survival of the Fittest
+    {
+        id       = 264735,
+        cd       = 180,
+        duration = 6,
+        charges  = nil,
+        class    = "HUNTER",
+        specs    = nil,
+        category = "defensive",
+    },
     -- HUNTER: Survival of the Fittest (Lone Wolf — no pet version)
     {
         id       = 281195,
@@ -282,16 +292,6 @@ local spells = {
         id       = 115203,
         cd       = 180,
         duration = 15,
-        charges  = nil,
-        class    = "MONK",
-        specs    = nil,
-        category = "defensive",
-    },
-    -- MONK: Dampen Harm (20-50% DR based on hit size)
-    {
-        id       = 122278,
-        cd       = 120,
-        duration = 10,
         charges  = nil,
         class    = "MONK",
         specs    = nil,
@@ -415,6 +415,133 @@ local spells = {
 };
 
 ST:RegisterSpells(spells);
+
+-------------------------------------------------------------------------------
+-- Talent CD Modifiers
+--
+-- Static cooldown reductions from talents detected via inspect.
+-- Dynamic/proc-based reductions (Red Thirst, Bloody Fortitude) cannot be
+-- tracked as static modifiers and are intentionally excluded.
+-------------------------------------------------------------------------------
+
+ST:RegisterTalentModifiers({
+    ---------------------------------------------------------------------------
+    -- DEATHKNIGHT
+    -- Skipped (dynamic): Red Thirst (VB CD per RP spent), Bloody Fortitude
+    --                     (IBF CD per kill)
+    ---------------------------------------------------------------------------
+    -- Anti-Magic Barrier: reduces Anti-Magic Shell CD by 20s
+    { spellID = 205727, affectsSpell = 48707, cdReduction = 20 },
+    -- Assimilation: reduces Anti-Magic Zone CD by 60s
+    { spellID = 374383, affectsSpell = 51052, cdReduction = 60 },
+    -- Insatiable Blade: reduces Dancing Rune Weapon CD by 30s (Blood)
+    { spellID = 377637, affectsSpell = 49028, cdReduction = 30 },
+    -- Unholy Endurance: reduces Lichborne CD by 30s
+    { spellID = 389682, affectsSpell = 49039, cdReduction = 30 },
+    -- Death's Messenger: reduces Lichborne CD by 30s
+    { spellID = 437122, affectsSpell = 49039, cdReduction = 30 },
+
+    ---------------------------------------------------------------------------
+    -- WARRIOR
+    -- Skipped (dynamic): Anger Management (Shield Wall CD per rage spent),
+    --                     Impenetrable Wall (Shield Slam reduces SW CD by 6s)
+    ---------------------------------------------------------------------------
+    -- Honed Reflexes: reduces defensive CDs by 10% (also affects Pummel in Interrupts.lua)
+    { spellID = 391271, affectsSpell = 118038, cdReductionPct = 0.10 },  -- Die by the Sword (Arms)
+    { spellID = 391271, affectsSpell = 184364, cdReductionPct = 0.10 },  -- Enraged Regeneration (Fury)
+    { spellID = 391271, affectsSpell = 871,    cdReductionPct = 0.10 },  -- Shield Wall (Prot)
+    -- Defender's Aegis: Shield Wall CD -60s and +1 charge (Prot)
+    { spellID = 397103, affectsSpell = 871, cdReduction = 60, chargeIncrease = 1 },
+
+    ---------------------------------------------------------------------------
+    -- PALADIN
+    ---------------------------------------------------------------------------
+    -- Unbreakable Spirit: reduces Divine Shield, Ardent Defender CD by 30%
+    { spellID = 114154, affectsSpell = 642,   cdReductionPct = 0.30 },  -- Divine Shield
+    { spellID = 114154, affectsSpell = 31850, cdReductionPct = 0.30 },  -- Ardent Defender
+    -- Uther's Counsel: reduces Divine Shield, BoP, Spellwarding CD by 15%
+    { spellID = 378425, affectsSpell = 642,    cdReductionPct = 0.15 },  -- Divine Shield
+    { spellID = 378425, affectsSpell = 1022,   cdReductionPct = 0.15 },  -- Blessing of Protection
+    { spellID = 378425, affectsSpell = 204018, cdReductionPct = 0.15 },  -- Blessing of Spellwarding
+    -- Improved Blessing of Protection: BoP and Spellwarding CD -60s
+    { spellID = 384909, affectsSpell = 1022,   cdReduction = 60 },  -- Blessing of Protection
+    { spellID = 384909, affectsSpell = 204018, cdReduction = 60 },  -- Blessing of Spellwarding
+    -- Empyrean Authority: Guardian of Ancient Kings +1 charge (Prot)
+    { spellID = 1246481, affectsSpell = 86659, chargeIncrease = 1 },
+
+    ---------------------------------------------------------------------------
+    -- MAGE
+    ---------------------------------------------------------------------------
+    -- Master of Escape: reduces Greater Invisibility CD by 60s
+    { spellID = 210476, affectsSpell = 110959, cdReduction = 60 },
+    -- Winter's Protection: reduces Ice Block CD by 30s per rank (2 ranks)
+    { spellID = 382424, affectsSpell = 45438, cdReduction = 30, perRank = true },
+    -- Permafrost Bauble: reduces Ice Block CD by 30s
+    { spellID = 1265517, affectsSpell = 45438, cdReduction = 30 },
+
+    ---------------------------------------------------------------------------
+    -- HUNTER
+    ---------------------------------------------------------------------------
+    -- Born To Be Wild: reduces Aspect of the Turtle CD by 15s per rank (2 ranks)
+    { spellID = 266921, affectsSpell = 186265, cdReduction = 15, perRank = true },
+    -- Improved Aspect of the Turtle: reduces Aspect of the Turtle CD by 30s
+    { spellID = 1258485, affectsSpell = 186265, cdReduction = 30 },
+    -- Padded Armor: Survival of the Fittest +1 charge
+    { spellID = 459450, affectsSpell = 264735, chargeIncrease = 1 },
+    { spellID = 459450, affectsSpell = 281195, chargeIncrease = 1 },
+
+    ---------------------------------------------------------------------------
+    -- DRUID
+    ---------------------------------------------------------------------------
+    -- Survival of the Fittest: reduces Barkskin and Survival Instincts CD by 12% per rank (2 ranks, Guardian only)
+    { spellID = 203965, affectsSpell = 22812, cdReductionPct = 0.12, perRank = true },  -- Barkskin
+    { spellID = 203965, affectsSpell = 61336, cdReductionPct = 0.12, perRank = true },  -- Survival Instincts
+
+    ---------------------------------------------------------------------------
+    -- MONK
+    -- Skipped (dynamic): Tiger Palm/Keg Smash brew CD reduction (Brewmaster)
+    ---------------------------------------------------------------------------
+    -- Expeditious Fortification: reduces Fortifying Brew CD by 30s
+    { spellID = 388813, affectsSpell = 115203, cdReduction = 30 },
+
+    ---------------------------------------------------------------------------
+    -- DEMONHUNTER
+    -- Skipped (dynamic): World Killer (Metamorphosis -10s per 3rd Voidfall proc,
+    --                     Vengeance/Annihilator hero tree only)
+    ---------------------------------------------------------------------------
+    -- Pitch Black: reduces Darkness CD by 120s
+    { spellID = 389783, affectsSpell = 196718, cdReduction = 120 },
+    -- Demonic Resilience: Blur +1 charge (Havoc/Devourer)
+    { spellID = 1266307, affectsSpell = 198589, chargeIncrease = 1 },
+
+    ---------------------------------------------------------------------------
+    -- PRIEST
+    ---------------------------------------------------------------------------
+    -- Intangibility: reduces Dispersion CD by 30s (Shadow)
+    { spellID = 288733, affectsSpell = 47585, cdReduction = 30 },
+    -- Angel's Mercy: reduces Desperate Prayer CD by 20s
+    { spellID = 238100, affectsSpell = 19236, cdReduction = 20 },
+
+    ---------------------------------------------------------------------------
+    -- SHAMAN
+    ---------------------------------------------------------------------------
+    -- Planes Traveler: reduces Astral Shift CD by 30s
+    { spellID = 381647, affectsSpell = 108271, cdReduction = 30 },
+
+    ---------------------------------------------------------------------------
+    -- WARLOCK
+    ---------------------------------------------------------------------------
+    -- Dark Accord: reduces Unending Resolve CD by 45s
+    { spellID = 386659, affectsSpell = 104773, cdReduction = 45 },
+
+    ---------------------------------------------------------------------------
+    -- EVOKER
+    ---------------------------------------------------------------------------
+    -- Obsidian Bulwark: Obsidian Scales +1 charge
+    { spellID = 375406, affectsSpell = 363916, chargeIncrease = 1 },
+    -- Interwoven Threads: reduces Obsidian Scales CD by 10% (Augmentation only)
+    { spellID = 412713, affectsSpell = 363916, cdReductionPct = 0.10 },
+});
 
 -------------------------------------------------------------------------------
 -- Category Registration
