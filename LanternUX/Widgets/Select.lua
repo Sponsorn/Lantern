@@ -19,6 +19,9 @@ local SELECT_BTN_W       = 160;
 local SELECT_BTN_H       = 24;
 local SELECT_ITEM_H      = 24;
 local SELECT_MAX_VISIBLE = 10;
+local SCROLLBAR_W        = 10;
+local SCROLLBAR_VISUAL_W = 3;
+local SCROLLBAR_THUMB_MIN = 16;
 
 -------------------------------------------------------------------------------
 -- Dropdown popup (shared singleton)
@@ -76,17 +79,115 @@ local function EnsureDropdownPopup()
     scrollFrame:SetPoint("TOPLEFT", 1, -1);
     scrollFrame:SetPoint("BOTTOMRIGHT", -1, 1);
     scrollFrame:EnableMouseWheel(true);
+
+    local scrollChild = CreateFrame("Frame", "LUX_DropdownScrollChild", scrollFrame);
+    scrollChild:SetWidth(1);
+    scrollFrame:SetScrollChild(scrollChild);
+
+    -- Scrollbar track
+    local track = CreateFrame("Frame", "LUX_DropdownTrack", f);
+    track:SetWidth(SCROLLBAR_W);
+    track:SetPoint("TOPRIGHT", f, "TOPRIGHT", -1, -2);
+    track:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, 2);
+    track:EnableMouse(true);
+    local trackBg = track:CreateTexture(nil, "BACKGROUND");
+    trackBg:SetWidth(SCROLLBAR_VISUAL_W);
+    trackBg:SetPoint("TOP");
+    trackBg:SetPoint("BOTTOM");
+    trackBg:SetPoint("RIGHT", -1, 0);
+    trackBg:SetColorTexture(0.14, 0.14, 0.16, 0.3);
+    track:Hide();
+
+    -- Scrollbar thumb
+    local thumb = CreateFrame("Frame", "LUX_DropdownThumb", track);
+    thumb:SetWidth(SCROLLBAR_W);
+    thumb:EnableMouse(true);
+    thumb:SetMovable(true);
+    local thumbBg = thumb:CreateTexture(nil, "ARTWORK");
+    thumbBg:SetWidth(SCROLLBAR_VISUAL_W);
+    thumbBg:SetPoint("TOP");
+    thumbBg:SetPoint("BOTTOM");
+    thumbBg:SetPoint("RIGHT", -1, 0);
+    thumbBg:SetColorTexture(0.40, 0.40, 0.44, 0.6);
+    thumb:Hide();
+
+    -- Thumb position updater
+    local function UpdateDropdownThumb()
+        local maxScroll = scrollFrame._maxScroll or 0;
+        if (maxScroll <= 0) then
+            track:Hide();
+            thumb:Hide();
+            scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, 1);
+            return;
+        end
+
+        track:Show();
+        thumb:Show();
+        scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -(SCROLLBAR_W + 1), 1);
+
+        local trackHeight = track:GetHeight();
+        local thumbHeight = math.max(SCROLLBAR_THUMB_MIN, (1 - maxScroll / (maxScroll + scrollFrame:GetHeight())) * trackHeight);
+        thumb:SetHeight(thumbHeight);
+
+        local currentScroll = scrollFrame:GetVerticalScroll();
+        local scrollRatio = (maxScroll > 0) and (currentScroll / maxScroll) or 0;
+        local thumbOffset = scrollRatio * (trackHeight - thumbHeight);
+
+        thumb:ClearAllPoints();
+        thumb:SetPoint("TOPLEFT", track, "TOPLEFT", 0, -thumbOffset);
+    end
+    f._updateThumb = UpdateDropdownThumb;
+
+    -- Mouse wheel scrolling
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
         local maxScroll = self._maxScroll or 0;
         if (maxScroll <= 0) then return; end
         local current = self:GetVerticalScroll();
         local newScroll = math.max(0, math.min(maxScroll, current - delta * SELECT_ITEM_H * 2));
         self:SetVerticalScroll(newScroll);
+        UpdateDropdownThumb();
     end);
 
-    local scrollChild = CreateFrame("Frame", "LUX_DropdownScrollChild", scrollFrame);
-    scrollChild:SetWidth(1);
-    scrollFrame:SetScrollChild(scrollChild);
+    -- Thumb drag
+    local isDragging = false;
+    local dragStartY, dragStartScroll;
+
+    thumb:SetScript("OnMouseDown", function(_, button)
+        if (button ~= "LeftButton") then return; end
+        isDragging = true;
+        dragStartY = select(2, GetCursorPosition()) / UIParent:GetEffectiveScale();
+        dragStartScroll = scrollFrame:GetVerticalScroll();
+    end);
+    thumb:SetScript("OnMouseUp", function() isDragging = false; end);
+    track:SetScript("OnMouseUp", function() isDragging = false; end);
+
+    thumb:SetScript("OnUpdate", function()
+        if (not isDragging) then return; end
+        local cursorY = select(2, GetCursorPosition()) / UIParent:GetEffectiveScale();
+        local deltaY = dragStartY - cursorY;
+        local trackHeight = track:GetHeight();
+        local thumbHeight = thumb:GetHeight();
+        local maxScroll = scrollFrame._maxScroll or 0;
+        if (trackHeight <= thumbHeight or maxScroll <= 0) then return; end
+        local scrollPerPixel = maxScroll / (trackHeight - thumbHeight);
+        local newScroll = math.max(0, math.min(dragStartScroll + deltaY * scrollPerPixel, maxScroll));
+        scrollFrame:SetVerticalScroll(newScroll);
+        UpdateDropdownThumb();
+    end);
+
+    -- Track click to jump
+    track:SetScript("OnMouseDown", function(_, button)
+        if (button ~= "LeftButton") then return; end
+        local cursorY = select(2, GetCursorPosition()) / UIParent:GetEffectiveScale();
+        local trackTop = track:GetTop();
+        local trackHeight = track:GetHeight();
+        if (not trackTop or trackHeight <= 0) then return; end
+        local clickRatio = (trackTop - cursorY) / trackHeight;
+        clickRatio = math.max(0, math.min(clickRatio, 1));
+        local maxScroll = scrollFrame._maxScroll or 0;
+        scrollFrame:SetVerticalScroll(clickRatio * maxScroll);
+        UpdateDropdownThumb();
+    end);
 
     f._scrollFrame = scrollFrame;
     f._scrollChild = scrollChild;
@@ -124,6 +225,8 @@ local function OpenDropdown(w)
     local scrollChild = popup._scrollChild;
 
     -- Create/show items
+    local hasPreview = (w._previewFn ~= nil);
+    local previewBtnW = 22;
     local y = -4;
     local maxTextWidth = 0;
     local selectedIndex = 0;
@@ -142,6 +245,28 @@ local function OpenDropdown(w)
             itemText:SetPoint("LEFT", 10, 0);
             itemText:SetJustifyH("LEFT");
             item._text = itemText;
+
+            -- Preview icon (created once, shown/hidden per dropdown open)
+            local pvBtn = CreateFrame("Button", NextName("LUX_DropdownPreview_"), item);
+            pvBtn:SetSize(previewBtnW, SELECT_ITEM_H);
+            pvBtn:SetPoint("RIGHT", item, "RIGHT", 0, 0);
+            local pvIcon = pvBtn:CreateTexture(nil, "ARTWORK");
+            pvIcon:SetSize(12, 12);
+            pvIcon:SetPoint("CENTER");
+            pvIcon:SetAtlas("voicechat-icon-speaker");
+            pvIcon:SetVertexColor(unpack(T.textDim));
+            pvBtn._icon = pvIcon;
+            pvBtn:Hide();
+            item._previewBtn = pvBtn;
+
+            pvBtn:SetScript("OnEnter", function()
+                pvIcon:SetVertexColor(unpack(T.accent));
+                item._bg:SetColorTexture(unpack(T.dropdownItem));
+            end);
+            pvBtn:SetScript("OnLeave", function()
+                pvIcon:SetVertexColor(unpack(T.textDim));
+                item._bg:SetColorTexture(0, 0, 0, 0);
+            end);
 
             item:SetScript("OnEnter", function(self)
                 self._bg:SetColorTexture(unpack(T.dropdownItem));
@@ -164,6 +289,18 @@ local function OpenDropdown(w)
         item:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, y);
         item._text:SetText(values[key]);
         item._text:SetTextColor(unpack(T.text));
+
+        -- Preview button: show/hide and wire up per item
+        if (hasPreview) then
+            item._text:SetPoint("RIGHT", item._previewBtn, "LEFT", -2, 0);
+            item._previewBtn:Show();
+            item._previewBtn:SetScript("OnClick", function()
+                w._previewFn(key);
+            end);
+        else
+            item._text:SetPoint("RIGHT", item, "RIGHT", -10, 0);
+            item._previewBtn:Hide();
+        end
 
         -- Track widest item for popup sizing
         local tw = item._text:GetStringWidth() or 0;
@@ -191,11 +328,14 @@ local function OpenDropdown(w)
     local totalContentHeight = math.abs(y) + 8;
     local maxVisibleHeight = SELECT_MAX_VISIBLE * SELECT_ITEM_H + 8;
     local popupHeight = math.min(totalContentHeight, maxVisibleHeight);
-    local popupWidth = math.max(SELECT_BTN_W, maxTextWidth + 24);
+    local needsScroll = (totalContentHeight > popupHeight);
+    local scrollbarExtra = needsScroll and SCROLLBAR_W or 0;
+    local previewExtra = hasPreview and previewBtnW or 0;
+    local popupWidth = math.max(SELECT_BTN_W, maxTextWidth + 24 + scrollbarExtra + previewExtra);
     popup:SetWidth(popupWidth);
     popup:SetHeight(popupHeight);
 
-    scrollChild:SetWidth(popupWidth - 2);
+    scrollChild:SetWidth(popupWidth - 2 - scrollbarExtra);
     scrollChild:SetHeight(totalContentHeight);
 
     -- Set scroll range and scroll selected item into view
@@ -213,6 +353,11 @@ local function OpenDropdown(w)
     popup:SetPoint("TOPLEFT", w._btn, "BOTTOMLEFT", 0, -2);
 
     popup:Show();
+
+    -- Update scrollbar after show (needs valid dimensions)
+    if (popup._updateThumb) then
+        popup._updateThumb();
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -293,12 +438,14 @@ local function CreateSelect(parent)
     btn:SetScript("OnEnter", function()
         if (not w._disabled) then
             btn:SetBackdropColor(unpack(T.buttonHover));
+            btn:SetBackdropBorderColor(unpack(T.inputFocus));
         end
         ShowDescription(w._label:GetText(), w._desc_text);
     end);
     btn:SetScript("OnLeave", function()
         if (not w._disabled) then
             btn:SetBackdropColor(unpack(T.buttonBg));
+            btn:SetBackdropBorderColor(unpack(T.buttonBorder));
         end
         ClearDescription();
     end);
@@ -330,6 +477,7 @@ local function SetupSelect(w, parent, data, contentWidth)
     w._onSet = data.set;
     w._getFn = data.get;
     w._disabledFn = data.disabled;
+    w._previewFn = data.preview;
 
     -- Current value
     local currentKey = data.get and data.get() or nil;

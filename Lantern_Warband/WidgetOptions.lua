@@ -547,9 +547,9 @@ local function warehousingWidgets()
         };
     end
 
-    -- Sync bank UI after mutations
+    -- Sync bank UI after mutations (only when bank panel is open)
     local function syncBankUI()
-        if (WarehousingUI and WarehousingUI._populatePanel) then
+        if (WarehousingUI and WarehousingUI._populatePanel and WarehousingUI._panel and WarehousingUI._panel:IsShown()) then
             WarehousingUI._populatePanel();
         end
     end
@@ -820,15 +820,30 @@ local function warehousingWidgets()
             table.insert(children, { type = "header", text = "Add Item" });
 
             table.insert(children, {
+                type = "drop_slot",
+                label = "Drag and drop:",
+                desc = "Drag an item from your bags and drop it here to add it to this group.",
+                onDrop = function(itemID)
+                    local itemName = C_Item.GetItemNameByID(itemID) or "";
+                    Warehousing:AddItemToGroup(groupName, itemID, itemName);
+                    local displayName = itemName ~= "" and itemName or ("Item " .. itemID);
+                    Lantern:Print(string.format("Added %s to '%s'.", displayName, groupName));
+                    -- Defer refresh so the drop handler finishes before widgets are rebuilt
+                    C_Timer.After(0, function()
+                        syncBankUI();
+                        refreshPage();
+                    end);
+                end,
+            });
+
+            table.insert(children, {
                 type = "input",
-                label = "Item ID or item link",
-                desc = "Enter an item ID (e.g. 12345) or paste an item link to add it to this group.",
+                label = "Item ID or drag and drop",
+                desc = "Enter an item ID (e.g. 12345) or drag an item from your bags into this field.",
                 get = function() return Warband._whAddItemTemp[groupName] or ""; end,
                 set = function(val)
-                    local itemID = val:match("item:(%d+)");
-                    if (not itemID) then
-                        itemID = val:match("^%s*(%d+)%s*$");
-                    end
+                    if (not val or val:match("^%s*$")) then return; end
+                    local itemID = val:match("^%s*(%d+)%s*$");
                     if (itemID) then
                         itemID = tonumber(itemID);
                         local itemName = C_Item.GetItemNameByID(itemID) or "";
@@ -840,7 +855,7 @@ local function warehousingWidgets()
                         refreshPage();
                     else
                         Warband._whAddItemTemp[groupName] = val;
-                        Lantern:Print("Invalid item ID or link.");
+                        Lantern:Print("Invalid item ID.");
                     end
                 end,
             });
@@ -917,6 +932,7 @@ local function warehousingWidgets()
             table.insert(widgets, {
                 type = "group",
                 text = groupLabel,
+                stateKey = groupName,
                 desc = "Expand to manage items and rules for this group.",
                 children = children,
             });

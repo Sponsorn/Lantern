@@ -473,7 +473,7 @@ PopulateGroupDetails = function()
 
     local addHint = rightContentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall");
     addHint:SetPoint("TOPLEFT", rightContentFrame, "TOPLEFT", 12, yOffset);
-    addHint:SetText("Enter item ID or link:");
+    addHint:SetText("Enter item ID or drag and drop:");
     addHint:SetTextColor(0.6, 0.6, 0.6);
 
     yOffset = yOffset - 22;
@@ -485,10 +485,7 @@ PopulateGroupDetails = function()
     addInputFrame:SetScript("OnEnterPressed", function(self)
         local text = self:GetText();
         if (text and text ~= "") then
-            local itemID = text:match("item:(%d+)");
-            if (not itemID) then
-                itemID = text:match("^%s*(%d+)%s*$");
-            end
+            local itemID = text:match("^%s*(%d+)%s*$");
             if (itemID) then
                 itemID = tonumber(itemID);
                 local itemName = C_Item.GetItemNameByID(itemID) or "";
@@ -499,7 +496,7 @@ PopulateGroupDetails = function()
                 PopulateGroupList();
                 PopulateGroupDetails();
             else
-                Lantern:Print("Invalid item ID or link.");
+                Lantern:Print("Invalid item ID.");
             end
         end
         self:ClearFocus();
@@ -516,10 +513,7 @@ PopulateGroupDetails = function()
     addBtn:SetScript("OnClick", function()
         local text = addInputFrame:GetText();
         if (text and text ~= "") then
-            local itemID = text:match("item:(%d+)");
-            if (not itemID) then
-                itemID = text:match("^%s*(%d+)%s*$");
-            end
+            local itemID = text:match("^%s*(%d+)%s*$");
             if (itemID) then
                 itemID = tonumber(itemID);
                 local itemName = C_Item.GetItemNameByID(itemID) or "";
@@ -530,7 +524,7 @@ PopulateGroupDetails = function()
                 PopulateGroupList();
                 PopulateGroupDetails();
             else
-                Lantern:Print("Invalid item ID or link.");
+                Lantern:Print("Invalid item ID.");
             end
         end
     end);

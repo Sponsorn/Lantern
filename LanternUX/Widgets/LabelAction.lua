@@ -65,12 +65,14 @@ local function CreateLabelAction(parent)
     btn:SetScript("OnEnter", function()
         if (not w._disabled) then
             btn:SetBackdropColor(unpack(T.buttonHover));
+            btn:SetBackdropBorderColor(unpack(T.inputFocus));
         end
         ShowDescription(w._originalLabel or w._btnText:GetText(), w._desc_text);
     end);
     btn:SetScript("OnLeave", function()
         if (not w._disabled) then
             btn:SetBackdropColor(unpack(T.buttonBg));
+            btn:SetBackdropBorderColor(unpack(T.buttonBorder));
         end
         if (w._confirming) then
             w._confirming = false;
