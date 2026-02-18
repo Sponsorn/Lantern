@@ -1362,6 +1362,112 @@ end
 -- Splash / Home content
 -------------------------------------------------------------------------------
 
+local linkPopup;
+
+local function showLinkPopup(link)
+    if (not linkPopup) then
+        local POPUP_W, POPUP_H = 340, 110;
+        local panelFrame = panel._frame;
+
+        local overlay = CreateFrame("Frame", "LanternUX_LinkOverlay", panelFrame);
+        overlay:SetAllPoints();
+        overlay:SetFrameLevel(panelFrame:GetFrameLevel() + 50);
+        overlay:EnableMouse(true);
+        overlay:SetScript("OnMouseDown", function() overlay:Hide(); end);
+
+        local bg = overlay:CreateTexture(nil, "BACKGROUND");
+        bg:SetAllPoints();
+        bg:SetColorTexture(0, 0, 0, 0.5);
+
+        local popup = CreateFrame("Frame", "LanternUX_LinkPopup", overlay, "BackdropTemplate");
+        popup:SetSize(POPUP_W, POPUP_H);
+        popup:SetPoint("CENTER", panelFrame, "CENTER", 0, 40);
+        popup:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        });
+        popup:SetBackdropColor(unpack(T.bg));
+        popup:SetBackdropBorderColor(unpack(T.border));
+        popup:EnableMouse(true);
+
+        -- Title
+        local title = popup:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        title:SetPoint("TOPLEFT", popup, "TOPLEFT", 14, -14);
+        title:SetText("Copy link");
+        title:SetTextColor(unpack(T.textBright));
+
+        -- Close button (X)
+        local closeBtn = CreateFrame("Button", "LanternUX_LinkCloseBtn", popup);
+        closeBtn:SetSize(20, 20);
+        closeBtn:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -8, -8);
+        local closeTxt = closeBtn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        closeTxt:SetPoint("CENTER");
+        closeTxt:SetText("x");
+        closeTxt:SetTextColor(unpack(T.text));
+        closeBtn:SetScript("OnEnter", function() closeTxt:SetTextColor(unpack(T.textBright)); end);
+        closeBtn:SetScript("OnLeave", function() closeTxt:SetTextColor(unpack(T.text)); end);
+        closeBtn:SetScript("OnClick", function() overlay:Hide(); end);
+
+        -- Edit box
+        local editBox = CreateFrame("EditBox", "LanternUX_LinkEditBox", popup, "BackdropTemplate");
+        editBox:SetSize(POPUP_W - 28, 26);
+        editBox:SetPoint("TOPLEFT", popup, "TOPLEFT", 14, -40);
+        editBox:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        });
+        editBox:SetBackdropColor(unpack(T.inputBg));
+        editBox:SetBackdropBorderColor(unpack(T.inputBorder));
+        editBox:SetFontObject(GameFontHighlightSmall);
+        editBox:SetTextColor(unpack(T.text));
+        editBox:SetTextInsets(6, 6, 0, 0);
+        editBox:SetAutoFocus(false);
+        editBox:SetMaxLetters(0);
+
+        editBox:SetScript("OnEscapePressed", function() overlay:Hide(); end);
+        editBox:SetScript("OnEnterPressed", function() overlay:Hide(); end);
+        editBox:SetScript("OnKeyUp", function(_, key)
+            if (IsControlKeyDown() and (key == "C" or key == "X")) then
+                overlay:Hide();
+            end
+        end);
+
+        -- Hint text
+        local hint = popup:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+        hint:SetPoint("TOPLEFT", editBox, "BOTTOMLEFT", 2, -8);
+        hint:SetText("Ctrl+C to copy, Escape to close");
+        hint:SetTextColor(unpack(T.textDim));
+
+        overlay._editBox = editBox;
+        linkPopup = overlay;
+    end
+
+    linkPopup._editBox:SetText(link or "");
+    linkPopup:Show();
+    linkPopup._editBox:SetFocus();
+    linkPopup._editBox:HighlightText();
+end
+
+local COMPANION_ADDONS = {
+    {
+        addonName = "Lantern_CraftingOrders",
+        label     = "Crafting Orders",
+        desc      = "Announces guild order activity, personal order alerts, and a Complete + Whisper button.",
+        url       = "https://www.curseforge.com/wow/addons/lantern-craftingorders",
+    },
+    {
+        addonName = "Lantern_Warband",
+        label     = "Warband",
+        desc      = "Organize characters into groups with automated gold balancing to/from warbank when opening a bank.",
+        url       = "https://www.curseforge.com/wow/addons/lantern-warband",
+    },
+};
+
+local COMPANION_COL_WIDTH = 255;
+local COMPANION_COL_GAP   = 24;
+
 local splashFrame;
 
 local function PopulateSplashModules()
@@ -1417,10 +1523,104 @@ local function PopulateSplashModules()
         if (splashFrame._moduleDots[i]) then splashFrame._moduleDots[i]:Hide(); end
         splashFrame._moduleLabels[i]:Hide();
     end
+
+    -- Companion addons section (show addons that are not loaded)
+    -- "not loaded" = not installed OR installed but disabled
+    local hasAnyCompanion = false;
+    for _, info in ipairs(COMPANION_ADDONS) do
+        local loaded = C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded(info.addonName);
+        if (not loaded) then
+            hasAnyCompanion = true;
+            break;
+        end
+    end
+
+    if (hasAnyCompanion and splashFrame._companionHeader) then
+        -- Position header below module list
+        y = y - 12;
+        splashFrame._companionHeader:ClearAllPoints();
+        splashFrame._companionHeader:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 28, y);
+        splashFrame._companionHeader:Show();
+
+        splashFrame._companionDivider:ClearAllPoints();
+        splashFrame._companionDivider:SetPoint("TOPLEFT", splashFrame._companionHeader, "BOTTOMLEFT", 0, -6);
+        splashFrame._companionDivider:SetPoint("RIGHT", splashFrame, "RIGHT", -28, 0);
+        splashFrame._companionDivider:Show();
+
+        y = y - 30;
+
+        -- Position companion rows in a 2-column grid
+        local col = 0;       -- 0 = left, 1 = right
+        local rowMaxH = 0;   -- tallest cell in current row pair
+
+        for idx, info in ipairs(COMPANION_ADDONS) do
+            local loaded = C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded(info.addonName);
+            local cell = splashFrame._companionRows[idx];
+            if (cell) then
+                if (loaded) then
+                    cell.frame:Hide();
+                else
+                    -- Determine if installed but disabled vs not installed
+                    local installed = C_AddOns and C_AddOns.GetAddOnInfo and C_AddOns.GetAddOnInfo(info.addonName) ~= nil;
+
+                    if (installed) then
+                        -- Installed but disabled — show muted button
+                        cell.btnText:SetText("Disabled");
+                        cell.btnText:SetTextColor(unpack(T.disabledText));
+                        cell.btn:SetBackdropColor(unpack(T.disabledBg));
+                        cell.btn:SetBackdropBorderColor(unpack(T.disabled));
+                        cell.btn:SetScript("OnEnter", nil);
+                        cell.btn:SetScript("OnLeave", nil);
+                        cell.btn:SetScript("OnClick", nil);
+                    else
+                        -- Not installed — show CurseForge link
+                        cell.btnText:SetText("CurseForge");
+                        cell.btnText:SetTextColor(unpack(T.buttonText));
+                        cell.btn:SetBackdropColor(unpack(T.buttonBg));
+                        cell.btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+                        cell.btn:SetScript("OnEnter", function(self)
+                            self:SetBackdropColor(unpack(T.buttonHover));
+                        end);
+                        cell.btn:SetScript("OnLeave", function(self)
+                            self:SetBackdropColor(unpack(T.buttonBg));
+                        end);
+                        cell.btn:SetScript("OnClick", function()
+                            showLinkPopup(cell.url);
+                        end);
+                    end
+
+                    local xOffset = 32 + col * (COMPANION_COL_WIDTH + COMPANION_COL_GAP);
+                    cell.frame:ClearAllPoints();
+                    cell.frame:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", xOffset, y);
+                    cell.frame:Show();
+
+                    if (cell.height > rowMaxH) then rowMaxH = cell.height; end
+
+                    col = col + 1;
+                    if (col >= 2) then
+                        y = y - rowMaxH - 12;
+                        col = 0;
+                        rowMaxH = 0;
+                    end
+                end
+            end
+        end
+
+        -- Advance y after a partial (odd-count) row
+        if (col > 0) then
+            y = y - rowMaxH - 12;
+        end
+    elseif (splashFrame._companionHeader) then
+        splashFrame._companionHeader:Hide();
+        splashFrame._companionDivider:Hide();
+        for _, row in ipairs(splashFrame._companionRows) do
+            row.frame:Hide();
+        end
+    end
 end
 
 local function CreateSplashContent(parent)
-    local f = CreateFrame("Frame", nil, parent);
+    local f = CreateFrame("Frame", "LanternUX_Splash", parent);
     f:SetAllPoints();
 
     local y = -28;
@@ -1472,6 +1672,70 @@ local function CreateSplashContent(parent)
     f._moduleLabels = {};
     f._moduleDots = {};
 
+    -- Companion addons section (created below modules, positioned dynamically by PopulateSplashModules)
+    -- We create the elements here but position them in PopulateSplashModules since
+    -- the Y offset depends on how many modules are listed above.
+    local companionHeader = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    companionHeader:SetText("Companion Addons");
+    companionHeader:SetTextColor(unpack(T.textBright));
+    companionHeader:Hide();
+    f._companionHeader = companionHeader;
+
+    local companionDivider = f:CreateTexture(nil, "ARTWORK");
+    companionDivider:SetHeight(1);
+    companionDivider:SetColorTexture(unpack(T.divider));
+    companionDivider:Hide();
+    f._companionDivider = companionDivider;
+
+    f._companionRows = {};
+
+    for i, info in ipairs(COMPANION_ADDONS) do
+        local row = CreateFrame("Frame", "LanternUX_CompanionRow_" .. i, f);
+        row:SetWidth(COMPANION_COL_WIDTH);
+
+        -- Description text
+        local rowDesc = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        rowDesc:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0);
+        rowDesc:SetWidth(COMPANION_COL_WIDTH);
+        rowDesc:SetJustifyH("LEFT");
+        rowDesc:SetWordWrap(true);
+        rowDesc:SetText(info.label .. ": " .. info.desc);
+        rowDesc:SetTextColor(unpack(T.splashText));
+
+        -- CurseForge button
+        local btn = CreateFrame("Button", "LanternUX_CompanionBtn_" .. i, row, "BackdropTemplate");
+        btn:SetSize(100, 22);
+        btn:SetPoint("TOPLEFT", rowDesc, "BOTTOMLEFT", 0, -6);
+        btn:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        });
+        btn:SetBackdropColor(unpack(T.buttonBg));
+        btn:SetBackdropBorderColor(unpack(T.buttonBorder));
+
+        local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+        btnText:SetPoint("CENTER");
+        btnText:SetText("CurseForge");
+        btnText:SetTextColor(unpack(T.buttonText));
+
+        btn:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(unpack(T.buttonHover));
+        end);
+        btn:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(unpack(T.buttonBg));
+        end);
+        btn:SetScript("OnClick", function()
+            showLinkPopup(info.url);
+        end);
+
+        local textHeight = math.max(14, rowDesc:GetStringHeight() or 0);
+        local totalHeight = textHeight + 6 + 22;
+        row:SetHeight(totalHeight);
+
+        f._companionRows[i] = { frame = row, height = totalHeight, btn = btn, btnText = btnText, url = info.url };
+    end
+
     splashFrame = f;
     return f;
 end
@@ -1480,7 +1744,7 @@ end
 -- Register pages on PLAYER_LOGIN (all addons loaded by then)
 -------------------------------------------------------------------------------
 
-local loginFrame = CreateFrame("Frame");
+local loginFrame = CreateFrame("Frame", "LanternUX_LoginFrame");
 loginFrame:RegisterEvent("PLAYER_LOGIN");
 loginFrame:SetScript("OnEvent", function()
     -- Home (splash page with module status)
@@ -1580,7 +1844,7 @@ end
 -- Handle deferred open after combat ends
 -------------------------------------------------------------------------------
 
-local combatFrame = CreateFrame("Frame");
+local combatFrame = CreateFrame("Frame", "LanternUX_CombatFrame");
 combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
 combatFrame:SetScript("OnEvent", function()
     if (Lantern._pendingSettingsPanel) then

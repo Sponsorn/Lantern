@@ -22,6 +22,12 @@ local ITEM_PAD_LEFT   = 14;
 local SIDEBAR_PAD_TOP = 8;
 local DESC_PANEL_W    = 220;
 
+local panelFrameCounter = 0;
+local function NextPanelName(prefix)
+    panelFrameCounter = panelFrameCounter + 1;
+    return prefix .. panelFrameCounter;
+end
+
 -------------------------------------------------------------------------------
 -- PanelMixin
 -------------------------------------------------------------------------------
@@ -83,8 +89,20 @@ end
 function PanelMixin:RefreshCurrentPage()
     local key = self._activeKey;
     if (not key) then return; end
+
+    -- Preserve scroll position across refresh
+    local savedScroll;
+    if (self._customScroll) then
+        savedScroll = self._customScroll.scrollFrame:GetVerticalScroll();
+    end
+
     self._activeKey = nil;
     self:_SelectItem(key);
+
+    -- Restore scroll position
+    if (savedScroll and self._customScroll) then
+        self._customScroll:RestoreScroll(savedScroll);
+    end
 end
 
 function PanelMixin:GetFrame()
@@ -96,7 +114,7 @@ end
 -------------------------------------------------------------------------------
 
 function PanelMixin:_CreateSidebarButton(parent, key, label, yOffset)
-    local btn = CreateFrame("Button", nil, parent);
+    local btn = CreateFrame("Button", NextPanelName("LUX_SidebarBtn_"), parent);
     btn:SetHeight(ITEM_H);
     btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -yOffset);
     btn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -1, -yOffset);
@@ -155,7 +173,7 @@ function PanelMixin:_GetGroupForPage(pageKey)
 end
 
 function PanelMixin:_CreateSidebarGroupHeader(parent, groupKey, label, yOffset)
-    local btn = CreateFrame("Button", nil, parent);
+    local btn = CreateFrame("Button", NextPanelName("LUX_SidebarGroup_"), parent);
     btn:SetHeight(ITEM_H);
     btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -yOffset);
     btn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -1, -yOffset);
@@ -182,7 +200,7 @@ function PanelMixin:_CreateSidebarGroupHeader(parent, groupKey, label, yOffset)
     text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
     text:SetPoint("RIGHT", btn, "RIGHT", -22, 0);
 
-    -- Arrow on the right (matches Widgets.lua group style)
+    -- Arrow on the right (matches Widgets/Group.lua style)
     local arrow = btn:CreateTexture(nil, "ARTWORK");
     arrow:SetSize(10, 10);
     arrow:SetPoint("RIGHT", -8, 0);
@@ -219,7 +237,7 @@ function PanelMixin:_UpdateGroupChevron(btn, expanded)
 end
 
 function PanelMixin:_CreateSidebarChildButton(parent, key, label, yOffset)
-    local btn = CreateFrame("Button", nil, parent);
+    local btn = CreateFrame("Button", NextPanelName("LUX_SidebarChild_"), parent);
     btn:SetHeight(ITEM_H);
     btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -yOffset);
     btn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -1, -yOffset);
@@ -413,8 +431,8 @@ function PanelMixin:_BuildSidebar()
     end
     self._sectionHeaders = {};
 
-    local sidebar = self._sidebar;
-    local y = (self._sidebarTopOffset or 0) + SIDEBAR_PAD_TOP;
+    local sidebar = self._sidebarScrollChild or self._sidebar;
+    local y = SIDEBAR_PAD_TOP;
 
     -- Helper: check if a page is assigned to a valid sidebar group
     local function isGrouped(entry)
@@ -488,6 +506,11 @@ function PanelMixin:_BuildSidebar()
         end
     end
 
+    -- Update sidebar scroll content height
+    if (self._sidebarScroll) then
+        self._sidebarScroll:UpdateContentHeight(y);
+    end
+
     -- Select first page if none active, or re-select current
     if (self._activeKey and (self._buttons[self._activeKey] or self:_GetGroupForPage(self._activeKey))) then
         -- Force re-render by resetting activeKey
@@ -535,7 +558,7 @@ function PanelMixin:_Build()
     -- Title bar
     ---------------------------------------------------------------------------
 
-    local titleBar = CreateFrame("Frame", nil, frame);
+    local titleBar = CreateFrame("Frame", config.name .. "_TitleBar", frame);
     titleBar:SetHeight(TITLE_H);
     titleBar:SetPoint("TOPLEFT");
     titleBar:SetPoint("TOPRIGHT");
@@ -597,28 +620,30 @@ function PanelMixin:_Build()
     end
 
     -- Close button
-    local closeBtn = CreateFrame("Button", nil, titleBar);
+    local closeBtn = CreateFrame("Button", config.name .. "_CloseBtn", titleBar);
     closeBtn:SetSize(TITLE_H, TITLE_H);
     closeBtn:SetPoint("TOPRIGHT");
 
-    local closeText = closeBtn:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge");
-    closeText:SetPoint("CENTER", 0, 0);
-    closeText:SetText("\195\151");  -- x character
-    closeText:SetTextColor(unpack(T.textDim));
+    local closeIcon = closeBtn:CreateTexture(nil, "ARTWORK");
+    closeIcon:SetAtlas("common-icon-redx");
+    closeIcon:SetSize(16, 16);
+    closeIcon:SetPoint("CENTER");
+    closeIcon:SetDesaturated(true);
+    closeIcon:SetVertexColor(unpack(T.text));
 
     local closeHover = closeBtn:CreateTexture(nil, "HIGHLIGHT");
     closeHover:SetAllPoints();
     closeHover:SetColorTexture(0.8, 0.2, 0.2, 0.15);
 
-    closeBtn:SetScript("OnEnter", function() closeText:SetTextColor(1, 1, 1); end);
-    closeBtn:SetScript("OnLeave", function() closeText:SetTextColor(unpack(T.textDim)); end);
+    closeBtn:SetScript("OnEnter", function() closeIcon:SetDesaturated(false); closeIcon:SetVertexColor(1, 1, 1); end);
+    closeBtn:SetScript("OnLeave", function() closeIcon:SetDesaturated(true); closeIcon:SetVertexColor(unpack(T.textDim)); end);
     closeBtn:SetScript("OnClick", function() frame:Hide(); end);
 
     ---------------------------------------------------------------------------
     -- Sidebar
     ---------------------------------------------------------------------------
 
-    local sidebar = CreateFrame("Frame", nil, frame);
+    local sidebar = CreateFrame("Frame", config.name .. "_Sidebar", frame);
     sidebar:SetWidth(SIDEBAR_W);
     sidebar:SetPoint("TOPLEFT", 0, -TITLE_H);
     sidebar:SetPoint("BOTTOMLEFT");
@@ -639,18 +664,91 @@ function PanelMixin:_Build()
     -- Hook: search input (added by Search.lua)
     if (self._BuildSearchInput) then self:_BuildSearchInput(sidebar); end
 
+    -- Sidebar scroll area (below search input, scrollable)
+    local sidebarScrollName = (config.name or "LanternUX") .. "SidebarScroll";
+    local sidebarScrollArea = CreateFrame("Frame", sidebarScrollName, sidebar);
+    sidebarScrollArea:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 0, -(self._sidebarTopOffset or 0));
+    sidebarScrollArea:SetPoint("BOTTOMRIGHT", sidebar, "BOTTOMRIGHT", -1, 0);
+
+    local sidebarScroll = LanternUX.CreateScrollContainer(sidebarScrollArea);
+    self._sidebarScroll = sidebarScroll;
+    self._sidebarScrollChild = sidebarScroll.scrollChild;
+
+    -- Keep scrollChild width in sync with the scroll area
+    sidebarScrollArea:SetScript("OnSizeChanged", function(_, w)
+        sidebarScroll.scrollChild:SetWidth(w);
+    end);
+
+    -- Bottom fade overlay (hints at more content below)
+    -- Parented to sidebar (not scroll area) so it layers above scroll content
+    local FADE_H = 16;
+    local fadeName = (config.name or "LanternUX") .. "SidebarFade";
+    local fade = CreateFrame("Frame", fadeName, sidebar);
+    fade:SetHeight(FADE_H);
+    fade:SetPoint("BOTTOMLEFT", sidebar, "BOTTOMLEFT");
+    fade:SetPoint("BOTTOMRIGHT", sidebar, "BOTTOMRIGHT", -1, 0);
+    fade:SetFrameStrata("DIALOG");
+    fade:SetFrameLevel(sidebarScroll.scrollFrame:GetFrameLevel() + 20);
+
+    local fadeTex = fade:CreateTexture(nil, "OVERLAY");
+    fadeTex:SetAllPoints();
+    fadeTex:SetTexture("Interface\\Buttons\\WHITE8x8");
+    fadeTex:SetGradient("VERTICAL",
+        CreateColor(T.accent[1], T.accent[2], T.accent[3], 0.35),
+        CreateColor(T.accent[1], T.accent[2], T.accent[3], 0)
+    );
+
+    fade:Hide();
+    self._sidebarFade = fade;
+
+    -- Hook UpdateThumb to also toggle fade visibility with smooth alpha
+    local fadeTarget = 0;
+    local FADE_BLEND = 0.12;
+    local FADE_SNAP = 0.02;
+
+    local function OnUpdate_Fade(_, elapsed)
+        local current = fade:GetAlpha();
+        local step = math.min(1, FADE_BLEND * elapsed * 60);
+        local newAlpha = current + (fadeTarget - current) * step;
+        if (math.abs(newAlpha - fadeTarget) < FADE_SNAP) then
+            newAlpha = fadeTarget;
+            fade:SetScript("OnUpdate", nil);
+            if (newAlpha <= 0) then fade:Hide(); end
+        end
+        fade:SetAlpha(newAlpha);
+    end
+
+    local origUpdateThumb = sidebarScroll.UpdateThumb;
+    sidebarScroll.UpdateThumb = function(self_scroll)
+        origUpdateThumb(self_scroll);
+        local sf = self_scroll.scrollFrame;
+        local maxScroll = sf:GetVerticalScrollRange();
+        local atBottom = (maxScroll <= 0) or (sf:GetVerticalScroll() >= maxScroll - 1);
+        if (atBottom) then
+            fadeTarget = 0;
+            fade:SetScript("OnUpdate", OnUpdate_Fade);
+        else
+            fadeTarget = 1;
+            if (not fade:IsShown()) then
+                fade:SetAlpha(0);
+                fade:Show();
+            end
+            fade:SetScript("OnUpdate", OnUpdate_Fade);
+        end
+    end
+
     ---------------------------------------------------------------------------
     -- Content area
     ---------------------------------------------------------------------------
 
-    local content = CreateFrame("Frame", nil, frame);
+    local content = CreateFrame("Frame", config.name .. "_Content", frame);
     content:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 1, 0);
     content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1);
     content:SetClipsChildren(true);
     self._content = content;
 
     -- Description panel (right side, for widget hover descriptions)
-    local descPanel = CreateFrame("Frame", nil, content);
+    local descPanel = CreateFrame("Frame", config.name .. "_DescPanel", content);
     descPanel:SetWidth(DESC_PANEL_W);
     descPanel:SetPoint("TOPRIGHT", content, "TOPRIGHT", 0, 0);
     descPanel:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0);

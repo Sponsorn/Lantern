@@ -5,6 +5,20 @@
 ## Version: 0.1.0
 ## DefaultState: enabled
 
-Widgets.lua
+Widgets\Core.lua
+Widgets\Scroll.lua
+Widgets\Toggle.lua
+Widgets\Display.lua
+Widgets\Range.lua
+Widgets\Select.lua
+Widgets\Execute.lua
+Widgets\LabelAction.lua
+Widgets\ItemRow.lua
+Widgets\Input.lua
+Widgets\Color.lua
+Widgets\Group.lua
+Widgets\SearchResult.lua
+Widgets\DropSlot.lua
+Widgets\Renderer.lua
 Panel.lua
 Search.lua
