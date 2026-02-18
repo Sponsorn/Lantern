@@ -2,7 +2,7 @@
 ## Title: Lantern: Warband
 ## Notes: Warband management with character groups and automated banking.
 ## Author: Dede in-game / Sponsorn on curseforge & github
-## Version: 0.3.1
+## Version: 0.3.2
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
 ## Dependencies: Lantern, LanternUX
 ## SavedVariables: LanternWarbandDB
