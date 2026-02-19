@@ -15,7 +15,7 @@ local function safeCall(fn, context, ...)
     local success, err = pcall(fn, ...);
     if (not success) then
         local contextStr = context or "unknown";
-        print("|cffe6c619Lantern error|r in " .. contextStr .. ": " .. tostring(err));
+        print("|cffe08f2eLantern error|r in " .. contextStr .. ": " .. tostring(err));
     end
     return success;
 end
@@ -77,6 +77,27 @@ function Lantern:GetCharacterInfo(characterKey)
     end
 
     return self.db.characters[characterKey];
+end
+
+-------------------------------------------------------------------------------
+-- Shared modifier key check (used by modules for "hold to pause")
+-------------------------------------------------------------------------------
+
+local MODIFIER_FN = {
+    shift = IsShiftKeyDown,
+    ctrl  = IsControlKeyDown,
+    alt   = IsAltKeyDown,
+};
+
+function Lantern:IsModifierDown()
+    local key = self.db and self.db.options and self.db.options.pauseModifier or "shift";
+    local fn = MODIFIER_FN[key] or IsShiftKeyDown;
+    return fn();
+end
+
+function Lantern:GetModifierName()
+    local key = self.db and self.db.options and self.db.options.pauseModifier or "shift";
+    return key:sub(1, 1):upper() .. key:sub(2);
 end
 
 function Lantern:NewModule(name, opts)
@@ -254,7 +275,7 @@ SlashCmdList["LANTERN"] = function(msg)
         if (petModule and petModule.PetDebug) then
             petModule:PetDebug();
         else
-            print("|cffe6c619Lantern:|r MissingPet module not found.");
+            print("|cffe08f2eLantern:|r MissingPet module not found.");
         end
         return;
     end

@@ -7,7 +7,7 @@ local utils = addon.utils;
 local converters = addon.converters;
 
 local function log(msg)
-    print("|cffe6c619Lantern:|r " .. tostring(msg or ""));
+    print("|cffe08f2eLantern:|r " .. tostring(msg or ""));
 end
 
 local function printProxy(self, msg)

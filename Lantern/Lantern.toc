@@ -21,9 +21,17 @@ Utils\TextAnimations.lua
 core.lua
 ui.lua
 AutoQuest\AutoQuest.lua
+AutoQuest\WidgetOptions.lua
 AutoQueue\AutoQueue.lua
+AutoRepair\AutoRepair.lua
+AutoSell\AutoSell.lua
+AutoSell\WidgetOptions.lua
+ChatFilter\ChatFilter.lua
+ChatFilter\WidgetOptions.lua
 CursorRing\CursorRing.lua
+CursorRing\WidgetOptions.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
 MissingPet\MissingPet.lua
+MissingPet\WidgetOptions.lua
 Options.lua

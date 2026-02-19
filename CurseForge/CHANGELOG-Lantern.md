@@ -1,7 +1,14 @@
 # Changelog
 
+## 0.5.0
+- Add: Auto Repair module — automatically repairs gear at merchants with personal gold, guild funds, or guild-first fallback
+- Add: Auto Sell module — automatically sells gray items and custom-listed items at merchants, with global and per-character sell lists
+- Add: Chat Filter module — filters gold spam, boost ads, and unwanted messages from whispers and public channels with a customizable keyword list
+- Add: Configurable pause modifier key (Shift, Ctrl, or Alt) in General settings — applies to all auto-features
+- Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)
+
 ## 0.4.35 - 2026-02-19
-- Remove: Old Interrupt Tracker module (replaced by Lantern: Mythic+ Tracker standalone addon), this will however, break any day now.
+- Remove: Old Interrupt Tracker module
 - Chore: Renamed UXBridge.lua to Options.lua
 
 ## 0.4.34 - 2026-02-18

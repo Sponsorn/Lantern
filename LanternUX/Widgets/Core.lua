@@ -63,6 +63,10 @@ local T = {
     -- Dropdown
     dropdownBg   = { 0.08, 0.08, 0.10, 0.98 },
     dropdownItem = { 1.0,  1.0,  1.0,  0.08 },
+    -- Danger / destructive
+    dangerBg     = { 0.35, 0.10, 0.10, 1.0 },
+    dangerBorder = { 0.60, 0.15, 0.15, 1.0 },
+    dangerText   = { 1.0,  0.40, 0.40, 1.0 },
 };
 
 LanternUX.Theme = T;

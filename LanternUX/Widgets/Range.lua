@@ -178,19 +178,7 @@ local function CreateRange(parent)
         -- Don't stop dragging on leave -- OnUpdate checks IsMouseButtonDown
     end);
 
-    -- Mouse wheel to increment/decrement by step
-    dragFrame:EnableMouseWheel(true);
-    dragFrame:SetScript("OnMouseWheel", function(self, delta)
-        if (w._disabled) then return; end
-        local step = w._bigStep or w._step;
-        local newVal = ClampValue(w._value + delta * step, w._min, w._max, w._step);
-        if (newVal ~= w._value) then
-            w._value = newVal;
-            UpdateThumbPosition();
-            if (w._onSet) then w._onSet(newVal); end
-            C_Timer.After(0, RefreshActiveWidgets);
-        end
-    end);
+    dragFrame:EnableMouseWheel(false);
 
     RegisterWidget("range", w);
     return w;

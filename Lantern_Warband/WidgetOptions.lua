@@ -351,7 +351,7 @@ local function groupsWidgets()
                     text = memberKey .. "  |cff888888(" .. timeAgo .. ")|r",
                     buttonLabel = "Remove",
                     desc = "Remove " .. memberKey .. " from this group.",
-                    confirm = "Remove " .. memberKey .. " from '" .. group.name .. "'?",
+                    confirm = "Remove?",
                     func = function()
                         Warband:RemoveCharacterFromGroup(memberKey);
                         Lantern:Print("Removed " .. memberKey .. " from group '" .. group.name .. "'.");
@@ -399,7 +399,7 @@ local function groupsWidgets()
             type = "execute",
             label = "Delete Group",
             desc = "Delete this group. Characters will be unassigned.",
-            confirm = "Are you sure you want to delete '" .. group.name .. "'?",
+            confirm = "Delete?",
             func = function()
                 Warband:DeleteGroup(group.name);
                 Lantern:Print("Deleted group '" .. group.name .. "'.");
@@ -916,7 +916,7 @@ local function warehousingWidgets()
                 type = "execute",
                 label = "Delete Group",
                 desc = "Delete this warehousing group and all its items.",
-                confirm = "Delete '" .. groupName .. "'?",
+                confirm = "Delete?",
                 func = function()
                     Warehousing:DeleteGroup(groupName);
                     Lantern:Print("Deleted warehousing group '" .. groupName .. "'.");

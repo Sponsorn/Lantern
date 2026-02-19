@@ -3,7 +3,7 @@ if (not Lantern) then return; end
 
 local module = Lantern:NewModule("AutoQuest", {
     title = "Auto Quest",
-    desc = "Automatically accept/turn-in quests; hold Shift to pause.",
+    desc = "Automatically accept and turn-in quests.",
     skipOptions = true, -- options are shown under Lantern > General Options instead
 });
 
@@ -15,8 +15,7 @@ local DEFAULTS = {
 };
 
 local function shouldPause()
-    if (IsShiftKeyDown()) then return true; end
-    return false;
+    return Lantern:IsModifierDown();
 end
 
 -------------------------------------------------------------------------------

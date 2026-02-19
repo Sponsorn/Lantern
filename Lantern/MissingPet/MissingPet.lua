@@ -499,7 +499,7 @@ function module:PetDebug()
 
     local db = getDB();
 
-    local prefix = "|cffe6c619Lantern PetDebug:|r ";
+    local prefix = "|cffe08f2eLantern PetDebug:|r ";
     print(prefix .. "--- MissingPet Diagnostics ---");
     print(prefix .. "classID=" .. tostring(classID) .. " (" .. tostring(className) .. ")");
     print(prefix .. "specIndex=" .. tostring(specIndex) .. ", specID=" .. tostring(specID) .. " (" .. tostring(specName) .. ")");

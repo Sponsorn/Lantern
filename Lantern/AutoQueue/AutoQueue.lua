@@ -3,7 +3,7 @@ if (not Lantern) then return; end
 
 local module = Lantern:NewModule("AutoQueue", {
     title = "Auto Queue",
-    desc = "Automatically accept role checks using your LFG role selection; hold Shift to pause.",
+    desc = "Automatically accept role checks using your LFG role selection.",
     skipOptions = true,
 });
 
@@ -32,7 +32,7 @@ local function ensureDB(self)
 end
 
 local function shouldPause()
-    return IsShiftKeyDown();
+    return Lantern:IsModifierDown();
 end
 
 function module:OnInit()

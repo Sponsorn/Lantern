@@ -110,13 +110,17 @@ local function CreateItemRow(parent)
         if (w._confirmText and not w._confirming) then
             w._confirming = true;
             w._btnText:SetText(w._confirmText);
-            w._btnText:SetTextColor(unpack(T.accent));
+            w._btnText:SetTextColor(unpack(T.dangerText));
+            w._btn:SetBackdropColor(unpack(T.dangerBg));
+            w._btn:SetBackdropBorderColor(unpack(T.dangerBorder));
             return;
         end
 
         w._confirming = false;
         w._btnText:SetText(w._originalLabel or "Remove");
         w._btnText:SetTextColor(unpack(T.buttonText));
+        w._btn:SetBackdropColor(unpack(T.buttonBg));
+        w._btn:SetBackdropBorderColor(unpack(T.buttonBorder));
         if (w._func) then w._func(); end
     end);
 
