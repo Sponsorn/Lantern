@@ -26,4 +26,4 @@ CursorRing\CursorRing.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
 MissingPet\MissingPet.lua
-UXBridge.lua
+Options.lua

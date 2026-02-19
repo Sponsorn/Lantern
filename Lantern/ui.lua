@@ -276,7 +276,7 @@ function Lantern:OpenOptions()
         self:SetupOptions();
     end
 
-    -- UXBridge overrides this method when LanternUX is available.
+    -- Options.lua overrides this method when LanternUX is available.
     -- This base version opens the Blizzard Settings stub as fallback.
     if (Settings and Settings.OpenToCategory) then
         Settings.OpenToCategory("Lantern");
