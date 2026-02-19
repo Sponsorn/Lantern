@@ -2,6 +2,7 @@
 
 ## 0.4.35 - 2026-02-19
 - Remove: Old Interrupt Tracker module (replaced by Lantern: Mythic+ Tracker standalone addon), this will however, break any day now.
+- Chore: Renamed UXBridge.lua to Options.lua
 
 ## 0.4.34 - 2026-02-18
 ~16k lines removed, whole UI framework added, "patch" version, well, perks of not being 1.0 yet I guess, I hope you will enjoy the new options panel, any feedback is welcome, I think I have covered all bases with migration.
