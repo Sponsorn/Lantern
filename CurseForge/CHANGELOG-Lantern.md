@@ -1,6 +1,10 @@
 # Changelog
 
+## 0.4.35 - 2026-02-19
+- Remove: Old Interrupt Tracker module (replaced by Lantern: Mythic+ Tracker standalone addon), this will however, break any day now.
+
 ## 0.4.34 - 2026-02-18
+~16k lines removed, whole UI framework added, "patch" version, well, perks of not being 1.0 yet I guess, I hope you will enjoy the new options panel, any feedback is welcome, I think I have covered all bases with migration.
 - Fix: Missing Pet no longer plays false alarm sounds on login before the pet has loaded
 - Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
 - Remove: Dropped AceConfig, AceGUI, and AceEvent library dependencies
