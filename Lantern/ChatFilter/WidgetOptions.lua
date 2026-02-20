@@ -146,8 +146,6 @@ module.widgetOptions = function()
         children = keywordChildren,
     });
 
-    table.insert(widgets, { type = "divider" });
-
     ---------------------------------------------------------------------------
     -- Restore defaults
     ---------------------------------------------------------------------------

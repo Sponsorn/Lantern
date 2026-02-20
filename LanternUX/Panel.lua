@@ -303,8 +303,10 @@ function PanelMixin:_SelectItem(key)
     if (self._ExitSearchOnSelect) then self:_ExitSearchOnSelect(); end
 
     -- Auto-expand the group containing the selected page
+    -- (skip when _BuildSidebar is re-selecting after a rebuild — the user may have
+    --  intentionally collapsed this group and we must not undo that)
     local activeGroupKey = self:_GetGroupForPage(key);
-    if (activeGroupKey and not self._expandedGroups[activeGroupKey]) then
+    if (activeGroupKey and not self._expandedGroups[activeGroupKey] and not self._rebuildingSelect) then
         self._expandedGroups[activeGroupKey] = true;
         self._sidebarDirty = true;
         self:_BuildSidebar();
@@ -516,7 +518,9 @@ function PanelMixin:_BuildSidebar()
         -- Force re-render by resetting activeKey
         local key = self._activeKey;
         self._activeKey = nil;
+        self._rebuildingSelect = true;
         self:_SelectItem(key);
+        self._rebuildingSelect = nil;
     elseif (#self._pages > 0) then
         self:_SelectItem(self._pages[1].key);
     end

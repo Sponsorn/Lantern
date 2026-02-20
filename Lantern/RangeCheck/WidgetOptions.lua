@@ -34,7 +34,7 @@ module.widgetOptions = function()
         if (not Lantern.db) then Lantern.db = {}; end
         if (not Lantern.db.rangeCheck) then Lantern.db.rangeCheck = {}; end
         local d = Lantern.db.rangeCheck;
-        local defaults = { combatOnly = false, fontSize = 16, locked = true };
+        local defaults = { combatOnly = false, fontSize = 16, locked = true, displayMode = "range", hideInRange = false };
         for k, v in pairs(defaults) do
             if (d[k] == nil) then d[k] = v; end
         end
@@ -45,6 +45,16 @@ module.widgetOptions = function()
         return not moduleEnabled("RangeCheck");
     end
 
+    local isStatusMode = function()
+        return db().displayMode == "status";
+    end
+
+    local refreshPage = function()
+        if (Lantern._uxPanel and Lantern._uxPanel.refreshPage) then
+            Lantern._uxPanel:refreshPage();
+        end
+    end
+
     return {
         moduleToggle("RangeCheck", "Enable", "Show distance to your current target."),
         {
@@ -52,6 +62,31 @@ module.widgetOptions = function()
             text = "Display",
             expanded = true,
             children = {
+                {
+                    type = "select",
+                    label = "Display Mode",
+                    desc = "Range: show distance numbers. Status: show In Range / Out of Range.",
+                    disabled = isDisabled,
+                    values = {
+                        range = "Range (numbers)",
+                        status = "Status (in/out)",
+                    },
+                    sorting = { "range", "status" },
+                    get = function() return db().displayMode; end,
+                    set = function(val)
+                        db().displayMode = val;
+                        refreshPage();
+                    end,
+                },
+                {
+                    type = "toggle",
+                    label = "Hide When In Range",
+                    desc = "Hide the display when your target is within range. Only shows when out of range.",
+                    disabled = function() return isDisabled() or not isStatusMode(); end,
+                    hidden = function() return not isStatusMode(); end,
+                    get = function() return db().hideInRange; end,
+                    set = function(val) db().hideInRange = val; end,
+                },
                 {
                     type = "toggle",
                     label = "Combat Only",
@@ -99,12 +134,6 @@ module.widgetOptions = function()
                     end,
                 },
             },
-        },
-        {
-            type = "description",
-            text = "Color coding: Green (melee, 0-8 yd) | Yellow (mid, 8-30 yd) | Red (far, 30+ yd)",
-            fontSize = "small",
-            color = T.textDim,
         },
     };
 end

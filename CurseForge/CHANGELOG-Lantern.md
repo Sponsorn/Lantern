@@ -9,12 +9,13 @@
 - Add: Faster Loot module — instantly collects all loot when a loot window opens, with inventory-full warning
 - Add: Disable Loot Warnings module — auto-confirms bind-on-pickup, loot roll, merchant refund, and mail lock popups with per-type toggles
 - Add: Auto Keystone module — automatically slots your Mythic+ keystone when the Challenge Mode UI opens
-- Add: Death Release Protection module — requires holding Alt for 1 second to release spirit, preventing accidental clicks
+- Add: Death Release Protection module — requires holding your pause modifier for 1 second to release spirit, preventing accidental clicks
 - Add: Combat Timer module — on-screen combat duration timer with sticky mode that keeps showing after combat ends
 - Add: Combat Alert module — fade-in/out text alerts when entering or leaving combat with configurable colors and sound
-- Add: Range Check module — color-coded distance display to your target using green/yellow/red range brackets
+- Add: Range Check module — color-coded distance display to your target with two display modes: range numbers or in/out of range status with optional hide-when-in-range
 - Change: Options sidebar reorganized into context-based categories (General, Dungeons & M+, Questing & World)
 - Change: Home page now shows all modules grouped by category with clickable navigation to settings
+- Fix: Range Check now detects Devourer Demon Hunter range correctly (added missing Consume spell to LibRangeCheck)
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)
 
 ## 0.4.35 - 2026-02-19

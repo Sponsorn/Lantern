@@ -146,6 +146,8 @@ local function RenderContent(scrollContainer, options, headerInfo, pageKey, pres
                     card.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", CONTENT_PAD + GROUP_INDENT - cardPad, cardStartY + cardTopPad);
                     card.frame:SetSize(contentWidth - GROUP_INDENT + cardPad * 2, cardH + cardTopPad + cardBotPad);
                     card.frame:SetFrameLevel(parent:GetFrameLevel());
+                    -- Push y past the card bottom so the next widget doesn't overlap
+                    y = y - cardBotPad;
                 end
             end
         end

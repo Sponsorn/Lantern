@@ -3,7 +3,7 @@ if (not Lantern) then return; end
 
 local module = Lantern:NewModule("DeathRelease", {
     title = "Death Release Protection",
-    desc = "Require holding Alt for 1 second before releasing spirit to prevent accidental clicks.",
+    desc = "Require holding your pause modifier for 1 second before releasing spirit to prevent accidental clicks.",
     skipOptions = true,
 });
 
@@ -25,9 +25,10 @@ local function createBlocker()
     blocker._text = text;
 
     blocker:SetScript("OnUpdate", function()
-        if (not IsAltKeyDown()) then
+        local modName = Lantern:GetModifierName();
+        if (not Lantern:IsModifierDown()) then
             holdStart = nil;
-            blocker._text:SetText("Hold Alt to release");
+            blocker._text:SetText("Hold " .. modName .. " to release");
             return;
         end
 
@@ -41,7 +42,7 @@ local function createBlocker()
             holdStart = nil;
         else
             local remaining = HOLD_DURATION - held;
-            blocker._text:SetText(string.format("Hold Alt... %.1fs", remaining));
+            blocker._text:SetText(string.format("Hold " .. modName .. "... %.1fs", remaining));
         end
     end);
 end
@@ -61,7 +62,7 @@ local function positionBlocker()
         blocker:SetAllPoints(btn);
         blocker:Show();
         holdStart = nil;
-        blocker._text:SetText("Hold Alt to release");
+        blocker._text:SetText("Hold " .. Lantern:GetModifierName() .. " to release");
     end
 end
 

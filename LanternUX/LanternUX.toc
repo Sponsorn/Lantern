@@ -22,3 +22,4 @@ Widgets\DropSlot.lua
 Widgets\Renderer.lua
 Panel.lua
 Search.lua
+Draggable.lua

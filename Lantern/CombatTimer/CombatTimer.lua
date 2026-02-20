@@ -1,6 +1,8 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
+local LanternUX = _G.LanternUX;
+
 local module = Lantern:NewModule("CombatTimer", {
     title = "Combat Timer",
     desc = "Display a timer showing how long you've been in combat.",
@@ -40,32 +42,27 @@ end
 local function createFrame(self)
     if (frame) then return; end
 
-    frame = CreateFrame("Frame", "Lantern_CombatTimer", UIParent);
+    frame = CreateFrame("Frame", "Lantern_CombatTimer", UIParent, "BackdropTemplate");
     frame:SetSize(100, 30);
     frame:SetPoint("TOP", UIParent, "TOP", 0, -200);
-    frame:SetMovable(true);
-    frame:SetClampedToScreen(true);
     frame:Hide();
-
-    frame:SetScript("OnMouseDown", function(_, button)
-        if (button == "LeftButton" and frame:IsMovable()) then
-            frame:StartMoving();
-        end
-    end);
-    frame:SetScript("OnMouseUp", function()
-        frame:StopMovingOrSizing();
-        local db = Lantern.db and Lantern.db.combatTimer;
-        if (db) then
-            local point, _, relPoint, x, y = frame:GetPoint();
-            db.pos = { point = point, relPoint = relPoint, x = x, y = y };
-        end
-    end);
 
     timerText = frame:CreateFontString(nil, "ARTWORK");
     timerText:SetFont("Fonts\\FRIZQT__.TTF", DEFAULTS.fontSize, "OUTLINE");
     timerText:SetPoint("CENTER");
     timerText:SetTextColor(1, 1, 1, 1);
     timerText:SetText("0:00");
+
+    if (LanternUX and LanternUX.MakeDraggable) then
+        LanternUX.MakeDraggable(frame, {
+            getPos    = function() return self.db and self.db.pos; end,
+            setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
+            getLocked = function() return self.db and self.db.locked; end,
+            defaultPoint = { "TOP", UIParent, "TOP", 0, -200 },
+            text = timerText,
+            placeholder = "0:00",
+        });
+    end
 
     frame:SetScript("OnUpdate", function()
         if (inCombat and combatStart) then
@@ -83,23 +80,16 @@ end
 
 function module:UpdateLock()
     if (not frame) then return; end
-    local locked = self.db and self.db.locked;
-    frame:SetMovable(not locked);
-    frame:EnableMouse(not locked);
+    frame:UpdateLock();
+    -- When locking back, hide if not in combat
+    if (self.db and self.db.locked and not inCombat) then
+        frame:Hide();
+    end
 end
 
 function module:ResetPosition()
     if (not frame) then return; end
-    frame:ClearAllPoints();
-    frame:SetPoint("TOP", UIParent, "TOP", 0, -200);
-    if (self.db) then self.db.pos = nil; end
-end
-
-function module:RestorePosition()
-    if (not frame or not self.db or not self.db.pos) then return; end
-    local p = self.db.pos;
-    frame:ClearAllPoints();
-    frame:SetPoint(p.point, UIParent, p.relPoint, p.x, p.y);
+    frame:ResetPosition();
 end
 
 function module:OnInit()
@@ -109,8 +99,8 @@ end
 function module:OnEnable()
     ensureDB(self);
     createFrame(self);
-    self:RestorePosition();
-    self:UpdateLock();
+    frame:RestorePosition();
+    frame:UpdateLock();
     self:RefreshFont();
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
@@ -126,14 +116,15 @@ function module:OnEnable()
         if (not self.enabled) then return; end
         inCombat = false;
         local stickyDur = self.db and self.db.stickyDuration or DEFAULTS.stickyDuration;
+        local unlocked = self.db and not self.db.locked;
         if (stickyDur > 0) then
             stickyTimer = C_Timer.NewTimer(stickyDur, function()
-                if (not inCombat and frame) then
+                if (not inCombat and frame and not unlocked) then
                     frame:Hide();
                 end
                 stickyTimer = nil;
             end);
-        else
+        elseif (not unlocked) then
             frame:Hide();
         end
     end);

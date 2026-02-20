@@ -197,6 +197,60 @@ end);
 utils.normalizeRegionCode = normalizeRegionCode;
 utils.GetDailyResetHourCET = GetDailyResetHourCET;
 
+-- Patch LibRangeCheck-3.0 with spells missing from the upstream library.
+-- The lib's spell tables are local, so we hook init() and inject checkers post-init.
+-- When the upstream library adds these spells, the duplicate-range guard skips our entries.
+do
+    local LRC = LibStub and LibStub("LibRangeCheck-3.0", true);
+    if (LRC) then
+        local BOOK = BOOKTYPE_SPELL or Enum.SpellBookSpellBank.Player;
+        local _, playerClass = UnitClass("player");
+
+        -- Extra harm spells the library doesn't include yet (keyed by class)
+        local EXTRA_HARM = {
+            DEMONHUNTER = {
+                { id = 473662, range = 25 }, -- Consume (Devourer) (25 yards)
+            },
+        };
+
+        local spells = EXTRA_HARM[playerClass];
+        if (spells) then
+            -- Sorted insert matching the lib's addChecker: descending range, skip duplicates
+            local function inject(list, range, checker, info)
+                for i = 1, #list do
+                    if (list[i].range == range) then return; end
+                    if (range > list[i].range) then
+                        table.insert(list, i, { range = range, minRange = nil, checker = checker, info = info });
+                        return;
+                    end
+                end
+                table.insert(list, { range = range, minRange = nil, checker = checker, info = info });
+            end
+
+            local origInit = LRC.init;
+            LRC.init = function(self, forced)
+                origInit(self, forced);
+                for _, spell in ipairs(spells) do
+                    local spellIdx = self:findSpellIndex(spell.id);
+                    if (spellIdx) then
+                        local idx = spellIdx; -- capture for closure
+                        local checker = function(unit)
+                            if (IsSpellBookItemInRange(idx, BOOK, unit) == 1) then
+                                return true;
+                            end
+                        end;
+                        local info = "spell:" .. spell.id .. ":Lantern";
+                        inject(self.harmRC, spell.range, checker, info);
+                        inject(self.harmRCInCombat, spell.range, checker, info);
+                        inject(self.harmNoItemsRC, spell.range, checker, info);
+                        inject(self.harmNoItemsRCInCombat, spell.range, checker, info);
+                    end
+                end
+            end;
+        end
+    end
+end
+
 function utils.GetClassColor(classToken)
     if (not classToken) then return 1, 1, 1; end
     local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken];
