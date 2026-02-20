@@ -6,6 +6,15 @@
 - Add: Chat Filter module — filters gold spam, boost ads, and unwanted messages from whispers and public channels with a customizable keyword list
 - Add: Configurable pause modifier key (Shift, Ctrl, or Alt) in General settings — applies to all auto-features
 - Add: Auto Playstyle module — auto-selects your preferred playstyle when listing M+ groups in the Group Finder
+- Add: Faster Loot module — instantly collects all loot when a loot window opens, with inventory-full warning
+- Add: Disable Loot Warnings module — auto-confirms bind-on-pickup, loot roll, merchant refund, and mail lock popups with per-type toggles
+- Add: Auto Keystone module — automatically slots your Mythic+ keystone when the Challenge Mode UI opens
+- Add: Death Release Protection module — requires holding Alt for 1 second to release spirit, preventing accidental clicks
+- Add: Combat Timer module — on-screen combat duration timer with sticky mode that keeps showing after combat ends
+- Add: Combat Alert module — fade-in/out text alerts when entering or leaving combat with configurable colors and sound
+- Add: Range Check module — color-coded distance display to your target using green/yellow/red range brackets
+- Change: Options sidebar reorganized into context-based categories (General, Dungeons & M+, Questing & World)
+- Change: Home page now shows all modules grouped by category with clickable navigation to settings
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)
 
 ## 0.4.35 - 2026-02-19
