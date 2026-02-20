@@ -186,6 +186,24 @@ CUSTOM_OPTIONS["autoQueue"] = function()
     };
 end
 
+CUSTOM_OPTIONS["fasterLoot"] = function()
+    return {
+        moduleToggle("FasterLoot", "Enable", "Instantly collect all loot when a loot window opens. Hold " .. Lantern:GetModifierName() .. " to pause."),
+    };
+end
+
+CUSTOM_OPTIONS["autoKeystone"] = function()
+    return {
+        moduleToggle("AutoKeystone", "Enable", "Auto-slot your keystone when opening the M+ UI. Hold " .. Lantern:GetModifierName() .. " to skip."),
+    };
+end
+
+CUSTOM_OPTIONS["deathRelease"] = function()
+    return {
+        moduleToggle("DeathRelease", "Enable", "Require holding Alt for 1 second to release spirit (prevents accidental release)."),
+    };
+end
+
 -------------------------------------------------------------------------------
 -- AutoRepair custom options
 -------------------------------------------------------------------------------

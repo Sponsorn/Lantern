@@ -32,8 +32,13 @@ CursorRing\CursorRing.lua
 CursorRing\WidgetOptions.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
+DisableLootWarnings\DisableLootWarnings.lua
+DisableLootWarnings\WidgetOptions.lua
 MissingPet\MissingPet.lua
 MissingPet\WidgetOptions.lua
 AutoPlaystyle\AutoPlaystyle.lua
 AutoPlaystyle\WidgetOptions.lua
+FasterLoot\FasterLoot.lua
+AutoKeystone\AutoKeystone.lua
+DeathRelease\DeathRelease.lua
 Options.lua
