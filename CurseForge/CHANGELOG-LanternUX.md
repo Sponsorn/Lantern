@@ -4,7 +4,7 @@
 - Add: Initial release
 - Add: Panel framework with sidebar navigation, sections, and collapsible groups
 - Add: Widget types: toggle, range, select, input, color, execute, label, header, description, divider, group, label_action, item_row, drop_slot
-- Add: Dark monochrome theme (near-black backgrounds, lavender accents)
+- Add: Dark monochrome theme (near-black backgrounds, amber accents)
 - Add: Widget search with real-time filtering and jump-to-widget
 - Add: Description panel for contextual widget help on hover
 - Add: Smooth scrolling with easing and fade overlays

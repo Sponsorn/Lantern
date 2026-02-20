@@ -33,14 +33,16 @@ local CORE_KEY = {
     DeleteConfirm        = "deleteConfirm",
     DisableAutoAddSpells = "disableAutoAddSpells",
     MissingPet           = "missingPet",
+    AutoPlaystyle        = "autoPlaystyle",
 };
 
 local CORE_ORDER = {
     "AutoQuest", "AutoQueue", "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
-    "DeleteConfirm", "DisableAutoAddSpells", "MissingPet",
+    "AutoPlaystyle", "DeleteConfirm", "DisableAutoAddSpells", "MissingPet",
 };
 
 local QUICK_SETTINGS = {
+    autoPlaystyle = true,
     autoQueue = true,
     autoRepair = true,
     deleteConfirm = true,

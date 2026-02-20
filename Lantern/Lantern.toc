@@ -34,4 +34,6 @@ DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
 MissingPet\MissingPet.lua
 MissingPet\WidgetOptions.lua
+AutoPlaystyle\AutoPlaystyle.lua
+AutoPlaystyle\WidgetOptions.lua
 Options.lua

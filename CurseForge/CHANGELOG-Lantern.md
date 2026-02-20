@@ -5,6 +5,7 @@
 - Add: Auto Sell module — automatically sells gray items and custom-listed items at merchants, with global and per-character sell lists
 - Add: Chat Filter module — filters gold spam, boost ads, and unwanted messages from whispers and public channels with a customizable keyword list
 - Add: Configurable pause modifier key (Shift, Ctrl, or Alt) in General settings — applies to all auto-features
+- Add: Auto Playstyle module — auto-selects your preferred playstyle when listing M+ groups in the Group Finder
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)
 
 ## 0.4.35 - 2026-02-19

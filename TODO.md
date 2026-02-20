@@ -6,10 +6,8 @@ TODO
 - add durability with edit mode lib
 - add summoning portal into core - /say current target and ask for help, maybe add optional notification if someone else is summoning
 - crafting orders: save last crafting cost known across warband into tooltip
-- warband: fix characters screen showing unknown character after name-realm
-- warband/warbank: fix proper cast bar instead of yank
 - cursorring: when installing the addon, disabled states are not read correctly
-- mythictracker: starting position for preview is under options menu, and preview closes with options
+- audit codebase for band-aid fixes / workarounds that should be proper root-cause fixes
+- screen calmer module: remove drunk blur, disable screen shake, skip death grayscale, tone down spell effects (sensory accessibility)
+- login briefing module: proactive summary on login (expiring mail, vault slots, uncollected crafting orders, daily/weekly resets, unspent profession knowledge)
 
-----
-- UX plan: ~\.claude\plans\snazzy-swimming-wave.md
