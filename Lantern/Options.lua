@@ -345,59 +345,115 @@ local COMPANION_COL_WIDTH = 255;
 local COMPANION_COL_GAP   = 24;
 
 local splashFrame;
+local splashToggles = {};
 
 local function PopulateSplashModules()
     if (not splashFrame) then return; end
 
-    local names = {};
-    for name, _ in pairs(Lantern.modules or {}) do
-        table.insert(names, name);
-    end
-    table.sort(names);
+    local y = splashFrame._contentStartY;
 
-    local y = splashFrame._moduleListY;
-
-    for i, name in ipairs(names) do
-        local dot = splashFrame._moduleDots[i];
-        local label = splashFrame._moduleLabels[i];
-
-        if (not dot) then
-            dot = splashFrame:CreateTexture(nil, "ARTWORK");
-            dot:SetSize(8, 8);
-            dot:SetTexture("Interface\\Buttons\\WHITE8x8");
-            splashFrame._moduleDots[i] = dot;
-        end
-
-        if (not label) then
-            label = splashFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-            splashFrame._moduleLabels[i] = label;
-        end
-
-        local mod = Lantern.modules[name];
-        local displayName = (mod.opts and mod.opts.title) or name;
-
-        dot:ClearAllPoints();
-        dot:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 32, y - 2);
-        if (mod.enabled) then
-            dot:SetColorTexture(unpack(T.enabled));
-        else
-            dot:SetColorTexture(unpack(T.disabledDot));
-        end
-        dot:Show();
-
-        label:ClearAllPoints();
-        label:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 46, y);
-        label:SetJustifyH("LEFT");
-        label:SetTextColor(unpack(T.text));
-        label:SetText(displayName);
-        label:Show();
-
-        y = y - 24;
+    -- Hide all previously-shown cached elements
+    for _, elem in pairs(splashToggles) do
+        if (elem.Hide) then elem:Hide(); end
     end
 
-    for i = #names + 1, #splashFrame._moduleLabels do
-        if (splashFrame._moduleDots[i]) then splashFrame._moduleDots[i]:Hide(); end
-        splashFrame._moduleLabels[i]:Hide();
+    for catIdx, category in ipairs(MODULE_CATEGORIES) do
+        -- Category header
+        local headerKey = catIdx .. "_header";
+        local header = splashToggles[headerKey];
+        if (not header) then
+            header = splashFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+            splashToggles[headerKey] = header;
+        end
+        header:ClearAllPoints();
+        header:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 28, y);
+        header:SetText(category.label);
+        header:SetTextColor(unpack(T.textBright));
+        header:Show();
+
+        -- Category divider
+        local divKey = catIdx .. "_divider";
+        local div = splashToggles[divKey];
+        if (not div) then
+            div = splashFrame:CreateTexture(nil, "ARTWORK");
+            div:SetHeight(1);
+            splashToggles[divKey] = div;
+        end
+        div:ClearAllPoints();
+        div:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6);
+        div:SetPoint("RIGHT", splashFrame, "RIGHT", -28, 0);
+        div:SetColorTexture(unpack(T.divider));
+        div:Show();
+
+        y = y - 26;
+
+        -- Modules in this category
+        for _, moduleName in ipairs(category.modules) do
+            local mod = Lantern.modules[moduleName];
+            if (mod) then
+                local displayName = (mod.opts and mod.opts.title) or moduleName;
+                local pageKey = CORE_KEY[moduleName];
+
+                -- Status dot
+                local dotKey = catIdx .. "_" .. moduleName .. "_dot";
+                local dot = splashToggles[dotKey];
+                if (not dot) then
+                    dot = splashFrame:CreateTexture(nil, "ARTWORK");
+                    dot:SetSize(8, 8);
+                    dot:SetTexture("Interface\\Buttons\\WHITE8x8");
+                    splashToggles[dotKey] = dot;
+                end
+                dot:ClearAllPoints();
+                dot:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 36, y - 2);
+                if (mod.enabled) then
+                    dot:SetColorTexture(unpack(T.enabled));
+                else
+                    dot:SetColorTexture(unpack(T.disabledDot));
+                end
+                dot:Show();
+
+                -- Clickable module label (Button frame for click support)
+                local labelKey = catIdx .. "_" .. moduleName .. "_label";
+                local btn = splashToggles[labelKey];
+                if (not btn) then
+                    btn = CreateFrame("Button", nil, splashFrame);
+                    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+                    btnText:SetPoint("LEFT");
+                    btnText:SetJustifyH("LEFT");
+                    btn._text = btnText;
+                    splashToggles[labelKey] = btn;
+
+                    btn:SetScript("OnEnter", function(self)
+                        self._text:SetTextColor(unpack(T.accent));
+                    end);
+                    btn:SetScript("OnLeave", function(self)
+                        self._text:SetTextColor(unpack(T.text));
+                    end);
+                end
+
+                btn._text:SetText(displayName);
+                btn._text:SetTextColor(unpack(T.text));
+
+                -- Update click handler each time (pageKey is stable but closure is cheap)
+                btn:SetScript("OnClick", function()
+                    if (pageKey) then
+                        panel:SelectPage(pageKey);
+                    end
+                end);
+
+                btn:ClearAllPoints();
+                btn:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 50, y);
+                -- Size the button to fit the text
+                local textWidth = btn._text:GetStringWidth() or 100;
+                btn:SetSize(textWidth + 4, 16);
+                btn:Show();
+
+                y = y - 22;
+            end
+        end
+
+        -- Spacing between categories
+        y = y - 10;
     end
 
     -- Companion addons section (show addons that are not loaded)
@@ -412,7 +468,7 @@ local function PopulateSplashModules()
     end
 
     if (hasAnyCompanion and splashFrame._companionHeader) then
-        -- Position header below module list
+        -- Position header below categorized module list
         y = y - 12;
         splashFrame._companionHeader:ClearAllPoints();
         splashFrame._companionHeader:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 28, y);
@@ -531,24 +587,13 @@ local function CreateSplashContent(parent)
     desc:SetWidth(540);
     desc:SetJustifyH("LEFT");
     desc:SetWordWrap(true);
-    desc:SetText("A modular quality-of-life addon for World of Warcraft.\nSelect a module from the sidebar to configure it.");
+    desc:SetText("A modular quality-of-life addon for World of Warcraft.\nClick a module name to configure it.");
     desc:SetTextColor(unpack(T.splashText));
 
-    -- Module status header
-    local statusHeader = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-    statusHeader:SetPoint("TOPLEFT", f, "TOPLEFT", 28, -160);
-    statusHeader:SetText("Loaded Modules");
-    statusHeader:SetTextColor(unpack(T.textBright));
-
-    local divider = f:CreateTexture(nil, "ARTWORK");
-    divider:SetHeight(1);
-    divider:SetPoint("TOPLEFT", statusHeader, "BOTTOMLEFT", 0, -6);
-    divider:SetPoint("RIGHT", f, "RIGHT", -28, 0);
-    divider:SetColorTexture(unpack(T.divider));
-
-    f._moduleListY = -190;
-    f._moduleLabels = {};
-    f._moduleDots = {};
+    -- Content starts below description; categories are positioned dynamically
+    f._contentStartY = -140;
+    f._catHeaders = {};
+    f._catDividers = {};
 
     -- Companion addons section (created below modules, positioned dynamically by PopulateSplashModules)
     -- We create the elements here but position them in PopulateSplashModules since
