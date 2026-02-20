@@ -34,19 +34,41 @@ local CORE_KEY = {
     DisableAutoAddSpells = "disableAutoAddSpells",
     MissingPet           = "missingPet",
     AutoPlaystyle        = "autoPlaystyle",
+    FasterLoot           = "fasterLoot",
+    DisableLootWarnings  = "disableLootWarnings",
+    AutoKeystone         = "autoKeystone",
+    DeathRelease         = "deathRelease",
+    CombatTimer          = "combatTimer",
+    CombatAlert          = "combatAlert",
+    RangeCheck           = "rangeCheck",
 };
 
-local CORE_ORDER = {
-    "AutoQuest", "AutoQueue", "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
-    "AutoPlaystyle", "DeleteConfirm", "DisableAutoAddSpells", "MissingPet",
-};
-
-local QUICK_SETTINGS = {
-    autoPlaystyle = true,
-    autoQueue = true,
-    autoRepair = true,
-    deleteConfirm = true,
-    disableAutoAddSpells = true,
+-- Ordered categories: each entry is { key, label, moduleNames }
+-- Modules within each category are alphabetical.
+local MODULE_CATEGORIES = {
+    {
+        key   = "general",
+        label = "General",
+        modules = {
+            "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
+            "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings",
+        },
+    },
+    {
+        key   = "dungeons",
+        label = "Dungeons & M+",
+        modules = {
+            "AutoKeystone", "AutoPlaystyle", "AutoQueue",
+            "CombatAlert", "CombatTimer", "MissingPet", "RangeCheck",
+        },
+    },
+    {
+        key   = "questing",
+        label = "Questing & World",
+        modules = {
+            "AutoQuest", "DeathRelease", "FasterLoot",
+        },
+    },
 };
 
 -------------------------------------------------------------------------------
@@ -612,34 +634,35 @@ loginFrame:SetScript("OnEvent", function()
         onShow = PopulateSplashModules,
     });
 
-    -- General
-    panel:AddPage("general", {
+    -- General settings page (addon-level settings, not a module)
+    panel:AddPage("general_settings", {
         label   = "General",
         title   = "General",
         description = "Core addon settings.",
         widgets = CUSTOM_OPTIONS["general"],
     });
 
-    -- Core modules section
+    -- Category-based module pages
     panel:AddSection("modules", "Modules");
-    panel:AddSidebarGroup("quickSettings", {
-        label   = "Quick Settings",
-        section = "modules",
-    });
-    for _, moduleName in ipairs(CORE_ORDER) do
-        local mod = Lantern.modules[moduleName];
-        if (mod) then
-            local key = CORE_KEY[moduleName];
-            local optionsFn = mod.widgetOptions or CUSTOM_OPTIONS[key];
-            panel:AddPage(key, {
-                label        = (mod.opts and mod.opts.title) or moduleName,
-                section      = "modules",
-                sidebarGroup = QUICK_SETTINGS[key] and "quickSettings" or nil,
-                title        = (mod.opts and mod.opts.title) or moduleName,
-                description  = mod.opts and mod.opts.desc,
-                widgets      = optionsFn or nil,
-                aceConfig    = (not optionsFn) and { appName = "Lantern_General", path = key } or nil,
-            });
+    for _, category in ipairs(MODULE_CATEGORIES) do
+        panel:AddSidebarGroup(category.key, {
+            label   = category.label,
+            section = "modules",
+        });
+        for _, moduleName in ipairs(category.modules) do
+            local mod = Lantern.modules[moduleName];
+            if (mod) then
+                local key = CORE_KEY[moduleName];
+                local optionsFn = mod.widgetOptions or CUSTOM_OPTIONS[key];
+                panel:AddPage(key, {
+                    label        = (mod.opts and mod.opts.title) or moduleName,
+                    section      = "modules",
+                    sidebarGroup = category.key,
+                    title        = (mod.opts and mod.opts.title) or moduleName,
+                    description  = mod.opts and mod.opts.desc,
+                    widgets      = optionsFn or nil,
+                });
+            end
         end
     end
 
@@ -671,7 +694,6 @@ loginFrame:SetScript("OnEvent", function()
                 panel:AddPage("module_" .. moduleName, {
                     label     = (mod.opts and mod.opts.title) or moduleName,
                     section   = "addons",
-                    aceConfig = { appName = "module_" .. moduleName },
                 });
             end
         end
