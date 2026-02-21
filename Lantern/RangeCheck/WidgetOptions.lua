@@ -30,16 +30,27 @@ local function moduleToggle(name, label, desc)
 end
 
 module.widgetOptions = function()
+    local DEFAULTS = {
+        font = "Roboto Light", fontSize = 16, fontOutline = "OUTLINE",
+        combatOnly = false, locked = true, displayMode = "range", hideInRange = false,
+        inRangeText = "In Range", outOfRangeText = "Out of Range",
+        inRangeColor = { r = 0.2, g = 1.0, b = 0.2 },
+        outOfRangeColor = { r = 1.0, g = 0.2, b = 0.2 },
+        animationStyle = "none",
+    };
+
     local function db()
         if (not Lantern.db) then Lantern.db = {}; end
         if (not Lantern.db.rangeCheck) then Lantern.db.rangeCheck = {}; end
         local d = Lantern.db.rangeCheck;
-        local defaults = {
-            font = "Roboto Light", fontSize = 16, fontOutline = "OUTLINE",
-            combatOnly = false, locked = true, displayMode = "range", hideInRange = false,
-        };
-        for k, v in pairs(defaults) do
-            if (d[k] == nil) then d[k] = v; end
+        for k, v in pairs(DEFAULTS) do
+            if (d[k] == nil) then
+                if (type(v) == "table") then
+                    d[k] = { r = v.r, g = v.g, b = v.b };
+                else
+                    d[k] = v;
+                end
+            end
         end
         return d;
     end
@@ -56,6 +67,10 @@ module.widgetOptions = function()
         if (Lantern._uxPanel and Lantern._uxPanel.refreshPage) then
             Lantern._uxPanel:refreshPage();
         end
+    end
+
+    local function refreshAnimation()
+        if (module.RefreshAnimation) then module:RefreshAnimation(); end
     end
 
     local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
@@ -77,8 +92,23 @@ module.widgetOptions = function()
     };
     local outlineSorting = { "", "OUTLINE", "THICKOUTLINE" };
 
+    local animationValues = {
+        none = "None (static)",
+        bounce = "Bounce",
+        pulse = "Pulse",
+        fade = "Fade",
+        shake = "Shake",
+        glow = "Glow",
+        heartbeat = "Heartbeat",
+    };
+    local animationSorting = { "none", "bounce", "pulse", "fade", "shake", "glow", "heartbeat" };
+
     return {
         moduleToggle("RangeCheck", "Enable", "Show distance to your current target."),
+
+        -----------------------------------------------------------------------
+        -- Display
+        -----------------------------------------------------------------------
         {
             type = "group",
             text = "Display",
@@ -97,6 +127,7 @@ module.widgetOptions = function()
                     get = function() return db().displayMode; end,
                     set = function(val)
                         db().displayMode = val;
+                        refreshAnimation();
                         refreshPage();
                     end,
                 },
@@ -119,6 +150,74 @@ module.widgetOptions = function()
                 },
             },
         },
+
+        -----------------------------------------------------------------------
+        -- Status Mode Text & Colors
+        -----------------------------------------------------------------------
+        {
+            type = "group",
+            text = "Status Text",
+            hidden = function() return not isStatusMode(); end,
+            expanded = true,
+            children = {
+                {
+                    type = "input",
+                    label = "In Range Text",
+                    desc = "Text to display when your target is within range.",
+                    disabled = isDisabled,
+                    get = function() return db().inRangeText or "In Range"; end,
+                    set = function(val) db().inRangeText = val; end,
+                },
+                {
+                    type = "input",
+                    label = "Out of Range Text",
+                    desc = "Text to display when your target is out of range.",
+                    disabled = isDisabled,
+                    get = function() return db().outOfRangeText or "Out of Range"; end,
+                    set = function(val) db().outOfRangeText = val; end,
+                },
+                {
+                    type = "color",
+                    label = "In Range Color",
+                    desc = "Color for the in-range text.",
+                    disabled = isDisabled,
+                    get = function()
+                        local c = db().inRangeColor or DEFAULTS.inRangeColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        db().inRangeColor = { r = r, g = g, b = b };
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Out of Range Color",
+                    desc = "Color for the out-of-range text.",
+                    disabled = isDisabled,
+                    get = function()
+                        local c = db().outOfRangeColor or DEFAULTS.outOfRangeColor;
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        db().outOfRangeColor = { r = r, g = g, b = b };
+                    end,
+                },
+                {
+                    type = "select",
+                    label = "Animation Style",
+                    desc = "Choose how the status text animates on state change.",
+                    values = animationValues,
+                    sorting = animationSorting,
+                    disabled = isDisabled,
+                    get = function() return db().animationStyle or "none"; end,
+                    set = function(val) db().animationStyle = val; refreshAnimation(); end,
+                },
+            },
+        },
+
+        -----------------------------------------------------------------------
+        -- Font
+        -----------------------------------------------------------------------
         {
             type = "group",
             text = "Font",
@@ -162,6 +261,10 @@ module.widgetOptions = function()
                 },
             },
         },
+
+        -----------------------------------------------------------------------
+        -- Position
+        -----------------------------------------------------------------------
         {
             type = "group",
             text = "Position",

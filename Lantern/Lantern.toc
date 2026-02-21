@@ -18,6 +18,7 @@ Libs\LibDDI-1.0\lib.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
 
 Utils\Utils.lua
+Utils\LibRangeCheckPatch.lua
 Utils\TextAnimations.lua
 core.lua
 ui.lua
