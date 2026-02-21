@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.5.0
+tldr: 8 new modules — Auto Repair, Auto Sell, Chat Filter, Auto Playstyle, Faster Loot, Disable Loot Warnings, Auto Keystone, and Release Protection. Three new HUD overlays — Combat Timer, Combat Alert, and Range Check — all draggable and fully customizable. Settings home page redesigned with category groups and clickable module navigation. Roboto font family across all UI. Pause modifier key is now configurable (Shift/Ctrl/Alt). Enough QoL to make your UI feel like it finally graduated from high school.
+
 - Change: Settings panel and HUD modules now use Roboto font for a modern, cohesive look
 - Add: Roboto Bold and Roboto ExtraBold fonts available in all font selectors
 - Change: Default font for Missing Pet and Crafting Orders notifications changed from Friz Quadrata to Roboto Light
@@ -40,6 +42,8 @@
 - Fix: Draggable frames restore original text and color when re-locking position
 - Fix: Draggable frames auto-lock when closing the settings panel
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)
+- Fix: Faster Loot inventory-full detection now works on all WoW client languages
+- Fix: Home page now scrollable when content extends beyond the panel
 
 ## 0.4.35 - 2026-02-19
 - Remove: Old Interrupt Tracker module

@@ -708,11 +708,20 @@ local function PopulateSplashModules()
             row.frame:Hide();
         end
     end
+
+    -- Update scroll content height so overflow is scrollable
+    if (splashFrame._scroll) then
+        splashFrame._scroll:UpdateContentHeight(math.abs(y) + 20);
+    end
 end
 
 local function CreateSplashContent(parent)
-    local f = CreateFrame("Frame", "LanternUX_Splash", parent);
-    f:SetAllPoints();
+    local scroll = LanternUX.CreateScrollContainer(parent);
+    local f = scroll.scrollChild;
+
+    scroll.scrollFrame:SetScript("OnSizeChanged", function(_, w)
+        f:SetWidth(w);
+    end);
 
     local y = -28;
 
@@ -842,8 +851,9 @@ local function CreateSplashContent(parent)
         f._companionRows[i] = { frame = row, height = totalHeight, btn = btn, btnText = btnText, url = info.url };
     end
 
+    f._scroll = scroll;
     splashFrame = f;
-    return f;
+    return scroll.scrollFrame;
 end
 
 -------------------------------------------------------------------------------
