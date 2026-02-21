@@ -198,6 +198,10 @@ end
 function module:UpdateLock()
     if (not banner) then return; end
     banner:UpdateLock();
+    -- When locking back, hide if no flash is playing
+    if (self.db and self.db.locked and not flashAt) then
+        banner:Hide();
+    end
 end
 
 function module:ResetPosition()
