@@ -2,19 +2,29 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
 local LanternUX = _G.LanternUX;
-local FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
-    or FONT_PATH;
+local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+local DEFAULT_FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
+    or "Fonts\\FRIZQT__.TTF";
+
+local function GetFontPath(fontName)
+    if (LSM) then
+        local path = LSM:Fetch("font", fontName);
+        if (path) then return path; end
+    end
+    return DEFAULT_FONT_PATH;
+end
 
 local module = Lantern:NewModule("RangeCheck", {
     title = "Range Check",
     desc = "Display distance to your target with color-coded range brackets.",
-    skipOptions = true,
     defaultEnabled = false,
 });
 
 local DEFAULTS = {
-    combatOnly = false,
+    font = "Roboto Light",
     fontSize = 16,
+    fontOutline = "OUTLINE",
+    combatOnly = false,
     locked = true,
     pos = nil,
     displayMode = "range",  -- "range" = numbers, "status" = In Range / Out of Range
@@ -43,13 +53,40 @@ local function ensureDB(self)
     end
 end
 
+-- Spec operating range: the range at which the spec is designed to fight.
+-- Melee specs use 5 yards, Evoker/Devourer use 25, ranged specs use 40.
+local SPEC_RANGE = {
+    -- Warrior
+    [71] = 5, [72] = 5, [73] = 5,
+    -- Death Knight
+    [250] = 5, [251] = 5, [252] = 5,
+    -- Paladin (Holy = 40 by default)
+    [66] = 5, [70] = 5,
+    -- Monk (Mistweaver = 40 by default)
+    [268] = 5, [269] = 5,
+    -- Druid (Balance/Resto = 40 by default)
+    [103] = 5, [104] = 5,
+    -- Rogue
+    [259] = 5, [260] = 5, [261] = 5,
+    -- Demon Hunter (Havoc/Vengeance melee, Devourer handled below)
+    [577] = 5, [581] = 5,
+    -- Shaman (Ele/Resto = 40 by default)
+    [263] = 5,
+    -- Hunter (BM/MM = 40 by default)
+    [255] = 5,
+    -- Evoker (all specs 25 yards)
+    [1467] = 25, [1468] = 25, [1473] = 25,
+};
+
 local function getSpecMaxRange()
-    if (not LibRangeCheck) then return 40; end
-    -- Use harmNoItemsRC (spell-only checkers, sorted descending by range)
-    -- harmRC includes item-based checks that can reach 80-100+ yards
-    local checkers = LibRangeCheck.harmNoItemsRC;
-    if (checkers and #checkers > 0) then
-        return checkers[1].range;
+    local specID = PlayerUtil and PlayerUtil.GetCurrentSpecID and PlayerUtil.GetCurrentSpecID();
+    if (specID and SPEC_RANGE[specID]) then
+        return SPEC_RANGE[specID];
+    end
+    -- Devourer DH: 3rd DH spec, not in table because spec ID may change.
+    -- Detect at runtime: DH class + not Havoc/Vengeance = Devourer (25 yards).
+    if (specID and select(2, UnitClass("player")) == "DEMONHUNTER" and specID ~= 577 and specID ~= 581) then
+        return 25;
     end
     return 40;
 end
@@ -74,8 +111,10 @@ local function createFrame(self)
     frame:Hide();
 
     rangeText = frame:CreateFontString(nil, "ARTWORK");
-    rangeText:SetFont(FONT_PATH, DEFAULTS.fontSize, "OUTLINE");
+    rangeText:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
     rangeText:SetPoint("CENTER");
+    rangeText:SetShadowOffset(1, -1);
+    rangeText:SetShadowColor(0, 0, 0, 0.8);
     rangeText:SetTextColor(1, 1, 1, 1);
 
     if (LanternUX and LanternUX.MakeDraggable) then
@@ -83,6 +122,7 @@ local function createFrame(self)
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
+            setLocked = function(val) if (self.db) then self.db.locked = val; end end,
             defaultPoint = { "CENTER", UIParent, "CENTER", 0, -100 },
             text = rangeText,
             placeholder = "0-40 yd",
@@ -125,7 +165,7 @@ local function createFrame(self)
             local effectiveRange = maxRange or minRange or 100;
             if (effectiveRange <= threshold) then
                 if (db and db.hideInRange and not unlocked) then
-                    frame:Hide();
+                    rangeText:SetText("");
                     return;
                 end
                 rangeText:SetText("In Range");
@@ -155,8 +195,10 @@ end
 
 function module:RefreshFont()
     if (not rangeText) then return; end
+    local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
-    rangeText:SetFont(FONT_PATH, size, "OUTLINE");
+    local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
+    rangeText:SetFont(fontPath, size, outline);
 end
 
 function module:UpdateLock()

@@ -470,10 +470,9 @@ module.widgetOptions = function()
                     end,
                 },
                 {
-                    type = "description",
+                    type = "callout",
                     text = "The mouse trail may have a noticeable impact on performance, especially on lower-end systems.",
-                    fontSize = "small",
-                    color = T.textDim,
+                    severity = "warning",
                 },
                 {
                     type = "color",

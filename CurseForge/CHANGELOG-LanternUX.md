@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+- Add: Callout widget type with three severity levels (info, notice, warning) — colored left border with tinted background
+- Add: Draggable frame registry with auto-lock when settings panel closes
+- Add: Roboto font family (Thin, Light, Regular) bundled with theme FontObjects
+- Fix: Draggable frames now restore original text and color when re-locking
+
 ## 0.1.0 - 2026-02-18
 - Add: Initial release
 - Add: Panel framework with sidebar navigation, sections, and collapsible groups

@@ -27,7 +27,14 @@
 - Add: Range Check module — color-coded distance display to your target with two display modes: range numbers or in/out of range status with optional hide-when-in-range
 - Change: Options sidebar reorganized into context-based categories (General, Dungeons & M+, Questing & World)
 - Change: Home page now shows all modules grouped by category with clickable navigation to settings
+- Add: Death Release Protection now supports scenario filtering — choose Always, All Instances, or Custom mode with per-type toggles (dungeons, M+, raids, arenas, battlegrounds, open world)
+- Add: Range Check font and outline selectors
+- Add: Combat Alert separate toggles to enable/disable enter and leave alerts independently
+- Fix: Range Check now detects melee range correctly for DK, DH, Rogue, and Warrior classes
 - Fix: Range Check now detects Devourer Demon Hunter range correctly (added missing Consume spell to LibRangeCheck)
+- Fix: Range Check "hide when in range" now correctly shows again when target goes out of range
+- Fix: Draggable frames restore original text and color when re-locking position
+- Fix: Draggable frames auto-lock when closing the settings panel
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)
 
 ## 0.4.35 - 2026-02-19

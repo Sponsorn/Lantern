@@ -15,6 +15,8 @@ local module = Lantern:NewModule("CombatAlert", {
 });
 
 local DEFAULTS = {
+    showEnter = true,
+    showLeave = true,
     enterText = "IN COMBAT",
     leaveText = "OUT OF COMBAT",
     enterColor = { r = 1, g = 0.2, b = 0.2 },
@@ -80,6 +82,7 @@ local function createFrame(self)
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
+            setLocked = function(val) if (self.db) then self.db.locked = val; end end,
             defaultPoint = { "CENTER", UIParent, "CENTER", 0, 200 },
             text = alertText,
             placeholder = DEFAULTS.enterText,
@@ -214,6 +217,7 @@ function module:OnEnable()
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         if (not self.enabled) then return; end
+        if (self.db and self.db.showEnter == false) then return; end
         local text = self.db.enterText or DEFAULTS.enterText;
         local color = self.db.enterColor or DEFAULTS.enterColor;
         showAlert(text, color, self.db);
@@ -221,6 +225,7 @@ function module:OnEnable()
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_ENABLED", function()
         if (not self.enabled) then return; end
+        if (self.db and self.db.showLeave == false) then return; end
         local text = self.db.leaveText or DEFAULTS.leaveText;
         local color = self.db.leaveColor or DEFAULTS.leaveColor;
         showAlert(text, color, self.db);

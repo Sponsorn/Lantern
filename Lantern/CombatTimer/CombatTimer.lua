@@ -80,6 +80,7 @@ local function createFrame(self)
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
+            setLocked = function(val) if (self.db) then self.db.locked = val; end end,
             defaultPoint = { "TOP", UIParent, "TOP", 0, -200 },
             text = timerText,
             placeholder = "0:00",

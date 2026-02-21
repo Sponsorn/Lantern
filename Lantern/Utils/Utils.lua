@@ -203,13 +203,27 @@ utils.GetDailyResetHourCET = GetDailyResetHourCET;
 do
     local LRC = LibStub and LibStub("LibRangeCheck-3.0", true);
     if (LRC) then
-        local BOOK = BOOKTYPE_SPELL or Enum.SpellBookSpellBank.Player;
         local _, playerClass = UnitClass("player");
 
         -- Extra harm spells the library doesn't include yet (keyed by class)
+        -- Uses C_Spell.IsSpellInRange (modern API) for tighter range detection
         local EXTRA_HARM = {
+            DEATHKNIGHT = {
+                { id = 49998, range = 5 },  -- Death Strike (Melee Range)
+            },
             DEMONHUNTER = {
                 { id = 473662, range = 25 }, -- Consume (Devourer) (25 yards)
+                { id = 162243, range = 5 },  -- Demon's Bite (Havoc) (Melee Range)
+            },
+            HUNTER = {
+                { id = 186270, range = 5 },  -- Raptor Strike (Survival) (Melee Range)
+            },
+            ROGUE = {
+                { id = 1752, range = 5 },    -- Sinister Strike (Melee Range)
+            },
+            WARRIOR = {
+                { id = 1464, range = 5 },    -- Slam (Arms/Fury) (Melee Range)
+                { id = 23922, range = 5 },   -- Shield Slam (Protection) (Melee Range)
             },
         };
 
@@ -231,15 +245,12 @@ do
             LRC.init = function(self, forced)
                 origInit(self, forced);
                 for _, spell in ipairs(spells) do
-                    local spellIdx = self:findSpellIndex(spell.id);
-                    if (spellIdx) then
-                        local idx = spellIdx; -- capture for closure
+                    if (IsPlayerSpell(spell.id)) then
+                        local spellID = spell.id; -- capture for closure
                         local checker = function(unit)
-                            if (IsSpellBookItemInRange(idx, BOOK, unit) == 1) then
-                                return true;
-                            end
+                            return C_Spell.IsSpellInRange(spellID, unit);
                         end;
-                        local info = "spell:" .. spell.id .. ":Lantern";
+                        local info = "spell:" .. spellID .. ":Lantern";
                         inject(self.harmRC, spell.range, checker, info);
                         inject(self.harmRCInCombat, spell.range, checker, info);
                         inject(self.harmNoItemsRC, spell.range, checker, info);

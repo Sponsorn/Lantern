@@ -59,14 +59,14 @@ local MODULE_CATEGORIES = {
         label = "Dungeons & M+",
         modules = {
             "AutoKeystone", "AutoPlaystyle", "AutoQueue",
-            "CombatAlert", "CombatTimer", "MissingPet", "RangeCheck",
+            "CombatAlert", "CombatTimer", "DeathRelease", "MissingPet", "RangeCheck",
         },
     },
     {
         key   = "questing",
         label = "Questing & World",
         modules = {
-            "AutoQuest", "DeathRelease", "FasterLoot",
+            "AutoQuest", "FasterLoot",
         },
     },
 };
@@ -178,10 +178,9 @@ CUSTOM_OPTIONS["autoQueue"] = function()
             set = function(val) db().announce = val and true or false; end,
         },
         {
-            type = "description",
+            type = "callout",
             text = "Hold " .. Lantern:GetModifierName() .. " to temporarily pause. Roles are set in the LFG tool.",
-            fontSize = "small",
-            color = T.textDim,
+            severity = "notice",
         },
     };
 end
@@ -199,8 +198,108 @@ CUSTOM_OPTIONS["autoKeystone"] = function()
 end
 
 CUSTOM_OPTIONS["deathRelease"] = function()
+    local function db()
+        Lantern.db.deathRelease = Lantern.db.deathRelease or {};
+        return Lantern.db.deathRelease;
+    end
+
+    local isDisabled = function()
+        return not moduleEnabled("DeathRelease");
+    end
+
+    local modeValues = {
+        always    = "Always",
+        instances = "All instances",
+        custom    = "Custom",
+    };
+    local modeSorting = { "always", "instances", "custom" };
+
+    local isCustomDisabled = function()
+        return isDisabled() or db().mode ~= "custom";
+    end
+
     return {
-        moduleToggle("DeathRelease", "Enable", "Require holding Alt for 1 second to release spirit (prevents accidental release)."),
+        moduleToggle("DeathRelease", "Enable", "Require holding " .. Lantern:GetModifierName() .. " for 1 second to release spirit (prevents accidental release)."),
+        {
+            type = "select",
+            label = "Active in",
+            desc = "Always: protection everywhere. All instances: only inside dungeons, raids, and PvP. Custom: choose specific instance types.",
+            values = modeValues,
+            sorting = modeSorting,
+            disabled = isDisabled,
+            get = function() return db().mode or "always"; end,
+            set = function(val)
+                db().mode = val;
+                if (Lantern._uxPanel and Lantern._uxPanel.refreshPage) then
+                    Lantern._uxPanel:refreshPage();
+                end
+            end,
+        },
+        {
+            type = "group",
+            text = "Instance Types",
+            expanded = true,
+            stateKey = "deathReleaseTypes",
+            hidden = function() return db().mode ~= "custom"; end,
+            children = {
+                {
+                    type = "toggle",
+                    label = "Open World",
+                    desc = "Protect in the open world (not inside any instance).",
+                    disabled = isCustomDisabled,
+                    get = function() return db().openWorld ~= false; end,
+                    set = function(val) db().openWorld = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Dungeons",
+                    desc = "Protect in normal, heroic, and mythic dungeons.",
+                    disabled = isCustomDisabled,
+                    get = function() return db().dungeons ~= false; end,
+                    set = function(val) db().dungeons = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Mythic+",
+                    desc = "Protect in Mythic+ keystones.",
+                    disabled = isCustomDisabled,
+                    get = function() return db().mythicPlus ~= false; end,
+                    set = function(val) db().mythicPlus = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Raids",
+                    desc = "Protect in all raid difficulties (LFR, Normal, Heroic, Mythic).",
+                    disabled = isCustomDisabled,
+                    get = function() return db().raids ~= false; end,
+                    set = function(val) db().raids = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Scenarios",
+                    desc = "Protect in scenario instances.",
+                    disabled = isCustomDisabled,
+                    get = function() return db().scenarios ~= false; end,
+                    set = function(val) db().scenarios = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Arenas",
+                    desc = "Protect in PvP arenas.",
+                    disabled = isCustomDisabled,
+                    get = function() return db().arenas ~= false; end,
+                    set = function(val) db().arenas = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Battlegrounds",
+                    desc = "Protect in PvP battlegrounds.",
+                    disabled = isCustomDisabled,
+                    get = function() return db().battlegrounds ~= false; end,
+                    set = function(val) db().battlegrounds = val; end,
+                },
+            },
+        },
     };
 end
 
@@ -244,10 +343,9 @@ CUSTOM_OPTIONS["autoRepair"] = function()
             set = function(val) db().source = val; end,
         },
         {
-            type = "description",
+            type = "callout",
             text = "Hold " .. Lantern:GetModifierName() .. " when opening a vendor to skip auto-repair.",
-            fontSize = "small",
-            color = T.textDim,
+            severity = "notice",
         },
     };
 end

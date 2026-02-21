@@ -1,3 +1,5 @@
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
+
 LanternUX is a standalone settings panel framework for WoW addon developers. No dependencies -- drop it in and create polished settings panels.
 
 ### Features
@@ -66,3 +68,4 @@ panel:Toggle()
 All widgets support `disabled` (value or function) for dynamic state.
 
 Used by [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) for its settings panel.
+

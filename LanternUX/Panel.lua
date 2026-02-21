@@ -844,6 +844,10 @@ function PanelMixin:_Build()
             local page = self_._pageMap[self_._activeKey];
             if (page and page.onHide) then page.onHide(); end
         end
+        -- Auto-lock any unlocked draggable frames
+        if (LanternUX.LockAllDraggables) then
+            LanternUX.LockAllDraggables();
+        end
     end);
 
     -- ESC to close

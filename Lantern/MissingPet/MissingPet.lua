@@ -246,6 +246,10 @@ local function CreateWarningFrame()
                 local db = getDB();
                 return db and db.locked;
             end,
+            setLocked = function(val)
+                local db = getDB();
+                if (db) then db.locked = val; end
+            end,
             defaultPoint = { "CENTER", UIParent, "CENTER", 0, 200 },
             text = warningText,
             placeholder = DEFAULTS.warningText,

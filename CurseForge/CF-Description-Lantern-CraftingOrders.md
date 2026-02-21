@@ -1,3 +1,5 @@
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
+
 Lantern: Crafting Orders adds lightweight, reliable notifications for crafting orders.
 
 Everything is possible to turn off.
@@ -12,3 +14,4 @@ Designed to be small, robust, and compatible with the default UI.
 
 *   [Lantern](https://www.curseforge.com/wow/addons/lantern-qol)
 *   [LanternUX](https://www.curseforge.com/wow/addons/lanternux) (settings panel framework)
+

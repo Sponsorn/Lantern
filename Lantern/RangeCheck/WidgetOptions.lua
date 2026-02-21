@@ -34,7 +34,10 @@ module.widgetOptions = function()
         if (not Lantern.db) then Lantern.db = {}; end
         if (not Lantern.db.rangeCheck) then Lantern.db.rangeCheck = {}; end
         local d = Lantern.db.rangeCheck;
-        local defaults = { combatOnly = false, fontSize = 16, locked = true, displayMode = "range", hideInRange = false };
+        local defaults = {
+            font = "Roboto Light", fontSize = 16, fontOutline = "OUTLINE",
+            combatOnly = false, locked = true, displayMode = "range", hideInRange = false,
+        };
         for k, v in pairs(defaults) do
             if (d[k] == nil) then d[k] = v; end
         end
@@ -54,6 +57,25 @@ module.widgetOptions = function()
             Lantern._uxPanel:refreshPage();
         end
     end
+
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+
+    local function getFontValues()
+        local fonts = {};
+        if (LSM) then
+            for _, name in ipairs(LSM:List("font") or {}) do
+                fonts[name] = name;
+            end
+        end
+        return fonts;
+    end
+
+    local outlineValues = {
+        [""]              = "None",
+        ["OUTLINE"]       = "Outline",
+        ["THICKOUTLINE"]  = "Thick Outline",
+    };
+    local outlineSorting = { "", "OUTLINE", "THICKOUTLINE" };
 
     return {
         moduleToggle("RangeCheck", "Enable", "Show distance to your current target."),
@@ -95,6 +117,24 @@ module.widgetOptions = function()
                     get = function() return db().combatOnly; end,
                     set = function(val) db().combatOnly = val; end,
                 },
+            },
+        },
+        {
+            type = "group",
+            text = "Font",
+            children = {
+                {
+                    type = "select",
+                    label = "Font",
+                    desc = "Select the font for the range text.",
+                    values = getFontValues,
+                    disabled = isDisabled,
+                    get = function() return db().font or "Roboto Light"; end,
+                    set = function(val)
+                        db().font = val;
+                        if (module.RefreshFont) then module:RefreshFont(); end
+                    end,
+                },
                 {
                     type = "range",
                     label = "Font Size",
@@ -104,6 +144,19 @@ module.widgetOptions = function()
                     get = function() return db().fontSize; end,
                     set = function(val)
                         db().fontSize = val;
+                        if (module.RefreshFont) then module:RefreshFont(); end
+                    end,
+                },
+                {
+                    type = "select",
+                    label = "Font Outline",
+                    desc = "Outline style for the range text.",
+                    values = outlineValues,
+                    sorting = outlineSorting,
+                    disabled = isDisabled,
+                    get = function() return db().fontOutline or "OUTLINE"; end,
+                    set = function(val)
+                        db().fontOutline = val;
                         if (module.RefreshFont) then module:RefreshFont(); end
                     end,
                 },

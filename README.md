@@ -1,5 +1,7 @@
 # Lantern
 
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
+
 Lantern is a modular QoL addon for World of Warcraft (Retail). It bundles small, focused features you can toggle on/off through a custom settings panel.
 
 ## Modules

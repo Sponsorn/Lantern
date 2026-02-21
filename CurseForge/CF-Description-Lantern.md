@@ -1,3 +1,5 @@
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
+
 Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused features you can toggle on/off:
 
 *   **Auto Quest**: Accepts and turns in quests automatically (pause modifier to pause). Possibility to add both NPC and Quest to blocklist.
@@ -29,3 +31,4 @@ The framework is module-based, so additional features can be plugged in later wi
 #### Configuration
 
 Click the minimap button or type `/lantern` to open the settings panel. Each module has an enable toggle and a short description.
+

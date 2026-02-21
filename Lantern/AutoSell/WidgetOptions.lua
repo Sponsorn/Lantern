@@ -143,10 +143,9 @@ module.widgetOptions = function()
         set = function(val) db().sellGrays = val and true or false; end,
     });
     table.insert(widgets, {
-        type = "description",
+        type = "callout",
         text = "Hold " .. Lantern:GetModifierName() .. " when opening a vendor to skip auto-sell.",
-        fontSize = "small",
-        color = T.textDim,
+        severity = "notice",
     });
 
     ---------------------------------------------------------------------------
@@ -205,10 +204,9 @@ module.widgetOptions = function()
 
     local charChildren = {};
     table.insert(charChildren, {
-        type = "description",
+        type = "callout",
         text = "Items in this list are only sold on this character.",
-        fontSize = "small",
-        color = T.textDim,
+        severity = "info",
     });
     table.insert(charChildren, {
         type = "drop_slot",

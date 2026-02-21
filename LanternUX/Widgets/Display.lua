@@ -180,10 +180,80 @@ _W.ReleaseCards = ReleaseCards;
 _W.CARD_PAD = CARD_PAD;
 
 -------------------------------------------------------------------------------
+-- Widget: Callout (info / notice / warning)
+-------------------------------------------------------------------------------
+
+local CALLOUT_BORDER_W = 3;
+local CALLOUT_PAD_H    = 10;  -- horizontal padding (left of text, after border)
+local CALLOUT_PAD_V    = 8;   -- vertical padding
+
+local CALLOUT_COLORS = {
+    info    = T.calloutInfo,
+    notice  = T.calloutNotice,
+    warning = T.calloutWarning,
+};
+
+local function CreateCallout(parent)
+    local w = AcquireWidget("callout", parent);
+    if (w) then return w; end
+
+    w = {};
+    local frame = CreateFrame("Frame", NextName("LUX_Callout_"), parent, "BackdropTemplate");
+    frame:SetHeight(30);
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+    });
+    w.frame = frame;
+
+    local border = frame:CreateTexture(nil, "ARTWORK");
+    border:SetWidth(CALLOUT_BORDER_W);
+    border:SetPoint("TOPLEFT");
+    border:SetPoint("BOTTOMLEFT");
+    w._border = border;
+
+    local text = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
+    text:SetPoint("TOPLEFT", frame, "TOPLEFT", CALLOUT_BORDER_W + CALLOUT_PAD_H, -CALLOUT_PAD_V);
+    text:SetJustifyH("LEFT");
+    text:SetWordWrap(true);
+    text:SetTextColor(unpack(T.text));
+    w._text = text;
+
+    RegisterWidget("callout", w);
+    return w;
+end
+
+local function SetupCallout(w, parent, data, contentWidth)
+    w.frame:SetParent(parent);
+    w.frame:SetWidth(contentWidth);
+
+    local severity = data.severity or "info";
+    local color = CALLOUT_COLORS[severity] or CALLOUT_COLORS.info;
+
+    -- Left border color
+    w._border:SetColorTexture(color[1], color[2], color[3], 1);
+
+    -- Tinted background
+    w.frame:SetBackdropColor(color[1], color[2], color[3], 0.06);
+
+    -- Text
+    local textWidth = contentWidth - CALLOUT_BORDER_W - CALLOUT_PAD_H - CALLOUT_PAD_H;
+    w._text:SetWidth(textWidth);
+    w._text:SetText(data.text or "");
+
+    local textHeight = w._text:GetStringHeight() or 14;
+    local totalHeight = textHeight + CALLOUT_PAD_V * 2;
+    w.frame:SetHeight(totalHeight);
+    w.height = totalHeight;
+
+    return w;
+end
+
+-------------------------------------------------------------------------------
 -- Register
 -------------------------------------------------------------------------------
 
-_W.factories.label       = { create = CreateLabel,   setup = SetupLabel };
-_W.factories.description = { create = CreateLabel,   setup = SetupLabel };
-_W.factories.header      = { create = CreateHeader,  setup = SetupHeader };
-_W.factories.divider     = { create = CreateDivider, setup = SetupDivider };
+_W.factories.label       = { create = CreateLabel,     setup = SetupLabel };
+_W.factories.description = { create = CreateLabel,     setup = SetupLabel };
+_W.factories.header      = { create = CreateHeader,    setup = SetupHeader };
+_W.factories.divider     = { create = CreateDivider,   setup = SetupDivider };
+_W.factories.callout     = { create = CreateCallout,   setup = SetupCallout };

@@ -8,8 +8,60 @@ local fontHeading = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontHeadi
 local module = Lantern:NewModule("DeathRelease", {
     title = "Death Release Protection",
     desc = "Require holding your pause modifier for 1 second before releasing spirit to prevent accidental clicks.",
-    skipOptions = true,
 });
+
+local DEFAULTS = {
+    mode = "always", -- always, instances, custom
+    openWorld = true,
+    dungeons = true,
+    raids = true,
+    scenarios = true,
+    mythicPlus = true,
+    arenas = true,
+    battlegrounds = true,
+};
+
+local function db()
+    Lantern.db.deathRelease = Lantern.db.deathRelease or {};
+    for k, v in pairs(DEFAULTS) do
+        if (Lantern.db.deathRelease[k] == nil) then
+            Lantern.db.deathRelease[k] = v;
+        end
+    end
+    return Lantern.db.deathRelease;
+end
+
+local function shouldProtect()
+    local d = db();
+    local mode = d.mode;
+
+    if (mode == "always") then return true; end
+
+    local inInstance, instanceType = IsInInstance();
+    if (not inInstance) then return d.openWorld; end
+
+    if (mode == "instances") then return true; end
+
+    -- Custom mode: check per-type toggles
+    if (instanceType == "party") then
+        -- Check for M+ specifically
+        local _, _, difficultyID = GetInstanceInfo();
+        if (difficultyID == 8) then
+            return d.mythicPlus;
+        end
+        return d.dungeons;
+    elseif (instanceType == "raid") then
+        return d.raids;
+    elseif (instanceType == "scenario") then
+        return d.scenarios;
+    elseif (instanceType == "arena") then
+        return d.arenas;
+    elseif (instanceType == "pvp") then
+        return d.battlegrounds;
+    end
+
+    return false;
+end
 
 local HOLD_DURATION = 1.0;
 local blocker, holdStart;
@@ -75,6 +127,7 @@ function module:OnEnable()
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_DEAD", function()
         if (not self.enabled) then return; end
+        if (not shouldProtect()) then return; end
         C_Timer.After(0.2, positionBlocker);
     end);
 

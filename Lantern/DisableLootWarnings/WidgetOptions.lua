@@ -87,10 +87,9 @@ module.widgetOptions = function()
             },
         },
         {
-            type = "description",
+            type = "callout",
             text = "Note: changes to popup types take effect after reloading the UI.",
-            fontSize = "small",
-            color = T.textDim,
+            severity = "notice",
         },
     };
 end

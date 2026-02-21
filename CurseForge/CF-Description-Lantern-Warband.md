@@ -1,3 +1,5 @@
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
+
 Lantern: Warband helps you organize characters and automate gold/item management across your warband.
 
 ![](https://media.forgecdn.net/attachments/1461/331/lanternwb113149-png.png)
@@ -24,3 +26,4 @@ Lantern: Warband helps you organize characters and automate gold/item management
 
 *   [Lantern](https://www.curseforge.com/wow/addons/lantern-qol)
 *   [LanternUX](https://www.curseforge.com/wow/addons/lanternux) (settings panel framework)
+

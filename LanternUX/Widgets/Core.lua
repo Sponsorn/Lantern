@@ -47,6 +47,10 @@ local T = {
     splashText   = { 0.60, 0.60, 0.60, 1.0 },
     enabled      = { 0.40, 0.67, 0.40, 1.0 },
     disabledDot  = { 0.67, 0.40, 0.40, 1.0 },
+    -- Callout
+    calloutInfo    = { 0.40, 0.65, 0.90 },
+    calloutNotice  = { 0.88, 0.56, 0.18 },
+    calloutWarning = { 0.90, 0.35, 0.30 },
     -- Input/range
     inputBg      = { 0.10, 0.10, 0.12, 1.0 },
     inputBorder  = { 0.28, 0.28, 0.30, 1.0 },

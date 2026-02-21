@@ -173,10 +173,9 @@ module.widgetOptions = function()
         set = function(val) db().skipTrivialQuests = val and true or false; end,
     });
     table.insert(widgets, {
-        type = "description",
+        type = "callout",
         text = "Hold " .. Lantern:GetModifierName() .. " to temporarily pause auto-accept and auto turn-in.",
-        fontSize = "small",
-        color = T.textDim,
+        severity = "notice",
     });
 
     ---------------------------------------------------------------------------
@@ -189,10 +188,9 @@ module.widgetOptions = function()
     ---------------------------------------------------------------------------
     local d = db();
     table.insert(widgets, {
-        type = "description",
+        type = "callout",
         text = "Note: other quest automation addons (QuickQuest, Plumber, etc.) may bypass the blocklist.",
-        fontSize = "small",
-        color = T.textDim,
+        severity = "notice",
     });
     table.insert(widgets, {
         type = "execute",

@@ -12,5 +12,4 @@ TODO
 - login briefing module: proactive summary on login (expiring mail, vault slots, uncollected crafting orders, daily/weekly resets, unspent profession knowledge)
 - import/export settings: copy/paste string pattern (like WeakAuras) for sharing configurations between characters or players
 - cursorring: give Preview toggle a distinct visual treatment (button style) so it reads as a tool, not a setting
-- auto quest: compatibility note ("other quest addons may bypass blocklist") should use a callout style (left border accent or tinted background)
 

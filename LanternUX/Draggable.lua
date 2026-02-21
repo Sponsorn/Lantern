@@ -25,6 +25,21 @@ local ADDON_NAME = ...;
 
 local T = LanternUX.Theme;
 
+-- Registry of all draggable frames for auto-lock on panel close
+local draggableFrames = {};
+
+function LanternUX.LockAllDraggables()
+    for _, entry in ipairs(draggableFrames) do
+        local frame = entry.frame;
+        local setLocked = entry.setLocked;
+        local getLocked = entry.getLocked;
+        if (not getLocked()) then
+            setLocked(true);
+            frame:UpdateLock();
+        end
+    end
+end
+
 local UNLOCK_BACKDROP = {
     bgFile   = "Interface\\Buttons\\WHITE8x8",
     edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -36,8 +51,15 @@ local PAD = 6;
 
 function LanternUX.MakeDraggable(frame, config)
     assert(frame and config, "MakeDraggable: frame and config required");
-    assert(config.getPos and config.setPos and config.getLocked, "MakeDraggable: getPos, setPos, getLocked required");
+    assert(config.getPos and config.setPos and config.getLocked and config.setLocked, "MakeDraggable: getPos, setPos, getLocked, setLocked required");
     assert(config.defaultPoint, "MakeDraggable: defaultPoint required");
+
+    -- Register for auto-lock on panel close
+    table.insert(draggableFrames, {
+        frame = frame,
+        getLocked = config.getLocked,
+        setLocked = config.setLocked,
+    });
 
     local dp = config.defaultPoint;
 
@@ -69,6 +91,9 @@ function LanternUX.MakeDraggable(frame, config)
         config.setPos({ point = point, relPoint = relPoint, x = x, y = y });
     end);
 
+    -- Saved text state (captured on unlock, restored on lock)
+    local savedText, savedR, savedG, savedB, savedA;
+
     -- UpdateLock: toggle movable state + backdrop visibility
     function frame:UpdateLock()
         local locked = config.getLocked();
@@ -81,6 +106,8 @@ function LanternUX.MakeDraggable(frame, config)
             self:SetBackdropColor(T.bg[1], T.bg[2], T.bg[3], 0.85);
             self:SetBackdropBorderColor(T.accent[1], T.accent[2], T.accent[3], 0.6);
             if (config.text and config.placeholder) then
+                savedText = config.text:GetText();
+                savedR, savedG, savedB, savedA = config.text:GetTextColor();
                 config.text:SetText(config.placeholder);
                 config.text:SetTextColor(T.textDim[1], T.textDim[2], T.textDim[3], 1);
             end
@@ -90,6 +117,10 @@ function LanternUX.MakeDraggable(frame, config)
         else
             self:SetSize(baseW, baseH);
             self:SetBackdrop(nil);
+            if (config.text and savedText) then
+                config.text:SetText(savedText);
+                config.text:SetTextColor(savedR, savedG, savedB, savedA);
+            end
             unlockLabel:Hide();
         end
     end

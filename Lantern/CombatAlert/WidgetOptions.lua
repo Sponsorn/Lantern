@@ -35,6 +35,7 @@ module.widgetOptions = function()
         if (not Lantern.db.combatAlert) then Lantern.db.combatAlert = {}; end
         local d = Lantern.db.combatAlert;
         local defaults = {
+            showEnter = true, showLeave = true,
             enterText = "IN COMBAT", leaveText = "OUT OF COMBAT",
             enterColor = { r = 1, g = 0.2, b = 0.2 },
             leaveColor = { r = 0.2, g = 1, b = 0.2 },
@@ -121,6 +122,14 @@ module.widgetOptions = function()
             expanded = true,
             children = {
                 {
+                    type = "toggle",
+                    label = "Show Enter Alert",
+                    desc = "Show an alert when entering combat.",
+                    disabled = isDisabled,
+                    get = function() return db().showEnter; end,
+                    set = function(val) db().showEnter = val; end,
+                },
+                {
                     type = "input",
                     label = "Enter Text",
                     desc = "Text displayed when entering combat.",
@@ -147,6 +156,14 @@ module.widgetOptions = function()
             type = "group",
             text = "Combat Leave",
             children = {
+                {
+                    type = "toggle",
+                    label = "Show Leave Alert",
+                    desc = "Show an alert when leaving combat.",
+                    disabled = isDisabled,
+                    get = function() return db().showLeave; end,
+                    set = function(val) db().showLeave = val; end,
+                },
                 {
                     type = "input",
                     label = "Leave Text",
