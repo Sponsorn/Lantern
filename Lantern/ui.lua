@@ -84,15 +84,34 @@ end
 
 function Lantern:ApplyMinimapStyle()
     if (not hasMinimapLibs()) then return; end
-    local clean = self.db.minimap and self.db.minimap.clean;
+    local clean = self.db.minimap and self.db.minimap.modern;
     if (clean) then
         LDBIcon:RemoveButtonBorder(MINIMAP_OBJECT_NAME);
         LDBIcon:RemoveButtonBackground(MINIMAP_OBJECT_NAME);
         LDBIcon:SetButtonIcon(MINIMAP_OBJECT_NAME, nil, 24);
+        local btn = LDBIcon:GetMinimapButton(MINIMAP_OBJECT_NAME);
+        if (btn) then
+            local hl = btn:GetHighlightTexture();
+            if (hl) then hl:Hide(); end
+            if (not btn._lanternHover) then
+                local hover = btn:CreateTexture(nil, "BACKGROUND", nil, 1);
+                hover:SetTexture("Interface\\Cooldown\\starburst");
+                hover:SetSize(32, 32);
+                hover:Hide();
+                hover:SetPoint("CENTER", 0, -4);
+                hover:SetVertexColor(1.0, 0.65, 0.2); -- warm lantern glow
+                hover:SetAlpha(0.6);
+                hover:SetBlendMode("ADD");
+                btn._lanternHover = hover;
+                btn:HookScript("OnEnter", function() hover:Show(); end);
+                btn:HookScript("OnLeave", function() hover:Hide(); end);
+            end
+        end
     else
         LDBIcon:ResetButtonBorder(MINIMAP_OBJECT_NAME);
         LDBIcon:ResetButtonBackground(MINIMAP_OBJECT_NAME);
         LDBIcon:ResetButtonIcon(MINIMAP_OBJECT_NAME);
+        LDBIcon:ResetButtonHighlightTexture(MINIMAP_OBJECT_NAME);
     end
 end
 

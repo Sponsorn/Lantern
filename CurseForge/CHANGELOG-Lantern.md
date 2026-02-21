@@ -2,7 +2,7 @@
 
 ## 0.5.1 - 2026-02-21
 - Add: Range Check now detects Holy Paladin melee range (item-based check since Holy has no melee attack spell)
-- Add: "Clean minimap icon" toggle in General settings — removes border and background for a minimal look
+- Add: "Modern minimap icon" toggle in General settings — removes border and background with a lantern glow on hover
 - Change: Warehousing panel text now uses bold font for better readability
 - Chore: Updated LibDBIcon-1.0 to v56 (new button customization APIs)
 

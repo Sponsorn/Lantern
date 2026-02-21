@@ -116,13 +116,13 @@ CUSTOM_OPTIONS["general"] = function()
         },
         {
             type = "toggle",
-            label = "Clean minimap icon",
-            desc = "Remove the border and background from the minimap button for a minimal look.",
+            label = "Modern minimap icon",
+            desc = "Remove the border and background from the minimap button for a modern look with a lantern glow on hover.",
             disabled = function() return Lantern.db.minimap and Lantern.db.minimap.hide; end,
-            get = function() return Lantern.db.minimap and Lantern.db.minimap.clean or false; end,
+            get = function() return Lantern.db.minimap and Lantern.db.minimap.modern or false; end,
             set = function(val)
                 Lantern.db.minimap = Lantern.db.minimap or {};
-                Lantern.db.minimap.clean = val;
+                Lantern.db.minimap.modern = val;
                 Lantern:ApplyMinimapStyle();
             end,
         },
