@@ -5,6 +5,7 @@ local module = Lantern:NewModule("DisableLootWarnings", {
     title = "Disable Loot Warnings",
     desc = "Auto-confirm loot roll, bind-on-pickup, merchant refund, and mail lock popups.",
     skipOptions = true,
+    defaultEnabled = false,
 });
 
 local DEFAULTS = {

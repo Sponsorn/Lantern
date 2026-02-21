@@ -8,6 +8,7 @@ local fontHeading = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontHeadi
 local module = Lantern:NewModule("DeathRelease", {
     title = "Death Release Protection",
     desc = "Require holding your pause modifier for 1 second before releasing spirit to prevent accidental clicks.",
+    defaultEnabled = false,
 });
 
 local DEFAULTS = {

@@ -13,26 +13,30 @@
 - Add: Draggable frames show "Unlocked - drag to move" label when unlocked
 - Fix: Cursor Ring preview now correctly auto-disables when closing the settings panel
 - Change: Improved empty state messages in Auto Quest blocklists
-- Add: Auto Repair module — automatically repairs gear at merchants with personal gold, guild funds, or guild-first fallback
-- Add: Auto Sell module — automatically sells gray items and custom-listed items at merchants, with global and per-character sell lists
+- Add: Auto Repair module — automatically repairs gear at merchants with personal gold, guild funds, or guild-first fallback (disabled by default)
+- Add: Auto Sell module — automatically sells gray items and custom-listed items at merchants, with global and per-character sell lists (disabled by default)
 - Add: Chat Filter module — filters gold spam, boost ads, and unwanted messages from whispers and public channels with a customizable keyword list
 - Add: Configurable pause modifier key (Shift, Ctrl, or Alt) in General settings — applies to all auto-features
 - Add: Auto Playstyle module — auto-selects your preferred playstyle when listing M+ groups in the Group Finder
 - Add: Faster Loot module — instantly collects all loot when a loot window opens, with inventory-full warning
-- Add: Disable Loot Warnings module — auto-confirms bind-on-pickup, loot roll, merchant refund, and mail lock popups with per-type toggles
+- Add: Disable Loot Warnings module — auto-confirms bind-on-pickup, loot roll, merchant refund, and mail lock popups with per-type toggles (disabled by default)
 - Add: Auto Keystone module — automatically slots your Mythic+ keystone when the Challenge Mode UI opens
-- Add: Death Release Protection module — requires holding your pause modifier for 1 second to release spirit, preventing accidental clicks
-- Add: Combat Timer module — on-screen combat duration timer with sticky mode that keeps showing after combat ends
-- Add: Combat Alert module — fade-in/out text alerts when entering or leaving combat with configurable colors and sound
-- Add: Range Check module — color-coded distance display to your target with two display modes: range numbers or in/out of range status with optional hide-when-in-range
+- Add: Death Release Protection module — requires holding your pause modifier for 1 second to release spirit, preventing accidental clicks (disabled by default)
+- Add: Combat Timer module — on-screen combat duration timer with sticky mode that keeps showing after combat ends (disabled by default)
+- Add: Combat Alert module — fade-in/out text alerts when entering or leaving combat with configurable colors and sound (disabled by default)
+- Add: Range Check module — color-coded distance display to your target with two display modes: range numbers or in/out of range status with optional hide-when-in-range (disabled by default)
 - Change: Options sidebar reorganized into context-based categories (General, Dungeons & M+, Questing & World)
 - Change: Home page now shows all modules grouped by category with clickable navigation to settings
 - Add: Death Release Protection now supports scenario filtering — choose Always, All Instances, or Custom mode with per-type toggles (dungeons, M+, raids, arenas, battlegrounds, open world)
 - Add: Range Check font and outline selectors
 - Add: Combat Alert separate toggles to enable/disable enter and leave alerts independently
+- Change: Range Check now uses direct spell checks for more reliable in-range detection across all 39 specs
+- Change: Range Check default display mode changed to status (in/out of range)
+- Add: Range Check customizable status text, colors, and animation style
 - Fix: Range Check now detects melee range correctly for DK, DH, Rogue, and Warrior classes
 - Fix: Range Check now detects Devourer Demon Hunter range correctly (added missing Consume spell to LibRangeCheck)
 - Fix: Range Check "hide when in range" now correctly shows again when target goes out of range
+- Fix: Range Check no longer shows "Out of Range" for friendly targets
 - Fix: Draggable frames restore original text and color when re-locking position
 - Fix: Draggable frames auto-lock when closing the settings panel
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)

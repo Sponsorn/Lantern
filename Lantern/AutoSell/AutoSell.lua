@@ -5,6 +5,7 @@ local module = Lantern:NewModule("AutoSell", {
     title = "Auto Sell",
     desc = "Automatically sell junk and custom-listed items at merchants.",
     skipOptions = true,
+    defaultEnabled = false,
 });
 
 local DEFAULTS = {

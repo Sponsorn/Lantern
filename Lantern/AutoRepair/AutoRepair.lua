@@ -5,6 +5,7 @@ local module = Lantern:NewModule("AutoRepair", {
     title = "Auto Repair",
     desc = "Automatically repair gear at merchants.",
     skipOptions = true,
+    defaultEnabled = false,
 });
 
 local DEFAULTS = {
