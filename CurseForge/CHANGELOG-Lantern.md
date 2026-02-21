@@ -1,6 +1,18 @@
 # Changelog
 
 ## 0.5.0
+- Change: Settings panel and HUD modules now use Roboto font for a modern, cohesive look
+- Add: Roboto Bold and Roboto ExtraBold fonts available in all font selectors
+- Change: Default font for Missing Pet and Crafting Orders notifications changed from Friz Quadrata to Roboto Light
+- Add: Home page status dot legend (enabled/disabled)
+- Add: Slider default value markers across all modules
+- Change: Home page modules displayed in two columns
+- Add: Font, outline, and color selectors for Combat Timer and Combat Alert modules
+- Add: Combat Timer and Combat Alert preview mode for real-time settings editing
+- Add: Combat Alert and Missing Pet now use the draggable frame system with lock/unlock position
+- Add: Draggable frames show "Unlocked - drag to move" label when unlocked
+- Fix: Cursor Ring preview now correctly auto-disables when closing the settings panel
+- Change: Improved empty state messages in Auto Quest blocklists
 - Add: Auto Repair module — automatically repairs gear at merchants with personal gold, guild funds, or guild-first fallback
 - Add: Auto Sell module — automatically sells gray items and custom-listed items at merchants, with global and per-character sell lists
 - Add: Chat Filter module — filters gold spam, boost ads, and unwanted messages from whispers and public channels with a customizable keyword list

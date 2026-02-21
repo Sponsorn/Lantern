@@ -25,7 +25,7 @@ function module:OnLootReady()
     local numItems = GetNumLootItems();
     if (numItems == 0) then return; end
 
-    for i = 1, numItems do
+    for i = numItems, 1, -1 do
         LootSlot(i);
     end
 end

@@ -99,7 +99,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Font Size",
                     desc = "Size of the range text.",
-                    min = 10, max = 36, step = 1,
+                    min = 10, max = 36, step = 1, default = 16,
                     disabled = isDisabled,
                     get = function() return db().fontSize; end,
                     set = function(val)

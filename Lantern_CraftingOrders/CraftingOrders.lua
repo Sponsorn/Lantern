@@ -26,7 +26,7 @@ local DEFAULTS = {
     notifyPersonal = true,
     personalSoundEnabled = true,
     personalSoundName = "Lantern: Auction Window Open",
-    personalFont = "Friz Quadrata TT",
+    personalFont = "Roboto Light",
     personalFontSize = 24,
     personalFontOutline = "OUTLINE",
     personalColor = { r = 1, g = 1, b = 1 },  -- White
@@ -177,7 +177,7 @@ local function GetFontPath(fontName)
         local path = LibSharedMedia:Fetch("font", fontName);
         if (path) then return path; end
     end
-    return "Fonts\\FRIZQT__.TTF";
+    return "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Light.ttf";
 end
 
 local function GetFontValues()
@@ -187,8 +187,8 @@ local function GetFontValues()
             fonts[name] = name;
         end
     end
-    if (not fonts["Friz Quadrata TT"]) then
-        fonts["Friz Quadrata TT"] = "Friz Quadrata TT";
+    if (not fonts["Roboto Light"]) then
+        fonts["Roboto Light"] = "Roboto Light";
     end
     return fonts;
 end

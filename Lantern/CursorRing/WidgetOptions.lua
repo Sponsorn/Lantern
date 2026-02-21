@@ -144,7 +144,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Combat Opacity",
                     desc = "Ring opacity while in combat or instanced content.",
-                    min = 0, max = 1, step = 0.05,
+                    min = 0, max = 1, step = 0.05, default = 1.0,
                     isPercent = true,
                     disabled = isDisabled,
                     get = function() return cursorRingDB().opacityInCombat; end,
@@ -157,7 +157,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Out of Combat Opacity",
                     desc = "Ring opacity outside of combat.",
-                    min = 0, max = 1, step = 0.05,
+                    min = 0, max = 1, step = 0.05, default = 1.0,
                     isPercent = true,
                     disabled = isDisabled,
                     get = function() return cursorRingDB().opacityOutOfCombat; end,
@@ -221,7 +221,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Size",
                     desc = "Ring 1 size in pixels.",
-                    min = 16, max = 80, step = 0.01, bigStep = 2,
+                    min = 16, max = 80, step = 0.01, bigStep = 2, default = 48,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
                     get = function() return cursorRingDB().ring1Size; end,
                     set = function(val)
@@ -284,7 +284,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Size",
                     desc = "Ring 2 size in pixels.",
-                    min = 16, max = 80, step = 0.01, bigStep = 2,
+                    min = 16, max = 80, step = 0.01, bigStep = 2, default = 32,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
                     get = function() return cursorRingDB().ring2Size; end,
                     set = function(val)
@@ -332,7 +332,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Size",
                     desc = "Dot size in pixels.",
-                    min = 2, max = 24, step = 1,
+                    min = 2, max = 24, step = 1, default = 8,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
                     get = function() return cursorRingDB().dotSize; end,
                     set = function(val)
@@ -391,7 +391,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Swipe Offset",
                     desc = "Pixel offset for the cast swipe ring outside the GCD ring. Only applies to Swipe style.",
-                    min = 0, max = 32, step = 0.01, bigStep = 0.5,
+                    min = 0, max = 32, step = 0.01, bigStep = 0.5, default = 8,
                     disabled = function() return isDisabled() or (not isPreviewActive() and (not cursorRingDB().castEnabled or cursorRingDB().castStyle ~= "swipe")); end,
                     get = function() return cursorRingDB().castOffset; end,
                     set = function(val)
@@ -439,7 +439,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Offset",
                     desc = "Pixel offset for the GCD ring outside Ring 1.",
-                    min = 0, max = 32, step = 0.01, bigStep = 0.5,
+                    min = 0, max = 32, step = 0.01, bigStep = 0.5, default = 8,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
                     get = function() return cursorRingDB().gcdOffset; end,
                     set = function(val)
@@ -492,7 +492,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Duration",
                     desc = "How long trail points last before fading.",
-                    min = 0.1, max = 2.0, step = 0.05,
+                    min = 0.1, max = 2.0, step = 0.05, default = 0.4,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailDuration; end,
                     set = function(val)

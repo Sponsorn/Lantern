@@ -241,7 +241,7 @@ local function OpenDropdown(w)
             itemBg:SetColorTexture(0, 0, 0, 0);
             item._bg = itemBg;
 
-            local itemText = item:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+            local itemText = item:CreateFontString(nil, "ARTWORK", T.fontBody);
             itemText:SetPoint("LEFT", 10, 0);
             itemText:SetJustifyH("LEFT");
             item._text = itemText;
@@ -374,7 +374,7 @@ local function CreateSelect(parent)
     w.frame = frame;
 
     -- Label (left)
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local label = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     label:SetPoint("LEFT", frame, "LEFT", 0, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));
@@ -401,7 +401,7 @@ local function CreateSelect(parent)
     btn:SetBackdropBorderColor(unpack(T.buttonBorder));
     w._btn = btn;
 
-    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontBody);
     btnText:SetPoint("LEFT", 8, 0);
     btnText:SetPoint("RIGHT", -20, 0);
     btnText:SetJustifyH("LEFT");

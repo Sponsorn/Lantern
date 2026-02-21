@@ -34,14 +34,14 @@ local function CreateSearchResult(parent)
     w._bg = bg;
 
     -- Label (left)
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local label = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     label:SetPoint("LEFT", frame, "LEFT", 0, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));
     w._label = label;
 
     -- Breadcrumb (right, dim)
-    local breadcrumb = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+    local breadcrumb = frame:CreateFontString(nil, "ARTWORK", T.fontSmall);
     breadcrumb:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
     breadcrumb:SetJustifyH("RIGHT");
     breadcrumb:SetTextColor(unpack(T.textDim));

@@ -30,7 +30,7 @@ local function CreateDropSlot(parent)
     w.frame = frame;
 
     -- Label (left side)
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local label = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     label:SetPoint("LEFT", frame, "LEFT", 0, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));

@@ -44,6 +44,14 @@ function LanternUX.MakeDraggable(frame, config)
     -- Store original size so we can add/remove padding on lock toggle
     local baseW, baseH = frame:GetSize();
 
+    -- "Unlocked" label (shown above frame when unlocked)
+    local unlockLabel = frame:CreateFontString(nil, "OVERLAY");
+    unlockLabel:SetFont(T.fontPathRegular, 10, "OUTLINE");
+    unlockLabel:SetPoint("BOTTOM", frame, "TOP", 0, 4);
+    unlockLabel:SetText("Unlocked - drag to move");
+    unlockLabel:SetTextColor(T.accent[1], T.accent[2], T.accent[3], 0.8);
+    unlockLabel:Hide();
+
     -- Base setup
     frame:SetMovable(true);
     frame:SetClampedToScreen(true);
@@ -76,11 +84,13 @@ function LanternUX.MakeDraggable(frame, config)
                 config.text:SetText(config.placeholder);
                 config.text:SetTextColor(T.textDim[1], T.textDim[2], T.textDim[3], 1);
             end
+            unlockLabel:Show();
             self:SetAlpha(1);
             self:Show();
         else
             self:SetSize(baseW, baseH);
             self:SetBackdrop(nil);
+            unlockLabel:Hide();
         end
     end
 

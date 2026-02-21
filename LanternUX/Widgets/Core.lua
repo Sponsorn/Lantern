@@ -72,6 +72,30 @@ local T = {
 LanternUX.Theme = T;
 
 -------------------------------------------------------------------------------
+-- Fonts
+-------------------------------------------------------------------------------
+
+local FONT_DIR = "Interface\\AddOns\\LanternUX\\Fonts\\";
+T.fontPathThin      = FONT_DIR .. "Roboto-Thin.ttf";
+T.fontPathLight     = FONT_DIR .. "Roboto-Light.ttf";
+T.fontPathRegular   = FONT_DIR .. "Roboto-Regular.ttf";
+T.fontPathBold      = FONT_DIR .. "Roboto-Bold.ttf";
+T.fontPathExtraBold = FONT_DIR .. "Roboto-ExtraBold.ttf";
+
+local heading = CreateFont("LanternUX_Heading");
+heading:SetFont(T.fontPathRegular, 16, "");
+
+local body = CreateFont("LanternUX_Body");
+body:SetFont(T.fontPathRegular, 12, "");
+
+local small = CreateFont("LanternUX_BodySmall");
+small:SetFont(T.fontPathRegular, 10, "");
+
+T.fontHeading = "LanternUX_Heading";
+T.fontBody    = "LanternUX_Body";
+T.fontSmall   = "LanternUX_BodySmall";
+
+-------------------------------------------------------------------------------
 -- Shared internal table
 -------------------------------------------------------------------------------
 

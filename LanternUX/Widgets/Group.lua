@@ -39,7 +39,7 @@ local function CreateGroup(parent)
     w._arrow = arrow;
 
     -- Label
-    local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     text:SetPoint("BOTTOMLEFT", arrow, "BOTTOMRIGHT", GROUP_ARROW_PAD, -1);
     text:SetJustifyH("LEFT");
     text:SetTextColor(unpack(T.textBright));

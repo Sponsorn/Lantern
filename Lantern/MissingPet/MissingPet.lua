@@ -12,7 +12,7 @@ local module = Lantern:NewModule("MissingPet", {
 local DEFAULTS = {
     warningText = "Pet Missing!",
     passiveText = "Pet is PASSIVE!",
-    framePosition = nil,
+    pos = nil,
     showMissing = true,
     showPassive = true,
     locked = true,
@@ -20,7 +20,7 @@ local DEFAULTS = {
     hideInRestZone = false,
     dismountDelay = 5,
     animationStyle = "bounce",
-    font = "Friz Quadrata TT",
+    font = "Roboto Light",
     fontSize = 24,
     fontOutline = "OUTLINE",
     missingColor = { r = 1, g = 0.2, b = 0.2 },  -- Red
@@ -138,7 +138,7 @@ local function GetFontPath(fontName)
         if (path) then return path; end
     end
     -- Fallback to default WoW font
-    return "Fonts\\FRIZQT__.TTF";
+    return "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Light.ttf";
 end
 
 -- Always get fresh database reference
@@ -211,16 +211,17 @@ local function UpdateWarningFont()
     warningText:SetFont(fontPath, fontSize, fontOutline);
 end
 
+local LanternUX = _G.LanternUX;
+
 local function CreateWarningFrame()
     if (warningFrame) then return; end
 
-    warningFrame = CreateFrame("Frame", "LanternMissingPetFrame", UIParent);
+    warningFrame = CreateFrame("Frame", "LanternMissingPetFrame", UIParent, "BackdropTemplate");
     warningFrame:SetSize(300, 50);
     warningFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 200);
     warningFrame:SetFrameStrata("MEDIUM");
     warningFrame:SetFrameLevel(1);
-    warningFrame:EnableMouse(false);
-    warningFrame:SetMovable(true);
+    warningFrame:Hide();
 
     warningText = warningFrame:CreateFontString(nil, "OVERLAY");
     warningText:SetPoint("CENTER", warningFrame, "CENTER", 0, 0);
@@ -231,45 +232,27 @@ local function CreateWarningFrame()
     -- Apply font settings
     UpdateWarningFont();
 
-    -- Drag functionality (only interactive when unlocked via settings)
-    warningFrame:RegisterForDrag("LeftButton");
-    warningFrame:SetScript("OnDragStart", function(self)
-        self:StartMoving();
-    end);
-    warningFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing();
-        -- Save position
-        local db = getDB();
-        if (db) then
-            local point, _, relativePoint, x, y = self:GetPoint();
-            db.framePosition = {
-                point = point,
-                relativePoint = relativePoint,
-                x = x,
-                y = y,
-            };
-        end
-    end);
+    if (LanternUX and LanternUX.MakeDraggable) then
+        LanternUX.MakeDraggable(warningFrame, {
+            getPos    = function()
+                local db = getDB();
+                return db and db.pos;
+            end,
+            setPos    = function(pos)
+                local db = getDB();
+                if (db) then db.pos = pos; end
+            end,
+            getLocked = function()
+                local db = getDB();
+                return db and db.locked;
+            end,
+            defaultPoint = { "CENTER", UIParent, "CENTER", 0, 200 },
+            text = warningText,
+            placeholder = DEFAULTS.warningText,
+        });
+    end
 
     warningFrame:Hide();
-end
-
-local function RestoreFramePosition()
-    if (not warningFrame) then return; end
-    local db = getDB();
-    if (db and db.framePosition) then
-        local pos = db.framePosition;
-        warningFrame:ClearAllPoints();
-        warningFrame:SetPoint(pos.point or "CENTER", UIParent, pos.relativePoint or "CENTER", pos.x or 0, pos.y or 200);
-    end
-end
-
-local function UpdateFrameLock()
-    if (not warningFrame) then return; end
-    local db = getDB();
-    local locked = db and db.locked;
-    -- Clickthrough when locked, interactive when unlocked (Shift overrides via OnKeyDown)
-    warningFrame:EnableMouse(not locked);
 end
 
 -------------------------------------------------------------------------------
@@ -452,12 +435,7 @@ end
 
 function module:ResetPosition()
     if (not warningFrame) then return; end
-    warningFrame:ClearAllPoints();
-    warningFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 200);
-    local db = getDB();
-    if (db) then
-        db.framePosition = nil;
-    end
+    warningFrame:ResetPosition();
 end
 
 function module:RefreshAnimation()
@@ -480,7 +458,8 @@ function module:RefreshFont()
 end
 
 function module:UpdateLock()
-    UpdateFrameLock();
+    if (not warningFrame) then return; end
+    warningFrame:UpdateLock();
 end
 
 function module:PetDebug()
@@ -559,9 +538,18 @@ end
 
 function module:OnInit()
     ensureDB();
+
+    -- Migrate old framePosition to pos format
+    local db = getDB();
+    if (db and db.framePosition and not db.pos) then
+        local fp = db.framePosition;
+        db.pos = { point = fp.point, relPoint = fp.relativePoint, x = fp.x, y = fp.y };
+        db.framePosition = nil;
+    end
+
     CreateWarningFrame();
-    RestoreFramePosition();
-    UpdateFrameLock();
+    warningFrame:RestorePosition();
+    warningFrame:UpdateLock();
 end
 
 function module:OnEnable()

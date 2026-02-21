@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.3
+- Change: Warehousing panel now uses Roboto font to match the settings panel theme
+
 ## 0.3.2 - 2026-02-18
 - Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
 - Remove: Old warehousing settings panel replaced by LanternUX Warehousing page

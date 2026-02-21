@@ -37,14 +37,14 @@ local function CreateRange(parent)
     w.frame = frame;
 
     -- Label (left)
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local label = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     label:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));
     w._label = label;
 
     -- Value text (right)
-    local valueText = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local valueText = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     valueText:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0);
     valueText:SetJustifyH("RIGHT");
     valueText:SetTextColor(unpack(T.textDim));
@@ -85,6 +85,14 @@ local function CreateRange(parent)
     thumbBg:SetColorTexture(unpack(T.thumbBg));
     w._thumb = thumb;
     w._thumbBg = thumbBg;
+
+    -- Default marker (subtle tick on the track)
+    local defaultMark = trackFrame:CreateTexture(nil, "ARTWORK");
+    defaultMark:SetSize(2, TRACK_HEIGHT + 6);
+    defaultMark:SetColorTexture(unpack(T.textDim));
+    defaultMark:SetAlpha(0.5);
+    defaultMark:Hide();
+    w._defaultMark = defaultMark;
 
     -- State
     w._value = 0;
@@ -197,6 +205,7 @@ local function SetupRange(w, parent, data, contentWidth)
     w._onSet = data.set;
     w._getFn = data.get;
     w._disabledFn = data.disabled;
+    w._default = data.default;
 
     -- Get current value
     local val = 0;
@@ -230,9 +239,26 @@ local function SetupRange(w, parent, data, contentWidth)
         w._thumbBg:SetColorTexture(unpack(T.thumbBg));
     end
 
-    -- Defer thumb position to next frame so width is resolved
+    -- Defer thumb + default marker position to next frame so width is resolved
     C_Timer.After(0, function()
-        if (w._inUse) then w._updateThumb(); end
+        if (not w._inUse) then return; end
+        w._updateThumb();
+        -- Position default marker
+        if (w._default ~= nil) then
+            local trackWidth = w._trackFrame:GetWidth();
+            if (trackWidth > 0) then
+                local range = w._max - w._min;
+                if (range > 0) then
+                    local ratio = (w._default - w._min) / range;
+                    local xPos = ratio * (trackWidth - THUMB_SIZE) + THUMB_SIZE / 2;
+                    w._defaultMark:ClearAllPoints();
+                    w._defaultMark:SetPoint("CENTER", w._trackFrame, "LEFT", xPos, 0);
+                    w._defaultMark:Show();
+                end
+            end
+        else
+            w._defaultMark:Hide();
+        end
     end);
 
     return w;

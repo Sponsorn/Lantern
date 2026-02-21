@@ -49,14 +49,14 @@ local function CreateItemRow(parent)
     btn:SetBackdropBorderColor(unpack(T.buttonBorder));
     w._btn = btn;
 
-    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+    local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontSmall);
     btnText:SetPoint("CENTER");
     btnText:SetText("Remove");
     btnText:SetTextColor(unpack(T.buttonText));
     w._btnText = btnText;
 
     -- Item name text (between icon and button)
-    local nameText = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local nameText = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     nameText:SetPoint("LEFT", icon, "RIGHT", 6, 0);
     nameText:SetPoint("RIGHT", btn, "LEFT", -8, 0);
     nameText:SetJustifyH("LEFT");

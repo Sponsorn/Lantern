@@ -200,7 +200,7 @@ local function personalWidgets()
             desc = "Font used for the notification text.",
             values = CraftingOrders._getFontValues,
             disabled = notifyDisabled,
-            get = function() return db.personalFont or "Friz Quadrata TT"; end,
+            get = function() return db.personalFont or "Roboto Light"; end,
             set = function(val)
                 db.personalFont = val;
             end,
@@ -209,7 +209,7 @@ local function personalWidgets()
             type = "range",
             label = "Font size",
             desc = "Size of the notification text.",
-            min = 12, max = 48, step = 1,
+            min = 12, max = 48, step = 1, default = 24,
             disabled = notifyDisabled,
             get = function() return db.personalFontSize or 24; end,
             set = function(val)
@@ -244,7 +244,7 @@ local function personalWidgets()
             type = "range",
             label = "Duration",
             desc = "How long the notification is shown (seconds).",
-            min = 1, max = 15, step = 1,
+            min = 1, max = 15, step = 1, default = 5,
             disabled = notifyDisabled,
             get = function() return db.personalDuration or 5; end,
             set = function(val)

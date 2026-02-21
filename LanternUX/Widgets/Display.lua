@@ -27,7 +27,7 @@ local function CreateLabel(parent)
     frame:SetHeight(18);
     w.frame = frame;
 
-    local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     text:SetPoint("TOPLEFT");
     text:SetJustifyH("LEFT");
     text:SetWordWrap(true);
@@ -44,11 +44,11 @@ local function SetupLabel(w, parent, data, contentWidth)
 
     local fontSize = data.fontSize or "medium";
     if (fontSize == "small") then
-        w._text:SetFontObject("GameFontHighlightSmall");
+        w._text:SetFontObject(T.fontSmall);
     elseif (fontSize == "large") then
-        w._text:SetFontObject("GameFontNormalLarge");
+        w._text:SetFontObject(T.fontHeading);
     else
-        w._text:SetFontObject("GameFontHighlight");
+        w._text:SetFontObject(T.fontBody);
     end
 
     w._text:SetWidth(contentWidth);
@@ -75,7 +75,7 @@ local function CreateHeader(parent)
     frame:SetHeight(HEADER_HEIGHT);
     w.frame = frame;
 
-    local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     text:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 6);
     text:SetJustifyH("LEFT");
     text:SetTextColor(unpack(T.textBright));

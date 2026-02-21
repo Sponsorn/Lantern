@@ -236,6 +236,17 @@ end
 Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
     if (name ~= ADDON_NAME) then return; end
     Lantern:SetupDB();
+
+    -- Register Roboto fonts with LibSharedMedia (available in font selectors)
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+    if (LSM) then
+        LSM:Register("font", "Roboto Thin", "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Thin.ttf");
+        LSM:Register("font", "Roboto Light", "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Light.ttf");
+        LSM:Register("font", "Roboto", "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Regular.ttf");
+        LSM:Register("font", "Roboto Bold", "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Bold.ttf");
+        LSM:Register("font", "Roboto ExtraBold", "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-ExtraBold.ttf");
+    end
+
     Lantern.ready = true;
     local pending = Lantern._pendingModules;
     Lantern._pendingModules = {};

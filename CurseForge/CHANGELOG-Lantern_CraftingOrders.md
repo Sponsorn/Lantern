@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.10
+- Change: Default notification font changed from Friz Quadrata to Roboto Light
+
 ## 0.4.9 - 2026-02-18
 - Change: Settings now use a custom UI panel (LanternUX) instead of the Blizzard options interface
 - Change: LanternUX is now a required dependency (previously optional)

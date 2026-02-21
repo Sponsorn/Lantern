@@ -41,7 +41,7 @@ local function CreateInput(parent)
     w.frame = frame;
 
     -- Label
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local label = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     label:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));
@@ -59,7 +59,7 @@ local function CreateInput(parent)
     box:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -18);
     box:SetPoint("RIGHT", frame, "RIGHT", 0, 0);
     box:SetAutoFocus(false);
-    box:SetFontObject("GameFontHighlight");
+    box:SetFontObject(T.fontBody);
     box:SetTextInsets(8, 8, 0, 0);
     box:SetMaxLetters(256);
 

@@ -251,8 +251,8 @@ module.widgetOptions = function()
     local npcGroupChildren = {};
     if (#npcKeys == 0) then
         local emptyMsg = (showAllNPCs or npcFilterZone == "")
-            and "No NPCs are blocked."
-            or ("No NPCs are blocked in " .. (npcFilterZone or "") .. ".");
+            and "No NPCs blocked yet -- target an NPC and click the button above to add one."
+            or ("No NPCs blocked in " .. (npcFilterZone or "") .. ".");
         table.insert(npcGroupChildren, {
             type = "description",
             text = emptyMsg,
@@ -333,8 +333,8 @@ module.widgetOptions = function()
 
     if (#filteredEntries == 0) then
         local emptyMsg = (showAllQuests or questFilterZone == "")
-            and "No quests are blocked."
-            or ("No quests are blocked in " .. (questFilterZone or "") .. ".");
+            and "No quests blocked yet -- quests auto-accepted from blocked NPCs will appear here."
+            or ("No quests blocked in " .. (questFilterZone or "") .. ".");
         table.insert(widgets, {
             type = "description",
             text = emptyMsg,

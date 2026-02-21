@@ -36,7 +36,7 @@ function PanelMixin:_BuildSearchInput(sidebar)
     searchBox:SetPoint("TOPLEFT", sidebar, "TOPLEFT", SEARCH_PAD_LR, -SEARCH_PAD_TOP);
     searchBox:SetPoint("TOPRIGHT", sidebar, "TOPRIGHT", -SEARCH_PAD_LR - 1, -SEARCH_PAD_TOP);
     searchBox:SetAutoFocus(false);
-    searchBox:SetFontObject("GameFontHighlightSmall");
+    searchBox:SetFontObject(T.fontSmall);
     searchBox:SetTextInsets(20, 6, 0, 0);
     searchBox:SetMaxLetters(64);
 
@@ -58,7 +58,8 @@ function PanelMixin:_BuildSearchInput(sidebar)
     searchIcon:SetVertexColor(unpack(T.textDim));
 
     -- Placeholder text
-    local placeholder = searchBox:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+    local placeholder = searchBox:CreateFontString(nil, "ARTWORK");
+    placeholder:SetFontObject(T.fontSmall);
     placeholder:SetPoint("LEFT", 20, 0);
     placeholder:SetText("Search...");
     placeholder:SetTextColor(T.textDim[1], T.textDim[2], T.textDim[3], 0.6);

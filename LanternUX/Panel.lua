@@ -152,7 +152,8 @@ function PanelMixin:_CreateSidebarButton(parent, key, label, yOffset)
     hover:SetAllPoints();
     hover:SetColorTexture(unpack(T.hover));
 
-    local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = btn:CreateFontString(nil, "ARTWORK");
+    text:SetFontObject(T.fontBody);
     text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
     text:SetText(label);
     text:SetTextColor(unpack(T.text));
@@ -169,7 +170,8 @@ function PanelMixin:_CreateSidebarButton(parent, key, label, yOffset)
 end
 
 function PanelMixin:_CreateSectionHeader(parent, label, yOffset)
-    local text = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+    local text = parent:CreateFontString(nil, "ARTWORK");
+    text:SetFontObject(T.fontSmall);
     text:SetPoint("TOPLEFT", parent, "TOPLEFT", ITEM_PAD_LEFT + ACCENT_W, -yOffset - 8);
     text:SetText(string.upper(label));
     text:SetTextColor(unpack(T.sectionLabel));
@@ -211,7 +213,8 @@ function PanelMixin:_CreateSidebarGroupHeader(parent, groupKey, label, yOffset)
     hover:SetAllPoints();
     hover:SetColorTexture(unpack(T.hover));
 
-    local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = btn:CreateFontString(nil, "ARTWORK");
+    text:SetFontObject(T.fontBody);
     text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W, 0);
     text:SetPoint("RIGHT", btn, "RIGHT", -26, 0);
 
@@ -275,7 +278,8 @@ function PanelMixin:_CreateSidebarChildButton(parent, key, label, yOffset)
     hover:SetAllPoints();
     hover:SetColorTexture(unpack(T.hover));
 
-    local text = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = btn:CreateFontString(nil, "ARTWORK");
+    text:SetFontObject(T.fontBody);
     text:SetPoint("LEFT", ITEM_PAD_LEFT + ACCENT_W + GROUP_CHILD_PAD, 0);
     text:SetText(label);
     text:SetTextColor(unpack(T.text));
@@ -606,7 +610,8 @@ function PanelMixin:_Build()
     end
 
     -- Title
-    local titleText = titleBar:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+    local titleText = titleBar:CreateFontString(nil, "ARTWORK");
+    titleText:SetFontObject(T.fontBody);
     if (self._titleIcon) then
         titleText:SetPoint("LEFT", self._titleIcon, "RIGHT", 8, 0);
     else
@@ -617,7 +622,8 @@ function PanelMixin:_Build()
 
     -- Version (subtle)
     if (config.version and config.version ~= "") then
-        local verText = titleBar:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+        local verText = titleBar:CreateFontString(nil, "ARTWORK");
+        verText:SetFontObject(T.fontSmall);
         verText:SetPoint("LEFT", titleText, "RIGHT", 6, -1);
         verText:SetText("v" .. config.version);
         verText:SetTextColor(unpack(T.textDim));
@@ -763,14 +769,16 @@ function PanelMixin:_Build()
     descBorder:SetPoint("BOTTOMLEFT", descPanel, "BOTTOMLEFT");
     descBorder:SetColorTexture(unpack(T.divider));
 
-    local descTitle = descPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+    local descTitle = descPanel:CreateFontString(nil, "ARTWORK");
+    descTitle:SetFontObject(T.fontBody);
     descTitle:SetPoint("TOPLEFT", descPanel, "TOPLEFT", 16, -20);
     descTitle:SetPoint("RIGHT", descPanel, "RIGHT", -16, 0);
     descTitle:SetJustifyH("LEFT");
     descTitle:SetTextColor(unpack(T.textBright));
     descPanel._title = descTitle;
 
-    local descText = descPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local descText = descPanel:CreateFontString(nil, "ARTWORK");
+    descText:SetFontObject(T.fontBody);
     descText:SetPoint("TOPLEFT", descTitle, "BOTTOMLEFT", 0, -8);
     descText:SetPoint("RIGHT", descPanel, "RIGHT", -16, 0);
     descText:SetJustifyH("LEFT");

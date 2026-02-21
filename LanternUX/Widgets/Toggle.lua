@@ -61,7 +61,7 @@ local function CreateToggle(parent)
     w._thumbBg = thumbBg;
 
     -- Label
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local label = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     label:SetPoint("LEFT", track, "RIGHT", TOGGLE_PAD, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));

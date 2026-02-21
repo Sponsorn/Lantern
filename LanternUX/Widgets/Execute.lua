@@ -43,7 +43,7 @@ local function CreateExecute(parent)
     btn:SetBackdropBorderColor(unpack(T.buttonBorder));
     w._btn = btn;
 
-    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontBody);
     btnText:SetPoint("CENTER");
     btnText:SetTextColor(unpack(T.buttonText));
     w._btnText = btnText;

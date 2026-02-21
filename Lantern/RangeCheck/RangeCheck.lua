@@ -2,6 +2,8 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
 local LanternUX = _G.LanternUX;
+local FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
+    or FONT_PATH;
 
 local module = Lantern:NewModule("RangeCheck", {
     title = "Range Check",
@@ -72,7 +74,7 @@ local function createFrame(self)
     frame:Hide();
 
     rangeText = frame:CreateFontString(nil, "ARTWORK");
-    rangeText:SetFont("Fonts\\FRIZQT__.TTF", DEFAULTS.fontSize, "OUTLINE");
+    rangeText:SetFont(FONT_PATH, DEFAULTS.fontSize, "OUTLINE");
     rangeText:SetPoint("CENTER");
     rangeText:SetTextColor(1, 1, 1, 1);
 
@@ -154,7 +156,7 @@ end
 function module:RefreshFont()
     if (not rangeText) then return; end
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
-    rangeText:SetFont("Fonts\\FRIZQT__.TTF", size, "OUTLINE");
+    rangeText:SetFont(FONT_PATH, size, "OUTLINE");
 end
 
 function module:UpdateLock()

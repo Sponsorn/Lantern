@@ -40,7 +40,7 @@ module.widgetOptions = function()
         hideInRestZone = false,
         dismountDelay = 5,
         animationStyle = "bounce",
-        font = "Friz Quadrata TT",
+        font = "Roboto Light",
         fontSize = 24,
         fontOutline = "OUTLINE",
         missingColor = { r = 1, g = 0.2, b = 0.2 },
@@ -122,8 +122,8 @@ module.widgetOptions = function()
                 fonts[name] = name;
             end
         end
-        if (not fonts["Friz Quadrata TT"]) then
-            fonts["Friz Quadrata TT"] = "Friz Quadrata TT";
+        if (not fonts["Roboto Light"]) then
+            fonts["Roboto Light"] = "Roboto Light";
         end
         return fonts;
     end
@@ -242,14 +242,14 @@ module.widgetOptions = function()
                     desc = "Select the font for the warning text.",
                     values = getFontValues,
                     disabled = isDisabled,
-                    get = function() return mpDB().font or "Friz Quadrata TT"; end,
+                    get = function() return mpDB().font or "Roboto Light"; end,
                     set = function(val) mpDB().font = val; refreshFont(); end,
                 },
                 {
                     type = "range",
                     label = "Font Size",
                     desc = "Size of the warning text.",
-                    min = 12, max = 72, step = 1,
+                    min = 12, max = 72, step = 1, default = 24,
                     disabled = isDisabled,
                     get = function() return mpDB().fontSize or 24; end,
                     set = function(val) mpDB().fontSize = val; refreshFont(); end,
@@ -277,7 +277,7 @@ module.widgetOptions = function()
                 {
                     type = "toggle",
                     label = "Lock Position",
-                    desc = "When locked, the warning cannot be moved. Hold Shift to move even when locked.",
+                    desc = "Prevent the warning from being moved.",
                     disabled = isDisabled,
                     get = function() return mpDB().locked; end,
                     set = function(val)
@@ -326,7 +326,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Dismount Delay",
                     desc = "Seconds to wait after dismounting before showing warning. Set to 0 to show immediately.",
-                    min = 0, max = 10, step = 0.5,
+                    min = 0, max = 10, step = 0.5, default = 5,
                     disabled = function() return isDisabled() or not mpDB().hideWhenMounted; end,
                     get = function() return mpDB().dismountDelay or 5; end,
                     set = function(val) mpDB().dismountDelay = val; end,
@@ -409,7 +409,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = "Repeat Interval",
                     desc = "Seconds between sound repeats.",
-                    min = 1, max = 30, step = 1,
+                    min = 1, max = 30, step = 1, default = 5,
                     disabled = function() return isDisabled() or not mpDB().soundEnabled or not mpDB().soundRepeat; end,
                     get = function() return mpDB().soundInterval or 5; end,
                     set = function(val) mpDB().soundInterval = val; end,

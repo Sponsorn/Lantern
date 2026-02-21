@@ -43,13 +43,13 @@ local function CreateLabelAction(parent)
     btn:SetBackdropBorderColor(unpack(T.buttonBorder));
     w._btn = btn;
 
-    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+    local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontSmall);
     btnText:SetPoint("CENTER");
     btnText:SetTextColor(unpack(T.buttonText));
     w._btnText = btnText;
 
     -- Text label (left side)
-    local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local text = frame:CreateFontString(nil, "ARTWORK", T.fontBody);
     text:SetPoint("LEFT", frame, "LEFT", 0, 0);
     text:SetPoint("RIGHT", btn, "LEFT", -8, 0);
     text:SetJustifyH("LEFT");

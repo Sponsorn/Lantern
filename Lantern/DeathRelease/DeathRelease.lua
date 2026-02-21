@@ -1,6 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
+local LanternUX = _G.LanternUX;
+local fontHeading = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontHeading)
+    or "GameFontNormalLarge";
+
 local module = Lantern:NewModule("DeathRelease", {
     title = "Death Release Protection",
     desc = "Require holding your pause modifier for 1 second before releasing spirit to prevent accidental clicks.",
@@ -19,7 +23,7 @@ local function createBlocker()
     blocker:EnableMouse(true);
     blocker:Hide();
 
-    local text = blocker:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge");
+    local text = blocker:CreateFontString(nil, "ARTWORK", fontHeading);
     text:SetPoint("CENTER");
     text:SetTextColor(1, 0.8, 0, 1);
     blocker._text = text;

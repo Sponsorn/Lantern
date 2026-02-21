@@ -2,6 +2,10 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
 local LanternUX = _G.LanternUX;
+local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+
+local DEFAULT_FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
+    or "Fonts\\FRIZQT__.TTF";
 
 local module = Lantern:NewModule("CombatTimer", {
     title = "Combat Timer",
@@ -11,14 +15,27 @@ local module = Lantern:NewModule("CombatTimer", {
 });
 
 local DEFAULTS = {
+    font = "Roboto Light",
     fontSize = 18,
+    fontOutline = "OUTLINE",
+    fontColor = { r = 1, g = 1, b = 1 },
     stickyDuration = 5,
     locked = true,
     pos = nil,
 };
 
+local function GetFontPath(fontName)
+    if (LSM) then
+        local path = LSM:Fetch("font", fontName);
+        if (path) then return path; end
+    end
+    return DEFAULT_FONT_PATH;
+end
+
 local frame, timerText;
 local combatStart, inCombat, stickyTimer;
+local previewMode = false;
+local previewTimer = nil;
 
 local function ensureDB(self)
     if (not self.addon.db) then return; end
@@ -28,7 +45,11 @@ local function ensureDB(self)
     self.db = self.addon.db.combatTimer;
     for k, v in pairs(DEFAULTS) do
         if (self.db[k] == nil) then
-            self.db[k] = v;
+            if (type(v) == "table") then
+                self.db[k] = { r = v.r, g = v.g, b = v.b };
+            else
+                self.db[k] = v;
+            end
         end
     end
 end
@@ -48,9 +69,10 @@ local function createFrame(self)
     frame:Hide();
 
     timerText = frame:CreateFontString(nil, "ARTWORK");
-    timerText:SetFont("Fonts\\FRIZQT__.TTF", DEFAULTS.fontSize, "OUTLINE");
+    timerText:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
     timerText:SetPoint("CENTER");
-    timerText:SetTextColor(1, 1, 1, 1);
+    local c = (self.db and self.db.fontColor) or DEFAULTS.fontColor;
+    timerText:SetTextColor(c.r, c.g, c.b, 1);
     timerText:SetText("0:00");
 
     if (LanternUX and LanternUX.MakeDraggable) then
@@ -65,6 +87,7 @@ local function createFrame(self)
     end
 
     frame:SetScript("OnUpdate", function()
+        if (previewMode) then return; end
         if (inCombat and combatStart) then
             local elapsed = GetTime() - combatStart;
             timerText:SetText(formatTime(elapsed));
@@ -74,8 +97,48 @@ end
 
 function module:RefreshFont()
     if (not timerText) then return; end
+    local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
-    timerText:SetFont("Fonts\\FRIZQT__.TTF", size, "OUTLINE");
+    local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
+    timerText:SetFont(fontPath, size, outline);
+end
+
+function module:RefreshColor()
+    if (not timerText) then return; end
+    local c = (self.db and self.db.fontColor) or DEFAULTS.fontColor;
+    timerText:SetTextColor(c.r, c.g, c.b, 1);
+end
+
+function module:SetPreviewMode(enabled)
+    previewMode = enabled;
+    if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
+
+    if (enabled) then
+        if (not frame) then createFrame(self); end
+        self:RefreshFont();
+        self:RefreshColor();
+        timerText:SetText("3:42");
+        frame:SetAlpha(1);
+        frame:Show();
+
+        -- Auto-disable when settings panel closes
+        previewTimer = C_Timer.NewTicker(0.5, function()
+            if (not previewMode) then return; end
+            local panel = Lantern._uxPanel;
+            if (panel and panel.frame and not panel.frame:IsShown()) then
+                module:SetPreviewMode(false);
+            end
+        end);
+    else
+        if (frame and not inCombat) then
+            local unlocked = self.db and not self.db.locked;
+            if (not unlocked) then frame:Hide(); end
+        end
+    end
+end
+
+function module:IsPreviewActive()
+    return previewMode;
 end
 
 function module:UpdateLock()
@@ -116,15 +179,15 @@ function module:OnEnable()
         if (not self.enabled) then return; end
         inCombat = false;
         local stickyDur = self.db and self.db.stickyDuration or DEFAULTS.stickyDuration;
-        local unlocked = self.db and not self.db.locked;
         if (stickyDur > 0) then
             stickyTimer = C_Timer.NewTimer(stickyDur, function()
+                local unlocked = self.db and not self.db.locked;
                 if (not inCombat and frame and not unlocked) then
                     frame:Hide();
                 end
                 stickyTimer = nil;
             end);
-        elseif (not unlocked) then
+        elseif (not (self.db and not self.db.locked)) then
             frame:Hide();
         end
     end);
@@ -134,7 +197,9 @@ function module:OnDisable()
     if (frame) then frame:Hide(); end
     inCombat = false;
     combatStart = nil;
+    previewMode = false;
     if (stickyTimer) then stickyTimer:Cancel(); stickyTimer = nil; end
+    if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
 end
 
 Lantern:RegisterModule(module);

@@ -38,8 +38,10 @@ module.widgetOptions = function()
             enterText = "IN COMBAT", leaveText = "OUT OF COMBAT",
             enterColor = { r = 1, g = 0.2, b = 0.2 },
             leaveColor = { r = 0.2, g = 1, b = 0.2 },
-            fontSize = 28, fadeDuration = 2.0,
+            font = "Roboto Light", fontSize = 28, fontOutline = "OUTLINE",
+            fadeDuration = 2.0,
             soundEnabled = false, soundName = "RaidWarning",
+            locked = true,
         };
         for k, v in pairs(defaults) do
             if (d[k] == nil) then
@@ -59,6 +61,28 @@ module.widgetOptions = function()
 
     local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
 
+    local function getFontValues()
+        local fonts = {};
+        if (LSM) then
+            for _, name in ipairs(LSM:List("font") or {}) do
+                fonts[name] = name;
+            end
+        end
+        if (not fonts["Roboto Light"]) then
+            fonts["Roboto Light"] = "Roboto Light";
+        end
+        return fonts;
+    end
+
+    local outlineValues = {
+        [""] = "None",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+        ["OUTLINE, MONOCHROME"] = "Outline + Mono",
+    };
+    local outlineSorting = { "", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "OUTLINE, MONOCHROME" };
+
     local function getSoundValues()
         if (Lantern.utils and Lantern.utils.RegisterMediaSounds) then
             Lantern.utils.RegisterMediaSounds(LSM);
@@ -75,8 +99,22 @@ module.widgetOptions = function()
         return sounds;
     end
 
+    local function isPreviewActive()
+        return module.IsPreviewActive and module:IsPreviewActive() or false;
+    end
+
     return {
         moduleToggle("CombatAlert", "Enable", "Show text alerts when entering/leaving combat."),
+        {
+            type = "toggle",
+            label = "Preview",
+            desc = "Loop enter/leave alerts on screen for real-time editing. Automatically disables when the settings panel is closed.",
+            disabled = isDisabled,
+            get = function() return isPreviewActive(); end,
+            set = function(val)
+                if (module.SetPreviewMode) then module:SetPreviewMode(val); end
+            end,
+        },
         {
             type = "group",
             text = "Combat Enter",
@@ -134,13 +172,25 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Display",
+            text = "Font and Display Settings",
             children = {
+                {
+                    type = "select",
+                    label = "Font",
+                    desc = "Select the font for the alert text.",
+                    values = getFontValues,
+                    disabled = isDisabled,
+                    get = function() return db().font or "Roboto Light"; end,
+                    set = function(val)
+                        db().font = val;
+                        if (module.RefreshFont) then module:RefreshFont(); end
+                    end,
+                },
                 {
                     type = "range",
                     label = "Font Size",
                     desc = "Size of the alert text.",
-                    min = 14, max = 48, step = 1,
+                    min = 14, max = 48, step = 1, default = 28,
                     disabled = isDisabled,
                     get = function() return db().fontSize; end,
                     set = function(val)
@@ -149,10 +199,23 @@ module.widgetOptions = function()
                     end,
                 },
                 {
+                    type = "select",
+                    label = "Font Outline",
+                    desc = "Outline style for the alert text.",
+                    values = outlineValues,
+                    sorting = outlineSorting,
+                    disabled = isDisabled,
+                    get = function() return db().fontOutline or "OUTLINE"; end,
+                    set = function(val)
+                        db().fontOutline = val;
+                        if (module.RefreshFont) then module:RefreshFont(); end
+                    end,
+                },
+                {
                     type = "range",
                     label = "Fade Duration",
                     desc = "Total duration of the alert (hold + fade out) in seconds.",
-                    min = 0.5, max = 5, step = 0.5,
+                    min = 0.5, max = 5, step = 0.5, default = 2.0,
                     disabled = isDisabled,
                     get = function() return db().fadeDuration; end,
                     set = function(val) db().fadeDuration = val; end,
@@ -183,6 +246,32 @@ module.widgetOptions = function()
                         if (not LSM) then return; end
                         local sound = LSM:Fetch("sound", key);
                         if (sound) then pcall(PlaySoundFile, sound, "Master"); end
+                    end,
+                },
+            },
+        },
+        {
+            type = "group",
+            text = "Position",
+            children = {
+                {
+                    type = "toggle",
+                    label = "Lock Position",
+                    desc = "Prevent the alert from being moved.",
+                    disabled = isDisabled,
+                    get = function() return db().locked; end,
+                    set = function(val)
+                        db().locked = val;
+                        if (module.UpdateLock) then module:UpdateLock(); end
+                    end,
+                },
+                {
+                    type = "execute",
+                    label = "Reset Position",
+                    desc = "Reset the alert to its default position.",
+                    disabled = isDisabled,
+                    func = function()
+                        if (module.ResetPosition) then module:ResetPosition(); end
                     end,
                 },
             },

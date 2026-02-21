@@ -286,7 +286,7 @@ local function showLinkPopup(link)
         popup:EnableMouse(true);
 
         -- Title
-        local title = popup:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        local title = popup:CreateFontString(nil, "ARTWORK", T.fontBody);
         title:SetPoint("TOPLEFT", popup, "TOPLEFT", 14, -14);
         title:SetText("Copy link");
         title:SetTextColor(unpack(T.textBright));
@@ -295,7 +295,7 @@ local function showLinkPopup(link)
         local closeBtn = CreateFrame("Button", "LanternUX_LinkCloseBtn", popup);
         closeBtn:SetSize(20, 20);
         closeBtn:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -8, -8);
-        local closeTxt = closeBtn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        local closeTxt = closeBtn:CreateFontString(nil, "ARTWORK", T.fontBody);
         closeTxt:SetPoint("CENTER");
         closeTxt:SetText("x");
         closeTxt:SetTextColor(unpack(T.text));
@@ -314,7 +314,7 @@ local function showLinkPopup(link)
         });
         editBox:SetBackdropColor(unpack(T.inputBg));
         editBox:SetBackdropBorderColor(unpack(T.inputBorder));
-        editBox:SetFontObject(GameFontHighlightSmall);
+        editBox:SetFontObject(T.fontSmall);
         editBox:SetTextColor(unpack(T.text));
         editBox:SetTextInsets(6, 6, 0, 0);
         editBox:SetAutoFocus(false);
@@ -329,7 +329,7 @@ local function showLinkPopup(link)
         end);
 
         -- Hint text
-        local hint = popup:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+        local hint = popup:CreateFontString(nil, "ARTWORK", T.fontSmall);
         hint:SetPoint("TOPLEFT", editBox, "BOTTOMLEFT", 2, -8);
         hint:SetText("Ctrl+C to copy, Escape to close");
         hint:SetTextColor(unpack(T.textDim));
@@ -380,7 +380,7 @@ local function PopulateSplashModules()
         local headerKey = catIdx .. "_header";
         local header = splashToggles[headerKey];
         if (not header) then
-            header = splashFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+            header = splashFrame:CreateFontString(nil, "ARTWORK", T.fontBody);
             splashToggles[headerKey] = header;
         end
         header:ClearAllPoints();
@@ -405,12 +405,16 @@ local function PopulateSplashModules()
 
         y = y - 26;
 
-        -- Modules in this category
+        -- Modules in this category (2-column layout)
+        local col = 0;
+        local COL_OFFSET = 254;  -- x offset for second column
+
         for _, moduleName in ipairs(category.modules) do
             local mod = Lantern.modules[moduleName];
             if (mod) then
                 local displayName = (mod.opts and mod.opts.title) or moduleName;
                 local pageKey = CORE_KEY[moduleName];
+                local xBase = 36 + col * COL_OFFSET;
 
                 -- Status dot
                 local dotKey = catIdx .. "_" .. moduleName .. "_dot";
@@ -422,7 +426,7 @@ local function PopulateSplashModules()
                     splashToggles[dotKey] = dot;
                 end
                 dot:ClearAllPoints();
-                dot:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 36, y - 2);
+                dot:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", xBase, y - 2);
                 if (mod.enabled) then
                     dot:SetColorTexture(unpack(T.enabled));
                 else
@@ -435,7 +439,7 @@ local function PopulateSplashModules()
                 local btn = splashToggles[labelKey];
                 if (not btn) then
                     btn = CreateFrame("Button", nil, splashFrame);
-                    local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+                    local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontBody);
                     btnText:SetPoint("LEFT");
                     btnText:SetJustifyH("LEFT");
                     btn._text = btnText;
@@ -460,14 +464,23 @@ local function PopulateSplashModules()
                 end);
 
                 btn:ClearAllPoints();
-                btn:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 50, y);
+                btn:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", xBase + 14, y);
                 -- Size the button to fit the text
                 local textWidth = btn._text:GetStringWidth() or 100;
                 btn:SetSize(textWidth + 4, 16);
                 btn:Show();
 
-                y = y - 22;
+                col = col + 1;
+                if (col >= 2) then
+                    col = 0;
+                    y = y - 22;
+                end
             end
+        end
+
+        -- Advance y after a partial (odd-count) row
+        if (col > 0) then
+            y = y - 22;
         end
 
         -- Spacing between categories
@@ -584,7 +597,7 @@ local function CreateSplashContent(parent)
     icon:SetTexture("Interface\\AddOns\\Lantern\\Media\\Images\\Icons\\lantern-core-icon128.blp");
 
     -- Title
-    local title = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge");
+    local title = f:CreateFontString(nil, "ARTWORK", T.fontHeading);
     title:SetPoint("LEFT", icon, "RIGHT", 12, 6);
     title:SetText("Lantern");
     title:SetTextColor(unpack(T.textBright));
@@ -594,21 +607,45 @@ local function CreateSplashContent(parent)
     if (C_AddOns and C_AddOns.GetAddOnMetadata) then
         ver = C_AddOns.GetAddOnMetadata("Lantern", "Version") or "";
     end
-    local verText = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-    verText:SetPoint("LEFT", title, "RIGHT", 8, -1);
+    local verText = f:CreateFontString(nil, "ARTWORK", T.fontSmall);
+    verText:SetPoint("LEFT", title, "RIGHT", 8, 0);
     verText:SetText("v" .. ver);
     verText:SetTextColor(unpack(T.textDim));
 
     -- Description
-    local desc = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-    desc:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -16);
+    local desc = f:CreateFontString(nil, "ARTWORK", T.fontBody);
+    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10);
     desc:SetWidth(540);
     desc:SetJustifyH("LEFT");
     desc:SetWordWrap(true);
     desc:SetText("A modular quality-of-life addon for World of Warcraft.\nClick a module name to configure it.");
     desc:SetTextColor(unpack(T.splashText));
 
-    -- Content starts below description; categories are positioned dynamically
+    -- Status legend
+    local legendY = -118;
+    local legendX = 36;
+
+    local enabledDot = f:CreateTexture(nil, "ARTWORK");
+    enabledDot:SetSize(6, 6);
+    enabledDot:SetPoint("TOPLEFT", f, "TOPLEFT", legendX, legendY - 1);
+    enabledDot:SetColorTexture(unpack(T.enabled));
+
+    local enabledLabel = f:CreateFontString(nil, "ARTWORK", T.fontSmall);
+    enabledLabel:SetPoint("LEFT", enabledDot, "RIGHT", 5, 0);
+    enabledLabel:SetText("Enabled");
+    enabledLabel:SetTextColor(unpack(T.textDim));
+
+    local disabledDot = f:CreateTexture(nil, "ARTWORK");
+    disabledDot:SetSize(6, 6);
+    disabledDot:SetPoint("LEFT", enabledLabel, "RIGHT", 12, 0);
+    disabledDot:SetColorTexture(unpack(T.disabledDot));
+
+    local disabledLabel = f:CreateFontString(nil, "ARTWORK", T.fontSmall);
+    disabledLabel:SetPoint("LEFT", disabledDot, "RIGHT", 5, 0);
+    disabledLabel:SetText("Disabled");
+    disabledLabel:SetTextColor(unpack(T.textDim));
+
+    -- Content starts below description + legend; categories are positioned dynamically
     f._contentStartY = -140;
     f._catHeaders = {};
     f._catDividers = {};
@@ -616,7 +653,7 @@ local function CreateSplashContent(parent)
     -- Companion addons section (created below modules, positioned dynamically by PopulateSplashModules)
     -- We create the elements here but position them in PopulateSplashModules since
     -- the Y offset depends on how many modules are listed above.
-    local companionHeader = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+    local companionHeader = f:CreateFontString(nil, "ARTWORK", T.fontBody);
     companionHeader:SetText("Companion Addons");
     companionHeader:SetTextColor(unpack(T.textBright));
     companionHeader:Hide();
@@ -635,7 +672,7 @@ local function CreateSplashContent(parent)
         row:SetWidth(COMPANION_COL_WIDTH);
 
         -- Description text
-        local rowDesc = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        local rowDesc = row:CreateFontString(nil, "ARTWORK", T.fontBody);
         rowDesc:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0);
         rowDesc:SetWidth(COMPANION_COL_WIDTH);
         rowDesc:SetJustifyH("LEFT");
@@ -655,7 +692,7 @@ local function CreateSplashContent(parent)
         btn:SetBackdropColor(unpack(T.buttonBg));
         btn:SetBackdropBorderColor(unpack(T.buttonBorder));
 
-        local btnText = btn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall");
+        local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontSmall);
         btnText:SetPoint("CENTER");
         btnText:SetText("CurseForge");
         btnText:SetTextColor(unpack(T.buttonText));

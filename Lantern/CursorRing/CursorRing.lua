@@ -809,8 +809,12 @@ local function CreateFrames()
         if (alphaTimer >= ALPHA_CHECK_INTERVAL) then
             alphaTimer = 0;
             -- Auto-disable preview when settings panel closes
-            if (previewMode and SettingsPanel and not SettingsPanel:IsShown()) then
-                module:SetPreviewMode(false);
+            if (previewMode) then
+                local panel = _G.Lantern and _G.Lantern._uxPanel;
+                local panelShown = panel and panel.frame and panel.frame:IsShown();
+                if (not panelShown) then
+                    module:SetPreviewMode(false);
+                end
             end
             UpdateVisibility();
         end
