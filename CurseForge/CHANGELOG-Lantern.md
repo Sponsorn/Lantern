@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 - 2026-02-21
+- Add: Range Check now detects Holy Paladin melee range (item-based check since Holy has no melee attack spell)
+- Add: "Clean minimap icon" toggle in General settings — removes border and background for a minimal look
+- Change: Warehousing panel text now uses bold font for better readability
+- Chore: Updated LibDBIcon-1.0 to v56 (new button customization APIs)
+
 ## 0.5.0 - 2026-02-21
 tldr: 8 new modules — Auto Repair, Auto Sell, Chat Filter, Auto Playstyle, Faster Loot, Disable Loot Warnings, Auto Keystone, and Release Protection. Three new HUD overlays — Combat Timer, Combat Alert, and Range Check — all draggable and fully customizable. Settings home page redesigned with category groups and clickable module navigation. Roboto font family across all UI. Pause modifier key is now configurable (Shift/Ctrl/Alt). Enough QoL to make your UI feel like it finally graduated from high school.
 

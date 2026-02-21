@@ -82,6 +82,20 @@ function Lantern:ToggleMinimapIcon(show)
     end
 end
 
+function Lantern:ApplyMinimapStyle()
+    if (not hasMinimapLibs()) then return; end
+    local clean = self.db.minimap and self.db.minimap.clean;
+    if (clean) then
+        LDBIcon:RemoveButtonBorder(MINIMAP_OBJECT_NAME);
+        LDBIcon:RemoveButtonBackground(MINIMAP_OBJECT_NAME);
+        LDBIcon:SetButtonIcon(MINIMAP_OBJECT_NAME, nil, 24);
+    else
+        LDBIcon:ResetButtonBorder(MINIMAP_OBJECT_NAME);
+        LDBIcon:ResetButtonBackground(MINIMAP_OBJECT_NAME);
+        LDBIcon:ResetButtonIcon(MINIMAP_OBJECT_NAME);
+    end
+end
+
 function Lantern:InitMinimap()
     if (self.minimapInitialized or not hasMinimapLibs()) then return; end
 
@@ -111,6 +125,7 @@ function Lantern:InitMinimap()
 
     LDBIcon:Register(MINIMAP_OBJECT_NAME, self.ldbObject, self.db.minimap);
     LDBIcon:AddButtonToCompartment(MINIMAP_OBJECT_NAME);
+    self:ApplyMinimapStyle();
     self.minimapInitialized = true;
 end
 

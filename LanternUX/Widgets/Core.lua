@@ -95,9 +95,17 @@ body:SetFont(T.fontPathRegular, 12, "");
 local small = CreateFont("LanternUX_BodySmall");
 small:SetFont(T.fontPathRegular, 10, "");
 
-T.fontHeading = "LanternUX_Heading";
-T.fontBody    = "LanternUX_Body";
-T.fontSmall   = "LanternUX_BodySmall";
+local bodyBold = CreateFont("LanternUX_BodyBold");
+bodyBold:SetFont(T.fontPathBold, 12, "OUTLINE");
+
+local smallBold = CreateFont("LanternUX_BodySmallBold");
+smallBold:SetFont(T.fontPathBold, 10, "OUTLINE");
+
+T.fontHeading   = "LanternUX_Heading";
+T.fontBody      = "LanternUX_Body";
+T.fontSmall     = "LanternUX_BodySmall";
+T.fontBodyBold  = "LanternUX_BodyBold";
+T.fontSmallBold = "LanternUX_BodySmallBold";
 
 -------------------------------------------------------------------------------
 -- Shared internal table

@@ -67,9 +67,12 @@ local SPEC_SPELLS = {
     [259] = 1752, [260] = 1752, [261] = 1752,
 };
 
+local SPEC_ITEMS = {
+    -- Paladin (Holy) — melee healer, no melee attack spell; use 3yd item check.
+    [65] = 42732, -- Everfrost Razor (3 yards)
+};
+
 local SPEC_RANGE = {
-    -- Paladin (Holy)
-    [65] = 40,
     -- Druid (Balance, Restoration)
     [102] = 40, [105] = 40,
     -- Monk (Mistweaver)
@@ -89,6 +92,7 @@ local SPEC_RANGE = {
 };
 
 local cachedMeleeSpell = nil;
+local cachedMeleeItem = nil;
 local cachedMaxRange = 40;
 
 local function refreshMaxRange()
@@ -97,12 +101,22 @@ local function refreshMaxRange()
     -- Melee spec: use direct spell check.
     if (specID and SPEC_SPELLS[specID]) then
         cachedMeleeSpell = SPEC_SPELLS[specID];
+        cachedMeleeItem = nil;
+        cachedMaxRange = nil;
+        return;
+    end
+
+    -- Melee spec with item check (no melee spell available).
+    if (specID and SPEC_ITEMS[specID]) then
+        cachedMeleeSpell = nil;
+        cachedMeleeItem = SPEC_ITEMS[specID];
         cachedMaxRange = nil;
         return;
     end
 
     -- Ranged spec: use LibRangeCheck with threshold.
     cachedMeleeSpell = nil;
+    cachedMeleeItem = nil;
 
     if (specID and SPEC_RANGE[specID]) then
         cachedMaxRange = SPEC_RANGE[specID];
@@ -196,6 +210,14 @@ local function createFrame(self)
         if (cachedMeleeSpell) then
             -- Melee spec: direct spell range check (same as MeleeRangeIndicator)
             local result = C_Spell.IsSpellInRange(cachedMeleeSpell, "target");
+            if (result == nil) then
+                clearStatus();
+                return;
+            end
+            inRange = result;
+        elseif (cachedMeleeItem) then
+            -- Melee spec without a melee spell (e.g. Holy Paladin): item range check
+            local result = C_Item.IsItemInRange(cachedMeleeItem, "target");
             if (result == nil) then
                 clearStatus();
                 return;

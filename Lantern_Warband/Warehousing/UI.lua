@@ -9,8 +9,8 @@ local Engine = Warband.WarehousingEngine;
 if (not Warehousing or not Engine) then return; end
 
 local T = _G.LanternUX and _G.LanternUX.Theme;
-local fontBody  = T and T.fontBody  or "GameFontNormal";
-local fontSmall = T and T.fontSmall or "GameFontNormalSmall";
+local fontBody  = T and T.fontBodyBold  or "GameFontNormal";
+local fontSmall = T and T.fontSmallBold or "GameFontNormalSmall";
 
 local WarehousingUI = {};
 Warband.WarehousingUI = WarehousingUI;

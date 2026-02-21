@@ -115,6 +115,18 @@ CUSTOM_OPTIONS["general"] = function()
             set = function(val) Lantern:ToggleMinimapIcon(val); end,
         },
         {
+            type = "toggle",
+            label = "Clean minimap icon",
+            desc = "Remove the border and background from the minimap button for a minimal look.",
+            disabled = function() return Lantern.db.minimap and Lantern.db.minimap.hide; end,
+            get = function() return Lantern.db.minimap and Lantern.db.minimap.clean or false; end,
+            set = function(val)
+                Lantern.db.minimap = Lantern.db.minimap or {};
+                Lantern.db.minimap.clean = val;
+                Lantern:ApplyMinimapStyle();
+            end,
+        },
+        {
             type = "select",
             label = "Pause modifier key",
             desc = "Hold this key to temporarily pause auto-features (Auto Quest, Auto Queue, Auto Repair, etc.).",
