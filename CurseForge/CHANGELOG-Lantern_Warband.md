@@ -1,6 +1,7 @@
 # Changelog
 
-## 0.3.3
+## 0.3.3 - 2026-02-21
+- Fix: Warehousing panel close button causing an error
 - Change: Warehousing panel now uses Roboto font to match the settings panel theme
 
 ## 0.3.2 - 2026-02-18

@@ -603,7 +603,6 @@ function WarehousingUI:Hide()
     if (panel) then
         panel:Hide();
     end
-    self:HideSettingsPanel();
     SavePanelOpen(false);
 end
 
