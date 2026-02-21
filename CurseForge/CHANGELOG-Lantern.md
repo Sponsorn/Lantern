@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0
+## 0.5.0 - 2026-02-21
 tldr: 8 new modules — Auto Repair, Auto Sell, Chat Filter, Auto Playstyle, Faster Loot, Disable Loot Warnings, Auto Keystone, and Release Protection. Three new HUD overlays — Combat Timer, Combat Alert, and Range Check — all draggable and fully customizable. Settings home page redesigned with category groups and clickable module navigation. Roboto font family across all UI. Pause modifier key is now configurable (Shift/Ctrl/Alt). Enough QoL to make your UI feel like it finally graduated from high school.
 
 - Change: Settings panel and HUD modules now use Roboto font for a modern, cohesive look
@@ -26,19 +26,17 @@ tldr: 8 new modules — Auto Repair, Auto Sell, Chat Filter, Auto Playstyle, Fas
 - Add: Release Protection module — requires holding your pause modifier to release spirit, preventing accidental clicks (disabled by default)
 - Add: Combat Timer module — on-screen combat duration timer with sticky mode that keeps showing after combat ends (disabled by default)
 - Add: Combat Alert module — fade-in/out text alerts when entering or leaving combat with configurable colors and sound (disabled by default)
-- Add: Range Check module — color-coded distance display to your target with two display modes: range numbers or in/out of range status with optional hide-when-in-range (disabled by default)
+- Add: Range Check module — in-range or out-of-range status display for your current target with customizable text, colors, animations, and optional hide-when-in-range (disabled by default)
 - Change: Options sidebar reorganized into context-based categories (General, Dungeons & M+, Questing & World)
 - Change: Home page now shows all modules grouped by category with clickable navigation to settings
 - Add: Release Protection now supports scenario filtering — choose Always, All Instances, or Custom mode with per-type toggles (dungeons, M+, raids, arenas, battlegrounds, open world)
 - Add: Range Check font and outline selectors
 - Add: Combat Alert separate toggles to enable/disable enter and leave alerts independently
-- Change: Range Check now uses direct spell checks for more reliable in-range detection across all 39 specs
-- Change: Range Check default display mode changed to status (in/out of range)
 - Add: Range Check customizable status text, colors, and animation style
-- Fix: Range Check now detects melee range correctly for DK, DH, Rogue, and Warrior classes
+- Fix: Range Check melee detection now works reliably for all melee specs (direct spell checks matching MeleeRangeIndicator approach)
 - Fix: Range Check now detects Devourer Demon Hunter range correctly (added missing Consume spell to LibRangeCheck)
-- Fix: Range Check "hide when in range" now correctly shows again when target goes out of range
 - Fix: Range Check no longer shows "Out of Range" for friendly targets
+- Fix: Combat Alert banner no longer stays visible after locking position
 - Fix: Draggable frames restore original text and color when re-locking position
 - Fix: Draggable frames auto-lock when closing the settings panel
 - Chore: Split large module options into separate WidgetOptions.lua files (AutoQuest, AutoSell, CursorRing, MissingPet)

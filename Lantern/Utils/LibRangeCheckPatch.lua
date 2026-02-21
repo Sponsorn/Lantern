@@ -1,6 +1,6 @@
--- Patch LibRangeCheck-3.0 with spells missing from the upstream library.
+-- Patch LibRangeCheck-3.0 to add Devourer Demon Hunter (new in 12.0).
 -- The lib's spell tables are local, so we hook init() and inject checkers post-init.
--- When the upstream library adds these spells, the duplicate-range guard skips our entries.
+-- When the upstream library adds this spec, the duplicate-range guard skips our entry.
 
 local ADDON_NAME, addon = ...;
 
@@ -8,31 +8,9 @@ local LRC = LibStub and LibStub("LibRangeCheck-3.0", true);
 if (not LRC) then return; end
 
 local _, playerClass = UnitClass("player");
+if (playerClass ~= "DEMONHUNTER") then return; end
 
--- Extra harm spells the library doesn't include yet (keyed by class).
--- Uses C_Spell.IsSpellInRange (modern API) for tighter range detection.
-local EXTRA_HARM = {
-    DEATHKNIGHT = {
-        { id = 49998, range = 5 },  -- Death Strike (Melee Range)
-    },
-    DEMONHUNTER = {
-        { id = 473662, range = 25 }, -- Consume (Devourer) (25 yards)
-        { id = 162243, range = 5 },  -- Demon's Bite (Havoc) (Melee Range)
-    },
-    HUNTER = {
-        { id = 186270, range = 5 },  -- Raptor Strike (Survival) (Melee Range)
-    },
-    ROGUE = {
-        { id = 1752, range = 5 },    -- Sinister Strike (Melee Range)
-    },
-    WARRIOR = {
-        { id = 1464, range = 5 },    -- Slam (Arms/Fury) (Melee Range)
-        { id = 23922, range = 5 },   -- Shield Slam (Protection) (Melee Range)
-    },
-};
-
-local spells = EXTRA_HARM[playerClass];
-if (not spells) then return; end
+local CONSUME_SPELL_ID = 473662; -- Consume (Devourer DH, 25 yards)
 
 -- Sorted insert matching the lib's addChecker: descending range, skip duplicates.
 local function inject(list, range, checker, info)
@@ -49,17 +27,14 @@ end
 local origInit = LRC.init;
 LRC.init = function(self, forced)
     origInit(self, forced);
-    for _, spell in ipairs(spells) do
-        if (IsPlayerSpell(spell.id)) then
-            local spellID = spell.id;
-            local checker = function(unit)
-                return C_Spell.IsSpellInRange(spellID, unit);
-            end;
-            local info = "spell:" .. spellID .. ":Lantern";
-            inject(self.harmRC, spell.range, checker, info);
-            inject(self.harmRCInCombat, spell.range, checker, info);
-            inject(self.harmNoItemsRC, spell.range, checker, info);
-            inject(self.harmNoItemsRCInCombat, spell.range, checker, info);
-        end
+    if (IsPlayerSpell(CONSUME_SPELL_ID)) then
+        local checker = function(unit)
+            return C_Spell.IsSpellInRange(CONSUME_SPELL_ID, unit);
+        end;
+        local info = "spell:" .. CONSUME_SPELL_ID .. ":Lantern";
+        inject(self.harmRC, 25, checker, info);
+        inject(self.harmRCInCombat, 25, checker, info);
+        inject(self.harmNoItemsRC, 25, checker, info);
+        inject(self.harmNoItemsRCInCombat, 25, checker, info);
     end
 end;

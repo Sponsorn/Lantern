@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0
+## 0.2.0 - 2026-02-21
 - Add: Callout widget type with three severity levels (info, notice, warning) — colored left border with tinted background
 - Add: Draggable frame registry with auto-lock when settings panel closes
 - Add: Roboto font family (Thin, Light, Regular) bundled with theme FontObjects

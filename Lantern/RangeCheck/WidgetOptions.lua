@@ -32,7 +32,7 @@ end
 module.widgetOptions = function()
     local DEFAULTS = {
         font = "Roboto Light", fontSize = 16, fontOutline = "OUTLINE",
-        combatOnly = false, locked = true, displayMode = "range", hideInRange = false,
+        combatOnly = false, locked = true, hideInRange = false,
         inRangeText = "In Range", outOfRangeText = "Out of Range",
         inRangeColor = { r = 0.2, g = 1.0, b = 0.2 },
         outOfRangeColor = { r = 1.0, g = 0.2, b = 0.2 },
@@ -57,16 +57,6 @@ module.widgetOptions = function()
 
     local isDisabled = function()
         return not moduleEnabled("RangeCheck");
-    end
-
-    local isStatusMode = function()
-        return db().displayMode == "status";
-    end
-
-    local refreshPage = function()
-        if (Lantern._uxPanel and Lantern._uxPanel.RefreshCurrentPage) then
-            Lantern._uxPanel:RefreshCurrentPage();
-        end
     end
 
     local function refreshAnimation()
@@ -104,7 +94,7 @@ module.widgetOptions = function()
     local animationSorting = { "none", "bounce", "pulse", "fade", "shake", "glow", "heartbeat" };
 
     return {
-        moduleToggle("RangeCheck", "Enable", "Show distance to your current target."),
+        moduleToggle("RangeCheck", "Enable", "Show in-range or out-of-range status for your current target."),
 
         -----------------------------------------------------------------------
         -- Display
@@ -115,28 +105,10 @@ module.widgetOptions = function()
             expanded = true,
             children = {
                 {
-                    type = "select",
-                    label = "Display Mode",
-                    desc = "Range: show distance numbers. Status: show In Range / Out of Range.",
-                    disabled = isDisabled,
-                    values = {
-                        range = "Range (numbers)",
-                        status = "Status (in/out)",
-                    },
-                    sorting = { "range", "status" },
-                    get = function() return db().displayMode; end,
-                    set = function(val)
-                        db().displayMode = val;
-                        refreshAnimation();
-                        refreshPage();
-                    end,
-                },
-                {
                     type = "toggle",
                     label = "Hide When In Range",
                     desc = "Hide the display when your target is within range. Only shows when out of range.",
-                    disabled = function() return isDisabled() or not isStatusMode(); end,
-                    hidden = function() return not isStatusMode(); end,
+                    disabled = isDisabled,
                     get = function() return db().hideInRange; end,
                     set = function(val) db().hideInRange = val; end,
                 },
@@ -152,12 +124,11 @@ module.widgetOptions = function()
         },
 
         -----------------------------------------------------------------------
-        -- Status Mode Text & Colors
+        -- Status Text & Colors
         -----------------------------------------------------------------------
         {
             type = "group",
             text = "Status Text",
-            hidden = function() return not isStatusMode(); end,
             expanded = true,
             children = {
                 {
