@@ -17,13 +17,11 @@ end
 -- Combat Lockdown Handling for Options
 -------------------------------------------------------------------------------
 
-local pendingOpenOptions = false;
-
-local combatFrame = CreateFrame("Frame");
+local combatFrame = CreateFrame("Frame", "Lantern_CombatFrame");
 combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
-combatFrame:SetScript("OnEvent", function(self, event)
-    if (event == "PLAYER_REGEN_ENABLED" and pendingOpenOptions) then
-        pendingOpenOptions = false;
+combatFrame:SetScript("OnEvent", function()
+    if (Lantern._pendingSettingsPanel) then
+        Lantern._pendingSettingsPanel = false;
         C_Timer.After(0.1, function()
             Lantern:OpenOptions();
         end);
@@ -114,25 +112,6 @@ function Lantern:InitMinimap()
     LDBIcon:Register(MINIMAP_OBJECT_NAME, self.ldbObject, self.db.minimap);
     LDBIcon:AddButtonToCompartment(MINIMAP_OBJECT_NAME);
     self.minimapInitialized = true;
-end
-
-local RELOAD_POPUP_NAME = "LanternModuleReloadConfirm";
-
-local function ensureReloadPopup()
-    if (StaticPopupDialogs[RELOAD_POPUP_NAME]) then return; end
-    StaticPopupDialogs[RELOAD_POPUP_NAME] = {
-        text = "Enabling this module requires a reload.",
-        button1 = "Reload UI",
-        button2 = "Cancel",
-        OnAccept = function(_, moduleName)
-            Lantern.db.modules[moduleName] = true;
-            ReloadUI();
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    };
 end
 
 -------------------------------------------------------------------------------
@@ -265,8 +244,8 @@ end
 function Lantern:OpenOptions()
     -- Defer opening options if in combat (Settings panel is protected)
     if (InCombatLockdown()) then
-        if (not pendingOpenOptions) then
-            pendingOpenOptions = true;
+        if (not self._pendingSettingsPanel) then
+            self._pendingSettingsPanel = true;
             Lantern:Print("Options will open after combat.");
         end
         return;

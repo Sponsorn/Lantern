@@ -219,7 +219,15 @@ CUSTOM_OPTIONS["deathRelease"] = function()
     end
 
     return {
-        moduleToggle("DeathRelease", "Enable", "Require holding " .. Lantern:GetModifierName() .. " for 1 second to release spirit (prevents accidental release)."),
+        moduleToggle("DeathRelease", "Enable", "Require holding " .. Lantern:GetModifierName() .. " to release spirit (prevents accidental release)."),
+        {
+            type = "toggle",
+            label = "Skip when solo",
+            desc = "Disable protection when you are not in a group.",
+            disabled = isDisabled,
+            get = function() return db().skipSolo; end,
+            set = function(val) db().skipSolo = val; end,
+        },
         {
             type = "select",
             label = "Active in",
@@ -230,10 +238,22 @@ CUSTOM_OPTIONS["deathRelease"] = function()
             get = function() return db().mode or "always"; end,
             set = function(val)
                 db().mode = val;
-                if (Lantern._uxPanel and Lantern._uxPanel.refreshPage) then
-                    Lantern._uxPanel:refreshPage();
+                if (Lantern._uxPanel and Lantern._uxPanel.RefreshCurrentPage) then
+                    Lantern._uxPanel:RefreshCurrentPage();
                 end
             end,
+        },
+        {
+            type = "range",
+            label = "Hold duration",
+            desc = "How long you need to hold the modifier key before the release button becomes active.",
+            min = 0.5,
+            max = 5,
+            step = 0.5,
+            disabled = isDisabled,
+            get = function() return db().holdDuration or 1.0; end,
+            set = function(val) db().holdDuration = val; end,
+            format = "%.1fs",
         },
         {
             type = "group",
@@ -281,6 +301,14 @@ CUSTOM_OPTIONS["deathRelease"] = function()
                     disabled = isCustomDisabled,
                     get = function() return db().scenarios ~= false; end,
                     set = function(val) db().scenarios = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = "Delves",
+                    desc = "Protect in Delves.",
+                    disabled = isCustomDisabled,
+                    get = function() return db().delves ~= false; end,
+                    set = function(val) db().delves = val; end,
                 },
                 {
                     type = "toggle",

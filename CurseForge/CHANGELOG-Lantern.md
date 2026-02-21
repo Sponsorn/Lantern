@@ -21,13 +21,13 @@
 - Add: Faster Loot module — instantly collects all loot when a loot window opens, with inventory-full warning
 - Add: Disable Loot Warnings module — auto-confirms bind-on-pickup, loot roll, merchant refund, and mail lock popups with per-type toggles (disabled by default)
 - Add: Auto Keystone module — automatically slots your Mythic+ keystone when the Challenge Mode UI opens
-- Add: Death Release Protection module — requires holding your pause modifier for 1 second to release spirit, preventing accidental clicks (disabled by default)
+- Add: Release Protection module — requires holding your pause modifier to release spirit, preventing accidental clicks (disabled by default)
 - Add: Combat Timer module — on-screen combat duration timer with sticky mode that keeps showing after combat ends (disabled by default)
 - Add: Combat Alert module — fade-in/out text alerts when entering or leaving combat with configurable colors and sound (disabled by default)
 - Add: Range Check module — color-coded distance display to your target with two display modes: range numbers or in/out of range status with optional hide-when-in-range (disabled by default)
 - Change: Options sidebar reorganized into context-based categories (General, Dungeons & M+, Questing & World)
 - Change: Home page now shows all modules grouped by category with clickable navigation to settings
-- Add: Death Release Protection now supports scenario filtering — choose Always, All Instances, or Custom mode with per-type toggles (dungeons, M+, raids, arenas, battlegrounds, open world)
+- Add: Release Protection now supports scenario filtering — choose Always, All Instances, or Custom mode with per-type toggles (dungeons, M+, raids, arenas, battlegrounds, open world)
 - Add: Range Check font and outline selectors
 - Add: Combat Alert separate toggles to enable/disable enter and leave alerts independently
 - Change: Range Check now uses direct spell checks for more reliable in-range detection across all 39 specs

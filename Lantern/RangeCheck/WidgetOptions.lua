@@ -64,8 +64,8 @@ module.widgetOptions = function()
     end
 
     local refreshPage = function()
-        if (Lantern._uxPanel and Lantern._uxPanel.refreshPage) then
-            Lantern._uxPanel:refreshPage();
+        if (Lantern._uxPanel and Lantern._uxPanel.RefreshCurrentPage) then
+            Lantern._uxPanel:RefreshCurrentPage();
         end
     end
 

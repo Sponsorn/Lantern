@@ -107,43 +107,6 @@ local function ensureDB(self)
     end
 end
 
-function module:GetOptions()
-    return {
-        autoAccept = {
-            type = "toggle",
-            name = "Auto-accept quests",
-            desc = "Automatically accept quests from NPCs.",
-            width = "full",
-            get = function() return module.db and module.db.autoAccept; end,
-            set = function(_, val) module.db.autoAccept = val and true or false; end,
-        },
-        autoTurnIn = {
-            type = "toggle",
-            name = "Auto turn-in quests",
-            desc = "Automatically turn in completed quests to NPCs.",
-            width = "full",
-            get = function() return module.db and module.db.autoTurnIn; end,
-            set = function(_, val) module.db.autoTurnIn = val and true or false; end,
-        },
-        autoSelectSingleReward = {
-            type = "toggle",
-            name = "Auto select single reward",
-            desc = "If a quest offers only one reward, auto-select it.",
-            width = "full",
-            get = function() return module.db and module.db.autoSelectSingleReward; end,
-            set = function(_, val) module.db.autoSelectSingleReward = val and true or false; end,
-        },
-        skipTrivialQuests = {
-            type = "toggle",
-            name = "Skip trivial quests",
-            desc = "Don't auto-accept quests that are gray (trivial/low-level).",
-            width = "full",
-            get = function() return module.db and module.db.skipTrivialQuests; end,
-            set = function(_, val) module.db.skipTrivialQuests = val and true or false; end,
-        },
-    };
-end
-
 function module:OnInit()
     ensureDB(self);
 end

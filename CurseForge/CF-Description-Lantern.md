@@ -13,7 +13,7 @@ Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused 
 *   **Combat Timer**: On-screen combat duration timer with sticky mode that keeps showing after combat ends. Disabled by default.
 *   **Combat Alert**: Fade-in/out text alerts when entering or leaving combat with configurable colors and sound. Disabled by default.
 *   **Cursor Ring**: Displays customizable ring(s) around your mouse cursor with cast/GCD indicators and an optional mouse trail. Supports two independent rings, three cast effect styles (segments, fill, swipe), a GCD swipe indicator, and a center dot. Includes preview buttons to test animations from the options panel. Disabled by default.
-*   **Death Release Protection**: Requires holding your pause modifier for 1 second to release spirit, preventing accidental clicks. Disabled by default.
+*   **Release Protection**: Requires holding your pause modifier to release spirit, preventing accidental clicks. Disabled by default.
 *   **Delete Confirm**: Hides the delete prompt input and enables the confirm button immediately.
 *   **Disable Auto Add Spells**: Prevents spells from being auto-added to your action bars.
 *   **Disable Loot Warnings**: Auto-confirms bind-on-pickup, loot roll, merchant refund, and mail lock popups with per-type toggles.
