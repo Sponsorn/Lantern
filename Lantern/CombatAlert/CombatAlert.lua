@@ -39,8 +39,8 @@ local function GetFontPath(fontName)
     return DEFAULT_FONT_PATH;
 end
 
-local alertFrame, alertText;
-local fadeStart, fadeDuration;
+local banner, label;
+local flashAt, flashLength;
 local previewMode = false;
 local previewTimer = nil;
 local previewPhase = "enter";
@@ -63,41 +63,41 @@ local function ensureDB(self)
 end
 
 local function createFrame(self)
-    if (alertFrame) then return; end
+    if (banner) then return; end
 
-    alertFrame = CreateFrame("Frame", "Lantern_CombatAlert", UIParent, "BackdropTemplate");
-    alertFrame:SetSize(400, 50);
-    alertFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 200);
-    alertFrame:SetFrameStrata("HIGH");
-    alertFrame:Hide();
+    banner = CreateFrame("Frame", "Lantern_CombatAlert", UIParent, "BackdropTemplate");
+    banner:SetSize(400, 50);
+    banner:SetPoint("CENTER", UIParent, "CENTER", 0, 200);
+    banner:SetFrameStrata("HIGH");
+    banner:Hide();
 
-    alertText = alertFrame:CreateFontString(nil, "ARTWORK");
-    alertText:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
-    alertText:SetPoint("CENTER");
-    alertText:SetShadowOffset(2, -2);
-    alertText:SetShadowColor(0, 0, 0, 0.8);
+    label = banner:CreateFontString(nil, "ARTWORK");
+    label:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
+    label:SetPoint("CENTER");
+    label:SetShadowOffset(2, -2);
+    label:SetShadowColor(0, 0, 0, 0.8);
 
     if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(alertFrame, {
+        LanternUX.MakeDraggable(banner, {
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
             setLocked = function(val) if (self.db) then self.db.locked = val; end end,
             defaultPoint = { "CENTER", UIParent, "CENTER", 0, 200 },
-            text = alertText,
+            text = label,
             placeholder = DEFAULTS.enterText,
         });
     end
 
-    alertFrame:SetScript("OnUpdate", function()
-        if (not fadeStart) then return; end
+    banner:SetScript("OnUpdate", function()
+        if (not flashAt) then return; end
 
-        local elapsed = GetTime() - fadeStart;
-        local dur = fadeDuration or DEFAULTS.fadeDuration;
+        local elapsed = GetTime() - flashAt;
+        local dur = flashLength or DEFAULTS.fadeDuration;
 
         if (elapsed >= dur) then
-            alertFrame:Hide();
-            fadeStart = nil;
+            banner:Hide();
+            flashAt = nil;
             if (previewMode) then
                 previewPhase = (previewPhase == "enter") and "leave" or "enter";
                 C_Timer.After(0.3, function()
@@ -112,34 +112,34 @@ local function createFrame(self)
         local holdTime = dur * holdPortion;
 
         if (elapsed <= holdTime) then
-            alertFrame:SetAlpha(1);
+            banner:SetAlpha(1);
         else
             local fadeProgress = (elapsed - holdTime) / (dur - holdTime);
-            alertFrame:SetAlpha(1 - fadeProgress);
+            banner:SetAlpha(1 - fadeProgress);
         end
     end);
 end
 
-local function showAlert(text, color, db)
-    if (not alertFrame) then createFrame(module); end
+local function flash(text, color, db)
+    if (not banner) then createFrame(module); end
 
     local fontName = (db and db.font) or DEFAULTS.font;
     local size = (db and db.fontSize) or DEFAULTS.fontSize;
     local outline = (db and db.fontOutline) or DEFAULTS.fontOutline;
-    alertText:SetFont(GetFontPath(fontName), size, outline);
-    alertText:SetText(text);
-    alertText:SetTextColor(color.r, color.g, color.b, 1);
+    label:SetFont(GetFontPath(fontName), size, outline);
+    label:SetText(text);
+    label:SetTextColor(color.r, color.g, color.b, 1);
 
-    fadeDuration = (db and db.fadeDuration) or DEFAULTS.fadeDuration;
-    fadeStart = GetTime();
-    alertFrame:SetAlpha(1);
-    alertFrame:Show();
+    flashLength = (db and db.fadeDuration) or DEFAULTS.fadeDuration;
+    flashAt = GetTime();
+    banner:SetAlpha(1);
+    banner:Show();
 
     -- Play sound if enabled (skip during preview)
     if (not previewMode and db and db.soundEnabled) then
-        local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
-        if (LSM) then
-            local sound = LSM:Fetch("sound", db.soundName or "RaidWarning");
+        local media = LibStub and LibStub("LibSharedMedia-3.0", true);
+        if (media) then
+            local sound = media:Fetch("sound", db.soundName or "RaidWarning");
             if (sound) then
                 pcall(PlaySoundFile, sound, "Master");
             end
@@ -148,11 +148,11 @@ local function showAlert(text, color, db)
 end
 
 function module:RefreshFont()
-    if (not alertText) then return; end
+    if (not label) then return; end
     local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
     local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
-    alertText:SetFont(fontPath, size, outline);
+    label:SetFont(fontPath, size, outline);
 end
 
 function module:ShowPreviewAlert()
@@ -165,7 +165,7 @@ function module:ShowPreviewAlert()
         text = (self.db and self.db.leaveText) or DEFAULTS.leaveText;
         color = (self.db and self.db.leaveColor) or DEFAULTS.leaveColor;
     end
-    showAlert(text, color, self.db);
+    flash(text, color, self.db);
 end
 
 function module:SetPreviewMode(enabled)
@@ -173,7 +173,7 @@ function module:SetPreviewMode(enabled)
     if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
 
     if (enabled) then
-        if (not alertFrame) then createFrame(self); end
+        if (not banner) then createFrame(self); end
         previewPhase = "enter";
         self:ShowPreviewAlert();
 
@@ -186,8 +186,8 @@ function module:SetPreviewMode(enabled)
             end
         end);
     else
-        fadeStart = nil;
-        if (alertFrame) then alertFrame:Hide(); end
+        flashAt = nil;
+        if (banner) then banner:Hide(); end
     end
 end
 
@@ -196,13 +196,13 @@ function module:IsPreviewActive()
 end
 
 function module:UpdateLock()
-    if (not alertFrame) then return; end
-    alertFrame:UpdateLock();
+    if (not banner) then return; end
+    banner:UpdateLock();
 end
 
 function module:ResetPosition()
-    if (not alertFrame) then return; end
-    alertFrame:ResetPosition();
+    if (not banner) then return; end
+    banner:ResetPosition();
 end
 
 function module:OnInit()
@@ -212,15 +212,15 @@ end
 function module:OnEnable()
     ensureDB(self);
     createFrame(self);
-    alertFrame:RestorePosition();
-    alertFrame:UpdateLock();
+    banner:RestorePosition();
+    banner:UpdateLock();
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         if (not self.enabled) then return; end
         if (self.db and self.db.showEnter == false) then return; end
         local text = self.db.enterText or DEFAULTS.enterText;
         local color = self.db.enterColor or DEFAULTS.enterColor;
-        showAlert(text, color, self.db);
+        flash(text, color, self.db);
     end);
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_ENABLED", function()
@@ -228,13 +228,13 @@ function module:OnEnable()
         if (self.db and self.db.showLeave == false) then return; end
         local text = self.db.leaveText or DEFAULTS.leaveText;
         local color = self.db.leaveColor or DEFAULTS.leaveColor;
-        showAlert(text, color, self.db);
+        flash(text, color, self.db);
     end);
 end
 
 function module:OnDisable()
-    if (alertFrame) then alertFrame:Hide(); end
-    fadeStart = nil;
+    if (banner) then banner:Hide(); end
+    flashAt = nil;
     previewMode = false;
     if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
 end

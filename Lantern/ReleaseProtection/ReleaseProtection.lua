@@ -69,100 +69,101 @@ local function shouldProtect()
     return false;
 end
 
-local blocker;
-local timerLabel;
-local pressStart = 0;
-local isReady = false;
+-------------------------------------------------------------------------------
+-- Overlay
+-------------------------------------------------------------------------------
 
-local function BuildBlocker(releaseBtn)
-    if (blocker) then return blocker; end
+local overlay, overlayLabel;
+local holdStart;
+local unlocked;
 
-    blocker = CreateFrame("Button", "Lantern_ReleaseBlocker", releaseBtn);
-    blocker:SetAllPoints();
-    blocker:SetFrameStrata("DIALOG");
-    blocker:RegisterForClicks("AnyUp", "AnyDown");
+local function createOverlay(parent)
+    if (overlay) then return; end
 
-    local bg = blocker:CreateTexture(nil, "BACKGROUND");
+    overlay = CreateFrame("Button", "Lantern_ReleaseOverlay", parent);
+    overlay:SetAllPoints();
+    overlay:SetFrameStrata("DIALOG");
+    overlay:RegisterForClicks("AnyUp", "AnyDown");
+    overlay:SetScript("OnClick", function() end);
+    overlay:Hide();
+
+    local bg = overlay:CreateTexture(nil, "BACKGROUND");
     bg:SetAllPoints();
     bg:SetColorTexture(0.1, 0.1, 0.1, 1);
 
-    timerLabel = blocker:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge");
-    timerLabel:SetPoint("CENTER");
-    timerLabel:SetTextColor(1, 0.65, 0);
-    local fontFile, fontSize, fontFlags = timerLabel:GetFont();
-    timerLabel:SetFont(fontFile, fontSize * 0.7, fontFlags);
+    overlayLabel = overlay:CreateFontString(nil, "OVERLAY", "GameFontNormal");
+    overlayLabel:SetPoint("CENTER");
+    overlayLabel:SetTextColor(1, 0.65, 0);
 
-    blocker:SetScript("OnClick", function() end);
-
-    return blocker;
-end
-
-local function TickTimer()
-    if (isReady) then
-        blocker:Hide();
-        return;
-    end
-
-    local dur = db().holdDuration or 1.0;
-
-    if (Lantern:IsModifierDown()) then
-        if (pressStart == 0) then
-            pressStart = GetTime();
+    -- OnUpdate runs only while overlay is visible (WoW skips hidden frames)
+    overlay:SetScript("OnUpdate", function()
+        if (unlocked) then
+            overlay:Hide();
+            return;
         end
 
-        local elapsed = GetTime() - pressStart;
-        local left = dur - elapsed;
+        local dur = db().holdDuration or 1.0;
+        local modName = Lantern:GetModifierName();
 
-        if (left <= 0) then
-            isReady = true;
-            blocker:Hide();
+        if (Lantern:IsModifierDown()) then
+            if (not holdStart) then
+                holdStart = GetTime();
+            end
+
+            local elapsed = GetTime() - holdStart;
+            if (elapsed >= dur) then
+                unlocked = true;
+                overlay:Hide();
+            else
+                overlayLabel:SetText(string.format("Hold %s... %.1fs", modName, dur - elapsed));
+            end
         else
-            timerLabel:SetText(string.format("Hold %s... %.1fs", Lantern:GetModifierName(), left));
+            holdStart = nil;
+            overlayLabel:SetText(string.format("Hold %s (%.1fs)", modName, dur));
         end
-    else
-        pressStart = 0;
-        timerLabel:SetText(string.format("Hold %s (%.1fs)", Lantern:GetModifierName(), dur));
-    end
+    end);
 end
 
-local function ClearState()
-    pressStart = 0;
-    isReady = false;
-    if (blocker) then
-        blocker:SetScript("OnUpdate", nil);
-        blocker:Hide();
-    end
-end
-
-local function ActivateProtection()
+local function showOverlay()
     local visible, popup = StaticPopup_Visible("DEATH");
     if (not visible or not popup) then return; end
 
-    local btn = popup.GetButton and popup:GetButton(1);
-    if (not btn) then return; end
+    local releaseBtn = popup.GetButton and popup:GetButton(1);
+    if (not releaseBtn) then return; end
 
-    BuildBlocker(btn);
-    ClearState();
+    createOverlay(releaseBtn);
+
+    holdStart = nil;
+    unlocked = false;
 
     local dur = db().holdDuration or 1.0;
-    timerLabel:SetText(string.format("Hold %s (%.1fs)", Lantern:GetModifierName(), dur));
-    blocker:Show();
-    blocker:SetScript("OnUpdate", TickTimer);
+    overlayLabel:SetText(string.format("Hold %s (%.1fs)", Lantern:GetModifierName(), dur));
+    overlay:Show();
 end
+
+local function hideOverlay()
+    holdStart = nil;
+    unlocked = false;
+    if (overlay) then overlay:Hide(); end
+end
+
+-------------------------------------------------------------------------------
+-- Lifecycle
+-------------------------------------------------------------------------------
 
 function module:OnEnable()
     self.addon:ModuleRegisterEvent(self, "PLAYER_DEAD", function()
         if (not self.enabled) then return; end
         if (not shouldProtect()) then return; end
-        C_Timer.After(0.1, ActivateProtection);
+        C_Timer.After(0.1, showOverlay);
     end);
 
-    self.addon:ModuleRegisterEvent(self, "PLAYER_ALIVE", ClearState);
-    self.addon:ModuleRegisterEvent(self, "PLAYER_UNGHOST", ClearState);
+    self.addon:ModuleRegisterEvent(self, "PLAYER_ALIVE", hideOverlay);
+    self.addon:ModuleRegisterEvent(self, "PLAYER_UNGHOST", hideOverlay);
 end
 
 function module:OnDisable()
-    ClearState();
+    hideOverlay();
 end
 
 Lantern:RegisterModule(module);

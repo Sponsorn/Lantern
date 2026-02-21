@@ -32,8 +32,8 @@ local function GetFontPath(fontName)
     return DEFAULT_FONT_PATH;
 end
 
-local frame, timerText;
-local combatStart, inCombat, stickyTimer;
+local clock, clockLabel;
+local startedAt, active, lingerTimer;
 local previewMode = false;
 local previewTimer = nil;
 
@@ -54,60 +54,60 @@ local function ensureDB(self)
     end
 end
 
-local function formatTime(seconds)
+local function formatClock(seconds)
     local m = math.floor(seconds / 60);
     local s = math.floor(seconds % 60);
     return string.format("%d:%02d", m, s);
 end
 
 local function createFrame(self)
-    if (frame) then return; end
+    if (clock) then return; end
 
-    frame = CreateFrame("Frame", "Lantern_CombatTimer", UIParent, "BackdropTemplate");
-    frame:SetSize(100, 30);
-    frame:SetPoint("TOP", UIParent, "TOP", 0, -200);
-    frame:Hide();
+    clock = CreateFrame("Frame", "Lantern_CombatTimer", UIParent, "BackdropTemplate");
+    clock:SetSize(100, 30);
+    clock:SetPoint("TOP", UIParent, "TOP", 0, -200);
+    clock:Hide();
 
-    timerText = frame:CreateFontString(nil, "ARTWORK");
-    timerText:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
-    timerText:SetPoint("CENTER");
+    clockLabel = clock:CreateFontString(nil, "ARTWORK");
+    clockLabel:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
+    clockLabel:SetPoint("CENTER");
     local c = (self.db and self.db.fontColor) or DEFAULTS.fontColor;
-    timerText:SetTextColor(c.r, c.g, c.b, 1);
-    timerText:SetText("0:00");
+    clockLabel:SetTextColor(c.r, c.g, c.b, 1);
+    clockLabel:SetText("0:00");
 
     if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(frame, {
+        LanternUX.MakeDraggable(clock, {
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
             setLocked = function(val) if (self.db) then self.db.locked = val; end end,
             defaultPoint = { "TOP", UIParent, "TOP", 0, -200 },
-            text = timerText,
+            text = clockLabel,
             placeholder = "0:00",
         });
     end
 
-    frame:SetScript("OnUpdate", function()
+    clock:SetScript("OnUpdate", function()
         if (previewMode) then return; end
-        if (inCombat and combatStart) then
-            local elapsed = GetTime() - combatStart;
-            timerText:SetText(formatTime(elapsed));
+        if (active and startedAt) then
+            local elapsed = GetTime() - startedAt;
+            clockLabel:SetText(formatClock(elapsed));
         end
     end);
 end
 
 function module:RefreshFont()
-    if (not timerText) then return; end
+    if (not clockLabel) then return; end
     local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
     local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
-    timerText:SetFont(fontPath, size, outline);
+    clockLabel:SetFont(fontPath, size, outline);
 end
 
 function module:RefreshColor()
-    if (not timerText) then return; end
+    if (not clockLabel) then return; end
     local c = (self.db and self.db.fontColor) or DEFAULTS.fontColor;
-    timerText:SetTextColor(c.r, c.g, c.b, 1);
+    clockLabel:SetTextColor(c.r, c.g, c.b, 1);
 end
 
 function module:SetPreviewMode(enabled)
@@ -115,12 +115,12 @@ function module:SetPreviewMode(enabled)
     if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
 
     if (enabled) then
-        if (not frame) then createFrame(self); end
+        if (not clock) then createFrame(self); end
         self:RefreshFont();
         self:RefreshColor();
-        timerText:SetText("3:42");
-        frame:SetAlpha(1);
-        frame:Show();
+        clockLabel:SetText("3:42");
+        clock:SetAlpha(1);
+        clock:Show();
 
         -- Auto-disable when settings panel closes
         previewTimer = C_Timer.NewTicker(0.5, function()
@@ -131,9 +131,9 @@ function module:SetPreviewMode(enabled)
             end
         end);
     else
-        if (frame and not inCombat) then
+        if (clock and not active) then
             local unlocked = self.db and not self.db.locked;
-            if (not unlocked) then frame:Hide(); end
+            if (not unlocked) then clock:Hide(); end
         end
     end
 end
@@ -143,17 +143,17 @@ function module:IsPreviewActive()
 end
 
 function module:UpdateLock()
-    if (not frame) then return; end
-    frame:UpdateLock();
+    if (not clock) then return; end
+    clock:UpdateLock();
     -- When locking back, hide if not in combat
-    if (self.db and self.db.locked and not inCombat) then
-        frame:Hide();
+    if (self.db and self.db.locked and not active) then
+        clock:Hide();
     end
 end
 
 function module:ResetPosition()
-    if (not frame) then return; end
-    frame:ResetPosition();
+    if (not clock) then return; end
+    clock:ResetPosition();
 end
 
 function module:OnInit()
@@ -163,43 +163,43 @@ end
 function module:OnEnable()
     ensureDB(self);
     createFrame(self);
-    frame:RestorePosition();
-    frame:UpdateLock();
+    clock:RestorePosition();
+    clock:UpdateLock();
     self:RefreshFont();
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         if (not self.enabled) then return; end
-        inCombat = true;
-        combatStart = GetTime();
-        if (stickyTimer) then stickyTimer:Cancel(); stickyTimer = nil; end
-        frame:SetAlpha(1);
-        frame:Show();
+        active = true;
+        startedAt = GetTime();
+        if (lingerTimer) then lingerTimer:Cancel(); lingerTimer = nil; end
+        clock:SetAlpha(1);
+        clock:Show();
     end);
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_ENABLED", function()
         if (not self.enabled) then return; end
-        inCombat = false;
+        active = false;
         local stickyDur = self.db and self.db.stickyDuration or DEFAULTS.stickyDuration;
         if (stickyDur > 0) then
-            stickyTimer = C_Timer.NewTimer(stickyDur, function()
+            lingerTimer = C_Timer.NewTimer(stickyDur, function()
                 local unlocked = self.db and not self.db.locked;
-                if (not inCombat and frame and not unlocked) then
-                    frame:Hide();
+                if (not active and clock and not unlocked) then
+                    clock:Hide();
                 end
-                stickyTimer = nil;
+                lingerTimer = nil;
             end);
         elseif (not (self.db and not self.db.locked)) then
-            frame:Hide();
+            clock:Hide();
         end
     end);
 end
 
 function module:OnDisable()
-    if (frame) then frame:Hide(); end
-    inCombat = false;
-    combatStart = nil;
+    if (clock) then clock:Hide(); end
+    active = false;
+    startedAt = nil;
     previewMode = false;
-    if (stickyTimer) then stickyTimer:Cancel(); stickyTimer = nil; end
+    if (lingerTimer) then lingerTimer:Cancel(); lingerTimer = nil; end
     if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
 end
 
