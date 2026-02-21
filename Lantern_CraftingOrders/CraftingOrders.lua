@@ -533,7 +533,7 @@ function CraftingOrders:EnsureWhisperButton()
     -- Don't recreate if it already exists
     if (view._lanternCompleteWhisperButton) then return; end
 
-    local button = CreateFrame("Button", nil, view, "UIPanelButtonTemplate");
+    local button = CreateFrame("Button", "LanternCO_CompleteWhisperBtn", view, "UIPanelButtonTemplate");
     button:SetText("Complete + Whisper");
 
     -- Set size based on base button

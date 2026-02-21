@@ -37,7 +37,7 @@ local CORE_KEY = {
     FasterLoot           = "fasterLoot",
     DisableLootWarnings  = "disableLootWarnings",
     AutoKeystone         = "autoKeystone",
-    DeathRelease         = "deathRelease",
+    ReleaseProtection    = "releaseProtection",
     CombatTimer          = "combatTimer",
     CombatAlert          = "combatAlert",
     RangeCheck           = "rangeCheck",
@@ -59,7 +59,7 @@ local MODULE_CATEGORIES = {
         label = "Dungeons & M+",
         modules = {
             "AutoKeystone", "AutoPlaystyle", "AutoQueue",
-            "CombatAlert", "CombatTimer", "DeathRelease", "MissingPet", "RangeCheck",
+            "CombatAlert", "CombatTimer", "MissingPet", "RangeCheck", "ReleaseProtection",
         },
     },
     {
@@ -197,14 +197,14 @@ CUSTOM_OPTIONS["autoKeystone"] = function()
     };
 end
 
-CUSTOM_OPTIONS["deathRelease"] = function()
+CUSTOM_OPTIONS["releaseProtection"] = function()
     local function db()
-        Lantern.db.deathRelease = Lantern.db.deathRelease or {};
-        return Lantern.db.deathRelease;
+        Lantern.db.releaseProtection = Lantern.db.releaseProtection or {};
+        return Lantern.db.releaseProtection;
     end
 
     local isDisabled = function()
-        return not moduleEnabled("DeathRelease");
+        return not moduleEnabled("ReleaseProtection");
     end
 
     local modeValues = {
@@ -219,7 +219,7 @@ CUSTOM_OPTIONS["deathRelease"] = function()
     end
 
     return {
-        moduleToggle("DeathRelease", "Enable", "Require holding " .. Lantern:GetModifierName() .. " to release spirit (prevents accidental release)."),
+        moduleToggle("ReleaseProtection", "Enable", "Require holding " .. Lantern:GetModifierName() .. " to release spirit (prevents accidental release)."),
         {
             type = "toggle",
             label = "Skip when solo",
@@ -259,7 +259,7 @@ CUSTOM_OPTIONS["deathRelease"] = function()
             type = "group",
             text = "Instance Types",
             expanded = true,
-            stateKey = "deathReleaseTypes",
+            stateKey = "releaseProtectionTypes",
             hidden = function() return db().mode ~= "custom"; end,
             children = {
                 {
@@ -564,7 +564,7 @@ local function PopulateSplashModules()
                 local labelKey = catIdx .. "_" .. moduleName .. "_label";
                 local btn = splashToggles[labelKey];
                 if (not btn) then
-                    btn = CreateFrame("Button", nil, splashFrame);
+                    btn = CreateFrame("Button", "LanternSplash_ModuleBtn_" .. moduleName, splashFrame);
                     local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontBody);
                     btnText:SetPoint("LEFT");
                     btnText:SetJustifyH("LEFT");

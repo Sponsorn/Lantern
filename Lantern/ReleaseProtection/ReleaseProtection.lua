@@ -1,7 +1,7 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
-local module = Lantern:NewModule("DeathRelease", {
+local module = Lantern:NewModule("ReleaseProtection", {
     title = "Release Protection",
     desc = "Require holding your pause modifier before releasing spirit to prevent accidental clicks.",
     defaultEnabled = false,
@@ -22,13 +22,13 @@ local DEFAULTS = {
 };
 
 local function db()
-    Lantern.db.deathRelease = Lantern.db.deathRelease or {};
+    Lantern.db.releaseProtection = Lantern.db.releaseProtection or {};
     for k, v in pairs(DEFAULTS) do
-        if (Lantern.db.deathRelease[k] == nil) then
-            Lantern.db.deathRelease[k] = v;
+        if (Lantern.db.releaseProtection[k] == nil) then
+            Lantern.db.releaseProtection[k] = v;
         end
     end
-    return Lantern.db.deathRelease;
+    return Lantern.db.releaseProtection;
 end
 
 local function shouldProtect()

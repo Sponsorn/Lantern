@@ -755,7 +755,7 @@ local function CreateFrames()
 
     -- GCD Cooldown
     local gcdSize = db.ring1Size + db.gcdOffset * 2;
-    local gcdCd = CreateFrame("Cooldown", nil, container);
+    local gcdCd = CreateFrame("Cooldown", "LanternCursorRing_GCDCooldown", container);
     gcdCd:SetSize(gcdSize, gcdSize);
     gcdCd:SetPoint("CENTER");
     SetupCooldownFrame(gcdCd, container);
@@ -771,7 +771,7 @@ local function CreateFrames()
 
     -- Cast Cooldown (swipe style)
     local castSize = db.ring1Size + db.gcdOffset * 2 + db.castOffset * 2;
-    local castCd = CreateFrame("Cooldown", nil, container);
+    local castCd = CreateFrame("Cooldown", "LanternCursorRing_CastCooldown", container);
     castCd:SetSize(castSize, castSize);
     castCd:SetPoint("CENTER");
     SetupCooldownFrame(castCd, container);
