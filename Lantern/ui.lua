@@ -103,8 +103,19 @@ function Lantern:ApplyMinimapStyle()
                 hover:SetAlpha(0.6);
                 hover:SetBlendMode("ADD");
                 btn._lanternHover = hover;
-                btn:HookScript("OnEnter", function() hover:Show(); end);
-                btn:HookScript("OnLeave", function() hover:Hide(); end);
+
+                local glow = btn:CreateTexture(nil, "OVERLAY");
+                glow:SetTexture(136467); -- UI-Minimap-Background (soft filled circle)
+                glow:SetSize(28, 28);
+                glow:Hide();
+                glow:SetPoint("CENTER", 0, -4);
+                glow:SetVertexColor(1.0, 0.6, 0.15); -- amber
+                glow:SetAlpha(0.7);
+                glow:SetBlendMode("ADD");
+                btn._lanternGlow = glow;
+
+                btn:HookScript("OnEnter", function() hover:Show(); glow:Show(); end);
+                btn:HookScript("OnLeave", function() hover:Hide(); glow:Hide(); end);
             end
         end
     else
