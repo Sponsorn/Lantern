@@ -49,4 +49,6 @@ CombatAlert\CombatAlert.lua
 CombatAlert\WidgetOptions.lua
 RangeCheck\RangeCheck.lua
 RangeCheck\WidgetOptions.lua
+Tooltip\Tooltip.lua
+Tooltip\WidgetOptions.lua
 Options.lua

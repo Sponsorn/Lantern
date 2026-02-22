@@ -41,6 +41,7 @@ local CORE_KEY = {
     CombatTimer          = "combatTimer",
     CombatAlert          = "combatAlert",
     RangeCheck           = "rangeCheck",
+    Tooltip              = "tooltip",
 };
 
 -- Ordered categories: each entry is { key, label, moduleNames }
@@ -51,7 +52,7 @@ local MODULE_CATEGORIES = {
         label = "General",
         modules = {
             "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
-            "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings",
+            "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings", "Tooltip",
         },
     },
     {
