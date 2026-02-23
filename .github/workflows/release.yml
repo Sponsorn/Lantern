@@ -1,0 +1,66 @@
+name: Package and Release
+
+on:
+  push:
+    tags:
+      - "lantern/v*"
+      - "lanternux/v*"
+      - "warband/v*"
+      - "crafting/v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine addon from tag
+        id: addon
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PREFIX="${TAG%%/*}"
+          VERSION="${TAG#*/}"
+
+          case "$PREFIX" in
+            lantern)
+              echo "pkgmeta=.pkgmeta-lantern" >> "$GITHUB_OUTPUT"
+              echo "toc=Lantern/Lantern.toc" >> "$GITHUB_OUTPUT"
+              ;;
+            lanternux)
+              echo "pkgmeta=.pkgmeta-lanternux" >> "$GITHUB_OUTPUT"
+              echo "toc=LanternUX/LanternUX.toc" >> "$GITHUB_OUTPUT"
+              ;;
+            warband)
+              echo "pkgmeta=.pkgmeta-warband" >> "$GITHUB_OUTPUT"
+              echo "toc=Lantern_Warband/Lantern_Warband.toc" >> "$GITHUB_OUTPUT"
+              ;;
+            crafting)
+              echo "pkgmeta=.pkgmeta-crafting" >> "$GITHUB_OUTPUT"
+              echo "toc=Lantern_CraftingOrders/Lantern_CraftingOrders.toc" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unknown tag prefix: $PREFIX"
+              exit 1
+              ;;
+          esac
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing: $PREFIX $VERSION"
+
+      - name: Set version in TOC
+        run: |
+          sed -i "s/^## Version:.*/## Version: ${{ steps.addon.outputs.version }}/" "${{ steps.addon.outputs.toc }}"
+
+      - name: Select pkgmeta
+        run: cp "${{ steps.addon.outputs.pkgmeta }}" .pkgmeta
+
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
