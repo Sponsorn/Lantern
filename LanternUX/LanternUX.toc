@@ -2,7 +2,8 @@
 ## Title: LanternUX
 ## Notes: Standalone settings panel UI framework for WoW addons.
 ## Author: Dede in-game / Sponsorn on curseforge & github
-## Version: 0.2.0
+## Version: @project-version@
+## X-Curse-Project-ID: 1465572
 ## DefaultState: enabled
 
 Widgets\Core.lua
