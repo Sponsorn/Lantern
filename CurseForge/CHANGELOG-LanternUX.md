@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1 - 2026-02-23
+- Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads
+
 ## 0.2.0 - 2026-02-21
 - Add: Callout widget type with three severity levels (info, notice, warning) — colored left border with tinted background
 - Add: Draggable frame registry with auto-lock when settings panel closes

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 - 2026-02-23
+- Add: Full localization support — all user-facing strings extracted to locale files with English as the base, 10 additional languages ready for community translations
+- Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads and localization substitution
+
 ## 0.3.3 - 2026-02-21
 - Fix: Warehousing panel close button causing an error
 - Change: Warehousing panel now uses Roboto font to match the settings panel theme

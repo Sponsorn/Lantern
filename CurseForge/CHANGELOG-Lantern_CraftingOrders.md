@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0 - 2026-02-23
+- Add: Full localization support — all user-facing strings extracted to locale files with English as the base, 10 additional languages ready for community translations
+- Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads and localization substitution
+
 ## 0.4.10
 - Change: Default notification font changed from Friz Quadrata to Roboto Light
 
