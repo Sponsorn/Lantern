@@ -1,0 +1,21 @@
+package-as: Lantern_CraftingOrders
+
+move-folders:
+  Lantern_CraftingOrders/Lantern_CraftingOrders: Lantern_CraftingOrders
+
+manual-changelog:
+  filename: CurseForge/CHANGELOG-Lantern_CraftingOrders.md
+  markup-type: markdown
+
+ignore:
+  - Lantern
+  - LanternUX
+  - Lantern_Warband
+  - CurseForge
+  - docs
+  - scratchpad
+  - LICENSE
+  - README.md
+  - TODO.md
+  - .pkgmeta-*
+  - .github

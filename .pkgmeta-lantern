@@ -1,0 +1,21 @@
+package-as: Lantern
+
+move-folders:
+  Lantern/Lantern: Lantern
+
+manual-changelog:
+  filename: CurseForge/CHANGELOG-Lantern.md
+  markup-type: markdown
+
+ignore:
+  - LanternUX
+  - Lantern_Warband
+  - Lantern_CraftingOrders
+  - CurseForge
+  - docs
+  - scratchpad
+  - LICENSE
+  - README.md
+  - TODO.md
+  - .pkgmeta-*
+  - .github
