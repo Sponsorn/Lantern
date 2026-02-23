@@ -53,8 +53,14 @@ module.widgetOptions = function()
         gcdColor = { r = 0.0, g = 0.56, b = 0.91 },
         gcdOffset = 8,
         trailEnabled = false,
+        trailStyle = "glow",
         trailDuration = 0.4,
         trailColor = { r = 1.0, g = 1.0, b = 1.0 },
+        trailMaxPoints = 20,
+        trailDotSize = 24,
+        trailDotSpacing = 2,
+        trailShrink = true,
+        trailShrinkDistance = false,
     };
 
     local function cursorRingDB()
@@ -109,7 +115,7 @@ module.widgetOptions = function()
 
     return {
         -- Enable
-        moduleToggle("CursorRing", "Enable", "Enable or disable the Cursor Ring module."),
+        moduleToggle("CursorRing", "Enable", "Enable or disable the Cursor Ring & Trail module."),
 
         -- Preview
         {
@@ -470,9 +476,38 @@ module.widgetOptions = function()
                     end,
                 },
                 {
-                    type = "callout",
-                    text = "The mouse trail may have a noticeable impact on performance, especially on lower-end systems.",
-                    severity = "warning",
+                    type = "select",
+                    label = "Style",
+                    desc = "Trail display style. Glow: fading sparkly trail. Line: continuous thin ribbon. Thick Line: wide ribbon. Dots: spaced-out fading dots. Custom: manual settings.",
+                    values = {
+                        glow = "Glow",
+                        line = "Line",
+                        thickline = "Thick Line",
+                        dots = "Dots",
+                        custom = "Custom",
+                    },
+                    sorting = { "glow", "line", "thickline", "dots", "custom" },
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailStyle or "glow"; end,
+                    set = function(val)
+                        local d = cursorRingDB();
+                        d.trailStyle = val;
+                        local m = cursorRingModule();
+                        local presets = m and m.TRAIL_STYLE_PRESETS;
+                        local preset = presets and presets[val];
+                        if (preset) then
+                            d.trailMaxPoints = preset.maxPoints;
+                            d.trailDotSize = preset.dotSize;
+                            d.trailDotSpacing = preset.dotSpacing;
+                            d.trailShrink = preset.shrink;
+                            d.trailShrinkDistance = preset.shrinkDistance;
+                        end
+                        refreshModule("UpdateTrail");
+                        refreshModule("EnsureTrail");
+                        -- Refresh the page to update slider values
+                        local panel = Lantern._uxPanel;
+                        if (panel and panel.refreshPage) then panel:refreshPage(); end
+                    end,
                 },
                 {
                     type = "color",
@@ -496,6 +531,72 @@ module.widgetOptions = function()
                     get = function() return cursorRingDB().trailDuration; end,
                     set = function(val)
                         cursorRingDB().trailDuration = val;
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Max Points",
+                    desc = "Number of trail dots in the pool. Higher values create longer trails but use more memory.",
+                    min = 5, max = 200, step = 1, default = 20,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailMaxPoints or 20; end,
+                    set = function(val)
+                        local d = cursorRingDB();
+                        d.trailMaxPoints = val;
+                        d.trailStyle = "custom";
+                        refreshModule("UpdateTrail");
+                        refreshModule("EnsureTrail");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Dot Size",
+                    desc = "Size of each trail dot in pixels.",
+                    min = 4, max = 48, step = 1, default = 24,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailDotSize or 24; end,
+                    set = function(val)
+                        local d = cursorRingDB();
+                        d.trailDotSize = val;
+                        d.trailStyle = "custom";
+                        refreshModule("UpdateTrail");
+                    end,
+                },
+                {
+                    type = "range",
+                    label = "Dot Spacing",
+                    desc = "Minimum distance in pixels before a new trail dot is placed. Lower values create a denser, more continuous trail.",
+                    min = 1, max = 16, step = 1, default = 2,
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailDotSpacing or 2; end,
+                    set = function(val)
+                        local d = cursorRingDB();
+                        d.trailDotSpacing = val;
+                        d.trailStyle = "custom";
+                    end,
+                },
+                {
+                    type = "toggle",
+                    label = "Shrink with Age",
+                    desc = "Trail dots shrink as they fade out. Disable for a uniform-width trail.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailShrink; end,
+                    set = function(val)
+                        local d = cursorRingDB();
+                        d.trailShrink = val;
+                        d.trailStyle = "custom";
+                    end,
+                },
+                {
+                    type = "toggle",
+                    label = "Taper with Distance",
+                    desc = "Trail dots shrink and fade toward the tail, creating a tapered brush-stroke effect.",
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailShrinkDistance; end,
+                    set = function(val)
+                        local d = cursorRingDB();
+                        d.trailShrinkDistance = val;
+                        d.trailStyle = "custom";
                     end,
                 },
             },

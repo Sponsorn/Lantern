@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.2 - 2026-02-22
+- Add: Tooltip module — shows mount names, item IDs, spell IDs, and talent node IDs on tooltips with Ctrl+C copy support (all features individually toggleable, disabled by default)
+- Add: Minimap icon now shows an amber glow overlay on hover
+- Add: Cursor Ring trail style selector — choose between Glow, Line, Thick Line, and Dots presets, or go Custom
+- Add: Cursor Ring trail manual controls — Max Points, Dot Size, Dot Spacing, and Shrink with Age settings
+- Add: Cursor Ring trail now interpolates dots along the cursor path — no more gaps during fast mouse movement
+- Add: Cursor Ring trail "Taper with Distance" option — dots shrink and fade toward the tail for a brush-stroke effect (enabled by default on Line and Thick Line presets)
+- Change: Cursor Ring renamed to Cursor Ring & Trail
+- Change: Cursor Ring trail max points increased from 80 to 200
+- Change: Cursor Ring trail performance improved — dot positions set once on placement instead of every frame, dormant mode when cursor is idle, and hitch recovery after loading screens
+- Fix: Tooltip module no longer errors on unit tooltips inside instances (secret value guard)
+
 ## 0.5.1 - 2026-02-21
 - Add: Range Check now detects Holy Paladin melee range (item-based check since Holy has no melee attack spell)
 - Add: "Modern minimap icon" toggle in General settings — removes border and background with a lantern glow on hover

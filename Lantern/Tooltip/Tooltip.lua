@@ -4,6 +4,7 @@ if (not Lantern) then return; end
 local module = Lantern:NewModule("Tooltip", {
     title = "Tooltip",
     desc = "Enhances tooltips with IDs and mount names.",
+    defaultEnabled = false,
 });
 
 -------------------------------------------------------------------------------
@@ -181,8 +182,9 @@ function module:OnEnable()
         local settings = db();
         local dataType = data.type;
 
-        -- Player tooltips: mount name
-        if (dataType == Enum.TooltipDataType.Unit and tooltip.GetUnit) then
+        -- Player tooltips: mount name (skip in instances — unit values are secret)
+        local inInstance = IsInInstance();
+        if (not inInstance and dataType == Enum.TooltipDataType.Unit and tooltip.GetUnit) then
             local _, unit = tooltip:GetUnit();
             if (unit and UnitIsPlayer(unit) and settings.showMount) then
                 local mountName = GetUnitMount(unit);
