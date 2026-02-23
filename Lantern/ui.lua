@@ -1,4 +1,5 @@
 local ADDON_NAME, Lantern = ...;
+local L = Lantern.L;
 
 local LDB = LibStub and LibStub("LibDataBroker-1.1", true);
 local LDBIcon = LibStub and LibStub("LibDBIcon-1.0", true);
@@ -31,7 +32,7 @@ end);
 local function ensureLinkPopup()
     if (StaticPopupDialogs[LINK_POPUP_NAME]) then return; end
     StaticPopupDialogs[LINK_POPUP_NAME] = {
-        text = "CTRL-C to copy link",
+        text = L["UI_COPY_LINK_PROMPT"],
         button1 = CLOSE,
         OnShow = function(dialog, data)
             local function hidePopup()
@@ -147,9 +148,9 @@ function Lantern:InitMinimap()
             end
         end,
         OnTooltipShow = function(tooltip)
-            tooltip:AddLine("Lantern");
-            tooltip:AddLine("Left-click: Open options", 1, 1, 1);
-            tooltip:AddLine("Shift+Left-click: Reload UI", 1, 1, 1);
+            tooltip:AddLine(L["UI_MINIMAP_TITLE"]);
+            tooltip:AddLine(L["UI_MINIMAP_LEFT_CLICK"], 1, 1, 1);
+            tooltip:AddLine(L["UI_MINIMAP_SHIFT_CLICK"], 1, 1, 1);
         end,
     });
 
@@ -186,26 +187,26 @@ local function createSplashFrame()
 
     local title = frame:CreateFontString("LanternSettingsSplash_Title", "ARTWORK", "GameFontNormalLarge");
     title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 12, -4);
-    title:SetText("Lantern");
+    title:SetText(L["UI_MINIMAP_TITLE"]);
 
     local version = getAddonVersion();
     local versionLabel = frame:CreateFontString("LanternSettingsSplash_Version", "ARTWORK", "GameFontHighlight");
     versionLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6);
-    versionLabel:SetText(string.format("Version: %s", version));
+    versionLabel:SetText(format(L["UI_SETTINGS_VERSION"], version));
 
     local authorLabel = frame:CreateFontString("LanternSettingsSplash_Author", "ARTWORK", "GameFontHighlight");
     authorLabel:SetPoint("TOPLEFT", versionLabel, "BOTTOMLEFT", 0, -8);
-    authorLabel:SetText("Author: Dede in-game / Sponsorn on curseforge & github");
+    authorLabel:SetText(L["UI_SETTINGS_AUTHOR"]);
 
     local thanks = frame:CreateFontString("LanternSettingsSplash_Thanks", "ARTWORK", "GameFontHighlight");
     thanks:SetPoint("TOPLEFT", authorLabel, "BOTTOMLEFT", 0, -8);
-    thanks:SetText("Special Thanks to copyrighters for making me pull my thumb out.");
+    thanks:SetText(L["UI_SETTINGS_THANKS"]);
 
     -- Open Settings button
     local openBtn = CreateFrame("Button", "LanternSettingsSplash_OpenBtn", frame, "UIPanelButtonTemplate");
     openBtn:SetSize(160, 28);
     openBtn:SetPoint("TOPLEFT", thanks, "BOTTOMLEFT", 0, -16);
-    openBtn:SetText("Open Settings");
+    openBtn:SetText(L["UI_SETTINGS_OPEN"]);
     openBtn:SetScript("OnClick", function()
         if (SettingsPanel and SettingsPanel:IsShown()) then
             HideUIPanel(SettingsPanel);
@@ -216,7 +217,7 @@ local function createSplashFrame()
     -- Available modules section
     local modulesTitle = frame:CreateFontString("LanternSettingsSplash_ModTitle", "ARTWORK", "GameFontNormalLarge");
     modulesTitle:SetPoint("TOPLEFT", openBtn, "BOTTOMLEFT", 0, -18);
-    modulesTitle:SetText("Available modules");
+    modulesTitle:SetText(L["UI_SETTINGS_AVAILABLE_MODULES"]);
 
     local modulesLine = frame:CreateTexture("LanternSettingsSplash_ModLine", "ARTWORK");
     modulesLine:SetPoint("TOPLEFT", modulesTitle, "BOTTOMLEFT", 0, -6);
@@ -228,7 +229,7 @@ local function createSplashFrame()
     craftingDesc:SetJustifyH("LEFT");
     craftingDesc:SetWidth(520);
     craftingDesc:SetWordWrap(true);
-    craftingDesc:SetText("Crafting Orders: announces guild order activity, personal order alerts, and a Complete + Whisper button.");
+    craftingDesc:SetText(L["UI_SETTINGS_CO_DESC"]);
 
     local craftBtn = CreateFrame("Button", "LanternSettingsSplash_CraftBtn", frame, "UIPanelButtonTemplate");
     craftBtn:SetSize(120, 24);
@@ -236,10 +237,10 @@ local function createSplashFrame()
     local hasCraftingOrders = C_AddOns and C_AddOns.IsAddOnLoaded
         and C_AddOns.IsAddOnLoaded("Lantern_CraftingOrders");
     if (hasCraftingOrders) then
-        craftBtn:SetText("Already enabled");
+        craftBtn:SetText(L["UI_SETTINGS_ALREADY_ENABLED"]);
         craftBtn:SetEnabled(false);
     else
-        craftBtn:SetText("CurseForge");
+        craftBtn:SetText(L["SPLASH_CURSEFORGE"]);
         craftBtn:SetScript("OnClick", function()
             showLinkPopup(CURSEFORGE_CRAFTING_ORDERS);
         end);
@@ -250,7 +251,7 @@ local function createSplashFrame()
     warbandDesc:SetJustifyH("LEFT");
     warbandDesc:SetWidth(520);
     warbandDesc:SetWordWrap(true);
-    warbandDesc:SetText("Warband: organize characters into groups with automated gold balancing to/from warbank when opening a bank.");
+    warbandDesc:SetText(L["UI_SETTINGS_WARBAND_DESC"]);
 
     local warbandBtn = CreateFrame("Button", "LanternSettingsSplash_WarbBtn", frame, "UIPanelButtonTemplate");
     warbandBtn:SetSize(120, 24);
@@ -258,10 +259,10 @@ local function createSplashFrame()
     local hasWarband = C_AddOns and C_AddOns.IsAddOnLoaded
         and C_AddOns.IsAddOnLoaded("Lantern_Warband");
     if (hasWarband) then
-        warbandBtn:SetText("Already enabled");
+        warbandBtn:SetText(L["UI_SETTINGS_ALREADY_ENABLED"]);
         warbandBtn:SetEnabled(false);
     else
-        warbandBtn:SetText("CurseForge");
+        warbandBtn:SetText(L["SPLASH_CURSEFORGE"]);
         warbandBtn:SetScript("OnClick", function()
             showLinkPopup(CURSEFORGE_WARBAND);
         end);
@@ -291,7 +292,7 @@ function Lantern:OpenOptions()
     if (InCombatLockdown()) then
         if (not self._pendingSettingsPanel) then
             self._pendingSettingsPanel = true;
-            Lantern:Print("Options will open after combat.");
+            Lantern:Print(L["MSG_OPTIONS_AFTER_COMBAT"]);
         end
         return;
     end

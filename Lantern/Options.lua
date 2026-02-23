@@ -6,6 +6,8 @@ if (not LanternUX or not LanternUX.CreatePanel) then return; end
 local T = LanternUX.Theme;
 if (not T) then return; end
 
+local L = Lantern.L;
+
 -------------------------------------------------------------------------------
 -- Create panel
 -------------------------------------------------------------------------------
@@ -49,7 +51,7 @@ local CORE_KEY = {
 local MODULE_CATEGORIES = {
     {
         key   = "general",
-        label = "General",
+        label = L["CATEGORY_GENERAL"],
         modules = {
             "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
             "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings", "Tooltip",
@@ -57,7 +59,7 @@ local MODULE_CATEGORIES = {
     },
     {
         key   = "dungeons",
-        label = "Dungeons & M+",
+        label = L["CATEGORY_DUNGEONS"],
         modules = {
             "AutoKeystone", "AutoPlaystyle", "AutoQueue",
             "CombatAlert", "CombatTimer", "MissingPet", "RangeCheck", "ReleaseProtection",
@@ -65,7 +67,7 @@ local MODULE_CATEGORIES = {
     },
     {
         key   = "questing",
-        label = "Questing & World",
+        label = L["CATEGORY_QUESTING"],
         modules = {
             "AutoQuest", "FasterLoot",
         },
@@ -84,7 +86,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -101,24 +103,24 @@ local CUSTOM_OPTIONS = {};
 
 CUSTOM_OPTIONS["general"] = function()
     local modifierValues = {
-        shift = "Shift",
-        ctrl  = "Ctrl",
-        alt   = "Alt",
+        shift = L["MODIFIER_SHIFT"],
+        ctrl  = L["MODIFIER_CTRL"],
+        alt   = L["MODIFIER_ALT"],
     };
     local modifierSorting = { "shift", "ctrl", "alt" };
 
     return {
         {
             type = "toggle",
-            label = "Show minimap icon",
-            desc = "Show or hide the Lantern minimap button.",
+            label = L["GENERAL_MINIMAP_SHOW"],
+            desc = L["GENERAL_MINIMAP_SHOW_DESC"],
             get = function() return not (Lantern.db.minimap and Lantern.db.minimap.hide); end,
             set = function(val) Lantern:ToggleMinimapIcon(val); end,
         },
         {
             type = "toggle",
-            label = "Modern minimap icon",
-            desc = "Remove the border and background from the minimap button for a modern look with a lantern glow on hover.",
+            label = L["GENERAL_MINIMAP_MODERN"],
+            desc = L["GENERAL_MINIMAP_MODERN_DESC"],
             disabled = function() return Lantern.db.minimap and Lantern.db.minimap.hide; end,
             get = function() return Lantern.db.minimap and Lantern.db.minimap.modern or false; end,
             set = function(val)
@@ -129,8 +131,8 @@ CUSTOM_OPTIONS["general"] = function()
         },
         {
             type = "select",
-            label = "Pause modifier key",
-            desc = "Hold this key to temporarily pause auto-features (Auto Quest, Auto Queue, Auto Repair, etc.).",
+            label = L["GENERAL_PAUSE_MODIFIER"],
+            desc = L["GENERAL_PAUSE_MODIFIER_DESC"],
             values = modifierValues,
             sorting = modifierSorting,
             get = function()
@@ -146,13 +148,13 @@ end
 
 CUSTOM_OPTIONS["deleteConfirm"] = function()
     return {
-        moduleToggle("DeleteConfirm", "Enable", "Replace typing DELETE with a confirm button (Shift pauses)."),
+        moduleToggle("DeleteConfirm", L["ENABLE"], L["DELETECONFIRM_ENABLE_DESC"]),
     };
 end
 
 CUSTOM_OPTIONS["disableAutoAddSpells"] = function()
     return {
-        moduleToggle("DisableAutoAddSpells", "Enable", "Disable auto-adding spells to the action bar."),
+        moduleToggle("DisableAutoAddSpells", L["ENABLE"], L["DISABLEAUTOADD_ENABLE_DESC"]),
     };
 end
 
@@ -173,26 +175,26 @@ CUSTOM_OPTIONS["autoQueue"] = function()
     end
 
     return {
-        moduleToggle("AutoQueue", "Enable", "Enable or disable Auto Queue."),
+        moduleToggle("AutoQueue", L["ENABLE"], L["AUTOQUEUE_ENABLE_DESC"]),
         {
             type = "toggle",
-            label = "Auto-accept role checks",
-            desc = "Accept LFG role checks automatically.",
+            label = L["AUTOQUEUE_AUTO_ACCEPT"],
+            desc = L["AUTOQUEUE_AUTO_ACCEPT_DESC"],
             disabled = isDisabled,
             get = function() return db().active; end,
             set = function(val) db().active = val and true or false; end,
         },
         {
             type = "toggle",
-            label = "Chat announce",
-            desc = "Print a chat message when a role check is auto-accepted.",
+            label = L["AUTOQUEUE_ANNOUNCE"],
+            desc = L["AUTOQUEUE_ANNOUNCE_DESC"],
             disabled = isDisabled,
             get = function() return db().announce; end,
             set = function(val) db().announce = val and true or false; end,
         },
         {
             type = "callout",
-            text = "Hold " .. Lantern:GetModifierName() .. " to temporarily pause. Roles are set in the LFG tool.",
+            text = format(L["AUTOQUEUE_CALLOUT"], Lantern:GetModifierName()),
             severity = "notice",
         },
     };
@@ -200,13 +202,13 @@ end
 
 CUSTOM_OPTIONS["fasterLoot"] = function()
     return {
-        moduleToggle("FasterLoot", "Enable", "Instantly collect all loot when a loot window opens. Hold " .. Lantern:GetModifierName() .. " to pause."),
+        moduleToggle("FasterLoot", L["ENABLE"], format(L["FASTERLOOT_ENABLE_DESC"], Lantern:GetModifierName())),
     };
 end
 
 CUSTOM_OPTIONS["autoKeystone"] = function()
     return {
-        moduleToggle("AutoKeystone", "Enable", "Auto-slot your keystone when opening the M+ UI. Hold " .. Lantern:GetModifierName() .. " to skip."),
+        moduleToggle("AutoKeystone", L["ENABLE"], format(L["AUTOKEYSTONE_ENABLE_DESC"], Lantern:GetModifierName())),
     };
 end
 
@@ -221,9 +223,9 @@ CUSTOM_OPTIONS["releaseProtection"] = function()
     end
 
     local modeValues = {
-        always    = "Always",
-        instances = "All instances",
-        custom    = "Custom",
+        always    = L["RELEASEPROTECT_MODE_ALWAYS"],
+        instances = L["RELEASEPROTECT_MODE_INSTANCES"],
+        custom    = L["RELEASEPROTECT_MODE_CUSTOM"],
     };
     local modeSorting = { "always", "instances", "custom" };
 
@@ -232,19 +234,19 @@ CUSTOM_OPTIONS["releaseProtection"] = function()
     end
 
     return {
-        moduleToggle("ReleaseProtection", "Enable", "Require holding " .. Lantern:GetModifierName() .. " to release spirit (prevents accidental release)."),
+        moduleToggle("ReleaseProtection", L["ENABLE"], format(L["RELEASEPROTECT_ENABLE_DESC"], Lantern:GetModifierName())),
         {
             type = "toggle",
-            label = "Skip when solo",
-            desc = "Disable protection when you are not in a group.",
+            label = L["RELEASEPROTECT_SKIP_SOLO"],
+            desc = L["RELEASEPROTECT_SKIP_SOLO_DESC"],
             disabled = isDisabled,
             get = function() return db().skipSolo; end,
             set = function(val) db().skipSolo = val; end,
         },
         {
             type = "select",
-            label = "Active in",
-            desc = "Always: protection everywhere. All instances: only inside dungeons, raids, and PvP. Custom: choose specific instance types.",
+            label = L["RELEASEPROTECT_ACTIVE_IN"],
+            desc = L["RELEASEPROTECT_ACTIVE_IN_DESC"],
             values = modeValues,
             sorting = modeSorting,
             disabled = isDisabled,
@@ -258,8 +260,8 @@ CUSTOM_OPTIONS["releaseProtection"] = function()
         },
         {
             type = "range",
-            label = "Hold duration",
-            desc = "How long you need to hold the modifier key before the release button becomes active.",
+            label = L["RELEASEPROTECT_HOLD_DURATION"],
+            desc = L["RELEASEPROTECT_HOLD_DURATION_DESC"],
             min = 0.5,
             max = 5,
             step = 0.5,
@@ -270,71 +272,71 @@ CUSTOM_OPTIONS["releaseProtection"] = function()
         },
         {
             type = "group",
-            text = "Instance Types",
+            text = L["RELEASEPROTECT_INSTANCE_TYPES"],
             expanded = true,
             stateKey = "releaseProtectionTypes",
             hidden = function() return db().mode ~= "custom"; end,
             children = {
                 {
                     type = "toggle",
-                    label = "Open World",
-                    desc = "Protect in the open world (not inside any instance).",
+                    label = L["RELEASEPROTECT_OPEN_WORLD"],
+                    desc = L["RELEASEPROTECT_OPEN_WORLD_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().openWorld ~= false; end,
                     set = function(val) db().openWorld = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Dungeons",
-                    desc = "Protect in normal, heroic, and mythic dungeons.",
+                    label = L["RELEASEPROTECT_DUNGEONS"],
+                    desc = L["RELEASEPROTECT_DUNGEONS_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().dungeons ~= false; end,
                     set = function(val) db().dungeons = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Mythic+",
-                    desc = "Protect in Mythic+ keystones.",
+                    label = L["RELEASEPROTECT_MYTHICPLUS"],
+                    desc = L["RELEASEPROTECT_MYTHICPLUS_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().mythicPlus ~= false; end,
                     set = function(val) db().mythicPlus = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Raids",
-                    desc = "Protect in all raid difficulties (LFR, Normal, Heroic, Mythic).",
+                    label = L["RELEASEPROTECT_RAIDS"],
+                    desc = L["RELEASEPROTECT_RAIDS_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().raids ~= false; end,
                     set = function(val) db().raids = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Scenarios",
-                    desc = "Protect in scenario instances.",
+                    label = L["RELEASEPROTECT_SCENARIOS"],
+                    desc = L["RELEASEPROTECT_SCENARIOS_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().scenarios ~= false; end,
                     set = function(val) db().scenarios = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Delves",
-                    desc = "Protect in Delves.",
+                    label = L["RELEASEPROTECT_DELVES"],
+                    desc = L["RELEASEPROTECT_DELVES_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().delves ~= false; end,
                     set = function(val) db().delves = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Arenas",
-                    desc = "Protect in PvP arenas.",
+                    label = L["RELEASEPROTECT_ARENAS"],
+                    desc = L["RELEASEPROTECT_ARENAS_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().arenas ~= false; end,
                     set = function(val) db().arenas = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Battlegrounds",
-                    desc = "Protect in PvP battlegrounds.",
+                    label = L["RELEASEPROTECT_BATTLEGROUNDS"],
+                    desc = L["RELEASEPROTECT_BATTLEGROUNDS_DESC"],
                     disabled = isCustomDisabled,
                     get = function() return db().battlegrounds ~= false; end,
                     set = function(val) db().battlegrounds = val; end,
@@ -365,18 +367,18 @@ CUSTOM_OPTIONS["autoRepair"] = function()
     end
 
     local sourceValues = {
-        personal    = "Personal gold",
-        guild_first = "Guild funds first",
-        guild_only  = "Guild funds only",
+        personal    = L["AUTOREPAIR_SOURCE_PERSONAL"],
+        guild_first = L["AUTOREPAIR_SOURCE_GUILD_FIRST"],
+        guild_only  = L["AUTOREPAIR_SOURCE_GUILD_ONLY"],
     };
     local sourceSorting = { "personal", "guild_first", "guild_only" };
 
     return {
-        moduleToggle("AutoRepair", "Enable", "Enable or disable Auto Repair."),
+        moduleToggle("AutoRepair", L["ENABLE"], L["AUTOREPAIR_ENABLE_DESC"]),
         {
             type = "select",
-            label = "Repair source",
-            desc = "Personal gold: always use your own gold. Guild funds first: try guild bank, fall back to personal. Guild funds only: only use guild bank (warns if unavailable).",
+            label = L["AUTOREPAIR_SOURCE"],
+            desc = L["AUTOREPAIR_SOURCE_DESC"],
             values = sourceValues,
             sorting = sourceSorting,
             disabled = isDisabled,
@@ -385,7 +387,7 @@ CUSTOM_OPTIONS["autoRepair"] = function()
         },
         {
             type = "callout",
-            text = "Hold " .. Lantern:GetModifierName() .. " when opening a vendor to skip auto-repair.",
+            text = format(L["AUTOREPAIR_CALLOUT"], Lantern:GetModifierName()),
             severity = "notice",
         },
     };
@@ -427,7 +429,7 @@ local function showLinkPopup(link)
         -- Title
         local title = popup:CreateFontString(nil, "ARTWORK", T.fontBody);
         title:SetPoint("TOPLEFT", popup, "TOPLEFT", 14, -14);
-        title:SetText("Copy link");
+        title:SetText(L["SPLASH_COPY_LINK"]);
         title:SetTextColor(unpack(T.textBright));
 
         -- Close button (X)
@@ -470,7 +472,7 @@ local function showLinkPopup(link)
         -- Hint text
         local hint = popup:CreateFontString(nil, "ARTWORK", T.fontSmall);
         hint:SetPoint("TOPLEFT", editBox, "BOTTOMLEFT", 2, -8);
-        hint:SetText("Ctrl+C to copy, Escape to close");
+        hint:SetText(L["SPLASH_COPY_HINT"]);
         hint:SetTextColor(unpack(T.textDim));
 
         overlay._editBox = editBox;
@@ -486,14 +488,14 @@ end
 local COMPANION_ADDONS = {
     {
         addonName = "Lantern_CraftingOrders",
-        label     = "Crafting Orders",
-        desc      = "Announces guild order activity, personal order alerts, and a Complete + Whisper button.",
+        label     = L["COMPANION_CO_LABEL"],
+        desc      = L["COMPANION_CO_DESC"],
         url       = "https://www.curseforge.com/wow/addons/lantern-craftingorders",
     },
     {
         addonName = "Lantern_Warband",
-        label     = "Warband",
-        desc      = "Organize characters into groups with automated gold balancing to/from warbank when opening a bank.",
+        label     = L["COMPANION_WARBAND_LABEL"],
+        desc      = L["COMPANION_WARBAND_DESC"],
         url       = "https://www.curseforge.com/wow/addons/lantern-warband",
     },
 };
@@ -667,7 +669,7 @@ local function PopulateSplashModules()
 
                     if (installed) then
                         -- Installed but disabled — show muted button
-                        cell.btnText:SetText("Disabled");
+                        cell.btnText:SetText(L["SPLASH_DISABLED"]);
                         cell.btnText:SetTextColor(unpack(T.disabledText));
                         cell.btn:SetBackdropColor(unpack(T.disabledBg));
                         cell.btn:SetBackdropBorderColor(unpack(T.disabled));
@@ -676,7 +678,7 @@ local function PopulateSplashModules()
                         cell.btn:SetScript("OnClick", nil);
                     else
                         -- Not installed — show CurseForge link
-                        cell.btnText:SetText("CurseForge");
+                        cell.btnText:SetText(L["SPLASH_CURSEFORGE"]);
                         cell.btnText:SetTextColor(unpack(T.buttonText));
                         cell.btn:SetBackdropColor(unpack(T.buttonBg));
                         cell.btn:SetBackdropBorderColor(unpack(T.buttonBorder));
@@ -766,7 +768,7 @@ local function CreateSplashContent(parent)
     desc:SetWidth(540);
     desc:SetJustifyH("LEFT");
     desc:SetWordWrap(true);
-    desc:SetText("A modular quality-of-life addon for World of Warcraft.\nClick a module name to configure it.");
+    desc:SetText(L["SPLASH_DESC"]);
     desc:SetTextColor(unpack(T.splashText));
 
     -- Status legend
@@ -780,7 +782,7 @@ local function CreateSplashContent(parent)
 
     local enabledLabel = f:CreateFontString(nil, "ARTWORK", T.fontSmall);
     enabledLabel:SetPoint("LEFT", enabledDot, "RIGHT", 5, 0);
-    enabledLabel:SetText("Enabled");
+    enabledLabel:SetText(L["SPLASH_ENABLED"]);
     enabledLabel:SetTextColor(unpack(T.textDim));
 
     local disabledDot = f:CreateTexture(nil, "ARTWORK");
@@ -790,7 +792,7 @@ local function CreateSplashContent(parent)
 
     local disabledLabel = f:CreateFontString(nil, "ARTWORK", T.fontSmall);
     disabledLabel:SetPoint("LEFT", disabledDot, "RIGHT", 5, 0);
-    disabledLabel:SetText("Disabled");
+    disabledLabel:SetText(L["SPLASH_DISABLED"]);
     disabledLabel:SetTextColor(unpack(T.textDim));
 
     -- Content starts below description + legend; categories are positioned dynamically
@@ -802,7 +804,7 @@ local function CreateSplashContent(parent)
     -- We create the elements here but position them in PopulateSplashModules since
     -- the Y offset depends on how many modules are listed above.
     local companionHeader = f:CreateFontString(nil, "ARTWORK", T.fontBody);
-    companionHeader:SetText("Companion Addons");
+    companionHeader:SetText(L["SPLASH_COMPANION_HEADER"]);
     companionHeader:SetTextColor(unpack(T.textBright));
     companionHeader:Hide();
     f._companionHeader = companionHeader;
@@ -842,7 +844,7 @@ local function CreateSplashContent(parent)
 
         local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontSmall);
         btnText:SetPoint("CENTER");
-        btnText:SetText("CurseForge");
+        btnText:SetText(L["SPLASH_CURSEFORGE"]);
         btnText:SetTextColor(unpack(T.buttonText));
 
         btn:SetScript("OnEnter", function(self)
@@ -878,21 +880,21 @@ loginFrame:RegisterEvent("PLAYER_LOGIN");
 loginFrame:SetScript("OnEvent", function()
     -- Home (splash page with module status)
     panel:AddPage("home", {
-        label = "Home",
+        label = L["PAGE_HOME"],
         frame = CreateSplashContent,
         onShow = PopulateSplashModules,
     });
 
     -- General settings page (addon-level settings, not a module)
     panel:AddPage("general_settings", {
-        label   = "General",
-        title   = "General",
-        description = "Core addon settings.",
+        label   = L["SECTION_GENERAL"],
+        title   = L["SECTION_GENERAL"],
+        description = L["SECTION_GENERAL_DESC"],
         widgets = CUSTOM_OPTIONS["general"],
     });
 
     -- Category-based module pages
-    panel:AddSection("modules", "Modules");
+    panel:AddSection("modules", L["SECTION_MODULES"]);
     for _, category in ipairs(MODULE_CATEGORIES) do
         panel:AddSidebarGroup(category.key, {
             label   = category.label,
@@ -925,7 +927,7 @@ loginFrame:SetScript("OnEvent", function()
     table.sort(external);
 
     if (#external > 0) then
-        panel:AddSection("addons", "Addons");
+        panel:AddSection("addons", L["SECTION_ADDONS"]);
         for _, moduleName in ipairs(external) do
             local mod = Lantern.modules[moduleName];
             if (mod.uxPages) then
@@ -957,7 +959,7 @@ function Lantern:OpenOptions()
     -- SetupOptions touches protected Blizzard UI; defer if in combat and not initialized.
     if (not self.optionsInitialized and InCombatLockdown()) then
         self._pendingSettingsPanel = true;
-        Lantern:Print("Options will open after combat.");
+        Lantern:Print(L["MSG_OPTIONS_AFTER_COMBAT"]);
         return;
     end
 

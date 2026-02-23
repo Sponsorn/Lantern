@@ -7,6 +7,7 @@ Lantern._pendingModules = Lantern._pendingModules or {};
 Lantern.eventHandlers = Lantern.eventHandlers or {};
 Lantern.messageHandlers = Lantern.messageHandlers or {};
 
+local L = Lantern.L;
 local tinsert = table.insert;
 
 -- Protected call wrapper for module callbacks
@@ -286,7 +287,7 @@ SlashCmdList["LANTERN"] = function(msg)
         if (petModule and petModule.PetDebug) then
             petModule:PetDebug();
         else
-            print("|cffe08f2eLantern:|r MissingPet module not found.");
+            print("|cffe08f2eLantern:|r " .. L["MSG_MISSINGPET_NOT_FOUND"]);
         end
         return;
     end
