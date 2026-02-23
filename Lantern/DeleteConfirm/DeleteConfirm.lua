@@ -1,10 +1,11 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 -- Minimal delete helper: hide the DELETE input and enable the confirm button.
 local module = Lantern:NewModule("DeleteConfirm", {
-    title = "Delete Confirm",
-    desc = "Hide delete input and enable the confirm button.",
+    title = L["DELETECONFIRM_TITLE"],
+    desc = L["DELETECONFIRM_DESC"],
     skipOptions = true,
 });
 

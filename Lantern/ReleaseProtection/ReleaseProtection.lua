@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("ReleaseProtection", {
-    title = "Release Protection",
-    desc = "Require holding your pause modifier before releasing spirit to prevent accidental clicks.",
+    title = L["RELEASEPROTECT_TITLE"],
+    desc = L["RELEASEPROTECT_DESC"],
     defaultEnabled = false,
 });
 
@@ -115,11 +116,11 @@ local function createOverlay(parent)
                 unlocked = true;
                 overlay:Hide();
             else
-                overlayLabel:SetText(string.format("Hold %s... %.1fs", modName, dur - elapsed));
+                overlayLabel:SetText(string.format(L["RELEASEPROTECT_HOLD_PROGRESS"], modName, dur - elapsed));
             end
         else
             holdStart = nil;
-            overlayLabel:SetText(string.format("Hold %s (%.1fs)", modName, dur));
+            overlayLabel:SetText(string.format(L["RELEASEPROTECT_HOLD_PROMPT"], modName, dur));
         end
     end);
 end
@@ -137,7 +138,7 @@ local function showOverlay()
     unlocked = false;
 
     local dur = db().holdDuration or 1.0;
-    overlayLabel:SetText(string.format("Hold %s (%.1fs)", Lantern:GetModifierName(), dur));
+    overlayLabel:SetText(string.format(L["RELEASEPROTECT_HOLD_PROMPT"], Lantern:GetModifierName(), dur));
     overlay:Show();
 end
 

@@ -1,11 +1,12 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
 
 local module = Lantern:NewModule("MissingPet", {
-    title = "Missing Pet",
-    desc = "Displays a warning when your pet is missing or set to passive.",
+    title = L["MISSINGPET_TITLE"],
+    desc = L["MISSINGPET_DESC"],
     skipOptions = true,
 });
 

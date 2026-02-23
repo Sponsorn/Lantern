@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["RangeCheck"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -76,46 +77,46 @@ module.widgetOptions = function()
     end
 
     local outlineValues = {
-        [""]              = "None",
-        ["OUTLINE"]       = "Outline",
-        ["THICKOUTLINE"]  = "Thick Outline",
+        [""]              = L["FONT_OUTLINE_NONE"],
+        ["OUTLINE"]       = L["FONT_OUTLINE_OUTLINE"],
+        ["THICKOUTLINE"]  = L["FONT_OUTLINE_THICK"],
     };
     local outlineSorting = { "", "OUTLINE", "THICKOUTLINE" };
 
     local animationValues = {
-        none = "None (static)",
-        bounce = "Bounce",
-        pulse = "Pulse",
-        fade = "Fade",
-        shake = "Shake",
-        glow = "Glow",
-        heartbeat = "Heartbeat",
+        none = L["ANIMATION_NONE"],
+        bounce = L["ANIMATION_BOUNCE"],
+        pulse = L["ANIMATION_PULSE"],
+        fade = L["ANIMATION_FADE"],
+        shake = L["ANIMATION_SHAKE"],
+        glow = L["ANIMATION_GLOW"],
+        heartbeat = L["ANIMATION_HEARTBEAT"],
     };
     local animationSorting = { "none", "bounce", "pulse", "fade", "shake", "glow", "heartbeat" };
 
     return {
-        moduleToggle("RangeCheck", "Enable", "Show in-range or out-of-range status for your current target."),
+        moduleToggle("RangeCheck", L["ENABLE"], L["RANGECHECK_ENABLE_DESC"]),
 
         -----------------------------------------------------------------------
         -- Display
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Display",
+            text = L["SHARED_GROUP_DISPLAY"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Hide When In Range",
-                    desc = "Hide the display when your target is within range. Only shows when out of range.",
+                    label = L["RANGECHECK_HIDE_IN_RANGE"],
+                    desc = L["RANGECHECK_HIDE_IN_RANGE_DESC"],
                     disabled = isDisabled,
                     get = function() return db().hideInRange; end,
                     set = function(val) db().hideInRange = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Combat Only",
-                    desc = "Only show range when in combat.",
+                    label = L["RANGECHECK_COMBAT_ONLY"],
+                    desc = L["RANGECHECK_COMBAT_ONLY_DESC"],
                     disabled = isDisabled,
                     get = function() return db().combatOnly; end,
                     set = function(val) db().combatOnly = val; end,
@@ -128,29 +129,29 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Status Text",
+            text = L["RANGECHECK_GROUP_STATUS"],
             expanded = true,
             children = {
                 {
                     type = "input",
-                    label = "In Range Text",
-                    desc = "Text to display when your target is within range.",
+                    label = L["RANGECHECK_IN_RANGE_TEXT"],
+                    desc = L["RANGECHECK_IN_RANGE_TEXT_DESC"],
                     disabled = isDisabled,
                     get = function() return db().inRangeText or "In Range"; end,
                     set = function(val) db().inRangeText = val; end,
                 },
                 {
                     type = "input",
-                    label = "Out of Range Text",
-                    desc = "Text to display when your target is out of range.",
+                    label = L["RANGECHECK_OUT_OF_RANGE_TEXT"],
+                    desc = L["RANGECHECK_OUT_OF_RANGE_TEXT_DESC"],
                     disabled = isDisabled,
                     get = function() return db().outOfRangeText or "Out of Range"; end,
                     set = function(val) db().outOfRangeText = val; end,
                 },
                 {
                     type = "color",
-                    label = "In Range Color",
-                    desc = "Color for the in-range text.",
+                    label = L["RANGECHECK_IN_RANGE_COLOR"],
+                    desc = L["RANGECHECK_IN_RANGE_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = db().inRangeColor or DEFAULTS.inRangeColor;
@@ -162,8 +163,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Out of Range Color",
-                    desc = "Color for the out-of-range text.",
+                    label = L["RANGECHECK_OUT_OF_RANGE_COLOR"],
+                    desc = L["RANGECHECK_OUT_OF_RANGE_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = db().outOfRangeColor or DEFAULTS.outOfRangeColor;
@@ -175,8 +176,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Animation Style",
-                    desc = "Choose how the status text animates on state change.",
+                    label = L["SHARED_ANIMATION_STYLE"],
+                    desc = L["RANGECHECK_ANIMATION_DESC"],
                     values = animationValues,
                     sorting = animationSorting,
                     disabled = isDisabled,
@@ -191,12 +192,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Font",
+            text = L["SHARED_FONT"],
             children = {
                 {
                     type = "select",
-                    label = "Font",
-                    desc = "Select the font for the range text.",
+                    label = L["SHARED_FONT"],
+                    desc = L["RANGECHECK_FONT_DESC"],
                     values = getFontValues,
                     disabled = isDisabled,
                     get = function() return db().font or "Roboto Light"; end,
@@ -207,8 +208,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Font Size",
-                    desc = "Size of the range text.",
+                    label = L["SHARED_FONT_SIZE"],
+                    desc = L["RANGECHECK_FONT_SIZE_DESC"],
                     min = 10, max = 36, step = 1, default = 16,
                     disabled = isDisabled,
                     get = function() return db().fontSize; end,
@@ -219,8 +220,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Font Outline",
-                    desc = "Outline style for the range text.",
+                    label = L["SHARED_FONT_OUTLINE"],
+                    desc = L["RANGECHECK_FONT_OUTLINE_DESC"],
                     values = outlineValues,
                     sorting = outlineSorting,
                     disabled = isDisabled,
@@ -238,12 +239,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Position",
+            text = L["SHARED_GROUP_POSITION"],
             children = {
                 {
                     type = "toggle",
-                    label = "Lock Position",
-                    desc = "Prevent the range display from being moved.",
+                    label = L["SHARED_LOCK_POSITION"],
+                    desc = L["RANGECHECK_LOCK_POSITION_DESC"],
                     disabled = isDisabled,
                     get = function() return db().locked; end,
                     set = function(val)
@@ -253,8 +254,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "execute",
-                    label = "Reset Position",
-                    desc = "Reset the range display to its default position.",
+                    label = L["SHARED_RESET_POSITION"],
+                    desc = L["RANGECHECK_RESET_POSITION_DESC"],
                     disabled = isDisabled,
                     func = function()
                         if (module.ResetPosition) then module:ResetPosition(); end

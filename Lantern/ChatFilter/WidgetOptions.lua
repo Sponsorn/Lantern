@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["ChatFilter"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -58,11 +59,11 @@ module.widgetOptions = function()
     local widgets = {};
 
     -- Enable
-    table.insert(widgets, moduleToggle("ChatFilter", "Enable", "Enable or disable the Chat Filter."));
+    table.insert(widgets, moduleToggle("ChatFilter", L["ENABLE"], L["CHATFILTER_ENABLE_DESC"]));
     table.insert(widgets, {
         type = "toggle",
-        label = "Login message",
-        desc = "Show a chat message on login confirming the filter is active.",
+        label = L["CHATFILTER_LOGIN_MESSAGE"],
+        desc = L["CHATFILTER_LOGIN_MESSAGE_DESC"],
         disabled = isDisabled,
         get = function() return db().loginMessage; end,
         set = function(val) db().loginMessage = val and true or false; end,
@@ -73,8 +74,8 @@ module.widgetOptions = function()
     ---------------------------------------------------------------------------
     table.insert(widgets, {
         type = "input",
-        label = "Add keyword",
-        desc = "Enter a word or phrase to filter. Matching is case-insensitive.",
+        label = L["CHATFILTER_ADD_KEYWORD"],
+        desc = L["CHATFILTER_ADD_KEYWORD_DESC"],
         disabled = isDisabled,
         get = function() return Lantern._chatFilterInput or ""; end,
         set = function(val)
@@ -86,14 +87,14 @@ module.widgetOptions = function()
             -- Check for duplicates (case-insensitive)
             for existing in pairs(d.keywords) do
                 if (existing:lower() == lowerVal) then
-                    Lantern:Print("Keyword already in filter list.");
+                    Lantern:Print(L["CHATFILTER_MSG_KEYWORD_EXISTS"]);
                     Lantern._chatFilterInput = "";
                     refreshPage();
                     return;
                 end
             end
             d.keywords[val] = true;
-            Lantern:Print("Added \"" .. val .. "\" to chat filter.");
+            Lantern:Print(format(L["CHATFILTER_MSG_KEYWORD_ADDED"], val));
             Lantern._chatFilterInput = "";
             refreshPage();
         end,
@@ -118,7 +119,7 @@ module.widgetOptions = function()
     if (#sortedKeywords == 0) then
         table.insert(keywordChildren, {
             type = "description",
-            text = "No keywords configured.",
+            text = L["CHATFILTER_NO_KEYWORDS"],
             fontSize = "small",
             color = T.textDim,
         });
@@ -127,9 +128,9 @@ module.widgetOptions = function()
             table.insert(keywordChildren, {
                 type = "label_action",
                 text = keyword,
-                buttonLabel = "Remove",
-                desc = "Remove \"" .. keyword .. "\" from the filter list.",
-                confirm = "Remove?",
+                buttonLabel = L["SHARED_REMOVE"],
+                desc = format(L["CHATFILTER_REMOVE_KEYWORD_DESC"], keyword),
+                confirm = L["SHARED_REMOVE_CONFIRM"],
                 disabled = isDisabled,
                 func = function()
                     db().keywords[keyword] = nil;
@@ -141,7 +142,7 @@ module.widgetOptions = function()
 
     table.insert(widgets, {
         type = "group",
-        text = "Keywords (" .. #sortedKeywords .. ")",
+        text = format(L["CHATFILTER_KEYWORDS_GROUP"], #sortedKeywords),
         stateKey = "chatFilterKeywords",
         children = keywordChildren,
     });
@@ -151,9 +152,9 @@ module.widgetOptions = function()
     ---------------------------------------------------------------------------
     table.insert(widgets, {
         type = "execute",
-        label = "Restore default keywords",
-        desc = "Reset the keyword list to the built-in defaults. This replaces all custom keywords.",
-        confirm = "Restore?",
+        label = L["CHATFILTER_RESTORE_DEFAULTS"],
+        desc = L["CHATFILTER_RESTORE_DEFAULTS_DESC"],
+        confirm = L["CHATFILTER_RESTORE_CONFIRM"],
         disabled = isDisabled,
         func = function()
             local mod = getModule();

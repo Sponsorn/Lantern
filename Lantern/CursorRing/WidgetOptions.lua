@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["CursorRing"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -102,30 +103,33 @@ module.widgetOptions = function()
     end
 
     local shapeValues = {
-        ring = "Circle",
-        thin_ring = "Thin Circle",
+        ring = L["CURSORRING_SHAPE_CIRCLE"],
+        thin_ring = L["CURSORRING_SHAPE_THIN"],
     };
     local shapeSorting = { "ring", "thin_ring" };
 
     local castStyleValues = {
-        segments = "Segments",
-        fill = "Fill",
-        swipe = "Swipe",
+        segments = L["CURSORRING_STYLE_SEGMENTS"],
+        fill = L["CURSORRING_STYLE_FILL"],
+        swipe = L["CURSORRING_STYLE_SWIPE"],
     };
     local castStyleSorting = { "segments", "fill", "swipe" };
 
     return {
         -- Enable
-        moduleToggle("CursorRing", "Enable", "Enable or disable the Cursor Ring & Trail module."),
+        moduleToggle("CursorRing", L["ENABLE"], L["CURSORRING_ENABLE_DESC"]),
 
         -- Preview
         {
-            type = "toggle",
-            label = "Preview",
-            desc = "Show all visual elements on the cursor for real-time editing. Automatically disables when the settings panel is closed.",
+            type = "execute",
+            label = isPreviewActive() and L["CURSORRING_PREVIEW_STOP"] or L["CURSORRING_PREVIEW_START"],
+            desc = L["CURSORRING_PREVIEW_DESC"],
             disabled = isDisabled,
-            get = function() return isPreviewActive(); end,
-            set = function(val) refreshModule("SetPreviewMode", val); end,
+            func = function()
+                refreshModule("SetPreviewMode", not isPreviewActive());
+                local panel = Lantern._uxPanel;
+                if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
+            end,
         },
 
         -----------------------------------------------------------------------
@@ -133,13 +137,13 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "General",
+            text = L["CURSORRING_GROUP_GENERAL"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Show Out of Combat",
-                    desc = "Show the cursor ring outside of combat and instances.",
+                    label = L["CURSORRING_SHOW_OOC"],
+                    desc = L["CURSORRING_SHOW_OOC_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().showOutOfCombat; end,
                     set = function(val)
@@ -149,8 +153,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Combat Opacity",
-                    desc = "Ring opacity while in combat or instanced content.",
+                    label = L["CURSORRING_COMBAT_OPACITY"],
+                    desc = L["CURSORRING_COMBAT_OPACITY_DESC"],
                     min = 0, max = 1, step = 0.05, default = 1.0,
                     isPercent = true,
                     disabled = isDisabled,
@@ -162,8 +166,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Out of Combat Opacity",
-                    desc = "Ring opacity outside of combat.",
+                    label = L["CURSORRING_OOC_OPACITY"],
+                    desc = L["CURSORRING_OOC_OPACITY_DESC"],
                     min = 0, max = 1, step = 0.05, default = 1.0,
                     isPercent = true,
                     disabled = isDisabled,
@@ -181,12 +185,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Ring 1 (Outer)",
+            text = L["CURSORRING_GROUP_RING1"],
             children = {
                 {
                     type = "toggle",
-                    label = "Enable Ring 1",
-                    desc = "Show the outer ring.",
+                    label = L["CURSORRING_ENABLE_RING1"],
+                    desc = L["CURSORRING_ENABLE_RING1_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().ring1Enabled; end,
                     set = function(val)
@@ -197,8 +201,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Shape",
-                    desc = "Ring shape.",
+                    label = L["CURSORRING_SHAPE"],
+                    desc = L["CURSORRING_RING_SHAPE_DESC"],
                     values = shapeValues,
                     sorting = shapeSorting,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
@@ -212,8 +216,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Color",
-                    desc = "Ring 1 color.",
+                    label = L["CURSORRING_COLOR"],
+                    desc = L["CURSORRING_RING1_COLOR_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
                     get = function()
                         local c = cursorRingDB().ring1Color;
@@ -226,8 +230,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Size",
-                    desc = "Ring 1 size in pixels.",
+                    label = L["CURSORRING_SIZE"],
+                    desc = L["CURSORRING_RING1_SIZE_DESC"],
                     min = 16, max = 80, step = 0.01, bigStep = 2, default = 48,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring1Enabled); end,
                     get = function() return cursorRingDB().ring1Size; end,
@@ -246,12 +250,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Ring 2 (Inner)",
+            text = L["CURSORRING_GROUP_RING2"],
             children = {
                 {
                     type = "toggle",
-                    label = "Enable Ring 2",
-                    desc = "Show the inner ring.",
+                    label = L["CURSORRING_ENABLE_RING2"],
+                    desc = L["CURSORRING_ENABLE_RING2_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().ring2Enabled; end,
                     set = function(val)
@@ -262,8 +266,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Shape",
-                    desc = "Ring shape.",
+                    label = L["CURSORRING_SHAPE"],
+                    desc = L["CURSORRING_RING_SHAPE_DESC"],
                     values = shapeValues,
                     sorting = shapeSorting,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
@@ -275,8 +279,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Color",
-                    desc = "Ring 2 color.",
+                    label = L["CURSORRING_COLOR"],
+                    desc = L["CURSORRING_RING2_COLOR_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
                     get = function()
                         local c = cursorRingDB().ring2Color;
@@ -289,8 +293,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Size",
-                    desc = "Ring 2 size in pixels.",
+                    label = L["CURSORRING_SIZE"],
+                    desc = L["CURSORRING_RING2_SIZE_DESC"],
                     min = 16, max = 80, step = 0.01, bigStep = 2, default = 32,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().ring2Enabled); end,
                     get = function() return cursorRingDB().ring2Size; end,
@@ -307,12 +311,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Center Dot",
+            text = L["CURSORRING_GROUP_DOT"],
             children = {
                 {
                     type = "toggle",
-                    label = "Enable Dot",
-                    desc = "Show a small dot at the center of the cursor rings.",
+                    label = L["CURSORRING_ENABLE_DOT"],
+                    desc = L["CURSORRING_ENABLE_DOT_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().dotEnabled; end,
                     set = function(val)
@@ -323,8 +327,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Color",
-                    desc = "Dot color.",
+                    label = L["CURSORRING_COLOR"],
+                    desc = L["CURSORRING_DOT_COLOR_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
                     get = function()
                         local c = cursorRingDB().dotColor;
@@ -337,8 +341,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Size",
-                    desc = "Dot size in pixels.",
+                    label = L["CURSORRING_SIZE"],
+                    desc = L["CURSORRING_DOT_SIZE_DESC"],
                     min = 2, max = 24, step = 1, default = 8,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().dotEnabled); end,
                     get = function() return cursorRingDB().dotSize; end,
@@ -355,12 +359,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Cast Effect",
+            text = L["CURSORRING_GROUP_CAST"],
             children = {
                 {
                     type = "toggle",
-                    label = "Enable Cast Effect",
-                    desc = "Show a visual effect during spell casting and channeling.",
+                    label = L["CURSORRING_ENABLE_CAST"],
+                    desc = L["CURSORRING_ENABLE_CAST_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().castEnabled; end,
                     set = function(val)
@@ -369,8 +373,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Style",
-                    desc = "Segments: arc lights up progressively. Fill: shape scales from center. Swipe: cooldown sweep (can run simultaneously with GCD).",
+                    label = L["CURSORRING_STYLE"],
+                    desc = L["CURSORRING_CAST_STYLE_DESC"],
                     values = castStyleValues,
                     sorting = castStyleSorting,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
@@ -382,8 +386,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Color",
-                    desc = "Cast effect color.",
+                    label = L["CURSORRING_COLOR"],
+                    desc = L["CURSORRING_CAST_COLOR_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().castEnabled); end,
                     get = function()
                         local c = cursorRingDB().castColor;
@@ -396,8 +400,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Swipe Offset",
-                    desc = "Pixel offset for the cast swipe ring outside the GCD ring. Only applies to Swipe style.",
+                    label = L["CURSORRING_SWIPE_OFFSET"],
+                    desc = L["CURSORRING_SWIPE_OFFSET_DESC"],
                     min = 0, max = 32, step = 0.01, bigStep = 0.5, default = 8,
                     disabled = function() return isDisabled() or (not isPreviewActive() and (not cursorRingDB().castEnabled or cursorRingDB().castStyle ~= "swipe")); end,
                     get = function() return cursorRingDB().castOffset; end,
@@ -414,12 +418,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "GCD Indicator",
+            text = L["CURSORRING_GROUP_GCD"],
             children = {
                 {
                     type = "toggle",
-                    label = "Enable GCD",
-                    desc = "Show a cooldown swipe for the global cooldown.",
+                    label = L["CURSORRING_ENABLE_GCD"],
+                    desc = L["CURSORRING_ENABLE_GCD_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().gcdEnabled; end,
                     set = function(val)
@@ -430,8 +434,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Color",
-                    desc = "GCD swipe color.",
+                    label = L["CURSORRING_COLOR"],
+                    desc = L["CURSORRING_GCD_COLOR_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
                     get = function()
                         local c = cursorRingDB().gcdColor;
@@ -444,8 +448,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Offset",
-                    desc = "Pixel offset for the GCD ring outside Ring 1.",
+                    label = L["CURSORRING_OFFSET"],
+                    desc = L["CURSORRING_GCD_OFFSET_DESC"],
                     min = 0, max = 32, step = 0.01, bigStep = 0.5, default = 8,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().gcdEnabled); end,
                     get = function() return cursorRingDB().gcdOffset; end,
@@ -463,12 +467,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Mouse Trail",
+            text = L["CURSORRING_GROUP_TRAIL"],
             children = {
                 {
                     type = "toggle",
-                    label = "Enable Trail",
-                    desc = "Show a fading trail behind the cursor.",
+                    label = L["CURSORRING_ENABLE_TRAIL"],
+                    desc = L["CURSORRING_ENABLE_TRAIL_DESC"],
                     disabled = isDisabled,
                     get = function() return cursorRingDB().trailEnabled; end,
                     set = function(val)
@@ -478,14 +482,14 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Style",
-                    desc = "Trail display style. Glow: fading sparkly trail. Line: continuous thin ribbon. Thick Line: wide ribbon. Dots: spaced-out fading dots. Custom: manual settings.",
+                    label = L["CURSORRING_STYLE"],
+                    desc = L["CURSORRING_TRAIL_STYLE_DESC"],
                     values = {
-                        glow = "Glow",
-                        line = "Line",
-                        thickline = "Thick Line",
-                        dots = "Dots",
-                        custom = "Custom",
+                        glow = L["CURSORRING_TRAIL_GLOW"],
+                        line = L["CURSORRING_TRAIL_LINE"],
+                        thickline = L["CURSORRING_TRAIL_THICKLINE"],
+                        dots = L["CURSORRING_TRAIL_DOTS"],
+                        custom = L["CURSORRING_TRAIL_CUSTOM"],
                     },
                     sorting = { "glow", "line", "thickline", "dots", "custom" },
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
@@ -507,26 +511,26 @@ module.widgetOptions = function()
                         refreshModule("EnsureTrail");
                         -- Refresh the page to update slider values
                         local panel = Lantern._uxPanel;
-                        if (panel and panel.refreshPage) then panel:refreshPage(); end
+                        if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
                     end,
                 },
                 {
                     type = "select",
-                    label = "Color",
-                    desc = "Trail color preset. Class Color uses your current class color automatically. Rainbow, Ember, and Ocean are multi-color gradients. Custom lets you pick any color below.",
+                    label = L["CURSORRING_COLOR"],
+                    desc = L["CURSORRING_TRAIL_COLOR_DESC"],
                     values = {
-                        custom  = "Custom",
-                        class   = "Class Color",
-                        gold    = "Lantern Gold",
-                        arcane  = "Arcane",
-                        fel     = "Fel",
-                        fire    = "Fire",
-                        frost   = "Frost",
-                        holy    = "Holy",
-                        shadow  = "Shadow",
-                        rainbow = "Rainbow",
-                        ember   = "Ember",
-                        ocean   = "Ocean",
+                        custom  = L["CURSORRING_TRAIL_COLOR_CUSTOM"],
+                        class   = L["CURSORRING_TRAIL_COLOR_CLASS"],
+                        gold    = L["CURSORRING_TRAIL_COLOR_GOLD"],
+                        arcane  = L["CURSORRING_TRAIL_COLOR_ARCANE"],
+                        fel     = L["CURSORRING_TRAIL_COLOR_FEL"],
+                        fire    = L["CURSORRING_TRAIL_COLOR_FIRE"],
+                        frost   = L["CURSORRING_TRAIL_COLOR_FROST"],
+                        holy    = L["CURSORRING_TRAIL_COLOR_HOLY"],
+                        shadow  = L["CURSORRING_TRAIL_COLOR_SHADOW"],
+                        rainbow = L["CURSORRING_TRAIL_COLOR_RAINBOW"],
+                        ember   = L["CURSORRING_TRAIL_COLOR_EMBER"],
+                        ocean   = L["CURSORRING_TRAIL_COLOR_OCEAN"],
                     },
                     sorting = { "custom", "class", "gold", "arcane", "fel", "fire", "frost", "holy", "shadow", "rainbow", "ember", "ocean" },
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
@@ -534,13 +538,13 @@ module.widgetOptions = function()
                     set = function(val)
                         cursorRingDB().trailColorPreset = val;
                         local panel = Lantern._uxPanel;
-                        if (panel and panel.refreshPage) then panel:refreshPage(); end
+                        if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
                     end,
                 },
                 {
                     type = "color",
-                    label = "Custom Color",
-                    desc = "Trail color (only used when Color is set to Custom).",
+                    label = L["CURSORRING_CUSTOM_COLOR"],
+                    desc = L["CURSORRING_CUSTOM_COLOR_DESC"],
                     disabled = function()
                         local d = cursorRingDB();
                         return isDisabled() or (not isPreviewActive() and not d.trailEnabled) or (d.trailColorPreset ~= "custom");
@@ -555,8 +559,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Duration",
-                    desc = "How long trail points last before fading.",
+                    label = L["CURSORRING_DURATION"],
+                    desc = L["CURSORRING_DURATION_DESC"],
                     min = 0.1, max = 2.0, step = 0.05, default = 0.4,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailDuration; end,
@@ -566,8 +570,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Max Points",
-                    desc = "Number of trail dots in the pool. Higher values create longer trails but use more memory.",
+                    label = L["CURSORRING_MAX_POINTS"],
+                    desc = L["CURSORRING_MAX_POINTS_DESC"],
                     min = 5, max = 200, step = 1, default = 20,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailMaxPoints or 20; end,
@@ -581,8 +585,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Dot Size",
-                    desc = "Size of each trail dot in pixels.",
+                    label = L["CURSORRING_DOT_SIZE"],
+                    desc = L["CURSORRING_DOT_SIZE_TRAIL_DESC"],
                     min = 4, max = 48, step = 1, default = 24,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailDotSize or 24; end,
@@ -595,8 +599,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Dot Spacing",
-                    desc = "Minimum distance in pixels before a new trail dot is placed. Lower values create a denser, more continuous trail.",
+                    label = L["CURSORRING_DOT_SPACING"],
+                    desc = L["CURSORRING_DOT_SPACING_DESC"],
                     min = 1, max = 16, step = 1, default = 2,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailDotSpacing or 2; end,
@@ -608,8 +612,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "toggle",
-                    label = "Shrink with Age",
-                    desc = "Trail dots shrink as they fade out. Disable for a uniform-width trail.",
+                    label = L["CURSORRING_SHRINK_AGE"],
+                    desc = L["CURSORRING_SHRINK_AGE_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailShrink; end,
                     set = function(val)
@@ -620,8 +624,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "toggle",
-                    label = "Taper with Distance",
-                    desc = "Trail dots shrink and fade toward the tail, creating a tapered brush-stroke effect.",
+                    label = L["CURSORRING_TAPER_DISTANCE"],
+                    desc = L["CURSORRING_TAPER_DISTANCE_DESC"],
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailShrinkDistance; end,
                     set = function(val)

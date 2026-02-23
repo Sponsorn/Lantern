@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("ChatFilter", {
-    title = "Chat Filter",
-    desc = "Filters gold spam, boost ads, and unwanted messages from whispers and public channels.",
+    title = L["CHATFILTER_TITLE"],
+    desc = L["CHATFILTER_DESC"],
 });
 
 local FILTERED_EVENTS = {
@@ -52,7 +53,7 @@ function module:OnEnable()
         for _, active in pairs(self.db.keywords) do
             if (active) then count = count + 1; end
         end
-        Lantern:Print("Chat Filter active with " .. count .. " keywords.");
+        Lantern:Print(format(L["CHATFILTER_MSG_ACTIVE"], count));
     end
 end
 

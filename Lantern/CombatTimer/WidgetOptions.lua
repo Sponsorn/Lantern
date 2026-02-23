@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["CombatTimer"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -71,11 +72,11 @@ module.widgetOptions = function()
     end
 
     local outlineValues = {
-        [""] = "None",
-        ["OUTLINE"] = "Outline",
-        ["THICKOUTLINE"] = "Thick Outline",
-        ["MONOCHROME"] = "Monochrome",
-        ["OUTLINE, MONOCHROME"] = "Outline + Mono",
+        [""] = L["FONT_OUTLINE_NONE"],
+        ["OUTLINE"] = L["FONT_OUTLINE_OUTLINE"],
+        ["THICKOUTLINE"] = L["FONT_OUTLINE_THICK"],
+        ["MONOCHROME"] = L["FONT_OUTLINE_MONO"],
+        ["OUTLINE, MONOCHROME"] = L["FONT_OUTLINE_OUTLINE_MONO"],
     };
     local outlineSorting = { "", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "OUTLINE, MONOCHROME" };
 
@@ -84,11 +85,11 @@ module.widgetOptions = function()
     end
 
     return {
-        moduleToggle("CombatTimer", "Enable", "Show a timer during combat."),
+        moduleToggle("CombatTimer", L["ENABLE"], L["COMBATTIMER_ENABLE_DESC"]),
         {
             type = "toggle",
-            label = "Preview",
-            desc = "Show the timer on screen for real-time editing. Automatically disables when the settings panel is closed.",
+            label = L["SHARED_PREVIEW"],
+            desc = L["COMBATTIMER_PREVIEW_DESC"],
             disabled = isDisabled,
             get = function() return isPreviewActive(); end,
             set = function(val)
@@ -97,13 +98,13 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Display",
+            text = L["SHARED_GROUP_DISPLAY"],
             expanded = true,
             children = {
                 {
                     type = "select",
-                    label = "Font",
-                    desc = "Select the font for the timer text.",
+                    label = L["SHARED_FONT"],
+                    desc = L["COMBATTIMER_FONT_DESC"],
                     values = getFontValues,
                     disabled = isDisabled,
                     get = function() return db().font or "Roboto Light"; end,
@@ -114,8 +115,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Font Size",
-                    desc = "Size of the timer text.",
+                    label = L["SHARED_FONT_SIZE"],
+                    desc = L["COMBATTIMER_FONT_SIZE_DESC"],
                     min = 12, max = 48, step = 1, default = 18,
                     disabled = isDisabled,
                     get = function() return db().fontSize; end,
@@ -126,8 +127,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Font Outline",
-                    desc = "Outline style for the timer text.",
+                    label = L["SHARED_FONT_OUTLINE"],
+                    desc = L["COMBATTIMER_FONT_OUTLINE_DESC"],
                     values = outlineValues,
                     sorting = outlineSorting,
                     disabled = isDisabled,
@@ -139,8 +140,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Font Color",
-                    desc = "Color of the timer text.",
+                    label = L["SHARED_FONT_COLOR"],
+                    desc = L["COMBATTIMER_FONT_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = db().fontColor;
@@ -153,8 +154,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Sticky Duration",
-                    desc = "Seconds to keep showing the final time after combat ends. Set to 0 to hide immediately.",
+                    label = L["COMBATTIMER_STICKY_DURATION"],
+                    desc = L["COMBATTIMER_STICKY_DURATION_DESC"],
                     min = 0, max = 30, step = 1, default = 5,
                     disabled = isDisabled,
                     get = function() return db().stickyDuration; end,
@@ -164,12 +165,12 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Position",
+            text = L["SHARED_GROUP_POSITION"],
             children = {
                 {
                     type = "toggle",
-                    label = "Lock Position",
-                    desc = "Prevent the timer from being moved.",
+                    label = L["SHARED_LOCK_POSITION"],
+                    desc = L["COMBATTIMER_LOCK_POSITION_DESC"],
                     disabled = isDisabled,
                     get = function() return db().locked; end,
                     set = function(val)
@@ -179,8 +180,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "execute",
-                    label = "Reset Position",
-                    desc = "Reset the timer to its default position.",
+                    label = L["SHARED_RESET_POSITION"],
+                    desc = L["COMBATTIMER_RESET_POSITION_DESC"],
                     disabled = isDisabled,
                     func = function()
                         if (module.ResetPosition) then module:ResetPosition(); end

@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("FasterLoot", {
-    title = "Faster Loot",
-    desc = "Instantly collect all loot when a loot window opens.",
+    title = L["FASTERLOOT_TITLE"],
+    desc = L["FASTERLOOT_DESC"],
     skipOptions = true,
 });
 
@@ -33,7 +34,7 @@ end
 function module:OnUIError(_, errorType, message)
     if (not self.enabled or inventoryFullWarned) then return; end
     if (message and message == ERR_INV_FULL) then
-        Lantern:Print("Inventory is full - some items could not be looted.");
+        Lantern:Print(L["FASTERLOOT_MSG_INV_FULL"]);
         inventoryFullWarned = true;
     end
 end

@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("AutoKeystone", {
-    title = "Auto Keystone",
-    desc = "Automatically slot your Mythic+ keystone when the Challenge Mode UI opens.",
+    title = L["AUTOKEYSTONE_TITLE"],
+    desc = L["AUTOKEYSTONE_DESC"],
     skipOptions = true,
 });
 

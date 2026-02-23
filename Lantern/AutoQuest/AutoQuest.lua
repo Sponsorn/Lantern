@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("AutoQuest", {
-    title = "Auto Quest",
-    desc = "Automatically accept and turn-in quests.",
+    title = L["AUTOQUEST_TITLE"],
+    desc = L["AUTOQUEST_DESC"],
     skipOptions = true, -- options are shown under Lantern > General Options instead
 });
 

@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("AutoQueue", {
-    title = "Auto Queue",
-    desc = "Automatically accept role checks using your LFG role selection.",
+    title = L["AUTOQUEUE_TITLE"],
+    desc = L["AUTOQUEUE_DESC"],
     skipOptions = true,
 });
 
@@ -48,7 +49,7 @@ function module:OnRoleCheckShow()
     if (not self.enabled or not self.db.active or shouldPause()) then return; end
     CompleteLFGRoleCheck(true);
     if (self.db.announce) then
-        Lantern:Print("Auto-accepted role check.");
+        Lantern:Print(L["AUTOQUEUE_MSG_ACCEPTED"]);
     end
 end
 

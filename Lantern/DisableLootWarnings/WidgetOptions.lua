@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["DisableLootWarnings"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -46,40 +47,40 @@ module.widgetOptions = function()
     end
 
     return {
-        moduleToggle("DisableLootWarnings", "Enable", "Auto-confirm loot and trade popups. Hold " .. Lantern:GetModifierName() .. " to see popups normally."),
+        moduleToggle("DisableLootWarnings", L["ENABLE"], format(L["LOOTWARNINGS_ENABLE_DESC"], Lantern:GetModifierName())),
         {
             type = "group",
-            text = "Popup Types",
+            text = L["LOOTWARNINGS_GROUP_TYPES"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Loot Roll (BoP)",
-                    desc = "Auto-confirm bind-on-pickup loot rolls (Need/Greed on soulbound items).",
+                    label = L["LOOTWARNINGS_LOOT_ROLL"],
+                    desc = L["LOOTWARNINGS_LOOT_ROLL_DESC"],
                     disabled = isDisabled,
                     get = function() return db().lootRoll; end,
                     set = function(val) db().lootRoll = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Bind on Pickup",
-                    desc = "Auto-confirm bind-on-pickup warnings when looting items.",
+                    label = L["LOOTWARNINGS_BIND_ON_PICKUP"],
+                    desc = L["LOOTWARNINGS_BIND_ON_PICKUP_DESC"],
                     disabled = isDisabled,
                     get = function() return db().bindOnPickup; end,
                     set = function(val) db().bindOnPickup = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Merchant Refund",
-                    desc = "Auto-confirm merchant refund timer removal warnings.",
+                    label = L["LOOTWARNINGS_MERCHANT_REFUND"],
+                    desc = L["LOOTWARNINGS_MERCHANT_REFUND_DESC"],
                     disabled = isDisabled,
                     get = function() return db().merchantRefund; end,
                     set = function(val) db().merchantRefund = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Mail Lock Send",
-                    desc = "Auto-confirm mail item lock warnings when sending items.",
+                    label = L["LOOTWARNINGS_MAIL_LOCK"],
+                    desc = L["LOOTWARNINGS_MAIL_LOCK_DESC"],
                     disabled = isDisabled,
                     get = function() return db().mailLock; end,
                     set = function(val) db().mailLock = val; end,

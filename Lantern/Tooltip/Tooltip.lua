@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("Tooltip", {
-    title = "Tooltip",
-    desc = "Enhances tooltips with IDs and mount names.",
+    title = L["TOOLTIP_TITLE"],
+    desc = L["TOOLTIP_DESC"],
     defaultEnabled = false,
 });
 
@@ -153,7 +154,7 @@ local function SetupCopyHandler()
 
             if (id) then
                 CopyToClipboard(id);
-                Lantern:Print(label .. " " .. id .. " copied.");
+                Lantern:Print(format(L["TOOLTIP_MSG_ID_COPIED"], label, id));
             end
         end
     end);
@@ -221,10 +222,10 @@ function module:OnEnable()
             if (tooltip == GameTooltip and settings.copyOnCtrlC and lastTooltipID
                 and not HasLine(tooltip, "Ctrl+C")) then
                 if (hasSpellID) then
-                    tooltip:AddLine("Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
+                    tooltip:AddLine(L["TOOLTIP_HINT_COPY_BOTH"],
                         T.textDim[1], T.textDim[2], T.textDim[3]);
                 else
-                    tooltip:AddLine("Ctrl+C to copy",
+                    tooltip:AddLine(L["TOOLTIP_HINT_COPY"],
                         T.textDim[1], T.textDim[2], T.textDim[3]);
                 end
                 tooltip:Show();
@@ -252,7 +253,7 @@ function module:OnEnable()
                             lastTooltipLabel = "SpellID";
 
                             if (settings.copyOnCtrlC and not HasLine(tooltip, "Ctrl+C")) then
-                                tooltip:AddLine("Ctrl+C to copy",
+                                tooltip:AddLine(L["TOOLTIP_HINT_COPY"],
                                     T.textDim[1], T.textDim[2], T.textDim[3]);
                                 tooltip:Show();
                             end
@@ -287,7 +288,7 @@ function module:OnEnable()
             end
 
             if (settings.copyOnCtrlC and lastTooltipID and not HasLine(tooltip, "Ctrl+C")) then
-                tooltip:AddLine("Ctrl+C to copy",
+                tooltip:AddLine(L["TOOLTIP_HINT_COPY"],
                     T.textDim[1], T.textDim[2], T.textDim[3]);
                 tooltip:Show();
             end

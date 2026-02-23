@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("AutoSell", {
-    title = "Auto Sell",
-    desc = "Automatically sell junk and custom-listed items at merchants.",
+    title = L["AUTOSELL_TITLE"],
+    desc = L["AUTOSELL_DESC"],
     skipOptions = true,
     defaultEnabled = false,
 });
@@ -106,8 +107,7 @@ function module:OnMerchantShow()
 
     if (itemCount > 0) then
         local costText = Lantern:Convert("money:format_copper", totalCopper);
-        local plural = itemCount > 1 and "s" or "";
-        Lantern:Print("Sold " .. itemCount .. " item" .. plural .. " for " .. costText .. ".");
+        Lantern:Print(format(L["AUTOSELL_MSG_SOLD_ITEMS"], itemCount, costText));
     end
 end
 

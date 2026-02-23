@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("AutoRepair", {
-    title = "Auto Repair",
-    desc = "Automatically repair gear at merchants.",
+    title = L["AUTOREPAIR_TITLE"],
+    desc = L["AUTOREPAIR_DESC"],
     skipOptions = true,
     defaultEnabled = false,
 });
@@ -62,18 +63,18 @@ function module:OnMerchantShow()
     local useGuild = (source ~= "personal") and canUseGuildRepair(repairCost);
 
     if (source == "guild_only" and not useGuild) then
-        Lantern:Print("Cannot repair: guild funds unavailable.");
+        Lantern:Print(L["AUTOREPAIR_MSG_GUILD_UNAVAILABLE"]);
         return;
     end
 
     if (useGuild) then
         RepairAllItems(true);
-        Lantern:Print("Repaired for " .. costText .. " (guild funds).");
+        Lantern:Print(format(L["AUTOREPAIR_MSG_REPAIRED_GUILD"], costText));
     elseif (GetMoney() >= repairCost) then
         RepairAllItems(false);
-        Lantern:Print("Repaired for " .. costText .. ".");
+        Lantern:Print(format(L["AUTOREPAIR_MSG_REPAIRED"], costText));
     else
-        Lantern:Print("Cannot repair: not enough gold (" .. costText .. " needed).");
+        Lantern:Print(format(L["AUTOREPAIR_MSG_NOT_ENOUGH_GOLD"], costText));
     end
 end
 

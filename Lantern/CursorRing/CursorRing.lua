@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("CursorRing", {
-    title = "Cursor Ring & Trail",
-    desc = "Displays customizable ring(s) around the mouse cursor with cast/GCD indicators and an optional trail.",
+    title = L["CURSORRING_TITLE"],
+    desc = L["CURSORRING_DESC"],
     skipOptions = true,
     defaultEnabled = false,
 });
@@ -1057,7 +1058,7 @@ local function CreateFrames()
             -- Auto-disable preview when settings panel closes
             if (previewMode) then
                 local panel = _G.Lantern and _G.Lantern._uxPanel;
-                local panelShown = panel and panel.frame and panel.frame:IsShown();
+                local panelShown = panel and panel._frame and panel._frame:IsShown();
                 if (not panelShown) then
                     module:SetPreviewMode(false);
                 end

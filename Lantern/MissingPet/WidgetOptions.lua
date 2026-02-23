@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["MissingPet"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -94,22 +95,22 @@ module.widgetOptions = function()
     end
 
     local animationValues = {
-        none = "None (static)",
-        bounce = "Bounce",
-        pulse = "Pulse",
-        fade = "Fade",
-        shake = "Shake",
-        glow = "Glow",
-        heartbeat = "Heartbeat",
+        none = L["ANIMATION_NONE"],
+        bounce = L["ANIMATION_BOUNCE"],
+        pulse = L["ANIMATION_PULSE"],
+        fade = L["ANIMATION_FADE"],
+        shake = L["ANIMATION_SHAKE"],
+        glow = L["ANIMATION_GLOW"],
+        heartbeat = L["ANIMATION_HEARTBEAT"],
     };
     local animationSorting = { "none", "bounce", "pulse", "fade", "shake", "glow", "heartbeat" };
 
     local outlineValues = {
-        [""] = "None",
-        ["OUTLINE"] = "Outline",
-        ["THICKOUTLINE"] = "Thick Outline",
-        ["MONOCHROME"] = "Monochrome",
-        ["OUTLINE, MONOCHROME"] = "Outline + Mono",
+        [""] = L["FONT_OUTLINE_NONE"],
+        ["OUTLINE"] = L["FONT_OUTLINE_OUTLINE"],
+        ["THICKOUTLINE"] = L["FONT_OUTLINE_THICK"],
+        ["MONOCHROME"] = L["FONT_OUTLINE_MONO"],
+        ["OUTLINE, MONOCHROME"] = L["FONT_OUTLINE_OUTLINE_MONO"],
     };
     local outlineSorting = { "", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "OUTLINE, MONOCHROME" };
 
@@ -146,52 +147,52 @@ module.widgetOptions = function()
 
     return {
         -- Enable
-        moduleToggle("MissingPet", "Enable", "Enable or disable the Missing Pet warning."),
+        moduleToggle("MissingPet", L["ENABLE"], L["MISSINGPET_ENABLE_DESC"]),
 
         -----------------------------------------------------------------------
         -- Warning Settings
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Warning Settings",
+            text = L["MISSINGPET_GROUP_WARNING"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Show Missing Warning",
-                    desc = "Display a warning when your pet is dismissed or dead.",
+                    label = L["MISSINGPET_SHOW_MISSING"],
+                    desc = L["MISSINGPET_SHOW_MISSING_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().showMissing; end,
                     set = function(val) mpDB().showMissing = val; refreshWarning(); end,
                 },
                 {
                     type = "toggle",
-                    label = "Show Passive Warning",
-                    desc = "Display a warning when your pet is set to passive mode.",
+                    label = L["MISSINGPET_SHOW_PASSIVE"],
+                    desc = L["MISSINGPET_SHOW_PASSIVE_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().showPassive; end,
                     set = function(val) mpDB().showPassive = val; refreshWarning(); end,
                 },
                 {
                     type = "input",
-                    label = "Missing Text",
-                    desc = "Text to display when your pet is missing.",
+                    label = L["MISSINGPET_MISSING_TEXT"],
+                    desc = L["MISSINGPET_MISSING_TEXT_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().warningText or "Pet Missing!"; end,
                     set = function(val) mpDB().warningText = val; refreshWarning(); end,
                 },
                 {
                     type = "input",
-                    label = "Passive Text",
-                    desc = "Text to display when your pet is set to passive.",
+                    label = L["MISSINGPET_PASSIVE_TEXT"],
+                    desc = L["MISSINGPET_PASSIVE_TEXT_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().passiveText or "Pet is PASSIVE!"; end,
                     set = function(val) mpDB().passiveText = val; refreshWarning(); end,
                 },
                 {
                     type = "color",
-                    label = "Missing Color",
-                    desc = "Color for the missing pet warning text.",
+                    label = L["MISSINGPET_MISSING_COLOR"],
+                    desc = L["MISSINGPET_MISSING_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = mpDB().missingColor;
@@ -204,8 +205,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "color",
-                    label = "Passive Color",
-                    desc = "Color for the passive pet warning text.",
+                    label = L["MISSINGPET_PASSIVE_COLOR"],
+                    desc = L["MISSINGPET_PASSIVE_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = mpDB().passiveColor;
@@ -218,8 +219,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Animation Style",
-                    desc = "Choose how the warning text animates.",
+                    label = L["SHARED_ANIMATION_STYLE"],
+                    desc = L["MISSINGPET_ANIMATION_DESC"],
                     values = animationValues,
                     sorting = animationSorting,
                     disabled = isDisabled,
@@ -234,12 +235,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Font Settings",
+            text = L["MISSINGPET_GROUP_FONT"],
             children = {
                 {
                     type = "select",
-                    label = "Font",
-                    desc = "Select the font for the warning text.",
+                    label = L["SHARED_FONT"],
+                    desc = L["MISSINGPET_FONT_DESC"],
                     values = getFontValues,
                     disabled = isDisabled,
                     get = function() return mpDB().font or "Roboto Light"; end,
@@ -247,8 +248,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Font Size",
-                    desc = "Size of the warning text.",
+                    label = L["SHARED_FONT_SIZE"],
+                    desc = L["MISSINGPET_FONT_SIZE_DESC"],
                     min = 12, max = 72, step = 1, default = 24,
                     disabled = isDisabled,
                     get = function() return mpDB().fontSize or 24; end,
@@ -256,8 +257,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Font Outline",
-                    desc = "Outline style for the warning text.",
+                    label = L["SHARED_FONT_OUTLINE"],
+                    desc = L["MISSINGPET_FONT_OUTLINE_DESC"],
                     values = outlineValues,
                     sorting = outlineSorting,
                     disabled = isDisabled,
@@ -272,12 +273,12 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Position",
+            text = L["SHARED_GROUP_POSITION"],
             children = {
                 {
                     type = "toggle",
-                    label = "Lock Position",
-                    desc = "Prevent the warning from being moved.",
+                    label = L["SHARED_LOCK_POSITION"],
+                    desc = L["MISSINGPET_LOCK_POSITION_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().locked; end,
                     set = function(val)
@@ -288,8 +289,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "execute",
-                    label = "Reset Position",
-                    desc = "Reset the warning frame position to the center of the screen.",
+                    label = L["SHARED_RESET_POSITION"],
+                    desc = L["MISSINGPET_RESET_POSITION_DESC"],
                     disabled = isDisabled,
                     func = function()
                         local m = mpModule();
@@ -304,28 +305,28 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Visibility",
+            text = L["MISSINGPET_GROUP_VISIBILITY"],
             children = {
                 {
                     type = "toggle",
-                    label = "Hide When Mounted",
-                    desc = "Hide the warning while mounted, on a taxi, or in a vehicle.",
+                    label = L["MISSINGPET_HIDE_MOUNTED"],
+                    desc = L["MISSINGPET_HIDE_MOUNTED_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().hideWhenMounted; end,
                     set = function(val) mpDB().hideWhenMounted = val; refreshWarning(); end,
                 },
                 {
                     type = "toggle",
-                    label = "Hide In Rest Zones",
-                    desc = "Hide the warning while in a rest zone (cities and inns).",
+                    label = L["MISSINGPET_HIDE_REST"],
+                    desc = L["MISSINGPET_HIDE_REST_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().hideInRestZone; end,
                     set = function(val) mpDB().hideInRestZone = val; refreshWarning(); end,
                 },
                 {
                     type = "range",
-                    label = "Dismount Delay",
-                    desc = "Seconds to wait after dismounting before showing warning. Set to 0 to show immediately.",
+                    label = L["MISSINGPET_DISMOUNT_DELAY"],
+                    desc = L["MISSINGPET_DISMOUNT_DELAY_DESC"],
                     min = 0, max = 10, step = 0.5, default = 5,
                     disabled = function() return isDisabled() or not mpDB().hideWhenMounted; end,
                     get = function() return mpDB().dismountDelay or 5; end,
@@ -339,52 +340,52 @@ module.widgetOptions = function()
         -----------------------------------------------------------------------
         {
             type = "group",
-            text = "Sound",
+            text = L["SHARED_GROUP_SOUND"],
             children = {
                 {
                     type = "toggle",
-                    label = "Play Sound",
-                    desc = "Play a sound when the warning is displayed.",
+                    label = L["SHARED_PLAY_SOUND"],
+                    desc = L["MISSINGPET_PLAY_SOUND_DESC"],
                     disabled = isDisabled,
                     get = function() return mpDB().soundEnabled; end,
                     set = function(val) mpDB().soundEnabled = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Sound When Missing",
-                    desc = "Play sound when pet is missing.",
+                    label = L["MISSINGPET_SOUND_MISSING"],
+                    desc = L["MISSINGPET_SOUND_MISSING_DESC"],
                     disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
                     get = function() return mpDB().soundMissing; end,
                     set = function(val) mpDB().soundMissing = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Sound When Passive",
-                    desc = "Play sound when pet is set to passive.",
+                    label = L["MISSINGPET_SOUND_PASSIVE"],
+                    desc = L["MISSINGPET_SOUND_PASSIVE_DESC"],
                     disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
                     get = function() return mpDB().soundPassive; end,
                     set = function(val) mpDB().soundPassive = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Sound In Combat",
-                    desc = "Continue playing sound while in combat. When disabled, sound stops when combat begins.",
+                    label = L["MISSINGPET_SOUND_COMBAT"],
+                    desc = L["MISSINGPET_SOUND_COMBAT_DESC"],
                     disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
                     get = function() return mpDB().soundInCombat; end,
                     set = function(val) mpDB().soundInCombat = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Repeat Sound",
-                    desc = "Repeat the sound at regular intervals while the warning is displayed.",
+                    label = L["MISSINGPET_SOUND_REPEAT"],
+                    desc = L["MISSINGPET_SOUND_REPEAT_DESC"],
                     disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
                     get = function() return mpDB().soundRepeat; end,
                     set = function(val) mpDB().soundRepeat = val; end,
                 },
                 {
                     type = "select",
-                    label = "Sound",
-                    desc = "Select the sound to play. Click the speaker icon to preview.",
+                    label = L["SHARED_SOUND_SELECT"],
+                    desc = L["MISSINGPET_SOUND_SELECT_DESC"],
                     values = getSoundValues,
                     disabled = function() return isDisabled() or not mpDB().soundEnabled; end,
                     get = function() return mpDB().soundName or "RaidWarning"; end,
@@ -407,8 +408,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Repeat Interval",
-                    desc = "Seconds between sound repeats.",
+                    label = L["MISSINGPET_REPEAT_INTERVAL"],
+                    desc = L["MISSINGPET_REPEAT_INTERVAL_DESC"],
                     min = 1, max = 30, step = 1, default = 5,
                     disabled = function() return isDisabled() or not mpDB().soundEnabled or not mpDB().soundRepeat; end,
                     get = function() return mpDB().soundInterval or 5; end,

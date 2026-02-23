@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["AutoSell"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -74,13 +75,13 @@ module.widgetOptions = function()
         itemID = tonumber(itemID);
         if (not itemID) then return; end
         if (list[itemID]) then
-            Lantern:Print("Item already in sell list.");
+            Lantern:Print(L["AUTOSELL_MSG_ALREADY_IN_LIST"]);
             return;
         end
         local itemName = C_Item.GetItemNameByID(itemID) or "";
         list[itemID] = itemName;
         local displayName = itemName ~= "" and itemName or ("Item " .. itemID);
-        Lantern:Print("Added " .. displayName .. " to sell list.");
+        Lantern:Print(format(L["AUTOSELL_MSG_ADDED_TO_LIST"], displayName));
         C_Timer.After(0, refreshPage);
     end
 
@@ -97,7 +98,7 @@ module.widgetOptions = function()
         if (#sortedItems == 0) then
             table.insert(widgets, {
                 type = "description",
-                text = "No items in " .. listLabel .. ".",
+                text = listLabel,
                 fontSize = "small",
                 color = T.textDim,
             });
@@ -113,8 +114,8 @@ module.widgetOptions = function()
                     type = "item_row",
                     itemID = item.id,
                     itemName = displayName,
-                    desc = "Remove this item from the sell list.",
-                    confirm = "Remove?",
+                    desc = L["AUTOSELL_REMOVE_DESC"],
+                    confirm = L["SHARED_REMOVE_CONFIRM"],
                     disabled = isDisabledFn,
                     func = function()
                         list[item.id] = nil;
@@ -133,18 +134,18 @@ module.widgetOptions = function()
     local widgets = {};
 
     -- Enable + sell grays
-    table.insert(widgets, moduleToggle("AutoSell", "Enable", "Enable or disable Auto Sell."));
+    table.insert(widgets, moduleToggle("AutoSell", L["ENABLE"], L["AUTOSELL_ENABLE_DESC"]));
     table.insert(widgets, {
         type = "toggle",
-        label = "Sell gray items",
-        desc = "Automatically sell all poor quality (gray) items.",
+        label = L["AUTOSELL_SELL_GRAYS"],
+        desc = L["AUTOSELL_SELL_GRAYS_DESC"],
         disabled = isDisabled,
         get = function() return db().sellGrays; end,
         set = function(val) db().sellGrays = val and true or false; end,
     });
     table.insert(widgets, {
         type = "callout",
-        text = "Hold " .. Lantern:GetModifierName() .. " when opening a vendor to skip auto-sell.",
+        text = format(L["AUTOSELL_CALLOUT"], Lantern:GetModifierName()),
         severity = "notice",
     });
 
@@ -152,13 +153,13 @@ module.widgetOptions = function()
     -- Global Sell List
     ---------------------------------------------------------------------------
     local globalList = db().globalList;
-    local globalItems = buildItemWidgets(globalList, "global sell list", isDisabled);
+    local globalItems = buildItemWidgets(globalList, L["AUTOSELL_EMPTY_GLOBAL"], isDisabled);
 
     local globalChildren = {};
     table.insert(globalChildren, {
         type = "drop_slot",
-        label = "Drag and drop:",
-        desc = "Drag an item from your bags and drop it here to add it to the global sell list.",
+        label = L["AUTOSELL_DRAG_DROP"],
+        desc = L["AUTOSELL_DRAG_GLOBAL_DESC"],
         disabled = isDisabled,
         onDrop = function(itemID)
             addItem(db().globalList, itemID);
@@ -166,8 +167,8 @@ module.widgetOptions = function()
     });
     table.insert(globalChildren, {
         type = "input",
-        label = "Item ID",
-        desc = "Enter an item ID to add to the global sell list.",
+        label = L["AUTOSELL_ITEM_ID"],
+        desc = L["AUTOSELL_ITEM_ID_GLOBAL_DESC"],
         disabled = isDisabled,
         get = function() return Lantern._autoSellGlobalInput or ""; end,
         set = function(val)
@@ -178,7 +179,7 @@ module.widgetOptions = function()
                 Lantern._autoSellGlobalInput = "";
             else
                 Lantern._autoSellGlobalInput = val;
-                Lantern:Print("Invalid item ID.");
+                Lantern:Print(L["AUTOSELL_MSG_INVALID_ITEM_ID"]);
             end
         end,
     });
@@ -190,7 +191,7 @@ module.widgetOptions = function()
     for _ in pairs(globalList) do globalCount = globalCount + 1; end
     table.insert(widgets, {
         type = "group",
-        text = "Global Sell List (" .. globalCount .. ")",
+        text = format(L["AUTOSELL_GLOBAL_LIST"], globalCount),
         expanded = true,
         stateKey = "autoSellGlobal",
         children = globalChildren,
@@ -200,18 +201,18 @@ module.widgetOptions = function()
     -- Character Sell List
     ---------------------------------------------------------------------------
     local cList = charList();
-    local charItems = buildItemWidgets(cList, "character sell list", isDisabled);
+    local charItems = buildItemWidgets(cList, L["AUTOSELL_EMPTY_CHAR"], isDisabled);
 
     local charChildren = {};
     table.insert(charChildren, {
         type = "callout",
-        text = "Items in this list are only sold on this character.",
+        text = L["AUTOSELL_CHAR_ONLY_NOTE"],
         severity = "info",
     });
     table.insert(charChildren, {
         type = "drop_slot",
-        label = "Drag and drop:",
-        desc = "Drag an item from your bags and drop it here to add it to this character's sell list.",
+        label = L["AUTOSELL_DRAG_DROP"],
+        desc = L["AUTOSELL_DRAG_CHAR_DESC"],
         disabled = isDisabled,
         onDrop = function(itemID)
             addItem(charList(), itemID);
@@ -219,8 +220,8 @@ module.widgetOptions = function()
     });
     table.insert(charChildren, {
         type = "input",
-        label = "Item ID",
-        desc = "Enter an item ID to add to this character's sell list.",
+        label = L["AUTOSELL_ITEM_ID"],
+        desc = L["AUTOSELL_ITEM_ID_CHAR_DESC"],
         disabled = isDisabled,
         get = function() return Lantern._autoSellCharInput or ""; end,
         set = function(val)
@@ -231,7 +232,7 @@ module.widgetOptions = function()
                 Lantern._autoSellCharInput = "";
             else
                 Lantern._autoSellCharInput = val;
-                Lantern:Print("Invalid item ID.");
+                Lantern:Print(L["AUTOSELL_MSG_INVALID_ITEM_ID"]);
             end
         end,
     });
@@ -244,7 +245,7 @@ module.widgetOptions = function()
     local charName = charKey() or "Unknown";
     table.insert(widgets, {
         type = "group",
-        text = charName .. " Sell List (" .. charCount .. ")",
+        text = format(L["AUTOSELL_CHAR_LIST"], charName, charCount),
         stateKey = "autoSellChar",
         children = charChildren,
     });

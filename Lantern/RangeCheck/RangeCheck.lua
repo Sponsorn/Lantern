@@ -14,9 +14,11 @@ local function GetFontPath(fontName)
     return DEFAULT_FONT_PATH;
 end
 
+local L = Lantern.L;
+
 local module = Lantern:NewModule("RangeCheck", {
-    title = "Range Check",
-    desc = "Display in-range or out-of-range status for your current target.",
+    title = L["RANGECHECK_TITLE"],
+    desc = L["RANGECHECK_DESC"],
     defaultEnabled = false,
 });
 

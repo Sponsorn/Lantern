@@ -1,5 +1,6 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local LanternUX = _G.LanternUX;
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
@@ -8,8 +9,8 @@ local DEFAULT_FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fon
     or "Fonts\\FRIZQT__.TTF";
 
 local module = Lantern:NewModule("CombatAlert", {
-    title = "Combat Alert",
-    desc = "Show a fade-in/out text alert when entering or leaving combat.",
+    title = L["COMBATALERT_TITLE"],
+    desc = L["COMBATALERT_DESC"],
     skipOptions = true,
     defaultEnabled = false,
 });
@@ -181,7 +182,7 @@ function module:SetPreviewMode(enabled)
         previewTimer = C_Timer.NewTicker(0.5, function()
             if (not previewMode) then return; end
             local panel = Lantern._uxPanel;
-            if (panel and panel.frame and not panel.frame:IsShown()) then
+            if (panel and panel._frame and not panel._frame:IsShown()) then
                 module:SetPreviewMode(false);
             end
         end);

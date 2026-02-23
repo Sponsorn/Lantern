@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["AutoPlaystyle"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -52,11 +53,11 @@ module.widgetOptions = function()
     end
 
     return {
-        moduleToggle("AutoPlaystyle", "Enable", "Auto-select playstyle when listing M+ groups."),
+        moduleToggle("AutoPlaystyle", L["ENABLE"], L["AUTOPLAYSTYLE_ENABLE_DESC"]),
         {
             type = "select",
-            label = "Playstyle",
-            desc = "Auto-selects this playstyle when opening the Group Finder listing dialog for M+ dungeons.",
+            label = L["AUTOPLAYSTYLE_PLAYSTYLE"],
+            desc = L["AUTOPLAYSTYLE_PLAYSTYLE_DESC"],
             disabled = isDisabled,
             values = getPlaystyleValues(),
             sorting = PLAYSTYLE_SORTING,

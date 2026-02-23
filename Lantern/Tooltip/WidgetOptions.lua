@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["Tooltip"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -41,16 +42,16 @@ module.widgetOptions = function()
     end
 
     return {
-        moduleToggle("Tooltip", "Enable", "Enhance tooltips with extra information."),
+        moduleToggle("Tooltip", L["ENABLE"], L["TOOLTIP_ENABLE_DESC"]),
         {
             type = "group",
-            text = "Player",
+            text = L["TOOLTIP_GROUP_PLAYER"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Mount name",
-                    desc = "Show what mount a player is currently riding.",
+                    label = L["TOOLTIP_MOUNT_NAME"],
+                    desc = L["TOOLTIP_MOUNT_NAME_DESC"],
                     disabled = isDisabled,
                     get = function() return tdb().showMount ~= false; end,
                     set = function(val) tdb().showMount = val; end,
@@ -59,21 +60,21 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Items",
+            text = L["TOOLTIP_GROUP_ITEMS"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Item ID",
-                    desc = "Show the item ID on item tooltips.",
+                    label = L["TOOLTIP_ITEM_ID"],
+                    desc = L["TOOLTIP_ITEM_ID_DESC"],
                     disabled = isDisabled,
                     get = function() return tdb().showItemID ~= false; end,
                     set = function(val) tdb().showItemID = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Item spell ID",
-                    desc = "Show the use-effect spell ID on consumables and other items with on-use abilities.",
+                    label = L["TOOLTIP_ITEM_SPELL_ID"],
+                    desc = L["TOOLTIP_ITEM_SPELL_ID_DESC"],
                     disabled = isDisabled,
                     get = function() return tdb().showItemSpellID ~= false; end,
                     set = function(val) tdb().showItemSpellID = val; end,
@@ -82,20 +83,20 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Spells",
+            text = L["TOOLTIP_GROUP_SPELLS"],
             children = {
                 {
                     type = "toggle",
-                    label = "Spell ID",
-                    desc = "Show the spell ID on spell, aura, and talent tooltips.",
+                    label = L["TOOLTIP_SPELL_ID"],
+                    desc = L["TOOLTIP_SPELL_ID_DESC"],
                     disabled = isDisabled,
                     get = function() return tdb().showSpellID ~= false; end,
                     set = function(val) tdb().showSpellID = val; end,
                 },
                 {
                     type = "toggle",
-                    label = "Node ID",
-                    desc = "Show the talent tree node ID on talent tooltips.",
+                    label = L["TOOLTIP_NODE_ID"],
+                    desc = L["TOOLTIP_NODE_ID_DESC"],
                     disabled = isDisabled,
                     get = function() return tdb().showNodeID ~= false; end,
                     set = function(val) tdb().showNodeID = val; end,
@@ -104,12 +105,12 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Copy",
+            text = L["TOOLTIP_GROUP_COPY"],
             children = {
                 {
                     type = "toggle",
-                    label = "Ctrl+C to copy",
-                    desc = "Press Ctrl+C to copy the primary ID, or Ctrl+Shift+C to copy the secondary ID (e.g. an item's use-effect SpellID).",
+                    label = L["TOOLTIP_CTRL_C"],
+                    desc = L["TOOLTIP_CTRL_C_DESC"],
                     disabled = isDisabled,
                     get = function() return tdb().copyOnCtrlC ~= false; end,
                     set = function(val) tdb().copyOnCtrlC = val; end,

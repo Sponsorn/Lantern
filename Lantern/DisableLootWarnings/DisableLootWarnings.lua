@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("DisableLootWarnings", {
-    title = "Disable Loot Warnings",
-    desc = "Auto-confirm loot roll, bind-on-pickup, merchant refund, and mail lock popups.",
+    title = L["LOOTWARNINGS_TITLE"],
+    desc = L["LOOTWARNINGS_DESC"],
     skipOptions = true,
     defaultEnabled = false,
 });

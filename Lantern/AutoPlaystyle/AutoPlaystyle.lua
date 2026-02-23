@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("AutoPlaystyle", {
-    title = "Auto Playstyle",
-    desc = "Auto-selects your preferred playstyle when listing M+ groups in the Group Finder.",
+    title = L["AUTOPLAYSTYLE_TITLE"],
+    desc = L["AUTOPLAYSTYLE_DESC"],
 });
 
 local function ensureDB(self)

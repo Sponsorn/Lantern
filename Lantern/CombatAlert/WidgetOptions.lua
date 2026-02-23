@@ -7,6 +7,7 @@ if (not T) then return; end
 
 local module = Lantern.modules["CombatAlert"];
 if (not module) then return; end
+local L = Lantern.L;
 
 local function moduleEnabled(name)
     local m = Lantern.modules and Lantern.modules[name];
@@ -16,7 +17,7 @@ end
 local function moduleToggle(name, label, desc)
     return {
         type = "toggle",
-        label = label or "Enable",
+        label = label or L["ENABLE"],
         desc = desc,
         get = function() return moduleEnabled(name); end,
         set = function(val)
@@ -76,11 +77,11 @@ module.widgetOptions = function()
     end
 
     local outlineValues = {
-        [""] = "None",
-        ["OUTLINE"] = "Outline",
-        ["THICKOUTLINE"] = "Thick Outline",
-        ["MONOCHROME"] = "Monochrome",
-        ["OUTLINE, MONOCHROME"] = "Outline + Mono",
+        [""] = L["FONT_OUTLINE_NONE"],
+        ["OUTLINE"] = L["FONT_OUTLINE_OUTLINE"],
+        ["THICKOUTLINE"] = L["FONT_OUTLINE_THICK"],
+        ["MONOCHROME"] = L["FONT_OUTLINE_MONO"],
+        ["OUTLINE, MONOCHROME"] = L["FONT_OUTLINE_OUTLINE_MONO"],
     };
     local outlineSorting = { "", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "OUTLINE, MONOCHROME" };
 
@@ -105,11 +106,11 @@ module.widgetOptions = function()
     end
 
     return {
-        moduleToggle("CombatAlert", "Enable", "Show text alerts when entering/leaving combat."),
+        moduleToggle("CombatAlert", L["ENABLE"], L["COMBATALERT_ENABLE_DESC"]),
         {
             type = "toggle",
-            label = "Preview",
-            desc = "Loop enter/leave alerts on screen for real-time editing. Automatically disables when the settings panel is closed.",
+            label = L["SHARED_PREVIEW"],
+            desc = L["COMBATALERT_PREVIEW_DESC"],
             disabled = isDisabled,
             get = function() return isPreviewActive(); end,
             set = function(val)
@@ -118,29 +119,29 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Combat Enter",
+            text = L["COMBATALERT_GROUP_ENTER"],
             expanded = true,
             children = {
                 {
                     type = "toggle",
-                    label = "Show Enter Alert",
-                    desc = "Show an alert when entering combat.",
+                    label = L["COMBATALERT_SHOW_ENTER"],
+                    desc = L["COMBATALERT_SHOW_ENTER_DESC"],
                     disabled = isDisabled,
                     get = function() return db().showEnter; end,
                     set = function(val) db().showEnter = val; end,
                 },
                 {
                     type = "input",
-                    label = "Enter Text",
-                    desc = "Text displayed when entering combat.",
+                    label = L["COMBATALERT_ENTER_TEXT"],
+                    desc = L["COMBATALERT_ENTER_TEXT_DESC"],
                     disabled = isDisabled,
                     get = function() return db().enterText; end,
                     set = function(val) db().enterText = val; end,
                 },
                 {
                     type = "color",
-                    label = "Enter Color",
-                    desc = "Color of the combat enter text.",
+                    label = L["COMBATALERT_ENTER_COLOR"],
+                    desc = L["COMBATALERT_ENTER_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = db().enterColor;
@@ -154,28 +155,28 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Combat Leave",
+            text = L["COMBATALERT_GROUP_LEAVE"],
             children = {
                 {
                     type = "toggle",
-                    label = "Show Leave Alert",
-                    desc = "Show an alert when leaving combat.",
+                    label = L["COMBATALERT_SHOW_LEAVE"],
+                    desc = L["COMBATALERT_SHOW_LEAVE_DESC"],
                     disabled = isDisabled,
                     get = function() return db().showLeave; end,
                     set = function(val) db().showLeave = val; end,
                 },
                 {
                     type = "input",
-                    label = "Leave Text",
-                    desc = "Text displayed when leaving combat.",
+                    label = L["COMBATALERT_LEAVE_TEXT"],
+                    desc = L["COMBATALERT_LEAVE_TEXT_DESC"],
                     disabled = isDisabled,
                     get = function() return db().leaveText; end,
                     set = function(val) db().leaveText = val; end,
                 },
                 {
                     type = "color",
-                    label = "Leave Color",
-                    desc = "Color of the combat leave text.",
+                    label = L["COMBATALERT_LEAVE_COLOR"],
+                    desc = L["COMBATALERT_LEAVE_COLOR_DESC"],
                     disabled = isDisabled,
                     get = function()
                         local c = db().leaveColor;
@@ -189,12 +190,12 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Font and Display Settings",
+            text = L["COMBATALERT_GROUP_FONT"],
             children = {
                 {
                     type = "select",
-                    label = "Font",
-                    desc = "Select the font for the alert text.",
+                    label = L["SHARED_FONT"],
+                    desc = L["COMBATALERT_FONT_DESC"],
                     values = getFontValues,
                     disabled = isDisabled,
                     get = function() return db().font or "Roboto Light"; end,
@@ -205,8 +206,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Font Size",
-                    desc = "Size of the alert text.",
+                    label = L["SHARED_FONT_SIZE"],
+                    desc = L["COMBATALERT_FONT_SIZE_DESC"],
                     min = 14, max = 48, step = 1, default = 28,
                     disabled = isDisabled,
                     get = function() return db().fontSize; end,
@@ -217,8 +218,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "select",
-                    label = "Font Outline",
-                    desc = "Outline style for the alert text.",
+                    label = L["SHARED_FONT_OUTLINE"],
+                    desc = L["COMBATALERT_FONT_OUTLINE_DESC"],
                     values = outlineValues,
                     sorting = outlineSorting,
                     disabled = isDisabled,
@@ -230,8 +231,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "range",
-                    label = "Fade Duration",
-                    desc = "Total duration of the alert (hold + fade out) in seconds.",
+                    label = L["COMBATALERT_FADE_DURATION"],
+                    desc = L["COMBATALERT_FADE_DURATION_DESC"],
                     min = 0.5, max = 5, step = 0.5, default = 2.0,
                     disabled = isDisabled,
                     get = function() return db().fadeDuration; end,
@@ -241,20 +242,20 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Sound",
+            text = L["SHARED_GROUP_SOUND"],
             children = {
                 {
                     type = "toggle",
-                    label = "Play Sound",
-                    desc = "Play a sound when the alert is shown.",
+                    label = L["SHARED_PLAY_SOUND"],
+                    desc = L["COMBATALERT_PLAY_SOUND_DESC"],
                     disabled = isDisabled,
                     get = function() return db().soundEnabled; end,
                     set = function(val) db().soundEnabled = val; end,
                 },
                 {
                     type = "select",
-                    label = "Sound",
-                    desc = "Select the sound to play.",
+                    label = L["SHARED_SOUND_SELECT"],
+                    desc = L["COMBATALERT_SOUND_SELECT_DESC"],
                     values = getSoundValues,
                     disabled = function() return isDisabled() or not db().soundEnabled; end,
                     get = function() return db().soundName or "RaidWarning"; end,
@@ -269,12 +270,12 @@ module.widgetOptions = function()
         },
         {
             type = "group",
-            text = "Position",
+            text = L["SHARED_GROUP_POSITION"],
             children = {
                 {
                     type = "toggle",
-                    label = "Lock Position",
-                    desc = "Prevent the alert from being moved.",
+                    label = L["SHARED_LOCK_POSITION"],
+                    desc = L["COMBATALERT_LOCK_POSITION_DESC"],
                     disabled = isDisabled,
                     get = function() return db().locked; end,
                     set = function(val)
@@ -284,8 +285,8 @@ module.widgetOptions = function()
                 },
                 {
                     type = "execute",
-                    label = "Reset Position",
-                    desc = "Reset the alert to its default position.",
+                    label = L["SHARED_RESET_POSITION"],
+                    desc = L["COMBATALERT_RESET_POSITION_DESC"],
                     disabled = isDisabled,
                     func = function()
                         if (module.ResetPosition) then module:ResetPosition(); end

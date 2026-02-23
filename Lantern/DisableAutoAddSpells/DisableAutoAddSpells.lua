@@ -1,9 +1,10 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
+local L = Lantern.L;
 
 local module = Lantern:NewModule("DisableAutoAddSpells", {
-    title = "Disable Auto Add Spells",
-    desc = "Stops spells from auto-adding to action bars.",
+    title = L["DISABLEAUTOADD_TITLE"],
+    desc = L["DISABLEAUTOADD_DESC"],
     skipOptions = true,
 });
 
