@@ -48,6 +48,24 @@ local TRAIL_STYLE_PRESETS = {
     dots      = { maxPoints = 12, dotSize = 18, dotSpacing = 8, shrink = true,  shrinkDistance = false },
 };
 
+local TRAIL_COLOR_PRESETS = {
+    -- custom and class are resolved dynamically
+    gold   = { r = 1.0,  g = 0.66, b = 0.0  },
+    arcane = { r = 0.64, g = 0.21, b = 0.93 },
+    fel    = { r = 0.0,  g = 0.9,  b = 0.1  },
+    fire   = { r = 1.0,  g = 0.3,  b = 0.0  },
+    frost  = { r = 0.5,  g = 0.8,  b = 1.0  },
+    holy   = { r = 1.0,  g = 0.9,  b = 0.5  },
+    shadow = { r = 0.5,  g = 0.0,  b = 0.8  },
+};
+
+-- Multi-color presets: gradient from → to, or special "rainbow" HSV cycle
+local TRAIL_GRADIENT_PRESETS = {
+    rainbow = true,
+    ember   = { from = { r = 1.0, g = 0.95, b = 0.3 }, to = { r = 0.8, g = 0.1, b = 0.0 } },
+    ocean   = { from = { r = 0.3, g = 1.0, b = 1.0 }, to = { r = 0.0, g = 0.15, b = 0.7 } },
+};
+
 local DEFAULTS = {
     showOutOfCombat = true,
     opacityInCombat = 1.0,
@@ -85,6 +103,7 @@ local DEFAULTS = {
     trailDotSpacing = 2,
     trailShrink = true,
     trailShrinkDistance = false,
+    trailColorPreset = "custom",
 };
 
 -------------------------------------------------------------------------------
@@ -145,6 +164,60 @@ local function clamp01(v)
     if (v < 0) then return 0; end
     if (v > 1) then return 1; end
     return v;
+end
+
+local cachedClassColor = nil;
+local function GetPlayerClassColor()
+    if (not cachedClassColor) then
+        local _, classToken = UnitClass("player");
+        if (classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]) then
+            local c = RAID_CLASS_COLORS[classToken];
+            cachedClassColor = { r = c.r, g = c.g, b = c.b };
+        else
+            cachedClassColor = { r = 1, g = 1, b = 1 };
+        end
+    end
+    return cachedClassColor;
+end
+
+local function ResolveTrailColor()
+    local preset = db.trailColorPreset;
+    if (preset == "class") then
+        return GetPlayerClassColor();
+    end
+    local static = TRAIL_COLOR_PRESETS[preset];
+    if (static) then
+        return static;
+    end
+    return db.trailColor;
+end
+
+local function HSVtoRGB(h, s, v)
+    local i = floor(h * 6);
+    local f = h * 6 - i;
+    local p = v * (1 - s);
+    local q = v * (1 - f * s);
+    local t = v * (1 - (1 - f) * s);
+    local m = i % 6;
+    if (m == 0) then return v, t, p; end
+    if (m == 1) then return q, v, p; end
+    if (m == 2) then return p, v, t; end
+    if (m == 3) then return p, q, v; end
+    if (m == 4) then return t, p, v; end
+    return v, p, q;
+end
+
+-- t: 0 = head (newest), 1 = tail (oldest)
+local function ResolveGradientColor(preset, t)
+    if (preset == "rainbow") then
+        return HSVtoRGB(t * 0.83, 1, 1);
+    end
+    local grad = TRAIL_GRADIENT_PRESETS[preset];
+    if (grad) then
+        local a, b = grad.from, grad.to;
+        return a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t;
+    end
+    return 1, 1, 1;
 end
 
 local function RefreshCombatCache()
@@ -509,6 +582,7 @@ function module:UpdateTrail()
     end
 end
 module.TRAIL_STYLE_PRESETS = TRAIL_STYLE_PRESETS;
+module.TRAIL_COLOR_PRESETS = TRAIL_COLOR_PRESETS;
 
 -------------------------------------------------------------------------------
 -- Preview Mode (called from Options)
@@ -824,13 +898,14 @@ local function CreateTrailFrame()
         -- Update existing points (alpha + size only, no repositioning)
         local dur = db.trailDuration > 0 and db.trailDuration or 0.1;
         local invDur = 1 / dur;
-        local tc = db.trailColor;
+        local tc = ResolveTrailColor();
+        local gradientPreset = TRAIL_GRADIENT_PRESETS[db.trailColorPreset] and db.trailColorPreset or nil;
         local anyActive = false;
 
         -- Walk ring buffer head-to-tail to assign distance ranks
         -- rank 1 = newest (near cursor), rank N = oldest (tail end)
         local visibleCount = 0;
-        if (shrinkDist) then
+        if (shrinkDist or gradientPreset) then
             local idx = trailHead;
             for i = 1, maxPts do
                 local pt = trailBuf[idx];
@@ -867,7 +942,13 @@ local function CreateTrailFrame()
                     end
 
                     local alpha = fade * distScale * opacity * TRAIL_MAX_ALPHA;
-                    pt.tex:SetVertexColor(tc.r, tc.g, tc.b, alpha);
+                    if (gradientPreset) then
+                        local t = (visibleCount > 1) and ((rank - 1) / (visibleCount - 1)) or 0;
+                        local gr, gg, gb = ResolveGradientColor(gradientPreset, t);
+                        pt.tex:SetVertexColor(gr, gg, gb, alpha);
+                    else
+                        pt.tex:SetVertexColor(tc.r, tc.g, tc.b, alpha);
+                    end
 
                     -- Only call SetSize when shrink is active (scale changes per dot)
                     if (anyShrink) then

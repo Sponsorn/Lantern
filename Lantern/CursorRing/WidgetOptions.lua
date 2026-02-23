@@ -61,6 +61,7 @@ module.widgetOptions = function()
         trailDotSpacing = 2,
         trailShrink = true,
         trailShrinkDistance = false,
+        trailColorPreset = "custom",
     };
 
     local function cursorRingDB()
@@ -510,10 +511,40 @@ module.widgetOptions = function()
                     end,
                 },
                 {
-                    type = "color",
+                    type = "select",
                     label = "Color",
-                    desc = "Trail color.",
+                    desc = "Trail color preset. Class Color uses your current class color automatically. Rainbow, Ember, and Ocean are multi-color gradients. Custom lets you pick any color below.",
+                    values = {
+                        custom  = "Custom",
+                        class   = "Class Color",
+                        gold    = "Lantern Gold",
+                        arcane  = "Arcane",
+                        fel     = "Fel",
+                        fire    = "Fire",
+                        frost   = "Frost",
+                        holy    = "Holy",
+                        shadow  = "Shadow",
+                        rainbow = "Rainbow",
+                        ember   = "Ember",
+                        ocean   = "Ocean",
+                    },
+                    sorting = { "custom", "class", "gold", "arcane", "fel", "fire", "frost", "holy", "shadow", "rainbow", "ember", "ocean" },
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailColorPreset or "custom"; end,
+                    set = function(val)
+                        cursorRingDB().trailColorPreset = val;
+                        local panel = Lantern._uxPanel;
+                        if (panel and panel.refreshPage) then panel:refreshPage(); end
+                    end,
+                },
+                {
+                    type = "color",
+                    label = "Custom Color",
+                    desc = "Trail color (only used when Color is set to Custom).",
+                    disabled = function()
+                        local d = cursorRingDB();
+                        return isDisabled() or (not isPreviewActive() and not d.trailEnabled) or (d.trailColorPreset ~= "custom");
+                    end,
                     get = function()
                         local c = cursorRingDB().trailColor;
                         return c.r, c.g, c.b;

@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.5.2 - 2026-02-22
+## 0.5.2 - 2026-02-23
 - Add: Tooltip module — shows mount names, item IDs, spell IDs, and talent node IDs on tooltips with Ctrl+C copy support (all features individually toggleable, disabled by default)
 - Add: Minimap icon now shows an amber glow overlay on hover
+- Add: Cursor Ring trail color presets — Class Color (auto-matches your class), Lantern Gold, Arcane, Fel, Fire, Frost, Holy, Shadow, plus multi-color gradients: Rainbow, Ember, and Ocean
 - Add: Cursor Ring trail style selector — choose between Glow, Line, Thick Line, and Dots presets, or go Custom
 - Add: Cursor Ring trail manual controls — Max Points, Dot Size, Dot Spacing, and Shrink with Age settings
 - Add: Cursor Ring trail now interpolates dots along the cursor path — no more gaps during fast mouse movement
