@@ -1,10 +1,11 @@
 local ADDON_NAME = "Lantern_Warband";
+local L = select(2, ...).L;
 local Lantern = _G.Lantern;
 if (not Lantern) then return; end
 
 local Warband = Lantern:NewModule("Warband", {
-    title = "Warband",
-    desc = "Manage character groups with automated banking features.",
+    title = L["WARBAND_TITLE"],
+    desc = L["WARBAND_DESC"],
 });
 
 -- Default settings
@@ -188,7 +189,7 @@ local function handleBankOpened(self)
             local success = depositToWarbank(depositAmount);
             if (success) then
                 local formatted = Lantern:Convert("money:format_gold_thousands", depositAmount) or "0";
-                Lantern:Print(string.format("Deposited %s gold to warbank.", formatted));
+                Lantern:Print(string.format(L["WARBAND_MSG_DEPOSITED"], formatted));
             end
             return;
         end
@@ -199,7 +200,7 @@ local function handleBankOpened(self)
             local success = withdrawFromWarbank(withdrawAmount);
             if (success) then
                 local formatted = Lantern:Convert("money:format_gold_thousands", withdrawAmount) or "0";
-                Lantern:Print(string.format("Withdrew %s gold from warbank.", formatted));
+                Lantern:Print(string.format(L["WARBAND_MSG_WITHDREW"], formatted));
             end
         end
     end);

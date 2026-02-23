@@ -1,3 +1,4 @@
+local L = select(2, ...).L;
 local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.CraftingOrders) then return; end
 
@@ -28,13 +29,13 @@ local function guildWidgets()
     local widgets = {
         {
             type = "description",
-            text = "Automatically announce guild crafting orders in guild chat when you place or fulfill them.",
+            text = L["CO_GUILD_DESCRIPTION"],
             fontSize = "medium",
         },
         {
             type = "execute",
-            label = "Guild Orders",
-            desc = "Click 5 times to unlock debug.",
+            label = L["CO_GUILD_ORDERS_BTN"],
+            desc = L["CO_GUILD_ORDERS_BTN_DESC"],
             func = function()
                 CraftingOrders:HandleDebugUnlockClick();
                 refreshPage();
@@ -44,11 +45,11 @@ local function guildWidgets()
         -----------------------------------------------------------------------
         -- Order Placed
         -----------------------------------------------------------------------
-        { type = "header", text = "Order Placed" },
+        { type = "header", text = L["CO_ORDER_PLACED_HEADER"] },
         {
             type = "toggle",
-            label = "Announce placed orders",
-            desc = "Post a message in guild chat when you place a guild crafting order.",
+            label = L["CO_ANNOUNCE_PLACED"],
+            desc = L["CO_ANNOUNCE_PLACED_DESC"],
             get = function() return db.postPlacement; end,
             set = function(val)
                 db.postPlacement = val and true or false;
@@ -56,8 +57,8 @@ local function guildWidgets()
         },
         {
             type = "input",
-            label = "Message format",
-            desc = "Tags: {item} {tip}",
+            label = L["CO_MESSAGE_FORMAT"],
+            desc = L["CO_PLACED_FORMAT_DESC"],
             get = function() return db.guildPlacedMessage or ""; end,
             set = function(val)
                 db.guildPlacedMessage = val or "";
@@ -66,7 +67,7 @@ local function guildWidgets()
         },
         {
             type = "description",
-            text = "Preview: " .. CraftingOrders._buildGuildPreview(db.guildPlacedMessage or "", false),
+            text = L["CO_PREVIEW_PREFIX"] .. CraftingOrders._buildGuildPreview(db.guildPlacedMessage or "", false),
             fontSize = "small",
             color = T.textDim,
         },
@@ -74,11 +75,11 @@ local function guildWidgets()
         -----------------------------------------------------------------------
         -- Order Fulfilled
         -----------------------------------------------------------------------
-        { type = "header", text = "Order Fulfilled" },
+        { type = "header", text = L["CO_ORDER_FULFILLED_HEADER"] },
         {
             type = "toggle",
-            label = "Announce fulfilled orders",
-            desc = "Post a message in guild chat when you fulfill a guild crafting order.",
+            label = L["CO_ANNOUNCE_FULFILLED"],
+            desc = L["CO_ANNOUNCE_FULFILLED_DESC"],
             get = function() return db.postFulfill; end,
             set = function(val)
                 db.postFulfill = val and true or false;
@@ -86,8 +87,8 @@ local function guildWidgets()
         },
         {
             type = "input",
-            label = "Message format",
-            desc = "Tags: {item} {who} {tip}",
+            label = L["CO_MESSAGE_FORMAT"],
+            desc = L["CO_FULFILLED_FORMAT_DESC"],
             get = function() return db.guildFulfilledMessage or ""; end,
             set = function(val)
                 db.guildFulfilledMessage = val or "";
@@ -96,7 +97,7 @@ local function guildWidgets()
         },
         {
             type = "description",
-            text = "Preview: " .. CraftingOrders._buildGuildPreview(db.guildFulfilledMessage or "", true),
+            text = L["CO_PREVIEW_PREFIX"] .. CraftingOrders._buildGuildPreview(db.guildFulfilledMessage or "", true),
             fontSize = "small",
             color = T.textDim,
         },
@@ -106,8 +107,8 @@ local function guildWidgets()
         -----------------------------------------------------------------------
         {
             type = "toggle",
-            label = "Debug (print only)",
-            desc = "When enabled, guild messages are printed to chat instead of being sent.",
+            label = L["CO_DEBUG_LABEL"],
+            desc = L["CO_DEBUG_DESC"],
             hidden = function() return not CraftingOrders._debugUnlocked; end,
             get = function() return db.debugGuild; end,
             set = function(val)
@@ -118,10 +119,10 @@ local function guildWidgets()
         -----------------------------------------------------------------------
         -- Tag Details
         -----------------------------------------------------------------------
-        { type = "header", text = "Tag Details" },
+        { type = "header", text = L["CO_TAG_DETAILS_HEADER"] },
         {
             type = "description",
-            text = "{item} = item link\n{who} = customer name\n{tip} = commission",
+            text = L["CO_TAG_DETAILS_TEXT"],
             fontSize = "medium",
         },
     };
@@ -143,18 +144,18 @@ local function personalWidgets()
     local widgets = {
         {
             type = "description",
-            text = "Get notified when you receive personal crafting orders.",
+            text = L["CO_PERSONAL_DESCRIPTION"],
             fontSize = "medium",
         },
 
         -----------------------------------------------------------------------
         -- Personal Order Received
         -----------------------------------------------------------------------
-        { type = "header", text = "Personal Order Received" },
+        { type = "header", text = L["CO_PERSONAL_RECEIVED_HEADER"] },
         {
             type = "toggle",
-            label = "Enable notification",
-            desc = "Show a notification when you receive a personal crafting order.",
+            label = L["CO_ENABLE_NOTIFICATION"],
+            desc = L["CO_ENABLE_NOTIFICATION_DESC"],
             get = function() return db.notifyPersonal; end,
             set = function(val)
                 db.notifyPersonal = val and true or false;
@@ -165,11 +166,11 @@ local function personalWidgets()
         -----------------------------------------------------------------------
         -- Sound
         -----------------------------------------------------------------------
-        { type = "header", text = "Sound" },
+        { type = "header", text = L["CO_SOUND_HEADER"] },
         {
             type = "toggle",
-            label = "Play sound",
-            desc = "Play a sound when a personal crafting order is received.",
+            label = L["CO_PLAY_SOUND"],
+            desc = L["CO_PLAY_SOUND_DESC"],
             disabled = notifyDisabled,
             get = function() return db.personalSoundEnabled; end,
             set = function(val)
@@ -179,8 +180,8 @@ local function personalWidgets()
         },
         {
             type = "select",
-            label = "Sound",
-            desc = "Sound to play when a personal crafting order is received. Click the speaker icon to preview.",
+            label = L["CO_SOUND_SELECT"],
+            desc = L["CO_SOUND_SELECT_DESC"],
             values = CraftingOrders._getSoundValues,
             disabled = soundDisabled,
             get = function() return db.personalSoundName or "Lantern: Auction Window Open"; end,
@@ -193,11 +194,11 @@ local function personalWidgets()
         -----------------------------------------------------------------------
         -- Notification Appearance
         -----------------------------------------------------------------------
-        { type = "header", text = "Notification Appearance" },
+        { type = "header", text = L["CO_APPEARANCE_HEADER"] },
         {
             type = "select",
-            label = "Font",
-            desc = "Font used for the notification text.",
+            label = L["CO_FONT"],
+            desc = L["CO_FONT_DESC"],
             values = CraftingOrders._getFontValues,
             disabled = notifyDisabled,
             get = function() return db.personalFont or "Roboto Light"; end,
@@ -207,8 +208,8 @@ local function personalWidgets()
         },
         {
             type = "range",
-            label = "Font size",
-            desc = "Size of the notification text.",
+            label = L["CO_FONT_SIZE"],
+            desc = L["CO_FONT_SIZE_DESC"],
             min = 12, max = 48, step = 1, default = 24,
             disabled = notifyDisabled,
             get = function() return db.personalFontSize or 24; end,
@@ -218,8 +219,8 @@ local function personalWidgets()
         },
         {
             type = "select",
-            label = "Font outline",
-            desc = "Outline style for the notification text.",
+            label = L["CO_FONT_OUTLINE"],
+            desc = L["CO_FONT_OUTLINE_DESC"],
             values = CraftingOrders._getOutlineValues,
             disabled = notifyDisabled,
             get = function() return db.personalFontOutline or "OUTLINE"; end,
@@ -229,8 +230,8 @@ local function personalWidgets()
         },
         {
             type = "color",
-            label = "Text color",
-            desc = "Color of the notification text.",
+            label = L["CO_TEXT_COLOR"],
+            desc = L["CO_TEXT_COLOR_DESC"],
             disabled = notifyDisabled,
             get = function()
                 local c = db.personalColor or { r = 1, g = 1, b = 1 };
@@ -242,8 +243,8 @@ local function personalWidgets()
         },
         {
             type = "range",
-            label = "Duration",
-            desc = "How long the notification is shown (seconds).",
+            label = L["CO_DURATION"],
+            desc = L["CO_DURATION_DESC"],
             min = 1, max = 15, step = 1, default = 5,
             disabled = notifyDisabled,
             get = function() return db.personalDuration or 5; end,
@@ -253,8 +254,8 @@ local function personalWidgets()
         },
         {
             type = "execute",
-            label = "Test notification",
-            desc = "Show a test notification with the current settings.",
+            label = L["CO_TEST_NOTIFICATION"],
+            desc = L["CO_TEST_NOTIFICATION_DESC"],
             disabled = notifyDisabled,
             func = function()
                 CraftingOrders:OutputMessage(CraftingOrders._formatPersonalOrderMessage());
@@ -265,11 +266,11 @@ local function personalWidgets()
         -----------------------------------------------------------------------
         -- Crafting Window
         -----------------------------------------------------------------------
-        { type = "header", text = "Crafting Window" },
+        { type = "header", text = L["CO_CRAFTING_WINDOW_HEADER"] },
         {
             type = "toggle",
-            label = "Show Complete + Whisper button",
-            desc = "Add a button to the crafting order view that completes the order and whispers the customer.",
+            label = L["CO_SHOW_WHISPER_BTN"],
+            desc = L["CO_SHOW_WHISPER_BTN_DESC"],
             get = function() return db.enableWhisperButton; end,
             set = function(val)
                 db.enableWhisperButton = val and true or false;
@@ -279,8 +280,8 @@ local function personalWidgets()
         },
         {
             type = "input",
-            label = "Whisper message",
-            desc = "Use {name} and {item} as placeholders.",
+            label = L["CO_WHISPER_MESSAGE"],
+            desc = L["CO_WHISPER_MESSAGE_DESC"],
             disabled = function() return not db.enableWhisperButton; end,
             get = function() return db.whisperMessage or ""; end,
             set = function(val)
@@ -297,6 +298,6 @@ end
 -------------------------------------------------------------------------------
 
 CraftingOrders.uxPages = {
-    { key = "craftingorders_guild",    opts = { label = "Guild Orders",    title = "Guild Orders",    description = "Announce guild crafting orders.", widgets = guildWidgets } },
-    { key = "craftingorders_personal", opts = { label = "Personal Orders", title = "Personal Orders", description = "Personal order notifications.",   widgets = personalWidgets } },
+    { key = "craftingorders_guild",    opts = { label = L["CO_PAGE_GUILD"],    title = L["CO_PAGE_GUILD_TITLE"],    description = L["CO_PAGE_GUILD_DESC"],    widgets = guildWidgets } },
+    { key = "craftingorders_personal", opts = { label = L["CO_PAGE_PERSONAL"], title = L["CO_PAGE_PERSONAL_TITLE"], description = L["CO_PAGE_PERSONAL_DESC"], widgets = personalWidgets } },
 };

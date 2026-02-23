@@ -1,3 +1,4 @@
+local L = select(2, ...).L;
 local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.Warband) then return; end
 
@@ -286,7 +287,7 @@ function Warehousing:ComputeDeposit(groupName)
 
             if (not allowed) then
                 local name = itemName ~= "" and itemName or ("item " .. tostring(itemID));
-                Lantern:Print(string.format("Warehousing: Skipping %s (not warbound).", name));
+                Lantern:Print(string.format(L["WARBAND_WH_MSG_SKIP_NOT_WARBOUND"], name));
             elseif (group.depositEnabled) then
                 local depositAmount;
                 if (group.depositAll) then

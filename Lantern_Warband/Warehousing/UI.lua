@@ -1,3 +1,4 @@
+local L = select(2, ...).L;
 local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.Warband) then return; end
 if (not Enum or not Enum.BagIndex or not Enum.BagIndex.AccountBankTab_1) then return; end
@@ -131,8 +132,8 @@ end
 
 local function RunOperations(operations, actionLabel)
     if (#operations == 0) then
-        UpdateStatus("No items to move.");
-        Lantern:Print(string.format("Warehousing: %s - nothing to move.", actionLabel));
+        UpdateStatus(L["WARBAND_WH_UI_NO_ITEMS_TO_MOVE"]);
+        Lantern:Print(string.format(L["WARBAND_WH_UI_MSG_NOTHING_TO_MOVE"], actionLabel));
         return;
     end
 
@@ -162,10 +163,10 @@ local function RunOperations(operations, actionLabel)
         if (movedItems >= totalItems and totalItems > 0) then
             currentBatch = totalBatches;
         end
-        local msg = string.format("%s: Batch %d/%d, Items %d/%d",
+        local msg = string.format(L["WARBAND_WH_UI_STATUS_FORMAT"],
             actionLabel, currentBatch, totalBatches, movedItems, totalItems);
         if (failedOps > 0) then
-            msg = msg .. string.format(" (%d failed)", failedOps);
+            msg = msg .. string.format(L["WARBAND_WH_UI_STATUS_FAILED"], failedOps);
         end
         if (suffix) then
             msg = msg .. suffix;
@@ -224,7 +225,7 @@ local function RunOperations(operations, actionLabel)
             SetActionButtonsEnabled(true);
             SetProgress(movedItems, totalItems, failedOps);
 
-            UpdateStatus(string.format("Stopped: %s (%d/%d)", reason, movedItems, totalItems));
+            UpdateStatus(string.format(L["WARBAND_WH_UI_STOPPED"], reason, movedItems, totalItems));
             -- Auto-hide progress bar after 4 seconds
             progressResetTimer = C_Timer.NewTimer(4, function()
                 progressResetTimer = nil;
@@ -237,7 +238,7 @@ local function RunOperations(operations, actionLabel)
         operationsRunning = false;
         SetActionButtonsEnabled(true);
         ResetProgress();
-        UpdateStatus("Failed: bank not accessible.");
+        UpdateStatus(L["WARBAND_WH_UI_FAILED_BANK"]);
     end
 end
 
@@ -314,12 +315,12 @@ local function CreateGroupRow(parent, index, groupName, group)
     if (group.keepEnabled) then
         table.insert(parts, "K:" .. (group.keepLimit or 0));
     end
-    local modeText = #parts > 0 and table.concat(parts, " ") or "Disabled";
+    local modeText = #parts > 0 and table.concat(parts, " ") or L["WARBAND_WH_UI_DISABLED"];
     local infoText = frame:CreateFontString(nil, "OVERLAY", fontSmall);
     infoText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -1);
     infoText:SetJustifyH("LEFT");
     infoText:SetTextColor(0.7, 0.7, 0.7);
-    infoText:SetText(string.format("%d item%s, %s", itemCount, itemCount == 1 and "" or "s", modeText));
+    infoText:SetText(string.format(L["WARBAND_WH_UI_ITEM_COUNT_MODE"], itemCount, itemCount == 1 and "" or "s", modeText));
 
     local row = {
         frame = frame,
@@ -369,7 +370,7 @@ local function CreatePanel()
 
     -- Set portrait and title
     frame:SetPortraitToAsset("Interface\\Icons\\achievement_guildperk_mobilebanking");
-    frame:SetTitle("Warehousing");
+    frame:SetTitle(L["WARBAND_WH_UI_TITLE"]);
 
     -- Restore saved position or use default
     local saved = Warband.db and Warband.db.warehousing and Warband.db.warehousing.panelPosition;
@@ -382,7 +383,7 @@ local function CreatePanel()
     -- Hook close button to stop engine and save state
     frame.CloseButton:SetScript("OnClick", function()
         if (Engine:IsRunning()) then
-            Engine:Stop("Cancelled");
+            Engine:Stop(L["WARBAND_WH_UI_REASON_CANCELLED"]);
         end
         WarehousingUI:Hide();
     end);
@@ -392,7 +393,7 @@ local function CreatePanel()
     settingsBtn:SetSize(70, 22);
     settingsBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -30, -26);
     settingsBtn:SetFrameLevel(1020);
-    settingsBtn:SetText("Settings");
+    settingsBtn:SetText(L["WARBAND_WH_UI_SETTINGS"]);
     settingsBtn:SetScript("OnClick", function()
         Lantern:OpenOptions();
         if (Lantern._uxPanel) then
@@ -401,8 +402,8 @@ local function CreatePanel()
     end);
     settingsBtn:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_TOP");
-        GameTooltip:SetText("Warehousing Settings");
-        GameTooltip:AddLine("Create and manage groups.", 1, 1, 1, true);
+        GameTooltip:SetText(L["WARBAND_WH_UI_SETTINGS_TOOLTIP"]);
+        GameTooltip:AddLine(L["WARBAND_WH_UI_SETTINGS_TOOLTIP_DESC"], 1, 1, 1, true);
         GameTooltip:Show();
     end);
     settingsBtn:SetScript("OnLeave", function() GameTooltip:Hide(); end);
@@ -443,11 +444,11 @@ local function CreatePanel()
     depositBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate");
     depositBtn:SetSize(130, 22);
     depositBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 14, 30);
-    depositBtn:SetText("< Warbank");
+    depositBtn:SetText(L["WARBAND_WH_UI_DEPOSIT_BTN"]);
     depositBtn:SetScript("OnClick", function()
         local names = GetSelectedGroupNames();
         if (#names == 0) then
-            UpdateStatus("No groups selected.");
+            UpdateStatus(L["WARBAND_WH_UI_NO_GROUPS_SELECTED"]);
             return;
         end
         local allOps = {};
@@ -457,12 +458,12 @@ local function CreatePanel()
                 table.insert(allOps, op);
             end
         end
-        RunOperations(allOps, "Deposit");
+        RunOperations(allOps, L["WARBAND_WH_UI_ACTION_DEPOSIT"]);
     end);
     depositBtn:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_TOP");
-        GameTooltip:SetText("Deposit to Warbank");
-        GameTooltip:AddLine("Move items from selected groups to warbank.", 1, 1, 1, true);
+        GameTooltip:SetText(L["WARBAND_WH_UI_DEPOSIT_TOOLTIP"]);
+        GameTooltip:AddLine(L["WARBAND_WH_UI_DEPOSIT_TOOLTIP_DESC"], 1, 1, 1, true);
         GameTooltip:Show();
     end);
     depositBtn:SetScript("OnLeave", function() GameTooltip:Hide(); end);
@@ -470,11 +471,11 @@ local function CreatePanel()
     restockBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate");
     restockBtn:SetSize(130, 22);
     restockBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -14, 30);
-    restockBtn:SetText("> Inventory");
+    restockBtn:SetText(L["WARBAND_WH_UI_RESTOCK_BTN"]);
     restockBtn:SetScript("OnClick", function()
         local names = GetSelectedGroupNames();
         if (#names == 0) then
-            UpdateStatus("No groups selected.");
+            UpdateStatus(L["WARBAND_WH_UI_NO_GROUPS_SELECTED"]);
             return;
         end
         local allOps = {};
@@ -484,12 +485,12 @@ local function CreatePanel()
                 table.insert(allOps, op);
             end
         end
-        RunOperations(allOps, "Restock");
+        RunOperations(allOps, L["WARBAND_WH_UI_ACTION_RESTOCK"]);
     end);
     restockBtn:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_TOP");
-        GameTooltip:SetText("Restock from Warbank");
-        GameTooltip:AddLine("Withdraw items for selected groups until limit is met.", 1, 1, 1, true);
+        GameTooltip:SetText(L["WARBAND_WH_UI_RESTOCK_TOOLTIP"]);
+        GameTooltip:AddLine(L["WARBAND_WH_UI_RESTOCK_TOOLTIP_DESC"], 1, 1, 1, true);
         GameTooltip:Show();
     end);
     restockBtn:SetScript("OnLeave", function() GameTooltip:Hide(); end);
@@ -549,12 +550,12 @@ local function PopulatePanel()
     if (#sortedNames == 0) then
         local noGroupsText = scrollChild:CreateFontString(nil, "OVERLAY", fontBody);
         noGroupsText:SetPoint("TOP", scrollChild, "TOP", 0, -20);
-        noGroupsText:SetText("No groups defined.");
+        noGroupsText:SetText(L["WARBAND_WH_UI_NO_GROUPS_DEFINED"]);
         noGroupsText:SetTextColor(0.7, 0.7, 0.7);
 
         local hintText = scrollChild:CreateFontString(nil, "OVERLAY", fontSmall);
         hintText:SetPoint("TOP", noGroupsText, "BOTTOM", 0, -8);
-        hintText:SetText("Click Settings above to create groups.");
+        hintText:SetText(L["WARBAND_WH_UI_CLICK_SETTINGS"]);
         hintText:SetTextColor(0.5, 0.5, 0.5);
         hintText:SetJustifyH("CENTER");
 
@@ -642,14 +643,14 @@ local function CreateBankButton()
     bankButton:SetFrameStrata("MEDIUM");
     bankButton:SetFrameLevel(510);
     bankButton:SetPoint("TOPRIGHT", BankFrame, "TOPRIGHT", -60, 0);
-    bankButton:SetText("Warehousing");
+    bankButton:SetText(L["WARBAND_WH_UI_BANK_BTN"]);
     bankButton:SetScript("OnClick", function()
         WarehousingUI:Toggle();
     end);
     bankButton:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_RIGHT");
-        GameTooltip:SetText("Lantern Warehousing");
-        GameTooltip:AddLine("Move items between inventory and warbank by group.", 1, 1, 1, true);
+        GameTooltip:SetText(L["WARBAND_WH_UI_BANK_TOOLTIP"]);
+        GameTooltip:AddLine(L["WARBAND_WH_UI_BANK_TOOLTIP_DESC"], 1, 1, 1, true);
         GameTooltip:Show();
     end);
     bankButton:SetScript("OnLeave", function()
@@ -697,7 +698,7 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         end
         -- Stop engine if running
         if (Engine:IsRunning()) then
-            Engine:Stop("Bank closed");
+            Engine:Stop(L["WARBAND_WH_UI_REASON_BANK_CLOSED"]);
         end
         -- Hide panel (without changing saved state)
         if (panel) then

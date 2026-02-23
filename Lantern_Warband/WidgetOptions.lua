@@ -1,4 +1,5 @@
 local ADDON_NAME = "Lantern_Warband";
+local L = select(2, ...).L;
 local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.Warband) then return; end
 
@@ -34,13 +35,13 @@ local function generalWidgets()
     local widgets = {
         {
             type = "description",
-            text = "Manage character groups and automated banking. Create groups with gold thresholds, and when you open a bank, the addon will automatically balance your gold to match the threshold (deposit excess or withdraw if below).",
+            text = L["WARBAND_GENERAL_DESCRIPTION"],
             fontSize = "medium",
         },
         {
             type = "toggle",
-            label = "Auto-balance gold with warbank",
-            desc = "Automatically deposit excess gold or withdraw if below threshold when opening a bank.",
+            label = L["WARBAND_AUTO_BALANCE"],
+            desc = L["WARBAND_AUTO_BALANCE_DESC"],
             get = function()
                 return Warband.db and Warband.db.autoDeposit;
             end,
@@ -50,11 +51,11 @@ local function generalWidgets()
                 end
             end,
         },
-        { type = "header", text = "Ungrouped Characters" },
+        { type = "header", text = L["WARBAND_UNGROUPED_HEADER"] },
         {
             type = "toggle",
-            label = "Use default threshold for ungrouped characters",
-            desc = "Apply a default gold threshold to characters not assigned to any group.",
+            label = L["WARBAND_USE_DEFAULT_THRESHOLD"],
+            desc = L["WARBAND_USE_DEFAULT_THRESHOLD_DESC"],
             get = function()
                 return Warband.db and Warband.db.useDefaultThreshold;
             end,
@@ -67,8 +68,8 @@ local function generalWidgets()
         },
         {
             type = "input",
-            label = "Default gold threshold",
-            desc = "Gold threshold for characters not in any group. The addon will automatically balance to this amount.",
+            label = L["WARBAND_DEFAULT_THRESHOLD"],
+            desc = L["WARBAND_DEFAULT_THRESHOLD_DESC"],
             disabled = function()
                 return not (Warband.db and Warband.db.useDefaultThreshold);
             end,
@@ -83,7 +84,7 @@ local function generalWidgets()
                 end
             end,
         },
-        { type = "header", text = "Current Character" },
+        { type = "header", text = L["WARBAND_CURRENT_CHAR_HEADER"] },
     };
 
     -- Dynamic current character info
@@ -91,16 +92,16 @@ local function generalWidgets()
     local group = Warband:GetCharacterGroup();
     local infoText;
     if (group) then
-        infoText = string.format("|cff00ff00Current character:|r %s\n|cff00ff00Group:|r %s\n|cff00ff00Gold threshold:|r %s gold",
-            key or "Unknown",
-            group.name or "None",
-            formatGoldThousands(group.goldThreshold or 0));
+        infoText = string.format("|cff00ff00%s|r %s\n|cff00ff00%s|r %s\n|cff00ff00%s|r %s",
+            L["WARBAND_CURRENT_CHAR_LABEL"], key or L["WARBAND_UNKNOWN"],
+            L["WARBAND_GROUP_LABEL"], group.name or L["WARBAND_NONE"],
+            L["WARBAND_GOLD_THRESHOLD_LABEL"], string.format(L["WARBAND_GOLD_SUFFIX"], formatGoldThousands(group.goldThreshold or 0)));
     else
         local thresholdText = "";
         if (Warband.db and Warband.db.useDefaultThreshold) then
-            thresholdText = string.format("\n|cff00ff00Default threshold:|r %s gold", formatGoldThousands(Warband.db.defaultThreshold or 1000000));
+            thresholdText = string.format("\n|cff00ff00%s|r %s", L["WARBAND_DEFAULT_THRESHOLD_LABEL"], string.format(L["WARBAND_GOLD_SUFFIX"], formatGoldThousands(Warband.db.defaultThreshold or 1000000)));
         end
-        infoText = string.format("|cff00ff00Current character:|r %s\n|cffff0000Not assigned to any group|r%s", key or "Unknown", thresholdText);
+        infoText = string.format("|cff00ff00%s|r %s\n|cffff0000%s|r%s", L["WARBAND_CURRENT_CHAR_LABEL"], key or L["WARBAND_UNKNOWN"], L["WARBAND_NOT_ASSIGNED"], thresholdText);
     end
 
     table.insert(widgets, {
@@ -137,12 +138,12 @@ local function groupsWidgets()
     -- Create New Group section
     ---------------------------------------------------------------------------
 
-    table.insert(widgets, { type = "header", text = "Create New Group" });
+    table.insert(widgets, { type = "header", text = L["WARBAND_CREATE_GROUP_HEADER"] });
 
     table.insert(widgets, {
         type = "input",
-        label = "Group name",
-        desc = "Enter a name for the new group (e.g., 'Mains', 'Alts', 'Bankers')",
+        label = L["WARBAND_GROUP_NAME"],
+        desc = L["WARBAND_GROUP_NAME_DESC"],
         get = function() return Warband._newGroupTemp.name or ""; end,
         set = function(val)
             Warband._newGroupTemp.name = val or "";
@@ -151,8 +152,8 @@ local function groupsWidgets()
 
     table.insert(widgets, {
         type = "input",
-        label = "Gold threshold",
-        desc = "Amount of gold to keep on character. Set to 0 to deposit all gold (deposit-only mode).",
+        label = L["WARBAND_GOLD_THRESHOLD"],
+        desc = L["WARBAND_GOLD_THRESHOLD_DESC"],
         get = function()
             local val = tonumber(Warband._newGroupTemp.threshold) or 100000;
             local copper = val * 10000;
@@ -169,8 +170,8 @@ local function groupsWidgets()
 
     table.insert(widgets, {
         type = "toggle",
-        label = "Allow deposits",
-        desc = "Allow depositing gold to warbank when over threshold.",
+        label = L["WARBAND_ALLOW_DEPOSITS"],
+        desc = L["WARBAND_ALLOW_DEPOSITS_DESC"],
         get = function()
             if (Warband._newGroupTemp.allowDeposit == nil) then return true; end
             return Warband._newGroupTemp.allowDeposit;
@@ -182,8 +183,8 @@ local function groupsWidgets()
 
     table.insert(widgets, {
         type = "toggle",
-        label = "Allow withdrawals",
-        desc = "Allow withdrawing gold from warbank when below threshold.",
+        label = L["WARBAND_ALLOW_WITHDRAWALS"],
+        desc = L["WARBAND_ALLOW_WITHDRAWALS_DESC"],
         get = function()
             if (Warband._newGroupTemp.allowWithdraw == nil) then return true; end
             return Warband._newGroupTemp.allowWithdraw;
@@ -195,25 +196,25 @@ local function groupsWidgets()
 
     table.insert(widgets, {
         type = "execute",
-        label = "Create Group",
-        desc = "Create a new character group with the settings above.",
+        label = L["WARBAND_CREATE_GROUP"],
+        desc = L["WARBAND_CREATE_GROUP_DESC"],
         func = function()
             local groupName = Warband._newGroupTemp.name;
             local thresholdStr = Warband._newGroupTemp.threshold;
             local threshold = parseGold(thresholdStr);
 
             if (not groupName or groupName == "") then
-                Lantern:Print("Please enter a group name.");
+                Lantern:Print(L["WARBAND_MSG_ENTER_NAME"]);
                 return;
             end
 
             if (not threshold) then
-                Lantern:Print("Please enter a valid gold amount.");
+                Lantern:Print(L["WARBAND_MSG_ENTER_VALID_GOLD"]);
                 return;
             end
 
             if (Warband.db.groups[groupName]) then
-                Lantern:Print("Group '" .. groupName .. "' already exists.");
+                Lantern:Print(string.format(L["WARBAND_MSG_GROUP_EXISTS"], groupName));
                 return;
             end
 
@@ -221,7 +222,7 @@ local function groupsWidgets()
             local allowWithdraw = Warband._newGroupTemp.allowWithdraw;
 
             Warband:CreateGroup(groupName, threshold, allowDeposit, allowWithdraw);
-            Lantern:Print("Created group '" .. groupName .. "' with threshold of " .. formatGoldThousands(threshold) .. " gold.");
+            Lantern:Print(string.format(L["WARBAND_MSG_CREATED_GROUP"], groupName, formatGoldThousands(threshold)));
 
             -- Clear inputs
             Warband._newGroupTemp.name = "";
@@ -244,30 +245,30 @@ local function groupsWidgets()
 
     for _, group in ipairs(groups) do
         local memberCount = group.members and #group.members or 0;
-        local groupLabel = string.format("%s - %d member%s", group.name, memberCount, memberCount == 1 and "" or "s");
+        local groupLabel = string.format(L["WARBAND_GROUP_MEMBER_COUNT"], group.name, memberCount, memberCount == 1 and "" or "s");
 
         local children = {};
 
         -- Group name (editable)
         table.insert(children, {
             type = "input",
-            label = "Group name",
-            desc = "Change the name of this group. Press Enter to confirm.",
+            label = L["WARBAND_GROUP_NAME"],
+            desc = L["WARBAND_RENAME_GROUP_DESC"],
             get = function() return group.name; end,
             set = function(val)
                 if (not val or val == "") then
-                    Lantern:Print("Please enter a new name.");
+                    Lantern:Print(L["WARBAND_MSG_ENTER_NEW_NAME"]);
                     return;
                 end
                 if (val == group.name) then return; end
                 if (Warband.db.groups[val]) then
-                    Lantern:Print("Group '" .. val .. "' already exists.");
+                    Lantern:Print(string.format(L["WARBAND_MSG_GROUP_EXISTS"], val));
                     return;
                 end
 
                 local oldName = group.name;
                 Warband:RenameGroup(oldName, val);
-                Lantern:Print("Renamed group '" .. oldName .. "' to '" .. val .. "'.");
+                Lantern:Print(string.format(L["WARBAND_MSG_RENAMED_GROUP"], oldName, val));
                 refreshPage();
             end,
         });
@@ -275,8 +276,8 @@ local function groupsWidgets()
         -- Gold threshold (editable)
         table.insert(children, {
             type = "input",
-            label = "Gold threshold",
-            desc = "Change the gold threshold for this group. Set to 0 to deposit all gold (deposit-only mode).",
+            label = L["WARBAND_GOLD_THRESHOLD"],
+            desc = L["WARBAND_EDIT_THRESHOLD_DESC"],
             get = function()
                 local freshGroup = Warband.db.groups[group.name];
                 return formatGoldThousands(freshGroup and freshGroup.goldThreshold or 0);
@@ -284,16 +285,16 @@ local function groupsWidgets()
             set = function(val)
                 local amount = parseGold(val);
                 if (not amount) then
-                    Lantern:Print("Please enter a valid gold amount.");
+                    Lantern:Print(L["WARBAND_MSG_ENTER_VALID_GOLD"]);
                     return;
                 end
                 if (amount < 0) then
-                    Lantern:Print("Gold amount must be 0 or greater.");
+                    Lantern:Print(L["WARBAND_MSG_GOLD_NONNEGATIVE"]);
                     return;
                 end
 
                 Warband:SetGroupGoldThreshold(group.name, amount);
-                Lantern:Print("Updated threshold for '" .. group.name .. "' to " .. formatGoldThousands(amount) .. " gold.");
+                Lantern:Print(string.format(L["WARBAND_MSG_UPDATED_THRESHOLD"], group.name, formatGoldThousands(amount)));
                 refreshPage();
             end,
         });
@@ -301,8 +302,8 @@ local function groupsWidgets()
         -- Allow deposits
         table.insert(children, {
             type = "toggle",
-            label = "Allow deposits",
-            desc = "Allow depositing gold to warbank when over threshold.",
+            label = L["WARBAND_ALLOW_DEPOSITS"],
+            desc = L["WARBAND_ALLOW_DEPOSITS_DESC"],
             get = function()
                 local freshGroup = Warband.db.groups[group.name];
                 if (freshGroup and freshGroup.allowDeposit ~= nil) then
@@ -321,8 +322,8 @@ local function groupsWidgets()
         -- Allow withdrawals
         table.insert(children, {
             type = "toggle",
-            label = "Allow withdrawals",
-            desc = "Allow withdrawing gold from warbank when below threshold.",
+            label = L["WARBAND_ALLOW_WITHDRAWALS"],
+            desc = L["WARBAND_ALLOW_WITHDRAWALS_DESC"],
             get = function()
                 local freshGroup = Warband.db.groups[group.name];
                 if (freshGroup and freshGroup.allowWithdraw ~= nil) then
@@ -339,7 +340,7 @@ local function groupsWidgets()
         });
 
         -- Members
-        table.insert(children, { type = "header", text = "Members" });
+        table.insert(children, { type = "header", text = L["WARBAND_MEMBERS_HEADER"] });
 
         if (group.members and #group.members > 0) then
             for _, memberKey in ipairs(group.members) do
@@ -349,12 +350,12 @@ local function groupsWidgets()
                 table.insert(children, {
                     type = "label_action",
                     text = memberKey .. "  |cff888888(" .. timeAgo .. ")|r",
-                    buttonLabel = "Remove",
-                    desc = "Remove " .. memberKey .. " from this group.",
-                    confirm = "Remove?",
+                    buttonLabel = L["WARBAND_REMOVE"],
+                    desc = string.format(L["WARBAND_REMOVE_MEMBER_DESC"], memberKey),
+                    confirm = L["WARBAND_REMOVE_CONFIRM"],
                     func = function()
                         Warband:RemoveCharacterFromGroup(memberKey);
-                        Lantern:Print("Removed " .. memberKey .. " from group '" .. group.name .. "'.");
+                        Lantern:Print(string.format(L["WARBAND_MSG_REMOVED_FROM_GROUP"], memberKey, group.name));
                         refreshPage();
                     end,
                 });
@@ -362,7 +363,7 @@ local function groupsWidgets()
         else
             table.insert(children, {
                 type = "description",
-                text = "No members in this group yet.",
+                text = L["WARBAND_NO_MEMBERS"],
                 fontSize = "small",
                 color = T.textDim,
             });
@@ -371,23 +372,23 @@ local function groupsWidgets()
         -- Add current character button
         table.insert(children, {
             type = "execute",
-            label = "Add Current Character",
-            desc = "Add the current character to this group.",
+            label = L["WARBAND_ADD_CURRENT_CHAR"],
+            desc = L["WARBAND_ADD_CURRENT_CHAR_DESC"],
             func = function()
                 local currentChar = Warband:GetCurrentCharacter();
                 if (not currentChar) then
-                    Lantern:Print("Could not get current character.");
+                    Lantern:Print(L["WARBAND_MSG_CANNOT_GET_CHAR"]);
                     return;
                 end
 
                 local currentGroup = Warband:GetCharacterGroup(currentChar);
                 if (currentGroup and currentGroup.name == group.name) then
-                    Lantern:Print(currentChar .. " is already in group '" .. group.name .. "'.");
+                    Lantern:Print(string.format(L["WARBAND_MSG_ALREADY_IN_GROUP"], currentChar, group.name));
                     return;
                 end
 
                 Warband:AssignCharacterToGroup(currentChar, group.name);
-                Lantern:Print("Added " .. currentChar .. " to group '" .. group.name .. "'.");
+                Lantern:Print(string.format(L["WARBAND_MSG_ADDED_TO_GROUP"], currentChar, group.name));
                 refreshPage();
             end,
         });
@@ -397,12 +398,12 @@ local function groupsWidgets()
 
         table.insert(children, {
             type = "execute",
-            label = "Delete Group",
-            desc = "Delete this group. Characters will be unassigned.",
-            confirm = "Delete?",
+            label = L["WARBAND_DELETE_GROUP"],
+            desc = L["WARBAND_DELETE_GROUP_DESC"],
+            confirm = L["WARBAND_DELETE_CONFIRM"],
             func = function()
                 Warband:DeleteGroup(group.name);
-                Lantern:Print("Deleted group '" .. group.name .. "'.");
+                Lantern:Print(string.format(L["WARBAND_MSG_DELETED_GROUP"], group.name));
                 refreshPage();
             end,
         });
@@ -418,7 +419,7 @@ local function groupsWidgets()
         table.insert(widgets, { type = "divider" });
         table.insert(widgets, {
             type = "description",
-            text = "No groups created yet. Use the form above to create your first group.",
+            text = L["WARBAND_NO_GROUPS"],
             fontSize = "small",
             color = T.textDim,
         });
@@ -438,14 +439,14 @@ local function charactersWidgets()
     local widgets = {
         {
             type = "description",
-            text = "Assign characters to groups. Characters in a group will automatically balance their gold to the threshold when opening a bank.",
+            text = L["WARBAND_CHARS_DESCRIPTION"],
             fontSize = "medium",
         },
-        { type = "header", text = "Current Character" },
+        { type = "header", text = L["WARBAND_CURRENT_CHAR_HEADER"] },
     };
 
     -- Build group values for dropdown
-    local groupValues = { [""] = "None" };
+    local groupValues = { [""] = L["WARBAND_NONE"] };
     local groupSorting = { "" };
     local sortedNames = {};
     for name, _ in pairs(Warband.db.groups or {}) do
@@ -462,8 +463,8 @@ local function charactersWidgets()
 
     table.insert(widgets, {
         type = "select",
-        label = "Assign to group",
-        desc = "Assign the current character to a group.",
+        label = L["WARBAND_ASSIGN_TO_GROUP"],
+        desc = L["WARBAND_ASSIGN_TO_GROUP_DESC"],
         values = groupValues,
         sorting = groupSorting,
         get = function()
@@ -472,16 +473,16 @@ local function charactersWidgets()
         set = function(val)
             if (val == "") then
                 Warband:RemoveCharacterFromGroup(currentChar);
-                Lantern:Print("Removed " .. currentChar .. " from groups.");
+                Lantern:Print(string.format(L["WARBAND_MSG_REMOVED_FROM_GROUPS"], currentChar));
             else
                 Warband:AssignCharacterToGroup(currentChar, val);
-                Lantern:Print("Assigned " .. currentChar .. " to group '" .. val .. "'.");
+                Lantern:Print(string.format(L["WARBAND_MSG_ASSIGNED_TO_GROUP"], currentChar, val));
             end
             refreshPage();
         end,
     });
 
-    table.insert(widgets, { type = "header", text = "All Characters" });
+    table.insert(widgets, { type = "header", text = L["WARBAND_ALL_CHARS_HEADER"] });
 
     -- List all assigned characters
     local hasChars = false;
@@ -501,12 +502,12 @@ local function charactersWidgets()
 
         local text;
         if (group) then
-            text = string.format("|cff00ff00%s|r  ->  %s (%s gold threshold)",
+            text = string.format("|cff00ff00%s|r  ->  %s (%s)",
                 displayName,
                 entry.groupName,
-                formatGoldThousands(group.goldThreshold or 0));
+                string.format(L["WARBAND_CHAR_GROUP_THRESHOLD"], formatGoldThousands(group.goldThreshold or 0)));
         else
-            text = string.format("|cffff0000%s|r  ->  %s (group not found)", displayName, entry.groupName);
+            text = string.format("|cffff0000%s|r  ->  %s (%s)", displayName, entry.groupName, L["WARBAND_CHAR_GROUP_NOT_FOUND"]);
         end
 
         table.insert(widgets, {
@@ -518,7 +519,7 @@ local function charactersWidgets()
     if (not hasChars) then
         table.insert(widgets, {
             type = "description",
-            text = "No characters assigned yet.",
+            text = L["WARBAND_NO_CHARS_ASSIGNED"],
             fontSize = "small",
             color = T.textDim,
         });
@@ -540,7 +541,7 @@ local function warehousingWidgets()
         return {
             {
                 type = "description",
-                text = "Warehousing is not available in this version of the game.",
+                text = L["WARBAND_WH_UNAVAILABLE"],
                 fontSize = "medium",
                 color = T.textDim,
             },
@@ -562,7 +563,7 @@ local function warehousingWidgets()
     local widgets = {
         {
             type = "description",
-            text = "Organize warbank items into groups and move them between your bags and the warband bank. Create groups, assign items, and configure deposit/restock rules.",
+            text = L["WARBAND_WH_DESCRIPTION"],
             fontSize = "medium",
         },
     };
@@ -571,12 +572,12 @@ local function warehousingWidgets()
     -- Create New Group section
     ---------------------------------------------------------------------------
 
-    table.insert(widgets, { type = "header", text = "Create New Group" });
+    table.insert(widgets, { type = "header", text = L["WARBAND_WH_CREATE_GROUP_HEADER"] });
 
     table.insert(widgets, {
         type = "input",
-        label = "Group name",
-        desc = "Enter a name for the new warehousing group.",
+        label = L["WARBAND_WH_GROUP_NAME"],
+        desc = L["WARBAND_WH_GROUP_NAME_DESC"],
         get = function() return Warband._newWHGroupTemp.name or ""; end,
         set = function(val)
             Warband._newWHGroupTemp.name = val or "";
@@ -585,23 +586,23 @@ local function warehousingWidgets()
 
     table.insert(widgets, {
         type = "execute",
-        label = "Create Group",
-        desc = "Create a new warehousing group with the name above.",
+        label = L["WARBAND_WH_CREATE_GROUP"],
+        desc = L["WARBAND_WH_CREATE_GROUP_DESC"],
         func = function()
             local name = Warband._newWHGroupTemp.name;
             if (not name or name == "") then
-                Lantern:Print("Please enter a group name.");
+                Lantern:Print(L["WARBAND_WH_MSG_ENTER_NAME"]);
                 return;
             end
 
             local success = Warehousing:CreateGroup(name);
             if (success) then
-                Lantern:Print("Created warehousing group '" .. name .. "'.");
+                Lantern:Print(string.format(L["WARBAND_WH_MSG_CREATED_GROUP"], name));
                 Warband._newWHGroupTemp.name = "";
                 syncBankUI();
                 refreshPage();
             else
-                Lantern:Print("Group '" .. name .. "' already exists.");
+                Lantern:Print(string.format(L["WARBAND_WH_MSG_GROUP_EXISTS"], name));
             end
         end,
     });
@@ -627,7 +628,7 @@ local function warehousingWidgets()
                 end
             end
 
-            local groupLabel = string.format("%s (%d item%s)", groupName, itemCount, itemCount == 1 and "" or "s");
+            local groupLabel = string.format(L["WARBAND_WH_GROUP_LABEL"], groupName, itemCount, itemCount == 1 and "" or "s");
             local children = {};
 
             -- Temp state for add-item input per group
@@ -638,12 +639,12 @@ local function warehousingWidgets()
             -- Deposit section
             -------------------------------------------------------------------
 
-            table.insert(children, { type = "header", text = "Deposit" });
+            table.insert(children, { type = "header", text = L["WARBAND_WH_DEPOSIT_HEADER"] });
 
             table.insert(children, {
                 type = "toggle",
-                label = "Enable deposit",
-                desc = "Deposit items from your bags into the warbank when visiting the bank.",
+                label = L["WARBAND_WH_ENABLE_DEPOSIT"],
+                desc = L["WARBAND_WH_ENABLE_DEPOSIT_DESC"],
                 get = function()
                     local g = Warehousing:GetGroup(groupName);
                     return g and g.depositEnabled;
@@ -660,8 +661,8 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "toggle",
-                label = "Deposit all",
-                desc = "Deposit all items in your bags (ignoring quantity limit). Disable to deposit a specific quantity.",
+                label = L["WARBAND_WH_DEPOSIT_ALL"],
+                desc = L["WARBAND_WH_DEPOSIT_ALL_DESC"],
                 disabled = function()
                     local g = Warehousing:GetGroup(groupName);
                     return not (g and g.depositEnabled);
@@ -682,8 +683,8 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "input",
-                label = "Deposit quantity",
-                desc = "Maximum number of items to deposit per visit. Only used when 'Deposit all' is off.",
+                label = L["WARBAND_WH_DEPOSIT_QTY"],
+                desc = L["WARBAND_WH_DEPOSIT_QTY_DESC"],
                 disabled = function()
                     local g = Warehousing:GetGroup(groupName);
                     return not (g and g.depositEnabled) or (g and g.depositAll);
@@ -705,12 +706,12 @@ local function warehousingWidgets()
             -- Restock section
             -------------------------------------------------------------------
 
-            table.insert(children, { type = "header", text = "Restock" });
+            table.insert(children, { type = "header", text = L["WARBAND_WH_RESTOCK_HEADER"] });
 
             table.insert(children, {
                 type = "toggle",
-                label = "Enable restock",
-                desc = "Withdraw items from the warbank to your bags when visiting the bank.",
+                label = L["WARBAND_WH_ENABLE_RESTOCK"],
+                desc = L["WARBAND_WH_ENABLE_RESTOCK_DESC"],
                 get = function()
                     local g = Warehousing:GetGroup(groupName);
                     return g and g.restockEnabled;
@@ -727,8 +728,8 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "toggle",
-                label = "Restock all",
-                desc = "Withdraw all available items from the warbank. Disable to restock up to a specific quantity.",
+                label = L["WARBAND_WH_RESTOCK_ALL"],
+                desc = L["WARBAND_WH_RESTOCK_ALL_DESC"],
                 disabled = function()
                     local g = Warehousing:GetGroup(groupName);
                     return not (g and g.restockEnabled);
@@ -749,8 +750,8 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "input",
-                label = "Restock quantity",
-                desc = "Target number of items to keep in your bags. Only used when 'Restock all' is off.",
+                label = L["WARBAND_WH_RESTOCK_QTY"],
+                desc = L["WARBAND_WH_RESTOCK_QTY_DESC"],
                 disabled = function()
                     local g = Warehousing:GetGroup(groupName);
                     return not (g and g.restockEnabled) or (g and g.restockAll);
@@ -772,12 +773,12 @@ local function warehousingWidgets()
             -- Keep section
             -------------------------------------------------------------------
 
-            table.insert(children, { type = "header", text = "Keep" });
+            table.insert(children, { type = "header", text = L["WARBAND_WH_KEEP_HEADER"] });
 
             table.insert(children, {
                 type = "toggle",
-                label = "Enable keep minimum",
-                desc = "Keep a minimum quantity in the source location. When depositing, keeps at least this many in your bags. When restocking, keeps at least this many in the warbank.",
+                label = L["WARBAND_WH_ENABLE_KEEP"],
+                desc = L["WARBAND_WH_ENABLE_KEEP_DESC"],
                 get = function()
                     local g = Warehousing:GetGroup(groupName);
                     return g and g.keepEnabled;
@@ -794,8 +795,8 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "input",
-                label = "Keep quantity",
-                desc = "Minimum number of items to keep in the source location.",
+                label = L["WARBAND_WH_KEEP_QTY"],
+                desc = L["WARBAND_WH_KEEP_QTY_DESC"],
                 disabled = function()
                     local g = Warehousing:GetGroup(groupName);
                     return not (g and g.keepEnabled);
@@ -817,17 +818,17 @@ local function warehousingWidgets()
             -- Add Item section
             -------------------------------------------------------------------
 
-            table.insert(children, { type = "header", text = "Add Item" });
+            table.insert(children, { type = "header", text = L["WARBAND_WH_ADD_ITEM_HEADER"] });
 
             table.insert(children, {
                 type = "drop_slot",
-                label = "Drag and drop:",
-                desc = "Drag an item from your bags and drop it here to add it to this group.",
+                label = L["WARBAND_WH_DRAG_DROP"],
+                desc = L["WARBAND_WH_DRAG_DROP_DESC"],
                 onDrop = function(itemID)
                     local itemName = C_Item.GetItemNameByID(itemID) or "";
                     Warehousing:AddItemToGroup(groupName, itemID, itemName);
                     local displayName = itemName ~= "" and itemName or ("Item " .. itemID);
-                    Lantern:Print(string.format("Added %s to '%s'.", displayName, groupName));
+                    Lantern:Print(string.format(L["WARBAND_WH_MSG_ADDED_ITEM"], displayName, groupName));
                     -- Defer refresh so the drop handler finishes before widgets are rebuilt
                     C_Timer.After(0, function()
                         syncBankUI();
@@ -838,8 +839,8 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "input",
-                label = "Item ID or drag and drop",
-                desc = "Enter an item ID (e.g. 12345) or drag an item from your bags into this field.",
+                label = L["WARBAND_WH_ITEM_ID_INPUT"],
+                desc = L["WARBAND_WH_ITEM_ID_INPUT_DESC"],
                 get = function() return Warband._whAddItemTemp[groupName] or ""; end,
                 set = function(val)
                     if (not val or val:match("^%s*$")) then return; end
@@ -849,13 +850,13 @@ local function warehousingWidgets()
                         local itemName = C_Item.GetItemNameByID(itemID) or "";
                         Warehousing:AddItemToGroup(groupName, itemID, itemName);
                         local displayName = itemName ~= "" and itemName or ("Item " .. itemID);
-                        Lantern:Print(string.format("Added %s to '%s'.", displayName, groupName));
+                        Lantern:Print(string.format(L["WARBAND_WH_MSG_ADDED_ITEM"], displayName, groupName));
                         Warband._whAddItemTemp[groupName] = "";
                         syncBankUI();
                         refreshPage();
                     else
                         Warband._whAddItemTemp[groupName] = val;
-                        Lantern:Print("Invalid item ID.");
+                        Lantern:Print(L["WARBAND_WH_MSG_INVALID_ITEM_ID"]);
                     end
                 end,
             });
@@ -866,7 +867,7 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "header",
-                text = string.format("Items (%d)", itemCount),
+                text = string.format(L["WARBAND_WH_ITEMS_HEADER"], itemCount),
             });
 
             -- Sort items by name
@@ -886,12 +887,12 @@ local function warehousingWidgets()
                         type = "item_row",
                         itemID = item.id,
                         itemName = item.name,
-                        desc = "Remove this item from the group.",
-                        confirm = "Remove?",
+                        desc = L["WARBAND_WH_REMOVE_ITEM_DESC"],
+                        confirm = L["WARBAND_REMOVE_CONFIRM"],
                         func = function()
                             Warehousing:RemoveItemFromGroup(groupName, item.id);
                             local displayName = C_Item.GetItemNameByID(item.id) or ("Item " .. item.id);
-                            Lantern:Print(string.format("Removed %s from '%s'.", displayName, groupName));
+                            Lantern:Print(string.format(L["WARBAND_WH_MSG_REMOVED_ITEM"], displayName, groupName));
                             syncBankUI();
                             refreshPage();
                         end,
@@ -900,7 +901,7 @@ local function warehousingWidgets()
             else
                 table.insert(children, {
                     type = "description",
-                    text = "No items yet. Enter an item ID or paste an item link above.",
+                    text = L["WARBAND_WH_NO_ITEMS"],
                     fontSize = "small",
                     color = T.textDim,
                 });
@@ -914,12 +915,12 @@ local function warehousingWidgets()
 
             table.insert(children, {
                 type = "execute",
-                label = "Delete Group",
-                desc = "Delete this warehousing group and all its items.",
-                confirm = "Delete?",
+                label = L["WARBAND_WH_DELETE_GROUP"],
+                desc = L["WARBAND_WH_DELETE_GROUP_DESC"],
+                confirm = L["WARBAND_WH_DELETE_CONFIRM"],
                 func = function()
                     Warehousing:DeleteGroup(groupName);
-                    Lantern:Print("Deleted warehousing group '" .. groupName .. "'.");
+                    Lantern:Print(string.format(L["WARBAND_WH_MSG_DELETED_GROUP"], groupName));
                     syncBankUI();
                     refreshPage();
                 end,
@@ -933,7 +934,7 @@ local function warehousingWidgets()
                 type = "group",
                 text = groupLabel,
                 stateKey = groupName,
-                desc = "Expand to manage items and rules for this group.",
+                desc = L["WARBAND_WH_GROUP_DESC"],
                 children = children,
             });
         end
@@ -944,7 +945,7 @@ local function warehousingWidgets()
         table.insert(widgets, { type = "divider" });
         table.insert(widgets, {
             type = "description",
-            text = "No warehousing groups created yet. Use the form above to create your first group.",
+            text = L["WARBAND_WH_NO_GROUPS"],
             fontSize = "small",
             color = T.textDim,
         });
@@ -958,8 +959,8 @@ end
 -------------------------------------------------------------------------------
 
 Warband.uxPages = {
-    { key = "warband_general",      opts = { label = "General",      title = "General",      description = "Core warband settings.",                             widgets = generalWidgets } },
-    { key = "warband_groups",       opts = { label = "Groups",       title = "Groups",       description = "Create and manage character groups.",                 widgets = groupsWidgets } },
-    { key = "warband_characters",   opts = { label = "Characters",   title = "Characters",   description = "Assign characters to groups.",                       widgets = charactersWidgets } },
-    { key = "warband_warehousing",  opts = { label = "Warehousing",  title = "Warehousing",  description = "Warbank item management.",                           widgets = warehousingWidgets } },
+    { key = "warband_general",      opts = { label = L["WARBAND_PAGE_GENERAL"],      title = L["WARBAND_PAGE_GENERAL_TITLE"],      description = L["WARBAND_PAGE_GENERAL_DESC"],      widgets = generalWidgets } },
+    { key = "warband_groups",       opts = { label = L["WARBAND_PAGE_GROUPS"],       title = L["WARBAND_PAGE_GROUPS_TITLE"],       description = L["WARBAND_PAGE_GROUPS_DESC"],       widgets = groupsWidgets } },
+    { key = "warband_characters",   opts = { label = L["WARBAND_PAGE_CHARACTERS"],   title = L["WARBAND_PAGE_CHARACTERS_TITLE"],   description = L["WARBAND_PAGE_CHARACTERS_DESC"],   widgets = charactersWidgets } },
+    { key = "warband_warehousing",  opts = { label = L["WARBAND_PAGE_WAREHOUSING"],  title = L["WARBAND_PAGE_WAREHOUSING_TITLE"],  description = L["WARBAND_PAGE_WAREHOUSING_DESC"],  widgets = warehousingWidgets } },
 };

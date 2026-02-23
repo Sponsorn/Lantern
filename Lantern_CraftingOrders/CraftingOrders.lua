@@ -1,4 +1,5 @@
-local ADDON_NAME = ...;
+local ADDON_NAME, ns = ...;
+local L = ns.L;
 local Lantern = _G.Lantern;
 local C_CraftingOrders = C_CraftingOrders;
 local C_TradeSkillUI = C_TradeSkillUI;
@@ -13,8 +14,8 @@ local LibSink = LibStub and LibStub("LibSink-2.0", true);
 local LibSharedMedia = LibStub and LibStub("LibSharedMedia-3.0", true);
 
 local CraftingOrders = Lantern:NewModule("CraftingOrders", {
-    title = "Crafting Orders",
-    desc = "Notify about guild crafting order placements and completions.",
+    title = L["CO_TITLE"],
+    desc = L["CO_DESC"],
 });
 
 local DEFAULTS = {
@@ -65,7 +66,7 @@ end
 local function formatGuildMessage(template, itemLink, who, tipCopper)
     local msg = tostring(template or "");
     local tipValue = Lantern and Lantern:Convert("money:format_copper", tipCopper) or "";
-    local tipText = (tipValue ~= "") and (", commission: " .. tipValue) or "";
+    local tipText = (tipValue ~= "") and (L["CO_COMMISSION_PREFIX"] .. tipValue) or "";
     msg = msg:gsub("{item}", itemLink or "Unknown item");
     msg = msg:gsub("{who}", who or "");
     msg = msg:gsub("{tip}", tipText);
@@ -82,7 +83,7 @@ local function sendGuildMessage(msg)
     if (SendChatMessage) then
         SendChatMessage(msg, "GUILD");
     else
-        Lantern:Print("Crafting Orders: " .. tostring(msg));
+        Lantern:Print(string.format(L["CO_MSG_FALLBACK_PRINT"], tostring(msg)));
     end
 end
 
@@ -124,7 +125,7 @@ local function isPersonalOrderType(orderType)
 end
 
 local function formatPersonalOrderMessage()
-    return "New personal crafting order received.";
+    return L["CO_PERSONAL_ORDER_MSG"];
 end
 
 local function getSoundValues()
@@ -195,11 +196,11 @@ end
 
 local function GetOutlineValues()
     return {
-        [""] = "None",
-        ["OUTLINE"] = "Outline",
-        ["THICKOUTLINE"] = "Thick Outline",
-        ["MONOCHROME"] = "Monochrome",
-        ["OUTLINE, MONOCHROME"] = "Outline + Monochrome",
+        [""] = L["CO_OUTLINE_NONE"],
+        ["OUTLINE"] = L["CO_OUTLINE_OUTLINE"],
+        ["THICKOUTLINE"] = L["CO_OUTLINE_THICK"],
+        ["MONOCHROME"] = L["CO_OUTLINE_MONO"],
+        ["OUTLINE, MONOCHROME"] = L["CO_OUTLINE_OUTLINE_MONO"],
     };
 end
 
@@ -362,7 +363,7 @@ function CraftingOrders:HandlePlacement()
     end
     local msg = formatGuildMessage(self.db.guildPlacedMessage, itemLink, nil, tip);
     if (self.db.debugGuild) then
-        Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
+        Lantern:Print(string.format(L["CO_MSG_DEBUG_WOULD_SEND"], tostring(msg)));
         return;
     end
     sendGuildMessage(msg);
@@ -415,7 +416,7 @@ function CraftingOrders:HandleFulfillResponse(...)
     if (itemLink and who) then
         local msg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, who, tipCopper);
         if (self.db.debugGuild) then
-            Lantern:Print("Crafting Orders: would have sent: " .. tostring(msg));
+            Lantern:Print(string.format(L["CO_MSG_DEBUG_WOULD_SEND"], tostring(msg)));
         else
             sendGuildMessage(msg);
         end
@@ -455,7 +456,7 @@ function CraftingOrders:HandleSystemMessage(msg)
 
     local fmtMsg = formatGuildMessage(self.db.guildFulfilledMessage, itemLink, self._awaitFulfillWho, tipCopper);
     if (self.db.debugGuild) then
-        Lantern:Print("Crafting Orders: would have sent: " .. tostring(fmtMsg));
+        Lantern:Print(string.format(L["CO_MSG_DEBUG_WOULD_SEND"], tostring(fmtMsg)));
     else
         sendGuildMessage(fmtMsg);
     end
@@ -534,7 +535,7 @@ function CraftingOrders:EnsureWhisperButton()
     if (view._lanternCompleteWhisperButton) then return; end
 
     local button = CreateFrame("Button", "LanternCO_CompleteWhisperBtn", view, "UIPanelButtonTemplate");
-    button:SetText("Complete + Whisper");
+    button:SetText(L["CO_COMPLETE_WHISPER_BTN"]);
 
     -- Set size based on base button
     local height = baseButton:GetHeight() or 22;
@@ -579,7 +580,7 @@ function CraftingOrders:HandleDebugUnlockClick()
     if (self._debugClickCount >= 5) then
         self._debugClickCount = 0;
         self._debugUnlocked = true;
-        Lantern:Print("Crafting Orders: debug options unlocked.");
+        Lantern:Print(L["CO_MSG_DEBUG_UNLOCKED"]);
     end
 end
 

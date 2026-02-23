@@ -1,3 +1,4 @@
+local L = select(2, ...).L;
 local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.Warband) then return; end
 if (not Enum or not Enum.BagIndex or not Enum.BagIndex.AccountBankTab_1) then return; end
@@ -52,7 +53,7 @@ local function ensureEventFrame()
     Engine.eventFrame:Hide();
     Engine.eventFrame:SetScript("OnEvent", function(_, event, ...)
         if (event == "BANKFRAME_CLOSED") then
-            Engine:Stop("Bank closed");
+            Engine:Stop(L["WARBAND_WH_UI_REASON_BANK_CLOSED"]);
         elseif (event == "ITEM_LOCK_CHANGED") then
             Engine:OnItemLockChanged(...);
         elseif (event == "BAG_UPDATE") then
@@ -201,7 +202,7 @@ function Engine:ProcessBatch()
 
     -- Verify bank is still open
     if (not C_Bank or not C_Bank.CanUseBank(Enum.BankType.Account)) then
-        self:Stop("Bank no longer accessible");
+        self:Stop(L["WARBAND_WH_UI_REASON_BANK_INACCESSIBLE"]);
         return;
     end
 
@@ -365,10 +366,9 @@ function Engine:ProcessBatch()
                         -- Exceeded max retries, fail permanently
                         self.operationsDone[opIndex] = true;
                         self.results[opIndex] = false;
-                        local dest = (op.mode == "deposit") and "warbank" or "inventory";
-                        local reason = "No space in " .. dest;
-                        Lantern:Print(string.format("Warehousing: Failed to %s %s - %s (after %d retries).",
-                            op.mode == "deposit" and "deposit" or "withdraw",
+                        local reason = (op.mode == "deposit") and L["WARBAND_WH_NO_SPACE_WARBANK"] or L["WARBAND_WH_NO_SPACE_INVENTORY"];
+                        local actionMsg = (op.mode == "deposit") and L["WARBAND_WH_MSG_FAILED_DEPOSIT"] or L["WARBAND_WH_MSG_FAILED_WITHDRAW"];
+                        Lantern:Print(string.format(actionMsg,
                             op.itemName or ("item " .. tostring(op.itemID)),
                             reason, MAX_OP_RETRIES));
                         if (self.callbacks and self.callbacks.onOperationComplete) then
@@ -405,8 +405,9 @@ function Engine:ProcessBatch()
                 if (not self.operationsDone[opIndex]) then
                     self.operationsDone[opIndex] = true;
                     self.results[opIndex] = false;
-                    Lantern:Print(string.format("Warehousing: Failed to %s %s - items unavailable.",
-                        op.mode == "deposit" and "deposit" or "withdraw",
+                    local action = (op.mode == "deposit") and L["WARBAND_WH_ACTION_DEPOSIT"] or L["WARBAND_WH_ACTION_WITHDRAW"];
+                    Lantern:Print(string.format(L["WARBAND_WH_MSG_FAILED_UNAVAILABLE"],
+                        action,
                         op.itemName or ("item " .. tostring(op.itemID))));
                     if (self.callbacks and self.callbacks.onOperationComplete) then
                         self.callbacks.onOperationComplete(opIndex, false, "Items unavailable");
