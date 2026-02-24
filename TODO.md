@@ -14,4 +14,3 @@ TODO
 - new module: character screen improvements, ilvl, gems, enchants
 - warband: fix font selection, maybe revert to old game font
 - cursor ring: add stack tracker for spells/buffs, radial x/y selector, per class
-- cursor ring: extract trail code (state, pool, sparkles, OnUpdate) into separate CursorRing/Trail.lua file — CursorRing.lua is 1400+ lines

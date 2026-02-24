@@ -45,6 +45,7 @@ AutoSell\WidgetOptions.lua
 ChatFilter\ChatFilter.lua
 ChatFilter\WidgetOptions.lua
 CursorRing\CursorRing.lua
+CursorRing\Trail.lua
 CursorRing\WidgetOptions.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
