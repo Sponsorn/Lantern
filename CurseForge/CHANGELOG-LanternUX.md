@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 - 2026-02-24
+- Fix: Range slider drag area now covers the full widget height, making it easier to grab
+- Change: Toggle widget uses a simpler solid texture instead of backdrop borders for a cleaner look
+
 ## 0.2.1 - 2026-02-23
 - Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads
 
