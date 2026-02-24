@@ -1,4 +1,11 @@
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
+<img src="https://img.shields.io/badge/Developer%20Library%20--%20Not%20a%20standalone%20addon-e04040?style=for-the-badge" alt="Developer Library -- Not a standalone addon" />
+----
+**This is a developer library.** LanternUX does nothing on its own -- it's a dependency used by addons like [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) to build settings panels. If you're a player, you don't need to install this manually.
+----
+---
+<a href="https://buymeacoffee.com/sponsorn"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e" alt="Buy me a coffee" /></a>
+
+
 
 LanternUX is a standalone settings panel framework for WoW addon developers. No dependencies -- drop it in and create polished settings panels.
 

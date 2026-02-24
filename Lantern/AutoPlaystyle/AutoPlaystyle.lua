@@ -78,16 +78,30 @@ end
 -- Playstyle auto-selection
 -------------------------------------------------------------------------------
 
+local PLAYSTYLE_GLOBALS = {
+    "GROUP_FINDER_GENERAL_PLAYSTYLE1",
+    "GROUP_FINDER_GENERAL_PLAYSTYLE2",
+    "GROUP_FINDER_GENERAL_PLAYSTYLE3",
+    "GROUP_FINDER_GENERAL_PLAYSTYLE4",
+};
+
 function module:ApplyPlaystyle(entryCreation)
     if (not entryCreation) then return; end
 
     local playstyle = self.db.playstyle;
     if (not playstyle or playstyle < 1 or playstyle > 4) then return; end
 
-    -- Set playstyle directly on the frame table.
-    -- The PlayStyleDropdown reads this value when opened.
-    -- The "List Group" button reads it when creating the listing.
+    -- Set playstyle on the frame table (read by "List Group" button)
     entryCreation.generalPlaystyle = playstyle;
+
+    -- Update the dropdown's visual text to match
+    local dropdown = entryCreation.PlayStyleDropdown;
+    if (dropdown and dropdown.SetText) then
+        local text = _G[PLAYSTYLE_GLOBALS[playstyle]];
+        if (text) then
+            dropdown:SetText(text);
+        end
+    end
 end
 
 Lantern:RegisterModule(module);

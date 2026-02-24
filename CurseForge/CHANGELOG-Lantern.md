@@ -1,21 +1,25 @@
 # Changelog
 
-## 0.6.0 - 2026-02-23
+## 0.6.0 - 2026-02-24
 - Add: Tooltip module — shows mount names, item IDs, spell IDs, and talent node IDs on tooltips with Ctrl+C copy support (all features individually toggleable, disabled by default)
+- Add: Tooltip Ctrl+C opens a copy popup showing the item/spell name with selectable ID fields — supports items with both ItemID and SpellID in one popup
 - Add: Minimap icon now shows an amber glow overlay on hover
-- Add: Cursor Ring trail color presets — Class Color (auto-matches your class), Lantern Gold, Arcane, Fel, Fire, Frost, Holy, Shadow, plus multi-color gradients: Rainbow, Ember, and Ocean
+- Add: Cursor Ring trail color presets — Class Color (auto-matches your class), Lantern Gold, Arcane, Fel, Fire, Frost, Holy, Shadow, plus multi-color gradients: Rainbow, Al'ar, Ember, and Ocean
 - Add: Cursor Ring trail style selector — choose between Glow, Line, Thick Line, and Dots presets, or go Custom
 - Add: Cursor Ring trail manual controls — Max Points, Dot Size, Dot Spacing, and Shrink with Age settings
 - Add: Cursor Ring trail now interpolates dots along the cursor path — no more gaps during fast mouse movement
 - Add: Cursor Ring trail "Taper with Distance" option — dots shrink and fade toward the tail for a brush-stroke effect (enabled by default on Line and Thick Line presets)
+- Add: Cursor Ring trail sparkle effect with two modes — Static (fade in place) and Twinkle (shimmer with upward drift)
+- Add: Cursor Ring rainbow trail now shifts its starting color as you move, instead of always starting from red
 - Add: Full localization support — all user-facing strings extracted to locale files with English as the base, 10 additional languages ready for community translations
 - Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads, localization substitution, and GitHub Releases
 - Change: Cursor Ring Preview is now a button ("Start Preview" / "Stop Preview") instead of a toggle, so it reads as a tool rather than a setting
 - Change: Cursor Ring renamed to Cursor Ring & Trail
-- Change: Cursor Ring trail max points increased from 80 to 200
+- Change: Cursor Ring trail max points increased from 80 to 400
 - Change: Cursor Ring trail performance improved — dot positions set once on placement instead of every frame, dormant mode when cursor is idle, and hitch recovery after loading screens
 - Fix: Preview mode now loops continuously in Cursor Ring, Combat Timer, and Combat Alert (was checking wrong panel frame property, causing auto-disable after 0.5s)
 - Fix: Tooltip module no longer errors on unit tooltips inside instances (secret value guard)
+- Fix: Tooltip copy no longer triggers protected function errors during combat
 
 ## 0.5.1 - 2026-02-21
 - Add: Range Check now detects Holy Paladin melee range (item-based check since Holy has no melee attack spell)

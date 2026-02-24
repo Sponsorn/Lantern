@@ -36,17 +36,15 @@ local function CreateToggle(parent)
     frame:SetHeight(TRACK_H + 4);
     w.frame = frame;
 
-    -- Track (pill background)
-    local track = CreateFrame("Frame", NextName("LUX_ToggleTrack_"), frame, "BackdropTemplate");
+    -- Track (pill background — single solid texture, no border)
+    local track = CreateFrame("Frame", NextName("LUX_ToggleTrack_"), frame);
     track:SetSize(TRACK_W, TRACK_H);
     track:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -2);
-    track:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    });
-    track:SetBackdropColor(unpack(T.toggleTrack));
-    track:SetBackdropBorderColor(unpack(T.checkBorder));
+
+    local trackBg = track:CreateTexture(nil, "ARTWORK");
+    trackBg:SetAllPoints();
+    trackBg:SetColorTexture(unpack(T.toggleTrack));
+    w._trackBg = trackBg;
     w._track = track;
 
     -- Thumb (small square that slides inside track)
@@ -84,16 +82,15 @@ local function CreateToggle(parent)
     -- Helper: apply track/thumb colors for current checked state
     local function ApplyColors()
         if (w._disabled) then
-            track:SetBackdropColor(unpack(T.toggleTrackDis));
-            track:SetBackdropBorderColor(unpack(T.disabled));
+            trackBg:SetColorTexture(unpack(T.toggleTrackDis));
             thumbBg:SetColorTexture(unpack(T.toggleThumbDis));
             label:SetTextColor(unpack(T.disabledText));
         elseif (w._checked) then
-            track:SetBackdropColor(unpack(T.toggleTrackOn));
+            trackBg:SetColorTexture(unpack(T.toggleTrackOn));
             thumbBg:SetColorTexture(unpack(T.toggleThumbOn));
             label:SetTextColor(unpack(T.text));
         else
-            track:SetBackdropColor(unpack(T.toggleTrack));
+            trackBg:SetColorTexture(unpack(T.toggleTrack));
             thumbBg:SetColorTexture(unpack(T.toggleThumb));
             label:SetTextColor(unpack(T.text));
         end
@@ -114,17 +111,9 @@ local function CreateToggle(parent)
 
     -- Hover
     frame:SetScript("OnEnter", function()
-        if (not w._disabled) then
-            track:SetBackdropBorderColor(unpack(T.checkHover));
-        end
         ShowDescription(w._label:GetText(), w._desc_text);
     end);
-    frame:SetScript("OnLeave", function()
-        if (not w._disabled) then
-            track:SetBackdropBorderColor(unpack(T.checkBorder));
-        end
-        ClearDescription();
-    end);
+    frame:SetScript("OnLeave", ClearDescription);
 
     -- Click
     frame:SetScript("OnClick", function()
@@ -189,13 +178,6 @@ local function SetupToggle(w, parent, data, contentWidth)
     -- Apply colors
     w._applyColors();
 
-    -- Reset border (not hovered during setup)
-    if (disabled) then
-        w._track:SetBackdropBorderColor(unpack(T.disabled));
-    else
-        w._track:SetBackdropBorderColor(unpack(T.checkBorder));
-    end
-
     return w;
 end
 
@@ -219,9 +201,4 @@ _W.refreshers.toggle = function(w)
     end
     local disabled = EvalDisabled(w);
     w._applyColors();
-    if (disabled) then
-        w._track:SetBackdropBorderColor(unpack(T.disabled));
-    else
-        w._track:SetBackdropBorderColor(unpack(T.checkBorder));
-    end
 end;

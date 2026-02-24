@@ -529,10 +529,11 @@ module.widgetOptions = function()
                         holy    = L["CURSORRING_TRAIL_COLOR_HOLY"],
                         shadow  = L["CURSORRING_TRAIL_COLOR_SHADOW"],
                         rainbow = L["CURSORRING_TRAIL_COLOR_RAINBOW"],
+                        alar    = L["CURSORRING_TRAIL_COLOR_ALAR"],
                         ember   = L["CURSORRING_TRAIL_COLOR_EMBER"],
                         ocean   = L["CURSORRING_TRAIL_COLOR_OCEAN"],
                     },
-                    sorting = { "custom", "class", "gold", "arcane", "fel", "fire", "frost", "holy", "shadow", "rainbow", "ember", "ocean" },
+                    sorting = { "custom", "class", "gold", "arcane", "fel", "fire", "frost", "holy", "shadow", "rainbow", "alar", "ember", "ocean" },
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailColorPreset or "custom"; end,
                     set = function(val)
@@ -572,7 +573,7 @@ module.widgetOptions = function()
                     type = "range",
                     label = L["CURSORRING_MAX_POINTS"],
                     desc = L["CURSORRING_MAX_POINTS_DESC"],
-                    min = 5, max = 200, step = 1, default = 20,
+                    min = 5, max = 400, step = 1, default = 20,
                     disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
                     get = function() return cursorRingDB().trailMaxPoints or 20; end,
                     set = function(val)
@@ -633,6 +634,25 @@ module.widgetOptions = function()
                         d.trailShrinkDistance = val;
                         d.trailStyle = "custom";
                     end,
+                },
+                {
+                    type = "select",
+                    label = L["CURSORRING_SPARKLE"],
+                    desc = L["CURSORRING_SPARKLE_DESC"],
+                    values = {
+                        off     = L["CURSORRING_SPARKLE_OFF"],
+                        static  = L["CURSORRING_SPARKLE_STATIC"],
+                        twinkle = L["CURSORRING_SPARKLE_TWINKLE"],
+                    },
+                    sorting = { "off", "static", "twinkle" },
+                    disabled = function() return isDisabled() or (not isPreviewActive() and not cursorRingDB().trailEnabled); end,
+                    get = function() return cursorRingDB().trailSparkle or "off"; end,
+                    set = function(val) cursorRingDB().trailSparkle = val; end,
+                },
+                {
+                    type = "callout",
+                    text = L["CURSORRING_TRAIL_PERF_NOTE"],
+                    severity = "info",
                 },
             },
         },

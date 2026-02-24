@@ -96,6 +96,8 @@ Lantern:RegisterLocale("enUS", {
     SPLASH_CURSEFORGE                       = "CurseForge",
     SPLASH_COPY_LINK                        = "Copy link",
     SPLASH_COPY_HINT                        = "Ctrl+C to copy, Escape to close",
+    COPY                                    = "Copy",
+    SELECT                                  = "Select",
 
     -- Companion addon descriptions
     COMPANION_CO_LABEL                      = "Crafting Orders",
@@ -341,7 +343,7 @@ Lantern:RegisterLocale("enUS", {
     CURSORRING_ENABLE_RING1_DESC            = "Show the outer ring.",
     CURSORRING_SHAPE                        = "Shape",
     CURSORRING_RING_SHAPE_DESC              = "Ring shape.",
-    CURSORRING_SHAPE_CIRCLE                 = "Circle",
+    CURSORRING_SHwPE_CIRCLE                 = "Circle",
     CURSORRING_SHAPE_THIN                   = "Thin Circle",
     CURSORRING_COLOR                        = "Color",
     CURSORRING_RING1_COLOR_DESC             = "Ring 1 color.",
@@ -394,6 +396,7 @@ Lantern:RegisterLocale("enUS", {
     CURSORRING_TRAIL_COLOR_HOLY             = "Holy",
     CURSORRING_TRAIL_COLOR_SHADOW           = "Shadow",
     CURSORRING_TRAIL_COLOR_RAINBOW          = "Rainbow",
+    CURSORRING_TRAIL_COLOR_ALAR             = "Al'ar",
     CURSORRING_TRAIL_COLOR_EMBER            = "Ember",
     CURSORRING_TRAIL_COLOR_OCEAN            = "Ocean",
     CURSORRING_CUSTOM_COLOR                 = "Custom Color",
@@ -410,6 +413,12 @@ Lantern:RegisterLocale("enUS", {
     CURSORRING_SHRINK_AGE_DESC              = "Trail dots shrink as they fade out. Disable for a uniform-width trail.",
     CURSORRING_TAPER_DISTANCE               = "Taper with Distance",
     CURSORRING_TAPER_DISTANCE_DESC          = "Trail dots shrink and fade toward the tail, creating a tapered brush-stroke effect.",
+    CURSORRING_SPARKLE                      = "Sparkle",
+    CURSORRING_SPARKLE_DESC                 = "Adds small glinting particles along the trail as you move the cursor.",
+    CURSORRING_SPARKLE_OFF                  = "Off",
+    CURSORRING_SPARKLE_STATIC               = "Static",
+    CURSORRING_SPARKLE_TWINKLE              = "Twinkle",
+    CURSORRING_TRAIL_PERF_NOTE              = "The trail runs per-frame. More dots, sparkles, and effects will use more CPU.",
 
     ---------------------------------------------------------------------------
     -- Phase 3: MissingPet WidgetOptions
@@ -564,6 +573,7 @@ Lantern:RegisterLocale("enUS", {
     TOOLTIP_GROUP_COPY                      = "Copy",
     TOOLTIP_CTRL_C                          = "Ctrl+C to copy",
     TOOLTIP_CTRL_C_DESC                     = "Press Ctrl+C to copy the primary ID, or Ctrl+Shift+C to copy the secondary ID (e.g. an item's use-effect SpellID).",
+    TOOLTIP_COMBAT_NOTE                     = "Tooltip enhancements are disabled in instances. Mount scanning and Ctrl+C copy are disabled during combat.",
 
     ---------------------------------------------------------------------------
     -- Phase 3: DisableLootWarnings WidgetOptions
@@ -623,4 +633,5 @@ Lantern:RegisterLocale("enUS", {
 
     TOOLTIP_HINT_COPY                       = "Ctrl+C to copy",
     TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
+    TOOLTIP_COPY_HINT                       = "Ctrl+C to copy, Esc to close",
 });

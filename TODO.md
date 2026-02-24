@@ -11,5 +11,7 @@ TODO
 - screen calmer module: remove drunk blur, disable screen shake, skip death grayscale, tone down spell effects (sensory accessibility)
 - login briefing module: proactive summary on login (expiring mail, vault slots, uncollected crafting orders, daily/weekly resets, unspent profession knowledge)
 - import/export settings: copy/paste string pattern (like WeakAuras) for sharing configurations between characters or players
-- cursorring: give Preview toggle a distinct visual treatment (button style) so it reads as a tool, not a setting
-
+- new module: character screen improvements, ilvl, gems, enchants
+- warband: fix font selection, maybe revert to old game font
+- cursor ring: add stack tracker for spells/buffs, radial x/y selector, per class
+- cursor ring: extract trail code (state, pool, sparkles, OnUpdate) into separate CursorRing/Trail.lua file — CursorRing.lua is 1400+ lines

@@ -18,6 +18,15 @@ local CAST_SEGMENTS = 36;
 local TRAIL_UPDATE_INTERVAL = 0.016; -- ~60Hz
 local TRAIL_MOVE_THRESHOLD_SQ = 4;   -- 2px squared
 local TRAIL_MAX_ALPHA = 0.8;
+
+local SPARKLE_POOL_SIZE = 40;
+local SPARKLE_DURATION = 0.4;
+local SPARKLE_SIZE_MIN = 6;
+local SPARKLE_SIZE_MAX = 18;
+local SPARKLE_OFFSET = 10;       -- random offset range from trail dot
+local SPARKLE_CHANCE = 0.30;     -- 30% chance per trail dot placed
+local SPARKLE_DRIFT_Y = 18;     -- upward drift in px over lifetime
+local SPARKLE_TWINKLE_SPEED = 14; -- sine oscillation speed
 local GCD_SPELL_ID = 61304;
 local GCD_SHOW_DELAY = 0.07;
 local CAST_TICKER_INTERVAL = 0.033;  -- ~30fps
@@ -63,6 +72,7 @@ local TRAIL_COLOR_PRESETS = {
 -- Multi-color presets: gradient from → to, or special "rainbow" HSV cycle
 local TRAIL_GRADIENT_PRESETS = {
     rainbow = true,
+    alar    = { from = { r = 1.0, g = 0.55, b = 0.05 }, to = { r = 0.95, g = 0.05, b = 0.65 } },
     ember   = { from = { r = 1.0, g = 0.95, b = 0.3 }, to = { r = 0.8, g = 0.1, b = 0.0 } },
     ocean   = { from = { r = 0.3, g = 1.0, b = 1.0 }, to = { r = 0.0, g = 0.15, b = 0.7 } },
 };
@@ -105,6 +115,7 @@ local DEFAULTS = {
     trailShrink = true,
     trailShrinkDistance = false,
     trailColorPreset = "custom",
+    trailSparkle = "off",
 };
 
 -------------------------------------------------------------------------------
@@ -132,9 +143,12 @@ local trailCount = 0;
 local trailActive = false;
 local trailUpdateTimer = 0;
 local lastTrailX, lastTrailY = 0, 0;
+local rainbowHueOffset = 0;
 local lastRingX, lastRingY = 0, 0;
 local trailDormant = false;
 local trailLastUpdateTime = nil;
+local sparkleBuf = {};
+local sparkleHead = 0;
 
 -------------------------------------------------------------------------------
 -- Database
@@ -152,6 +166,10 @@ local function getDB()
                 d[k] = v;
             end
         end
+    end
+    -- Migrate trailSparkle from boolean to string
+    if (type(d.trailSparkle) == "boolean") then
+        d.trailSparkle = d.trailSparkle and "twinkle" or "off";
     end
     db = d;
     return d;
@@ -211,7 +229,7 @@ end
 -- t: 0 = head (newest), 1 = tail (oldest)
 local function ResolveGradientColor(preset, t)
     if (preset == "rainbow") then
-        return HSVtoRGB(t * 0.83, 1, 1);
+        return HSVtoRGB((t * 0.83 + rainbowHueOffset) % 1, 1, 1);
     end
     local grad = TRAIL_GRADIENT_PRESETS[preset];
     if (grad) then
@@ -803,8 +821,16 @@ ResetTrailState = function()
             if (pt.tex) then pt.tex:Hide(); end
         end
     end
+    for i = 1, SPARKLE_POOL_SIZE do
+        local sp = sparkleBuf[i];
+        if (sp) then
+            sp.active = false;
+            if (sp.tex) then sp.tex:Hide(); end
+        end
+    end
     trailHead = 0;
     trailCount = 0;
+    sparkleHead = 0;
     trailDormant = false;
     trailLastUpdateTime = nil;
 end
@@ -823,6 +849,16 @@ local function CreateTrailFrame()
     -- Create pooled trail textures
     local poolCount = db.trailMaxPoints or 20;
     EnsureTrailPool(poolCount);
+
+    -- Create sparkle pool
+    for i = 1, SPARKLE_POOL_SIZE do
+        local tex = container:CreateTexture(nil, "BACKGROUND");
+        tex:SetTexture(ASSET_PATH .. "trail_glow.tga", "CLAMP", "CLAMP", "TRILINEAR");
+        tex:SetTexCoord(TRAIL_TEXCOORD_HALF, 1 - TRAIL_TEXCOORD_HALF, TRAIL_TEXCOORD_HALF, 1 - TRAIL_TEXCOORD_HALF);
+        tex:SetBlendMode("ADD");
+        tex:Hide();
+        sparkleBuf[i] = { x = 0, y = 0, time = 0, size = 4, r = 1, g = 1, b = 1, tex = tex, active = false };
+    end
 
     -- Trail OnUpdate
     container:SetScript("OnUpdate", function(_, elapsed)
@@ -871,6 +907,10 @@ local function CreateTrailFrame()
         local shrinkDist = db.trailShrinkDistance;
         local anyShrink = shouldShrink or shrinkDist;
 
+        -- Resolve trail color once (used by emission and update)
+        local tc = ResolveTrailColor();
+        local gradientPreset = TRAIL_GRADIENT_PRESETS[db.trailColorPreset] and db.trailColorPreset or nil;
+
         -- Emit dots along the path — interpolate to fill gaps during fast movement
         local dx, dy = x - lastTrailX, y - lastTrailY;
         local distSq = dx * dx + dy * dy;
@@ -879,6 +919,17 @@ local function CreateTrailFrame()
             local n = floor(dist / spacing);
             if (n > maxPts) then n = maxPts; end -- cap to pool size
             local ux, uy = dx / dist, dy / dist;
+            local sparkleEnabled = db.trailSparkle ~= "off" and sparkleBuf[1];
+            local sparkleColor;
+            if (sparkleEnabled) then
+                if (gradientPreset) then
+                    local sr, sg, sb = ResolveGradientColor(gradientPreset, 0);
+                    sparkleColor = { sr, sg, sb };
+                else
+                    sparkleColor = { tc.r, tc.g, tc.b };
+                end
+            end
+
             for s = 1, n do
                 local px = lastTrailX + ux * spacing * s;
                 local py = lastTrailY + uy * spacing * s;
@@ -886,10 +937,29 @@ local function CreateTrailFrame()
                 local slot = trailBuf[trailHead];
                 slot.x, slot.y, slot.time, slot.active = px, py, now, true;
                 if (trailCount < maxPts) then trailCount = trailCount + 1; end
+                rainbowHueOffset = rainbowHueOffset + 0.001;
                 local tex = slot.tex;
                 if (tex) then
                     tex:ClearAllPoints();
                     tex:SetPoint("CENTER", UIParent, "BOTTOMLEFT", px, py);
+                end
+
+                -- Sparkle emission
+                if (sparkleEnabled and math.random() < SPARKLE_CHANCE) then
+                    sparkleHead = (sparkleHead % SPARKLE_POOL_SIZE) + 1;
+                    local sp = sparkleBuf[sparkleHead];
+                    local sx = px + (math.random() * 2 - 1) * SPARKLE_OFFSET;
+                    local sy = py + (math.random() * 2 - 1) * SPARKLE_OFFSET;
+                    local sz = SPARKLE_SIZE_MIN + math.random() * (SPARKLE_SIZE_MAX - SPARKLE_SIZE_MIN);
+                    sp.x, sp.y, sp.time, sp.active = sx, sy, now, true;
+                    sp.size = sz;
+                    sp.r, sp.g, sp.b = sparkleColor[1], sparkleColor[2], sparkleColor[3];
+                    local stex = sp.tex;
+                    if (stex) then
+                        stex:SetSize(sz, sz);
+                        stex:ClearAllPoints();
+                        stex:SetPoint("CENTER", UIParent, "BOTTOMLEFT", sx, sy);
+                    end
                 end
             end
             lastTrailX = lastTrailX + ux * spacing * n;
@@ -899,8 +969,6 @@ local function CreateTrailFrame()
         -- Update existing points (alpha + size only, no repositioning)
         local dur = db.trailDuration > 0 and db.trailDuration or 0.1;
         local invDur = 1 / dur;
-        local tc = ResolveTrailColor();
-        local gradientPreset = TRAIL_GRADIENT_PRESETS[db.trailColorPreset] and db.trailColorPreset or nil;
         local anyActive = false;
 
         -- Walk ring buffer head-to-tail to assign distance ranks
@@ -965,6 +1033,40 @@ local function CreateTrailFrame()
             end
             idx = idx - 1;
             if (idx < 1) then idx = maxPts; end
+        end
+
+        -- Update sparkles
+        local sparkleMode = db.trailSparkle;
+        if (sparkleMode ~= "off") then
+            local invSpkDur = 1 / SPARKLE_DURATION;
+            local isTwinkle = (sparkleMode == "twinkle");
+            for i = 1, SPARKLE_POOL_SIZE do
+                local sp = sparkleBuf[i];
+                if (sp and sp.active) then
+                    local age = now - sp.time;
+                    if (age >= SPARKLE_DURATION) then
+                        sp.active = false;
+                        sp.tex:Hide();
+                    else
+                        anyActive = true;
+                        local t = age * invSpkDur; -- 0→1 over lifetime
+                        local fade = (1 - t) * (1 - t); -- quadratic fade-out
+                        local alpha;
+
+                        if (isTwinkle) then
+                            local twinkle = 0.5 + 0.5 * math.sin(age * SPARKLE_TWINKLE_SPEED);
+                            alpha = fade * twinkle * opacity;
+                            sp.tex:ClearAllPoints();
+                            sp.tex:SetPoint("CENTER", UIParent, "BOTTOMLEFT", sp.x, sp.y + t * SPARKLE_DRIFT_Y);
+                        else
+                            alpha = fade * opacity;
+                        end
+
+                        sp.tex:SetVertexColor(sp.r, sp.g, sp.b, alpha);
+                        sp.tex:Show();
+                    end
+                end
+            end
         end
 
         -- Enter dormant mode when cursor is still and all dots have faded
@@ -1114,8 +1216,16 @@ local function DestroyFrames()
             pt.active = false;
         end
     end
+    for i = 1, SPARKLE_POOL_SIZE do
+        local sp = sparkleBuf[i];
+        if (sp) then
+            if (sp.tex) then sp.tex:Hide(); end
+            sp.active = false;
+        end
+    end
     trailHead = 0;
     trailCount = 0;
+    sparkleHead = 0;
     trailPoolSize = 0;
     trailActive = false;
     trailDormant = false;

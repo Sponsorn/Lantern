@@ -44,6 +44,11 @@ module.widgetOptions = function()
     return {
         moduleToggle("Tooltip", L["ENABLE"], L["TOOLTIP_ENABLE_DESC"]),
         {
+            type = "callout",
+            text = L["TOOLTIP_COMBAT_NOTE"],
+            severity = "info",
+        },
+        {
             type = "group",
             text = L["TOOLTIP_GROUP_PLAYER"],
             expanded = true,

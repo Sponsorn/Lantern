@@ -146,7 +146,8 @@ local function CreateRange(parent)
 
     -- Drag handling on the track frame (covers both thumb and track clicks)
     local dragFrame = CreateFrame("Frame", NextName("LUX_RangeDrag_"), trackFrame);
-    dragFrame:SetAllPoints(trackFrame);
+    dragFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -RANGE_LABEL_H);
+    dragFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0);
     dragFrame:SetFrameLevel(trackFrame:GetFrameLevel() + 3);
     dragFrame:EnableMouse(true);
 
