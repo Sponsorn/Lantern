@@ -10,7 +10,7 @@ function Lantern:RegisterLocale(loc, strings)
         end
     elseif (loc == locale) then
         for k, v in pairs(strings) do
-            L[k] = v;
+            if (v ~= "") then L[k] = v; end
         end
     end
 end
