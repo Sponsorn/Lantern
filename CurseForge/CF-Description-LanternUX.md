@@ -1,18 +1,17 @@
-<img src="https://img.shields.io/badge/Developer%20Library%20--%20Not%20a%20standalone%20addon-e04040?style=for-the-badge" alt="Developer Library -- Not a standalone addon" />
-----
-**This is a developer library.** LanternUX does nothing on its own -- it's a dependency used by addons like [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) to build settings panels. If you're a player, you don't need to install this manually.
-----
----
-<a href="https://buymeacoffee.com/sponsorn"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-fff?logo=buymeacoffee&logoColor=e08f2e" alt="Buy me a coffee" /></a>
+## ![Developer Library -- Not a standalone addon](https://img.shields.io/badge/Developer Library -- Not a standalone addon-e04040?style=for-the-badge)
 
+## **This is a developer library.** LanternUX does nothing on its own -- it's a dependency used by addons like [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) to build settings panels. If you're a player, you don't need to install this manually.
 
+***
+
+[![Buy me a coffee](https://img.shields.io/badge/Buy me a coffee-fff?logo=buymeacoffee&logoColor=e08f2e)](https://buymeacoffee.com/sponsorn)
 
 LanternUX is a standalone settings panel framework for WoW addon developers. No dependencies -- drop it in and create polished settings panels.
 
 ### Features
 
-*   **Dark monochrome theme** inspired by Linear - near-black backgrounds with muted lavender accents
-*   **15 built-in widget types**: toggle, range (slider), select (dropdown), input (text field), color picker, execute (button), label, header, description, divider, collapsible group, label with action button, item row, drop slot, search result
+*   **Dark monochrome theme** inspired by Linear - near-black backgrounds with warm amber accents
+*   **15 built-in widget types**: toggle, range (slider), select (dropdown), input (text field), color picker, execute (button), label, header, description, divider, callout, collapsible group, label with action button, item row, drop slot
 *   **Sidebar navigation** with sections, collapsible groups, and accent-highlighted selection
 *   **Widget search** with real-time filtering and jump-to-widget
 *   **Description panel** that shows contextual help on widget hover
@@ -22,7 +21,7 @@ LanternUX is a standalone settings panel framework for WoW addon developers. No 
 
 ### Quick Start
 
-```lua
+```
 local panel = LanternUX:CreatePanel({
     name = "MyAddonSettings",
     title = "My Addon",
@@ -55,24 +54,26 @@ panel:Toggle()
 
 ### Widget Types
 
-| Type | Description |
-|------|-------------|
-| `toggle` | Checkbox with label |
-| `range` | Slider with min/max/step |
-| `select` | Dropdown with values/sorting |
-| `input` | Text field |
-| `color` | Color picker swatch |
-| `execute` | Button with optional confirm |
-| `label` | Static text (small/medium/large) |
-| `header` | Section header with divider line |
-| `description` | Wrapping paragraph text |
-| `divider` | Horizontal separator |
-| `group` | Collapsible container with children |
-| `label_action` | Text label + action button |
-| `item_row` | Item icon + name + remove button |
-| `drop_slot` | Drag-and-drop item slot |
+| Type         |Description                         |
+| ------------ |----------------------------------- |
+| <code>toggle</code> |Toggle switch with label            |
+| <code>range</code> |Slider with min/max/step            |
+| <code>select</code> |Dropdown with values/sorting        |
+| <code>input</code> |Text field                          |
+| <code>color</code> |Color picker swatch                 |
+| <code>execute</code> |Button with optional confirm        |
+| <code>label</code> |Static text (small/medium/large)    |
+| <code>header</code> |Section header with divider line    |
+| <code>description</code> |Wrapping paragraph text             |
+| <code>divider</code> |Horizontal separator                |
+| <code>callout</code> |Info/notice/warning box             |
+| <code>group</code> |Collapsible container with children |
+| <code>label_action</code> |Text label + action button          |
+| <code>item_row</code> |Item icon + name + remove button    |
+| <code>drop_slot</code> |Drag-and-drop item slot             |
 
 All widgets support `disabled` (value or function) for dynamic state.
 
-Used by [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) for its settings panel.
+Full developer documentation is available on [GitHub](https://github.com/Sponsorn/Lantern/blob/master/LanternUX/DEVELOPERS.md).
 
+Used by [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) for its settings panel.
