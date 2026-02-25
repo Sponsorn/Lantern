@@ -54,7 +54,7 @@ local function HasLine(tooltip, label)
         local left = _G[name .. "TextLeft" .. i];
         if (left) then
             local text = left:GetText();
-            if (text and text:find(label, 1, true)) then
+            if (text and not (issecretvalue and issecretvalue(text)) and text:find(label, 1, true)) then
                 return true;
             end
         end

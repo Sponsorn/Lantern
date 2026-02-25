@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1 - 2026-02-25
+- Fix: Tooltip no longer crashes on secret tooltip text in instances (WoW 12.0 secret string guard)
+- Fix: DisableLootWarnings no longer errors when confirming loot rolls, bind-on-pickup, and merchant refund popups
+
 ## 0.6.0 - 2026-02-24
 - Add: Tooltip module — shows mount names, item IDs, spell IDs, and talent node IDs on tooltips with Ctrl+C copy support (all features individually toggleable, disabled by default)
 - Add: Tooltip Ctrl+C opens a copy popup showing the item/spell name with selectable ID fields — supports items with both ItemID and SpellID in one popup

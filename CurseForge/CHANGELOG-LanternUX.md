@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.3 - 2026-02-25
+- Add: Collapse button on the title bar — click to minimize the panel to just the title bar
+
 ## 0.2.2 - 2026-02-24
 - Fix: Range slider drag area now covers the full widget height, making it easier to grab
 - Change: Toggle widget uses a simpler solid texture instead of backdrop borders for a cleaner look

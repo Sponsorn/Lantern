@@ -629,6 +629,60 @@ function PanelMixin:_Build()
         verText:SetTextColor(unpack(T.textDim));
     end
 
+    -- Collapse button
+    local collapseBtn = CreateFrame("Button", config.name .. "_CollapseBtn", titleBar);
+    collapseBtn:SetSize(TITLE_H, TITLE_H);
+    collapseBtn:SetPoint("TOPRIGHT", -TITLE_H, 0);
+
+    local collapseIcon = collapseBtn:CreateFontString(nil, "ARTWORK");
+    collapseIcon:SetFontObject(T.fontBody);
+    collapseIcon:SetPoint("CENTER", 0, 1);
+    collapseIcon:SetText("_");
+    collapseIcon:SetTextColor(unpack(T.text));
+
+    local collapseHover = collapseBtn:CreateTexture(nil, "HIGHLIGHT");
+    collapseHover:SetAllPoints();
+    collapseHover:SetColorTexture(1, 1, 1, 0.06);
+
+    local collapsed = false;
+    local self_ = self;
+
+    local function SetCollapsed(state)
+        collapsed = state;
+        -- Re-anchor from top so the title bar stays in place
+        local top = frame:GetTop();
+        local left = frame:GetLeft();
+        frame:ClearAllPoints();
+        frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top);
+
+        if (collapsed) then
+            frame:SetHeight(TITLE_H);
+            collapseIcon:SetText("+");
+            -- Hide body (sidebar + content are anchored below title bar)
+            if (self_._sidebar) then self_._sidebar:Hide(); end
+            if (self_._content) then self_._content:Hide(); end
+            if (self_._customScroll) then
+                LanternUX.ReleaseAll();
+            end
+            if (self_._descPanel) then self_._descPanel:Hide(); end
+        else
+            frame:SetHeight(panelH);
+            collapseIcon:SetText("_");
+            if (self_._sidebar) then self_._sidebar:Show(); end
+            if (self_._content) then self_._content:Show(); end
+            -- Re-render current page content (widgets were released)
+            if (self_._activeKey) then
+                self_:_ShowContent(self_._activeKey);
+            end
+        end
+    end
+
+    collapseBtn:SetScript("OnEnter", function() collapseIcon:SetTextColor(unpack(T.textBright)); end);
+    collapseBtn:SetScript("OnLeave", function() collapseIcon:SetTextColor(unpack(T.text)); end);
+    collapseBtn:SetScript("OnClick", function() SetCollapsed(not collapsed); end);
+
+    self._SetCollapsed = SetCollapsed;
+
     -- Close button
     local closeBtn = CreateFrame("Button", config.name .. "_CloseBtn", titleBar);
     closeBtn:SetSize(TITLE_H, TITLE_H);
@@ -817,6 +871,11 @@ function PanelMixin:_Build()
     frame:SetScript("OnShow", function()
         PlaySound(SOUNDKIT.IG_MAINMENU_OPEN or 850);
         LanternUX.descPanel = self_._descPanel;
+        -- Always expand on show
+        if (self_._SetCollapsed and collapsed) then
+            self_._SetCollapsed(false);
+            return; -- SetCollapsed already re-renders content
+        end
         -- Re-render current content (widgets were released on hide)
         if (self_._activeKey) then
             local page = self_._pageMap[self_._activeKey];
