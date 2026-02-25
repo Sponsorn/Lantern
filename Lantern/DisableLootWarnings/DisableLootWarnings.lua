@@ -40,17 +40,17 @@ end
 function module:OnEnable()
     ensureDB(self);
 
-    self.addon:ModuleRegisterEvent(self, "CONFIRM_LOOT_ROLL", function(_, rollID, rollType)
+    self.addon:ModuleRegisterEvent(self, "CONFIRM_LOOT_ROLL", function(_, _, rollID, rollType)
         if (not self.db.lootRoll or shouldPause()) then return; end
         ConfirmLootRoll(rollID, rollType);
     end);
 
-    self.addon:ModuleRegisterEvent(self, "LOOT_BIND_CONFIRM", function(_, slot)
+    self.addon:ModuleRegisterEvent(self, "LOOT_BIND_CONFIRM", function(_, _, slot)
         if (not self.db.bindOnPickup or shouldPause()) then return; end
         ConfirmLootSlot(slot);
     end);
 
-    self.addon:ModuleRegisterEvent(self, "MERCHANT_CONFIRM_TRADE_TIMER_REMOVAL", function(_, itemLink)
+    self.addon:ModuleRegisterEvent(self, "MERCHANT_CONFIRM_TRADE_TIMER_REMOVAL", function(_, _, itemLink)
         if (not self.db.merchantRefund or shouldPause()) then return; end
         SellCursorItem();
     end);
