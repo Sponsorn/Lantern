@@ -4,6 +4,8 @@
 - Fix: Tooltip no longer crashes on secret tooltip text in instances (WoW 12.0 secret string guard)
 - Fix: DisableLootWarnings no longer errors when confirming loot rolls, bind-on-pickup, and merchant refund popups
 - Fix: Range Check now uses Pummel for all Warrior specs instead of Slam/Shield Slam
+- Fix: Range Check now uses Death Strike for Death Knights instead of pre-spec Rune Strike
+- Fix: Range Check now uses correct Blackout Kick spell for Windwalker Monk
 
 ## 0.6.0 - 2026-02-24
 - Add: Tooltip module — shows mount names, item IDs, spell IDs, and talent node IDs on tooltips with Ctrl+C copy support (all features individually toggleable, disabled by default)

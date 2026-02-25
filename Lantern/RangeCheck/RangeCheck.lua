@@ -51,8 +51,8 @@ local lastStatusState = nil;
 local SPEC_SPELLS = {
     -- Paladin (Protection, Retribution)
     [66] = 96231, [70] = 96231,
-    -- Death Knight (all specs)
-    [250] = 316239, [251] = 316239, [252] = 316239,
+    -- Death Knight (all specs) — Death Strike, available to all DK specs
+    [250] = 49998, [251] = 49998, [252] = 49998,
     -- Demon Hunter (Havoc, Vengeance)
     [577] = 162794, [581] = 344859,
     -- Hunter (Survival)
@@ -60,7 +60,7 @@ local SPEC_SPELLS = {
     -- Druid (Feral, Guardian)
     [103] = 5221, [104] = 5221,
     -- Monk (Brewmaster, Windwalker)
-    [268] = 205523, [269] = 205523,
+    [268] = 205523, [269] = 100784,
     -- Warrior (Arms, Fury, Protection)
     [71] = 6552, [72] = 6552, [73] = 6552,
     -- Shaman (Enhancement)
