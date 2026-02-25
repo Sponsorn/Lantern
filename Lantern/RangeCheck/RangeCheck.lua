@@ -62,7 +62,7 @@ local SPEC_SPELLS = {
     -- Monk (Brewmaster, Windwalker)
     [268] = 205523, [269] = 205523,
     -- Warrior (Arms, Fury, Protection)
-    [71] = 1464, [72] = 1464, [73] = 23922,
+    [71] = 6552, [72] = 6552, [73] = 6552,
     -- Shaman (Enhancement)
     [263] = 17364,
     -- Rogue (all specs)
