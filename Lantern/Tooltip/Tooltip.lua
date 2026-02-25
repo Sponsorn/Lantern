@@ -63,6 +63,7 @@ local function HasLine(tooltip, label)
 end
 
 local function AddID(tooltip, label, id)
+    if (issecretvalue and issecretvalue(id)) then return; end
     if (not id or id == 0) then return; end
     if (HasLine(tooltip, label)) then return; end
     tooltip:AddDoubleLine(label, tostring(id), 1, 0.82, 0, 1, 1, 1);
@@ -434,7 +435,7 @@ function module:OnEnable()
                 if (dataType == Enum.TooltipDataType.Spell
                     or dataType == Enum.TooltipDataType.UnitAura
                     or dataType == Enum.TooltipDataType.Totem) then
-                    if (data.id) then
+                    if (data.id and not (issecretvalue and issecretvalue(data.id))) then
                         AddID(tooltip, "SpellID", data.id);
                         if (tooltip == GameTooltip) then
                             local spellName = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(data.id);
