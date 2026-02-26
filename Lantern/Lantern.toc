@@ -35,6 +35,7 @@ Utils\Utils.lua
 Utils\LibRangeCheckPatch.lua
 Utils\TextAnimations.lua
 core.lua
+Utils\WidgetHelpers.lua
 ui.lua
 AutoQuest\AutoQuest.lua
 AutoQuest\WidgetOptions.lua
@@ -66,4 +67,6 @@ RangeCheck\RangeCheck.lua
 RangeCheck\WidgetOptions.lua
 Tooltip\Tooltip.lua
 Tooltip\WidgetOptions.lua
+ItemInfo\ItemInfo.lua
+ItemInfo\WidgetOptions.lua
 Options.lua

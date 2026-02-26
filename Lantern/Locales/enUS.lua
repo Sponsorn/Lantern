@@ -89,9 +89,11 @@ Lantern:RegisterLocale("enUS", {
     AUTOREPAIR_CALLOUT                      = "Hold %s when opening a vendor to skip auto-repair.",
 
     -- Splash page
-    SPLASH_DESC                             = "A modular quality-of-life addon for World of Warcraft.\nClick a module name to configure it.",
+    SPLASH_DESC                             = "A modular quality-of-life addon for World of Warcraft.\nClick a module name to configure it, or click a status dot to toggle it.",
     SPLASH_ENABLED                          = "Enabled",
     SPLASH_DISABLED                         = "Disabled",
+    SPLASH_CLICK_ENABLE                     = "Click to enable",
+    SPLASH_CLICK_DISABLE                    = "Click to disable",
     SPLASH_COMPANION_HEADER                 = "Companion Addons",
     SPLASH_CURSEFORGE                       = "CurseForge",
     SPLASH_COPY_LINK                        = "Copy link",
@@ -220,6 +222,21 @@ Lantern:RegisterLocale("enUS", {
     -- Tooltip
     TOOLTIP_TITLE                           = "Tooltip",
     TOOLTIP_DESC                            = "Enhances tooltips with IDs and mount names.",
+
+    -- Item Info
+    ITEMINFO_TITLE                          = "Item Info",
+    ITEMINFO_DESC                           = "Shows item level, missing enchants, and gem sockets on equipment and bags.",
+    ITEMINFO_ENABLE_DESC                    = "Enable the Item Info module.",
+    ITEMINFO_SHOW_ILVL_CHARACTER            = "Item Level (Character)",
+    ITEMINFO_SHOW_ILVL_CHARACTER_DESC       = "Show item level on equipment slots in the character and inspect panels.",
+    ITEMINFO_SHOW_ILVL_BAGS                 = "Item Level (Bags)",
+    ITEMINFO_SHOW_ILVL_BAGS_DESC            = "Show item level on equipment in bags, loot, bank, and equipment flyout.",
+    ITEMINFO_SHOW_MISSING_ENCHANTS          = "Missing Enchants",
+    ITEMINFO_SHOW_MISSING_ENCHANTS_DESC     = "Show a red indicator on equipment slots that are missing an enchant at max level.",
+    ITEMINFO_SHOW_MISSING_GEMS              = "Missing Gems",
+    ITEMINFO_SHOW_MISSING_GEMS_DESC         = "Show a red indicator on equipment slots that have empty gem sockets.",
+    ITEMINFO_UPGRADE_ARROW                  = "Upgrade Arrow",
+    ITEMINFO_UPGRADE_ARROW_DESC             = "Show a green arrow on bag items that are an upgrade over your currently equipped gear.",
 
     ---------------------------------------------------------------------------
     -- Phase 3: Module Print Messages

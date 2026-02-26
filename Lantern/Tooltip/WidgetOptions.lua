@@ -9,26 +9,8 @@ local module = Lantern.modules["Tooltip"];
 if (not module) then return; end
 local L = Lantern.L;
 
-local function moduleEnabled(name)
-    local m = Lantern.modules and Lantern.modules[name];
-    return m and m.enabled;
-end
-
-local function moduleToggle(name, label, desc)
-    return {
-        type = "toggle",
-        label = label or L["ENABLE"],
-        desc = desc,
-        get = function() return moduleEnabled(name); end,
-        set = function(val)
-            if (val) then
-                Lantern:EnableModule(name);
-            else
-                Lantern:DisableModule(name);
-            end
-        end,
-    };
-end
+local moduleEnabled = Lantern.moduleEnabled;
+local moduleToggle = Lantern.moduleToggle;
 
 module.widgetOptions = function()
     local function tdb()

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+- Fix: Warehousing engine looping indefinitely when warbank is full instead of stopping after retries
+- Fix: Warehousing panel now uses the game's default fonts instead of Roboto Bold
+
 ## 0.4.0 - 2026-02-23
 - Add: Full localization support — all user-facing strings extracted to locale files with English as the base, 10 additional languages ready for community translations
 - Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads and localization substitution

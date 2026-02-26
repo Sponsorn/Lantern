@@ -44,6 +44,7 @@ local CORE_KEY = {
     CombatAlert          = "combatAlert",
     RangeCheck           = "rangeCheck",
     Tooltip              = "tooltip",
+    ItemInfo             = "itemInfo",
 };
 
 -- Ordered categories: each entry is { key, label, moduleNames }
@@ -54,7 +55,7 @@ local MODULE_CATEGORIES = {
         label = L["CATEGORY_GENERAL"],
         modules = {
             "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
-            "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings", "Tooltip",
+            "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings", "ItemInfo", "Tooltip",
         },
     },
     {
@@ -78,26 +79,8 @@ local MODULE_CATEGORIES = {
 -- Custom option definitions
 -------------------------------------------------------------------------------
 
-local function moduleEnabled(name)
-    local m = Lantern.modules and Lantern.modules[name];
-    return m and m.enabled;
-end
-
-local function moduleToggle(name, label, desc)
-    return {
-        type = "toggle",
-        label = label or L["ENABLE"],
-        desc = desc,
-        get = function() return moduleEnabled(name); end,
-        set = function(val)
-            if (val) then
-                Lantern:EnableModule(name);
-            else
-                Lantern:DisableModule(name);
-            end
-        end,
-    };
-end
+local moduleEnabled = Lantern.moduleEnabled;
+local moduleToggle = Lantern.moduleToggle;
 
 local CUSTOM_OPTIONS = {};
 
@@ -253,9 +236,7 @@ CUSTOM_OPTIONS["releaseProtection"] = function()
             get = function() return db().mode or "always"; end,
             set = function(val)
                 db().mode = val;
-                if (Lantern._uxPanel and Lantern._uxPanel.RefreshCurrentPage) then
-                    Lantern._uxPanel:RefreshCurrentPage();
-                end
+                Lantern.refreshPage();
             end,
         },
         {
@@ -557,21 +538,50 @@ local function PopulateSplashModules()
                 local pageKey = CORE_KEY[moduleName];
                 local xBase = 36 + col * COL_OFFSET;
 
-                -- Status dot
+                -- Status dot (clickable toggle)
                 local dotKey = catIdx .. "_" .. moduleName .. "_dot";
                 local dot = splashToggles[dotKey];
                 if (not dot) then
-                    dot = splashFrame:CreateTexture(nil, "ARTWORK");
-                    dot:SetSize(8, 8);
-                    dot:SetTexture("Interface\\Buttons\\WHITE8x8");
+                    dot = CreateFrame("Button", "LanternSplash_DotBtn_" .. moduleName, splashFrame);
+                    dot:SetSize(16, 16);
+                    local tex = dot:CreateTexture(nil, "ARTWORK");
+                    tex:SetSize(8, 8);
+                    tex:SetPoint("CENTER");
+                    tex:SetTexture("Interface\\Buttons\\WHITE8x8");
+                    dot._tex = tex;
+                    dot:SetScript("OnEnter", function(self)
+                        self._tex:SetSize(10, 10);
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                        GameTooltip:SetText(self._enabled and L["SPLASH_CLICK_DISABLE"] or L["SPLASH_CLICK_ENABLE"], 1, 1, 1);
+                        GameTooltip:Show();
+                    end);
+                    dot:SetScript("OnLeave", function(self)
+                        self._tex:SetSize(8, 8);
+                        GameTooltip:Hide();
+                    end);
                     splashToggles[dotKey] = dot;
                 end
+                dot._enabled = mod.enabled;
+                dot._moduleName = moduleName;
+                dot:SetScript("OnClick", function(self)
+                    if (self._enabled) then
+                        Lantern:DisableModule(self._moduleName);
+                    else
+                        Lantern:EnableModule(self._moduleName);
+                    end
+                    self._enabled = not self._enabled;
+                    if (self._enabled) then
+                        self._tex:SetColorTexture(unpack(T.enabled));
+                    else
+                        self._tex:SetColorTexture(unpack(T.disabledDot));
+                    end
+                end);
                 dot:ClearAllPoints();
-                dot:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", xBase, y - 2);
+                dot:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", xBase - 4, y + 2);
                 if (mod.enabled) then
-                    dot:SetColorTexture(unpack(T.enabled));
+                    dot._tex:SetColorTexture(unpack(T.enabled));
                 else
-                    dot:SetColorTexture(unpack(T.disabledDot));
+                    dot._tex:SetColorTexture(unpack(T.disabledDot));
                 end
                 dot:Show();
 

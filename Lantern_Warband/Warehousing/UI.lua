@@ -9,10 +9,6 @@ local Engine = Warband.WarehousingEngine;
 
 if (not Warehousing or not Engine) then return; end
 
-local T = _G.LanternUX and _G.LanternUX.Theme;
-local fontBody  = T and T.fontBodyBold  or "GameFontNormal";
-local fontSmall = T and T.fontSmallBold or "GameFontNormalSmall";
-
 local WarehousingUI = {};
 Warband.WarehousingUI = WarehousingUI;
 
@@ -291,7 +287,7 @@ local function CreateGroupRow(parent, index, groupName, group)
     end);
 
     -- Group name
-    local nameText = frame:CreateFontString(nil, "OVERLAY", fontBody);
+    local nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal");
     nameText:SetPoint("LEFT", checkbox, "RIGHT", 2, 4);
     nameText:SetPoint("RIGHT", frame, "RIGHT", -4, 0);
     nameText:SetJustifyH("LEFT");
@@ -316,7 +312,7 @@ local function CreateGroupRow(parent, index, groupName, group)
         table.insert(parts, "K:" .. (group.keepLimit or 0));
     end
     local modeText = #parts > 0 and table.concat(parts, " ") or L["WARBAND_WH_UI_DISABLED"];
-    local infoText = frame:CreateFontString(nil, "OVERLAY", fontSmall);
+    local infoText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall");
     infoText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -1);
     infoText:SetJustifyH("LEFT");
     infoText:SetTextColor(0.7, 0.7, 0.7);
@@ -518,7 +514,7 @@ local function CreatePanel()
     progressBorder:SetPoint("TOPLEFT", -5, 5);
     progressBorder:SetPoint("BOTTOMRIGHT", 5, -5);
 
-    progressText = progressBar:CreateFontString(nil, "OVERLAY", fontSmall);
+    progressText = progressBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall");
     progressText:SetAllPoints();
     progressText:SetJustifyH("CENTER");
     progressText:SetJustifyV("MIDDLE");
@@ -548,12 +544,12 @@ local function PopulatePanel()
     table.sort(sortedNames, function(a, b) return a:lower() < b:lower(); end);
 
     if (#sortedNames == 0) then
-        local noGroupsText = scrollChild:CreateFontString(nil, "OVERLAY", fontBody);
+        local noGroupsText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal");
         noGroupsText:SetPoint("TOP", scrollChild, "TOP", 0, -20);
         noGroupsText:SetText(L["WARBAND_WH_UI_NO_GROUPS_DEFINED"]);
         noGroupsText:SetTextColor(0.7, 0.7, 0.7);
 
-        local hintText = scrollChild:CreateFontString(nil, "OVERLAY", fontSmall);
+        local hintText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall");
         hintText:SetPoint("TOP", noGroupsText, "BOTTOM", 0, -8);
         hintText:SetText(L["WARBAND_WH_UI_CLICK_SETTINGS"]);
         hintText:SetTextColor(0.5, 0.5, 0.5);

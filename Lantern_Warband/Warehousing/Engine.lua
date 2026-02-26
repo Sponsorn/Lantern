@@ -282,6 +282,13 @@ function Engine:ProcessBatch()
                         local isFullStackDeposit = (op.mode == "deposit" and moveCount >= itemInfo.stackCount);
 
                         if (isFullStackDeposit) then
+                            -- Verify warbank has space before attempting full-stack deposit
+                            local checkBag = self:FindTargetSlot(targetStart, targetEnd, op.itemID, self.usedTargetSlots);
+                            if (not checkBag) then
+                                opHadFailure = true;
+                                break;
+                            end
+
                             -- Full-stack deposit: use UseContainerItem (server auto-targets)
                             C_Container.UseContainerItem(srcSlot.bag, srcSlot.slot, nil, Enum.BankType.Account, false);
 

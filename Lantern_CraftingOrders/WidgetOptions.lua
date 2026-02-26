@@ -12,11 +12,7 @@ local T = LanternUX.Theme;
 -- Utilities
 -------------------------------------------------------------------------------
 
-local function refreshPage()
-    if (Lantern._uxPanel and Lantern._uxPanel.RefreshCurrentPage) then
-        Lantern._uxPanel:RefreshCurrentPage();
-    end
-end
+local refreshPage = Lantern.refreshPage;
 
 -------------------------------------------------------------------------------
 -- Guild Orders page

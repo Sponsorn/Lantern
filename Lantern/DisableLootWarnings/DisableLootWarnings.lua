@@ -45,9 +45,22 @@ function module:OnEnable()
         ConfirmLootRoll(rollID, rollType);
     end);
 
-    self.addon:ModuleRegisterEvent(self, "LOOT_BIND_CONFIRM", function(_, _, slot)
+    self.addon:ModuleRegisterEvent(self, "LOOT_BIND_CONFIRM", function()
         if (not self.db.bindOnPickup or shouldPause()) then return; end
-        ConfirmLootSlot(slot);
+        -- ConfirmLootSlot() is a protected C++ function — click the popup instead.
+        -- UIParent's handler shows the "LOOT_BIND" popup before ours fires,
+        -- but use a short timer as a safety net for handler ordering.
+        local function tryClick()
+            local popup = StaticPopup_FindVisible("LOOT_BIND");
+            if (popup and popup.button1) then
+                popup.button1:Click();
+                return true;
+            end
+            return false;
+        end
+        if (not tryClick()) then
+            C_Timer.After(0, tryClick);
+        end
     end);
 
     self.addon:ModuleRegisterEvent(self, "MERCHANT_CONFIRM_TRADE_TIMER_REMOVAL", function(_, _, itemLink)
