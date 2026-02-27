@@ -37,7 +37,6 @@ local CORE_KEY = {
     MissingPet           = "missingPet",
     AutoPlaystyle        = "autoPlaystyle",
     FasterLoot           = "fasterLoot",
-    DisableLootWarnings  = "disableLootWarnings",
     AutoKeystone         = "autoKeystone",
     ReleaseProtection    = "releaseProtection",
     CombatTimer          = "combatTimer",
@@ -55,7 +54,7 @@ local MODULE_CATEGORIES = {
         label = L["CATEGORY_GENERAL"],
         modules = {
             "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
-            "DeleteConfirm", "DisableAutoAddSpells", "DisableLootWarnings", "ItemInfo", "Tooltip",
+            "DeleteConfirm", "DisableAutoAddSpells", "ItemInfo", "Tooltip",
         },
     },
     {

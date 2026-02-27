@@ -4,11 +4,11 @@
 - Add: Item Info module — shows item level (color-coded by quality), missing enchant warnings, and empty gem socket indicators on the character and inspect panels, plus item level overlays on bags, loot, bank, and equipment flyout (disabled by default)
 - Add: Item Info upgrade arrow — bag, bank, loot, and flyout items show a green arrow when they are an upgrade over currently equipped gear (toggleable, enabled by default)
 - Change: Item Info now displays item level and socket icons beside equipment slots (left/right layout matching the character panel) instead of overlaid on top — empty sockets show colored socket-type icons, filled sockets show the gem texture
-- Fix: DisableLootWarnings now correctly auto-confirms bind-on-pickup loot popups (ConfirmLootSlot is protected in 12.0 — now clicks the LOOT_BIND popup button instead)
 - Add: Module status dots on the splash page are now clickable toggles — quickly enable or disable any module without navigating to its settings page
 - Chore: Consolidated duplicate widget helpers (moduleEnabled, moduleToggle, refreshPage) into shared Utils/WidgetHelpers.lua
 - Fix: Custom fonts (Roboto) sometimes showing as default WoW font on cold login — SetFont now retries after a short delay if the font file isn't cached yet
 - Chore: Consolidated duplicate GetFontPath into shared Utils with SafeSetFont retry helper (RangeCheck, CombatTimer, CombatAlert, MissingPet)
+- Remove: Disable Loot Warnings module — core APIs are protected in WoW 12.0 making auto-confirm unreliable
 
 ## 0.6.1 - 2026-02-25
 - Fix: Tooltip no longer crashes on secret tooltip text in instances (WoW 12.0 secret string guard)

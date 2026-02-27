@@ -183,10 +183,6 @@ Lantern:RegisterLocale("ruRU", {
     -- DISABLEAUTOADD_TITLE                    = "Disable Auto Add Spells",
     -- DISABLEAUTOADD_DESC                     = "Stops spells from auto-adding to action bars.",
 
-    -- Disable Loot Warnings
-    -- LOOTWARNINGS_TITLE                      = "Disable Loot Warnings",
-    -- LOOTWARNINGS_DESC                       = "Auto-confirm loot roll, bind-on-pickup, merchant refund, and mail lock popups.",
-
     -- Missing Pet
     -- MISSINGPET_TITLE                        = "Missing Pet",
     -- MISSINGPET_DESC                         = "Displays a warning when your pet is missing or set to passive.",
@@ -591,21 +587,6 @@ Lantern:RegisterLocale("ruRU", {
     -- TOOLTIP_CTRL_C                          = "Ctrl+C to copy",
     -- TOOLTIP_CTRL_C_DESC                     = "Press Ctrl+C to copy the primary ID, or Ctrl+Shift+C to copy the secondary ID (e.g. an item's use-effect SpellID).",
     -- TOOLTIP_COMBAT_NOTE                     = "Tooltip enhancements are disabled in instances. Mount scanning and Ctrl+C copy are disabled during combat.",
-
-    ---------------------------------------------------------------------------
-    -- Phase 3: DisableLootWarnings WidgetOptions
-    ---------------------------------------------------------------------------
-
-    -- LOOTWARNINGS_ENABLE_DESC                = "Auto-confirm loot and trade popups. Hold %s to see popups normally.",
-    -- LOOTWARNINGS_GROUP_TYPES                = "Popup Types",
-    -- LOOTWARNINGS_LOOT_ROLL                  = "Loot Roll (BoP)",
-    -- LOOTWARNINGS_LOOT_ROLL_DESC             = "Auto-confirm bind-on-pickup loot rolls (Need/Greed on soulbound items).",
-    -- LOOTWARNINGS_BIND_ON_PICKUP             = "Bind on Pickup",
-    -- LOOTWARNINGS_BIND_ON_PICKUP_DESC        = "Auto-confirm bind-on-pickup warnings when looting items.",
-    -- LOOTWARNINGS_MERCHANT_REFUND            = "Merchant Refund",
-    -- LOOTWARNINGS_MERCHANT_REFUND_DESC       = "Auto-confirm merchant refund timer removal warnings.",
-    -- LOOTWARNINGS_MAIL_LOCK                  = "Mail Lock Send",
-    -- LOOTWARNINGS_MAIL_LOCK_DESC             = "Auto-confirm mail item lock warnings when sending items.",
 
     ---------------------------------------------------------------------------
     -- Phase 3: AutoPlaystyle WidgetOptions

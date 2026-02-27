@@ -50,8 +50,6 @@ CursorRing\Trail.lua
 CursorRing\WidgetOptions.lua
 DeleteConfirm\DeleteConfirm.lua
 DisableAutoAddSpells\DisableAutoAddSpells.lua
-DisableLootWarnings\DisableLootWarnings.lua
-DisableLootWarnings\WidgetOptions.lua
 MissingPet\MissingPet.lua
 MissingPet\WidgetOptions.lua
 AutoPlaystyle\AutoPlaystyle.lua
