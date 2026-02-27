@@ -3,10 +3,8 @@ if (not Lantern) then return; end
 local L = Lantern.L;
 
 local LanternUX = _G.LanternUX;
-local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
-
-local DEFAULT_FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
-    or "Fonts\\FRIZQT__.TTF";
+local GetFontPath = Lantern.utils.GetFontPath;
+local SafeSetFont = Lantern.utils.SafeSetFont;
 
 local module = Lantern:NewModule("CombatTimer", {
     title = L["COMBATTIMER_TITLE"],
@@ -24,14 +22,6 @@ local DEFAULTS = {
     locked = true,
     pos = nil,
 };
-
-local function GetFontPath(fontName)
-    if (LSM) then
-        local path = LSM:Fetch("font", fontName);
-        if (path) then return path; end
-    end
-    return DEFAULT_FONT_PATH;
-end
 
 local clock, clockLabel;
 local startedAt, active, lingerTimer;
@@ -70,7 +60,7 @@ local function createFrame(self)
     clock:Hide();
 
     clockLabel = clock:CreateFontString(nil, "ARTWORK");
-    clockLabel:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
+    SafeSetFont(clockLabel, GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
     clockLabel:SetPoint("CENTER");
     local c = (self.db and self.db.fontColor) or DEFAULTS.fontColor;
     clockLabel:SetTextColor(c.r, c.g, c.b, 1);
@@ -102,7 +92,7 @@ function module:RefreshFont()
     local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
     local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
-    clockLabel:SetFont(fontPath, size, outline);
+    SafeSetFont(clockLabel, fontPath, size, outline);
 end
 
 function module:RefreshColor()

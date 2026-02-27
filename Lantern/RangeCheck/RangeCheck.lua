@@ -2,17 +2,8 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
 local LanternUX = _G.LanternUX;
-local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
-local DEFAULT_FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
-    or "Fonts\\FRIZQT__.TTF";
-
-local function GetFontPath(fontName)
-    if (LSM) then
-        local path = LSM:Fetch("font", fontName);
-        if (path) then return path; end
-    end
-    return DEFAULT_FONT_PATH;
-end
+local GetFontPath = Lantern.utils.GetFontPath;
+local SafeSetFont = Lantern.utils.SafeSetFont;
 
 local L = Lantern.L;
 
@@ -164,7 +155,7 @@ local function createFrame(self)
     frame:Hide();
 
     rangeText = frame:CreateFontString(nil, "ARTWORK");
-    rangeText:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
+    SafeSetFont(rangeText, GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
     rangeText:SetPoint("CENTER");
     rangeText:SetShadowOffset(1, -1);
     rangeText:SetShadowColor(0, 0, 0, 0.8);
@@ -277,7 +268,7 @@ function module:RefreshFont()
     local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
     local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
-    rangeText:SetFont(fontPath, size, outline);
+    SafeSetFont(rangeText, fontPath, size, outline);
 end
 
 function module:UpdateLock()

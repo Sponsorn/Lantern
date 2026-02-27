@@ -7,6 +7,8 @@
 - Fix: DisableLootWarnings now correctly auto-confirms bind-on-pickup loot popups (ConfirmLootSlot is protected in 12.0 — now clicks the LOOT_BIND popup button instead)
 - Add: Module status dots on the splash page are now clickable toggles — quickly enable or disable any module without navigating to its settings page
 - Chore: Consolidated duplicate widget helpers (moduleEnabled, moduleToggle, refreshPage) into shared Utils/WidgetHelpers.lua
+- Fix: Custom fonts (Roboto) sometimes showing as default WoW font on cold login — SetFont now retries after a short delay if the font file isn't cached yet
+- Chore: Consolidated duplicate GetFontPath into shared Utils with SafeSetFont retry helper (RangeCheck, CombatTimer, CombatAlert, MissingPet)
 
 ## 0.6.1 - 2026-02-25
 - Fix: Tooltip no longer crashes on secret tooltip text in instances (WoW 12.0 secret string guard)

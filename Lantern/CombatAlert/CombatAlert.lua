@@ -3,10 +3,8 @@ if (not Lantern) then return; end
 local L = Lantern.L;
 
 local LanternUX = _G.LanternUX;
-local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
-
-local DEFAULT_FONT_PATH = (LanternUX and LanternUX.Theme and LanternUX.Theme.fontPathLight)
-    or "Fonts\\FRIZQT__.TTF";
+local GetFontPath = Lantern.utils.GetFontPath;
+local SafeSetFont = Lantern.utils.SafeSetFont;
 
 local module = Lantern:NewModule("CombatAlert", {
     title = L["COMBATALERT_TITLE"],
@@ -32,13 +30,6 @@ local DEFAULTS = {
     pos = nil,
 };
 
-local function GetFontPath(fontName)
-    if (LSM) then
-        local path = LSM:Fetch("font", fontName);
-        if (path) then return path; end
-    end
-    return DEFAULT_FONT_PATH;
-end
 
 local banner, label;
 local flashAt, flashLength;
@@ -73,7 +64,7 @@ local function createFrame(self)
     banner:Hide();
 
     label = banner:CreateFontString(nil, "ARTWORK");
-    label:SetFont(GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
+    SafeSetFont(label, GetFontPath(DEFAULTS.font), DEFAULTS.fontSize, DEFAULTS.fontOutline);
     label:SetPoint("CENTER");
     label:SetShadowOffset(2, -2);
     label:SetShadowColor(0, 0, 0, 0.8);
@@ -127,7 +118,7 @@ local function flash(text, color, db)
     local fontName = (db and db.font) or DEFAULTS.font;
     local size = (db and db.fontSize) or DEFAULTS.fontSize;
     local outline = (db and db.fontOutline) or DEFAULTS.fontOutline;
-    label:SetFont(GetFontPath(fontName), size, outline);
+    SafeSetFont(label, GetFontPath(fontName), size, outline);
     label:SetText(text);
     label:SetTextColor(color.r, color.g, color.b, 1);
 
@@ -153,7 +144,7 @@ function module:RefreshFont()
     local fontPath = GetFontPath((self.db and self.db.font) or DEFAULTS.font);
     local size = (self.db and self.db.fontSize) or DEFAULTS.fontSize;
     local outline = (self.db and self.db.fontOutline) or DEFAULTS.fontOutline;
-    label:SetFont(fontPath, size, outline);
+    SafeSetFont(label, fontPath, size, outline);
 end
 
 function module:ShowPreviewAlert()

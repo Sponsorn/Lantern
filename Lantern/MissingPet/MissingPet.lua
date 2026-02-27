@@ -2,6 +2,8 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 local L = Lantern.L;
 
+local GetFontPath = Lantern.utils.GetFontPath;
+local SafeSetFont = Lantern.utils.SafeSetFont;
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
 
 local module = Lantern:NewModule("MissingPet", {
@@ -133,14 +135,6 @@ local dismountTimer = nil;
 local waitingAfterDismount = false;
 local soundTimer = nil;
 
-local function GetFontPath(fontName)
-    if (LSM) then
-        local path = LSM:Fetch("font", fontName);
-        if (path) then return path; end
-    end
-    -- Fallback to default WoW font
-    return "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Light.ttf";
-end
 
 -- Always get fresh database reference
 local function getDB()
@@ -209,7 +203,7 @@ local function UpdateWarningFont()
     local fontSize = db.fontSize or DEFAULTS.fontSize;
     local fontOutline = db.fontOutline or DEFAULTS.fontOutline;
 
-    warningText:SetFont(fontPath, fontSize, fontOutline);
+    SafeSetFont(warningText, fontPath, fontSize, fontOutline);
 end
 
 local LanternUX = _G.LanternUX;

@@ -63,6 +63,32 @@ function utils.RegisterMediaSounds(lsm)
     end
 end
 
+-------------------------------------------------------------------------------
+-- Font Helpers
+-------------------------------------------------------------------------------
+
+local _LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+local _DEFAULT_FONT_PATH = (_G.LanternUX and _G.LanternUX.Theme and _G.LanternUX.Theme.fontPathLight)
+    or "Fonts\\FRIZQT__.TTF";
+
+function utils.GetFontPath(fontName)
+    if (_LSM) then
+        local path = _LSM:Fetch("font", fontName);
+        if (path) then return path; end
+    end
+    return _DEFAULT_FONT_PATH;
+end
+
+function utils.SafeSetFont(fontString, fontPath, size, outline)
+    if (not fontString) then return; end
+    local ok = fontString:SetFont(fontPath, size, outline);
+    if (not ok) then
+        C_Timer.After(0.5, function()
+            if (fontString) then fontString:SetFont(fontPath, size, outline); end
+        end);
+    end
+end
+
 utils._optionsRebuilders = utils._optionsRebuilders or {};
 
 function utils.RegisterOptionsRebuilder(key, fn)
