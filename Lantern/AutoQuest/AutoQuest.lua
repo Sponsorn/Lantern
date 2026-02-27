@@ -12,6 +12,7 @@ local DEFAULTS = {
     autoAccept = true,
     autoTurnIn = true,
     autoSelectSingleReward = true,
+    autoSelectSingleGossip = true,
     skipTrivialQuests = false,
 };
 
@@ -246,6 +247,17 @@ end
 function module:OnGossipShow()
     handleAvailableQuests(self);
     handleActiveQuests(self);
+
+    -- Auto-select single gossip option to progress through dialog chains
+    if (not self.db.autoSelectSingleGossip) then return; end
+    if (shouldPause() or self:IsCurrentNPCBlocked()) then return; end
+    local numAvail = C_GossipInfo.GetNumAvailableQuests and C_GossipInfo.GetNumAvailableQuests() or 0;
+    local numActive = C_GossipInfo.GetNumActiveQuests and C_GossipInfo.GetNumActiveQuests() or 0;
+    if (numAvail > 0 or numActive > 0) then return; end
+    local options = C_GossipInfo.GetOptions and C_GossipInfo.GetOptions();
+    if (options and #options == 1 and options[1].gossipOptionID) then
+        SafeCall(C_GossipInfo.SelectOption, options[1].gossipOptionID);
+    end
 end
 
 function module:OnQuestGreeting()

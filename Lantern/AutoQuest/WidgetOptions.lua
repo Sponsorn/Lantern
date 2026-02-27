@@ -15,7 +15,7 @@ local moduleToggle = Lantern.moduleToggle;
 module.widgetOptions = function()
     local function db()
         Lantern.db.autoQuest = Lantern.db.autoQuest or {};
-        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true, skipTrivialQuests = false };
+        local defaults = { autoAccept = true, autoTurnIn = true, autoSelectSingleReward = true, autoSelectSingleGossip = true, skipTrivialQuests = false };
         for k, v in pairs(defaults) do
             if (Lantern.db.autoQuest[k] == nil) then
                 Lantern.db.autoQuest[k] = v;
@@ -141,6 +141,14 @@ module.widgetOptions = function()
         disabled = isDisabled,
         get = function() return db().autoSelectSingleReward; end,
         set = function(val) db().autoSelectSingleReward = val and true or false; end,
+    });
+    table.insert(widgets, {
+        type = "toggle",
+        label = L["AUTOQUEST_SINGLE_GOSSIP"],
+        desc = L["AUTOQUEST_SINGLE_GOSSIP_DESC"],
+        disabled = isDisabled,
+        get = function() return db().autoSelectSingleGossip; end,
+        set = function(val) db().autoSelectSingleGossip = val and true or false; end,
     });
     table.insert(widgets, {
         type = "toggle",

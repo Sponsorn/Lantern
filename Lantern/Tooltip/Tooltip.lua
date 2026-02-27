@@ -377,7 +377,7 @@ function module:OnEnable()
         local inInstance = IsInInstance();
         if (not inInstance and not InCombatLockdown() and dataType == Enum.TooltipDataType.Unit and tooltip.GetUnit) then
             local _, unit = tooltip:GetUnit();
-            if (unit and UnitIsPlayer(unit) and settings.showMount) then
+            if (unit and not issecretvalue(unit) and UnitIsPlayer(unit) and settings.showMount) then
                 local mountName = GetUnitMount(unit);
                 if (mountName and not HasLine(tooltip, "Mount")) then
                     tooltip:AddDoubleLine("Mount", mountName, 1, 0.82, 0, 1, 1, 1);

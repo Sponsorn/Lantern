@@ -65,6 +65,4 @@ RangeCheck\RangeCheck.lua
 RangeCheck\WidgetOptions.lua
 Tooltip\Tooltip.lua
 Tooltip\WidgetOptions.lua
-ItemInfo\ItemInfo.lua
-ItemInfo\WidgetOptions.lua
 Options.lua

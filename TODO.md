@@ -9,3 +9,6 @@ TODO
 - login briefing module: proactive summary on login (expiring mail, vault slots, uncollected crafting orders, daily/weekly resets, unspent profession knowledge)
 - import/export settings: copy/paste string pattern (like WeakAuras) for sharing configurations between characters or players
 - cursor ring: add stack tracker for spells/buffs, radial x/y selector, per class
+- warband: add customer tip history, maybe other analytics as well such as item order history, avg tip, etc
+- warband: add ping when background sound is off - enable background sound before notification, ping and then turn off again, this is to notify if the game is not in focus
+- iteminfo: position customization — dropdown controls to choose where ilvl, enchant indicators, and socket icons appear on equipment slots (inside icon or beside slot) and bag items. Also fix ilvl squish for pre-Midnight items (use C_Item.GetCurrentItemLevel instead of GetDetailedItemLevelInfo which returns pre-squish values)

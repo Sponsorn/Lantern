@@ -1,9 +1,9 @@
 # Changelog
 
-## 0.6.2 - 2026-02-26
-- Add: Item Info module — shows item level (color-coded by quality), missing enchant warnings, and empty gem socket indicators on the character and inspect panels, plus item level overlays on bags, loot, bank, and equipment flyout (disabled by default)
-- Add: Item Info upgrade arrow — bag, bank, loot, and flyout items show a green arrow when they are an upgrade over currently equipped gear (toggleable, enabled by default)
-- Change: Item Info now displays item level and socket icons beside equipment slots (left/right layout matching the character panel) instead of overlaid on top — empty sockets show colored socket-type icons, filled sockets show the gem texture
+## 0.6.2 - 2026-02-27
+- Fix: Tooltip no longer errors on unit tooltips when the unit value is secret (WoW 12.0 taint guard on UnitIsPlayer)
+- Add: Auto Quest now auto-selects single gossip dialog options to progress through NPC dialog chains leading to quests (toggleable in settings, enabled by default)
+- Remove: Item Info module temporarily removed for rework
 - Add: Module status dots on the splash page are now clickable toggles — quickly enable or disable any module without navigating to its settings page
 - Chore: Consolidated duplicate widget helpers (moduleEnabled, moduleToggle, refreshPage) into shared Utils/WidgetHelpers.lua
 - Fix: Custom fonts (Roboto) sometimes showing as default WoW font on cold login — SetFont now retries after a short delay if the font file isn't cached yet

@@ -285,6 +285,8 @@ Lantern:RegisterLocale("esES", {
     -- AUTOQUEST_AUTO_TURNIN_DESC              = "Automatically turn in completed quests to NPCs.",
     -- AUTOQUEST_SINGLE_REWARD                 = "Auto select single reward",
     -- AUTOQUEST_SINGLE_REWARD_DESC            = "If a quest offers only one reward, auto-select it.",
+    -- AUTOQUEST_SINGLE_GOSSIP                 = "Auto-select single dialog option",
+    -- AUTOQUEST_SINGLE_GOSSIP_DESC            = "Automatically select NPCs with only one dialog option to progress through dialog chains leading to quests.",
     -- AUTOQUEST_SKIP_TRIVIAL                  = "Skip trivial quests",
     -- AUTOQUEST_SKIP_TRIVIAL_DESC             = "Don't auto-accept quests that are gray (trivial/low-level).",
     -- AUTOQUEST_CALLOUT                       = "Hold %s to temporarily pause auto-accept and auto turn-in.",
