@@ -64,6 +64,21 @@ function utils.RegisterMediaSounds(lsm)
 end
 
 -------------------------------------------------------------------------------
+-- Secret Value Helpers (WoW 12.0+)
+-------------------------------------------------------------------------------
+
+local _issecretvalue = issecretvalue or function() return false; end;
+
+function utils.IsSecret(val)
+    return _issecretvalue(val);
+end
+
+function utils.SafeValue(val)
+    if (_issecretvalue(val)) then return nil; end
+    return val;
+end
+
+-------------------------------------------------------------------------------
 -- Font Helpers
 -------------------------------------------------------------------------------
 
@@ -79,14 +94,24 @@ function utils.GetFontPath(fontName)
     return _DEFAULT_FONT_PATH;
 end
 
+-- Font object cache: keyed by "path|size|outline" to reuse across calls.
+-- Using CreateFont + SetFontObject lets WoW manage late-loading font files
+-- transparently, unlike direct SetFont which silently falls back to default.
+local _fontObjects = {};
+local _fontObjectCount = 0;
+
 function utils.SafeSetFont(fontString, fontPath, size, outline)
     if (not fontString) then return; end
-    local ok = fontString:SetFont(fontPath, size, outline);
-    if (not ok) then
-        C_Timer.After(0.5, function()
-            if (fontString) then fontString:SetFont(fontPath, size, outline); end
-        end);
+    outline = outline or "";
+    local key = fontPath .. "|" .. size .. "|" .. outline;
+    local fontObj = _fontObjects[key];
+    if (not fontObj) then
+        _fontObjectCount = _fontObjectCount + 1;
+        fontObj = CreateFont("LanternFont_" .. _fontObjectCount);
+        fontObj:SetFont(fontPath, size, outline);
+        _fontObjects[key] = fontObj;
     end
+    fontString:SetFontObject(fontObj);
 end
 
 utils._optionsRebuilders = utils._optionsRebuilders or {};

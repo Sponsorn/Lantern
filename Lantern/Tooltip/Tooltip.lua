@@ -1,6 +1,7 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 local L = Lantern.L;
+local IsSecret = Lantern.utils.IsSecret;
 
 local module = Lantern:NewModule("Tooltip", {
     title = L["TOOLTIP_TITLE"],
@@ -54,7 +55,7 @@ local function HasLine(tooltip, label)
         local left = _G[name .. "TextLeft" .. i];
         if (left) then
             local text = left:GetText();
-            if (text and not (issecretvalue and issecretvalue(text)) and text:find(label, 1, true)) then
+            if (text and not IsSecret(text) and text:find(label, 1, true)) then
                 return true;
             end
         end
@@ -63,7 +64,7 @@ local function HasLine(tooltip, label)
 end
 
 local function AddID(tooltip, label, id)
-    if (issecretvalue and issecretvalue(id)) then return; end
+    if (IsSecret(id)) then return; end
     if (not id or id == 0) then return; end
     if (HasLine(tooltip, label)) then return; end
     tooltip:AddDoubleLine(label, tostring(id), 1, 0.82, 0, 1, 1, 1);
@@ -79,7 +80,7 @@ local function GetUnitMount(unit)
         if (not aura) then break; end
 
         local spellId = aura.spellId;
-        if (spellId and not issecretvalue(spellId)) then
+        if (spellId and not IsSecret(spellId)) then
             local mountID = GetMountFromSpell(spellId);
             if (mountID) then
                 local name = GetMountInfoByID(mountID);
@@ -377,7 +378,7 @@ function module:OnEnable()
         local inInstance = IsInInstance();
         if (not inInstance and not InCombatLockdown() and dataType == Enum.TooltipDataType.Unit and tooltip.GetUnit) then
             local _, unit = tooltip:GetUnit();
-            if (unit and not issecretvalue(unit) and UnitIsPlayer(unit) and settings.showMount) then
+            if (unit and not IsSecret(unit) and UnitIsPlayer(unit) and settings.showMount) then
                 local mountName = GetUnitMount(unit);
                 if (mountName and not HasLine(tooltip, "Mount")) then
                     tooltip:AddDoubleLine("Mount", mountName, 1, 0.82, 0, 1, 1, 1);
@@ -435,7 +436,7 @@ function module:OnEnable()
                 if (dataType == Enum.TooltipDataType.Spell
                     or dataType == Enum.TooltipDataType.UnitAura
                     or dataType == Enum.TooltipDataType.Totem) then
-                    if (data.id and not (issecretvalue and issecretvalue(data.id))) then
+                    if (data.id and not IsSecret(data.id)) then
                         AddID(tooltip, "SpellID", data.id);
                         if (tooltip == GameTooltip) then
                             local spellName = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(data.id);

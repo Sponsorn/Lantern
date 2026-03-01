@@ -1,12 +1,18 @@
 # Changelog
 
+## 0.6.3 - 2026-03-01
+- Fix: Custom fonts (Roboto) showing as default WoW font — for real this time. SafeSetFont now uses Font Objects (CreateFont + SetFontObject) instead of direct SetFont calls, letting WoW handle late-loading font files transparently
+- Add: Secret value utility (IsSecret, SafeValue) with polyfill — centralizes WoW 12.0 secret value guards
+- Add: German (deDE), Spanish (esES), French (frFR), and Italian (itIT) translations
+- Fix: Auto Sell no longer gets stuck when selling many stacks of the same item — sells one item at a time with a short delay instead of all at once
+- Chore: Tooltip module now uses shared IsSecret helper instead of raw issecretvalue calls
+
 ## 0.6.2 - 2026-02-27
 - Fix: Tooltip no longer errors on unit tooltips when the unit value is secret (WoW 12.0 taint guard on UnitIsPlayer)
 - Add: Auto Quest now auto-selects single gossip dialog options to progress through NPC dialog chains leading to quests (toggleable in settings, enabled by default)
 - Remove: Item Info module temporarily removed for rework
 - Add: Module status dots on the splash page are now clickable toggles — quickly enable or disable any module without navigating to its settings page
 - Chore: Consolidated duplicate widget helpers (moduleEnabled, moduleToggle, refreshPage) into shared Utils/WidgetHelpers.lua
-- Fix: Custom fonts (Roboto) sometimes showing as default WoW font on cold login — SetFont now retries after a short delay if the font file isn't cached yet
 - Chore: Consolidated duplicate GetFontPath into shared Utils with SafeSetFont retry helper (RangeCheck, CombatTimer, CombatAlert, MissingPet)
 - Remove: Disable Loot Warnings module — core APIs are protected in WoW 12.0 making auto-confirm unreliable
 

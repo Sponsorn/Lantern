@@ -69,12 +69,15 @@ function module:OnEnable()
     self.addon:ModuleRegisterEvent(self, "MERCHANT_SHOW", self.OnMerchantShow);
 end
 
+local SELL_INTERVAL = 0.2; -- seconds between each sell
+
 function module:OnMerchantShow()
     if (not self.enabled or shouldPause()) then return; end
     if (not C_MerchantFrame or not C_MerchantFrame.IsSellAllJunkEnabled or not C_MerchantFrame.IsSellAllJunkEnabled()) then return; end
 
+    -- Collect all items to sell
+    local queue = {};
     local totalCopper = 0;
-    local itemCount = 0;
 
     for bag = 0, NUM_BAG_SLOTS do
         local numSlots = C_Container.GetContainerNumSlots(bag);
@@ -97,18 +100,34 @@ function module:OnMerchantShow()
                     local _, _, _, _, _, _, _, _, _, _, sellPrice = C_Item.GetItemInfo(info.itemID);
                     if (sellPrice and sellPrice > 0) then
                         totalCopper = totalCopper + (sellPrice * (info.stackCount or 1));
-                        itemCount = itemCount + 1;
-                        C_Container.UseContainerItem(bag, slot);
+                        table.insert(queue, { bag = bag, slot = slot });
                     end
                 end
             end
         end
     end
 
-    if (itemCount > 0) then
-        local costText = Lantern:Convert("money:format_copper", totalCopper);
-        Lantern:Print(format(L["AUTOSELL_MSG_SOLD_ITEMS"], itemCount, costText));
-    end
+    if (#queue == 0) then return; end
+
+    -- Sell one item at a time with a delay
+    local itemCount = #queue;
+    local idx = 0;
+    local ticker;
+    ticker = C_Timer.NewTicker(SELL_INTERVAL, function()
+        idx = idx + 1;
+        if (idx > #queue or not MerchantFrame:IsShown()) then
+            ticker:Cancel();
+            return;
+        end
+        local entry = queue[idx];
+        local info = C_Container.GetContainerItemInfo(entry.bag, entry.slot);
+        if (info and not info.isLocked) then
+            C_Container.UseContainerItem(entry.bag, entry.slot);
+        end
+    end, #queue);
+
+    local costText = Lantern:Convert("money:format_copper", totalCopper);
+    Lantern:Print(format(L["AUTOSELL_MSG_SOLD_ITEMS"], itemCount, costText));
 end
 
 Lantern:RegisterModule(module);
