@@ -2,7 +2,7 @@
 
 ## 0.6.0
 - Add: Order history tracking — automatically records fulfilled crafting orders (guild and personal)
-- Add: Analytics window with Customers, Items, and Dashboard tabs (`/lantern orders`)
+- Add: Analytics window with Dashboard, Customers, and Items pages using native LanternUX panel (`/lantern orders`)
 - Add: Per-customer stats: order count, total tips, average tip, last order
 - Add: Per-item stats: craft count, average tip, total revenue, unique customers
 - Add: Dashboard with overall stats, top 5 customers, and top 5 items
