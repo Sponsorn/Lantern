@@ -419,7 +419,7 @@ local function PopulateDashboard()
         { label = L["CO_DASH_AVG_TIP"],      value = FormatMoney(stats.avgTip) },
         { label = L["CO_DASH_THIS_WEEK"],    value = tostring(stats.weekOrders) },
         { label = L["CO_DASH_THIS_MONTH"],   value = tostring(stats.monthOrders) },
-    end
+    };
 
     local startX = 16;
 
