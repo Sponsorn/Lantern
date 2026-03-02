@@ -328,11 +328,9 @@ local function historyWidgets()
         },
         {
             type = "description",
-            text = function()
-                local count = CraftingOrders.GetCharacterOrderCount
-                    and CraftingOrders:GetCharacterOrderCount() or 0;
-                return string.format(L["CO_HISTORY_COUNT"], count);
-            end,
+            text = string.format(L["CO_HISTORY_COUNT"],
+                CraftingOrders.GetCharacterOrderCount
+                    and CraftingOrders:GetCharacterOrderCount() or 0),
             fontSize = "medium",
         },
         { type = "header", text = "" },
