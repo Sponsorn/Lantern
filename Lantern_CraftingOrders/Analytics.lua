@@ -96,6 +96,145 @@ function CraftingOrders:ClearCharacterHistory()
 end
 
 -------------------------------------------------------------------------------
+-- Aggregation
+-------------------------------------------------------------------------------
+
+local function iterateOrders(charFilter, callback)
+    local db = ensureHistoryDB();
+    if (charFilter == "all") then
+        for _, charData in pairs(db.characters) do
+            if (charData.orders) then
+                for _, order in ipairs(charData.orders) do
+                    callback(order);
+                end
+            end
+        end
+    else
+        local charData = ensureCharacterData(db);
+        if (charData and charData.orders) then
+            for _, order in ipairs(charData.orders) do
+                callback(order);
+            end
+        end
+    end
+end
+
+function CraftingOrders:GetCustomerList(charFilter)
+    local map = {};
+
+    iterateOrders(charFilter, function(order)
+        local name = order.customer or "Unknown";
+        if (not map[name]) then
+            map[name] = {
+                name = name,
+                count = 0,
+                totalTip = 0,
+                firstOrder = order.timestamp,
+                lastOrder = order.timestamp,
+                items = {},
+            };
+        end
+        local c = map[name];
+        c.count = c.count + 1;
+        c.totalTip = c.totalTip + (order.tip or 0);
+        if (order.timestamp and order.timestamp < c.firstOrder) then
+            c.firstOrder = order.timestamp;
+        end
+        if (order.timestamp and order.timestamp > c.lastOrder) then
+            c.lastOrder = order.timestamp;
+        end
+        if (order.itemID) then c.items[order.itemID] = true; end
+    end);
+
+    local list = {};
+    for _, data in pairs(map) do
+        data.avgTip = data.count > 0 and math.floor(data.totalTip / data.count) or 0;
+        local n = 0;
+        for _ in pairs(data.items) do n = n + 1; end
+        data.uniqueItems = n;
+        table.insert(list, data);
+    end
+
+    return list;
+end
+
+function CraftingOrders:GetItemList(charFilter)
+    local map = {};
+
+    iterateOrders(charFilter, function(order)
+        local id = order.itemID;
+        if (not id) then return; end
+        if (not map[id]) then
+            map[id] = {
+                itemID = id,
+                itemLink = order.item,
+                count = 0,
+                totalTip = 0,
+                customers = {},
+            };
+        end
+        local it = map[id];
+        it.count = it.count + 1;
+        it.totalTip = it.totalTip + (order.tip or 0);
+        -- Keep the most recent item link (may have updated quality)
+        if (order.item and order.item ~= "") then
+            it.itemLink = order.item;
+        end
+        if (order.customer) then it.customers[order.customer] = true; end
+    end);
+
+    local list = {};
+    for _, data in pairs(map) do
+        data.avgTip = data.count > 0 and math.floor(data.totalTip / data.count) or 0;
+        local n = 0;
+        for _ in pairs(data.customers) do n = n + 1; end
+        data.uniqueCustomers = n;
+        table.insert(list, data);
+    end
+
+    return list;
+end
+
+function CraftingOrders:GetDashboardStats(charFilter)
+    local stats = {
+        totalOrders = 0,
+        totalTips = 0,
+        weekOrders = 0,
+        monthOrders = 0,
+    };
+
+    local now = time();
+    local weekAgo = now - (7 * 24 * 3600);
+    local monthAgo = now - (30 * 24 * 3600);
+
+    iterateOrders(charFilter, function(order)
+        stats.totalOrders = stats.totalOrders + 1;
+        stats.totalTips = stats.totalTips + (order.tip or 0);
+        if (order.timestamp and order.timestamp >= weekAgo) then
+            stats.weekOrders = stats.weekOrders + 1;
+        end
+        if (order.timestamp and order.timestamp >= monthAgo) then
+            stats.monthOrders = stats.monthOrders + 1;
+        end
+    end);
+
+    stats.avgTip = stats.totalOrders > 0
+        and math.floor(stats.totalTips / stats.totalOrders) or 0;
+
+    return stats;
+end
+
+function CraftingOrders:GetCharacterKeys()
+    local db = ensureHistoryDB();
+    local keys = {};
+    for key in pairs(db.characters) do
+        table.insert(keys, key);
+    end
+    table.sort(keys);
+    return keys;
+end
+
+-------------------------------------------------------------------------------
 -- Expose DB helpers
 -------------------------------------------------------------------------------
 
