@@ -623,6 +623,27 @@ function CraftingOrders:EnsureWhisperButton()
     end
 end
 
+function CraftingOrders:EnsureAnalyticsButton()
+    local view = getOrderView();
+    if (not view) then return; end
+    if (view._lanternAnalyticsButton) then return; end
+
+    local anchor = getRightButton(view);
+    if (not anchor) then return; end
+
+    local button = CreateFrame("Button", "LanternCO_AnalyticsBtn", view, "UIPanelButtonTemplate");
+    button:SetText(L["CO_ANALYTICS_BTN"]);
+    button:SetHeight(anchor:GetHeight() or 22);
+    button:SetWidth(100);
+    button:ClearAllPoints();
+    button:SetPoint("RIGHT", anchor, "LEFT", -8, 0);
+    button:SetScript("OnClick", function()
+        self:ToggleAnalytics();
+    end);
+
+    view._lanternAnalyticsButton = button;
+end
+
 function CraftingOrders:HandleDebugUnlockClick()
     self._debugClickCount = (self._debugClickCount or 0) + 1;
     if (self._debugClickCount >= 5) then
@@ -649,6 +670,7 @@ function CraftingOrders:OnEnable()
     self._awaitDeadline = 0;
     self._personalCount = getPersonalOrderCount();
     self:EnsureWhisperButton();
+    self:EnsureAnalyticsButton();
     self:UpdateWhisperButton();
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", function()
         self:HandlePlacement();
@@ -659,10 +681,12 @@ function CraftingOrders:OnEnable()
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function()
         self:EnsureWhisperButton();
+        self:EnsureAnalyticsButton();
         self:UpdateWhisperButton();
     end);
     self.addon:ModuleRegisterEvent(self, "TRADE_SKILL_ITEM_CRAFTED_RESULT", function()
         self:EnsureWhisperButton();
+        self:EnsureAnalyticsButton();
         self:UpdateWhisperButton();
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_UPDATE_PERSONAL_ORDER_COUNTS", function()
@@ -676,6 +700,7 @@ function CraftingOrders:OnEnable()
     if (ProfessionsFrame and ProfessionsFrame.HookScript) then
         ProfessionsFrame:HookScript("OnShow", function()
             self:EnsureWhisperButton();
+            self:EnsureAnalyticsButton();
             self:UpdateWhisperButton();
         end);
     end
@@ -711,5 +736,21 @@ CraftingOrders._previewSound = function(key)
     end
 end;
 CraftingOrders._formatPersonalOrderMessage = formatPersonalOrderMessage;
+
+-------------------------------------------------------------------------------
+-- Slash command hook: /lantern orders
+-------------------------------------------------------------------------------
+
+local _origSlashHandler = SlashCmdList["LANTERN"];
+SlashCmdList["LANTERN"] = function(msg)
+    local cmd = (msg or ""):lower():match("^(%S+)") or "";
+    if (cmd == "orders") then
+        CraftingOrders:ToggleAnalytics();
+        return;
+    end
+    if (_origSlashHandler) then
+        _origSlashHandler(msg);
+    end
+end;
 
 Lantern:RegisterModule(CraftingOrders);
