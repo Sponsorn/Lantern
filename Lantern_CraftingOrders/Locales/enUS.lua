@@ -114,4 +114,65 @@ ns:RegisterLocale("enUS", {
     CO_PAGE_PERSONAL                             = "Personal Orders",
     CO_PAGE_PERSONAL_TITLE                       = "Personal Orders",
     CO_PAGE_PERSONAL_DESC                        = "Personal order notifications.",
+
+    ---------------------------------------------------------------------------
+    -- Analytics
+    ---------------------------------------------------------------------------
+
+    CO_ANALYTICS_TITLE                           = "Crafting Orders Analytics",
+    CO_ANALYTICS_BTN                             = "Analytics",
+    CO_ANALYTICS_BTN_DESC                        = "Open crafting order analytics.",
+
+    -- Tabs
+    CO_TAB_CUSTOMERS                             = "Customers",
+    CO_TAB_ITEMS                                 = "Items",
+    CO_TAB_DASHBOARD                             = "Dashboard",
+
+    -- Column headers
+    CO_COL_CUSTOMER                              = "Customer",
+    CO_COL_ORDERS                                = "Orders",
+    CO_COL_TOTAL_TIPS                            = "Total Tips",
+    CO_COL_AVG_TIP                               = "Avg Tip",
+    CO_COL_LAST_ORDER                            = "Last Order",
+    CO_COL_ITEM                                  = "Item",
+    CO_COL_CRAFTS                                = "Crafts",
+    CO_COL_REVENUE                               = "Revenue",
+    CO_COL_CUSTOMERS                             = "Customers",
+
+    -- Dashboard
+    CO_DASH_TOTAL_ORDERS                         = "Total Orders",
+    CO_DASH_TOTAL_TIPS                           = "Total Tips Earned",
+    CO_DASH_AVG_TIP                              = "Average Tip",
+    CO_DASH_THIS_WEEK                            = "This Week",
+    CO_DASH_THIS_MONTH                           = "This Month",
+    CO_DASH_TOP_CUSTOMERS                        = "Top Customers",
+    CO_DASH_TOP_ITEMS                            = "Top Items",
+    CO_DASH_NO_DATA                              = "No orders recorded yet.",
+
+    -- Character filter
+    CO_FILTER_CURRENT                            = "Current Character",
+    CO_FILTER_ALL                                = "All Characters",
+
+    -- Time formatting
+    CO_TIME_JUST_NOW                             = "Just now",
+    CO_TIME_MINUTES_AGO                          = "%dm ago",
+    CO_TIME_HOURS_AGO                            = "%dh ago",
+    CO_TIME_DAYS_AGO                             = "%dd ago",
+
+    -- Settings: Order History section
+    CO_HISTORY_HEADER                            = "Order History",
+    CO_TRACK_HISTORY                             = "Track order history",
+    CO_TRACK_HISTORY_DESC                        = "Record fulfilled crafting orders for analytics.",
+    CO_HISTORY_COUNT                              = "%d orders recorded.",
+    CO_OPEN_ANALYTICS                            = "Open Analytics",
+    CO_OPEN_ANALYTICS_DESC                       = "Open the crafting orders analytics window.",
+    CO_CLEAR_HISTORY                             = "Clear History",
+    CO_CLEAR_HISTORY_DESC                        = "Delete all recorded order history for the current character.",
+    CO_CLEAR_HISTORY_CONFIRM                     = "Are you sure you want to delete all order history for this character? This cannot be undone.",
+    CO_MAX_ORDERS                                = "Max orders to keep",
+    CO_MAX_ORDERS_DESC                           = "Maximum number of orders to store per character. Oldest orders are removed first.",
+
+    -- Repeat customer indicator
+    CO_REPEAT_CUSTOMER                           = "Repeat",
+    CO_NEW_CUSTOMER                              = "New",
 });
