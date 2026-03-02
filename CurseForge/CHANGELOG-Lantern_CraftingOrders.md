@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+- Add: Order history tracking — automatically records fulfilled crafting orders (guild and personal)
+- Add: Analytics window with Customers, Items, and Dashboard tabs (`/lantern orders`)
+- Add: Per-customer stats: order count, total tips, average tip, last order
+- Add: Per-item stats: craft count, average tip, total revenue, unique customers
+- Add: Dashboard with overall stats, top 5 customers, and top 5 items
+- Add: Character filter to view current character or all characters
+- Add: Analytics button in the crafting window
+- Add: Order History settings page with tracking toggle, max orders limit, and clear history
+- Add: Background sound option for personal order notifications
+
 ## 0.5.0 - 2026-02-23
 - Add: Full localization support — all user-facing strings extracted to locale files with English as the base, 10 additional languages ready for community translations
 - Add: Automated release pipeline — GitHub Actions with BigWigs packager for CurseForge uploads and localization substitution
