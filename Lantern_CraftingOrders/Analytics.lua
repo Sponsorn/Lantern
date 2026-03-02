@@ -1,5 +1,4 @@
 local ADDON_NAME, ns = ...;
-local L = ns.L;
 local Lantern = _G.Lantern;
 if (not Lantern) then return; end
 

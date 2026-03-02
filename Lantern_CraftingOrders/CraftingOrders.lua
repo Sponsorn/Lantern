@@ -446,6 +446,8 @@ function CraftingOrders:HandleFulfillResponse(...)
     self._awaitFulfillTip = tipCopper;
 end
 
+-- Record all fulfilled order types (guild AND personal) for analytics,
+-- independent of the guild-announce setting in HandleFulfillResponse.
 function CraftingOrders:TryRecordFulfillment(...)
     local orderID, result = parseFulfillArgs(...);
     if (not isFulfillOk(result)) then return; end
