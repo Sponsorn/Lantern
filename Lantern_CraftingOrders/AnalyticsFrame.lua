@@ -708,8 +708,22 @@ local function EnsurePanel()
         end,
     });
 
+    -- Expose so settings panel can close us
+    CraftingOrders._analyticsPanel = panel;
+
     return panel;
 end
+
+-------------------------------------------------------------------------------
+-- Close analytics when the settings panel opens
+-------------------------------------------------------------------------------
+
+hooksecurefunc(Lantern, "OpenOptions", function()
+    if (panel) then
+        CloseDropdownMenu();
+        panel:Hide();
+    end
+end);
 
 -------------------------------------------------------------------------------
 -- Public API
@@ -730,8 +744,16 @@ function CraftingOrders:RefreshAnalytics()
     end
 end
 
+local function HideSettingsPanel()
+    local settingsPanel = Lantern._uxPanel;
+    if (settingsPanel and settingsPanel.Hide) then
+        settingsPanel:Hide();
+    end
+end
+
 function CraftingOrders:OpenAnalytics()
     CloseDropdownMenu();
+    HideSettingsPanel();
     local p = EnsurePanel();
     p:Show();
 end
@@ -739,5 +761,10 @@ end
 function CraftingOrders:ToggleAnalytics()
     local p = EnsurePanel();
     CloseDropdownMenu();
-    p:Toggle();
+    if (p:GetFrame() and p:GetFrame():IsShown()) then
+        p:Hide();
+    else
+        HideSettingsPanel();
+        p:Show();
+    end
 end
