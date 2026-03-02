@@ -300,10 +300,84 @@ local function personalWidgets()
 end
 
 -------------------------------------------------------------------------------
+-- Order History page
+-------------------------------------------------------------------------------
+
+local function historyWidgets()
+    local db = _G.LanternCraftingOrdersDB or {};
+
+    local widgets = {
+        {
+            type = "toggle",
+            label = L["CO_TRACK_HISTORY"],
+            desc = L["CO_TRACK_HISTORY_DESC"],
+            get = function() return db.trackHistory ~= false; end,
+            set = function(val)
+                db.trackHistory = val and true or false;
+            end,
+        },
+        {
+            type = "range",
+            label = L["CO_MAX_ORDERS"],
+            desc = L["CO_MAX_ORDERS_DESC"],
+            min = 100, max = 2000, step = 100, default = 500,
+            get = function() return db.maxOrders or 500; end,
+            set = function(val)
+                db.maxOrders = val;
+            end,
+        },
+        {
+            type = "description",
+            text = function()
+                local count = CraftingOrders.GetCharacterOrderCount
+                    and CraftingOrders:GetCharacterOrderCount() or 0;
+                return string.format(L["CO_HISTORY_COUNT"], count);
+            end,
+            fontSize = "medium",
+        },
+        { type = "header", text = "" },
+        {
+            type = "execute",
+            label = L["CO_OPEN_ANALYTICS"],
+            desc = L["CO_OPEN_ANALYTICS_DESC"],
+            func = function()
+                CraftingOrders:ToggleAnalytics();
+            end,
+        },
+        {
+            type = "execute",
+            label = L["CO_CLEAR_HISTORY"],
+            desc = L["CO_CLEAR_HISTORY_DESC"],
+            func = function()
+                StaticPopup_Show("LANTERN_CO_CLEAR_HISTORY");
+            end,
+        },
+    };
+
+    return widgets;
+end
+
+-- Confirmation dialog for clearing history
+StaticPopupDialogs["LANTERN_CO_CLEAR_HISTORY"] = {
+    text = L["CO_CLEAR_HISTORY_CONFIRM"] or "Are you sure?",
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function()
+        CraftingOrders:ClearCharacterHistory();
+        if (refreshPage) then refreshPage(); end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+};
+
+-------------------------------------------------------------------------------
 -- Register uxPages
 -------------------------------------------------------------------------------
 
 CraftingOrders.uxPages = {
     { key = "craftingorders_guild",    opts = { label = L["CO_PAGE_GUILD"],    title = L["CO_PAGE_GUILD_TITLE"],    description = L["CO_PAGE_GUILD_DESC"],    widgets = guildWidgets } },
     { key = "craftingorders_personal", opts = { label = L["CO_PAGE_PERSONAL"], title = L["CO_PAGE_PERSONAL_TITLE"], description = L["CO_PAGE_PERSONAL_DESC"], widgets = personalWidgets } },
+    { key = "craftingorders_history",  opts = { label = L["CO_HISTORY_HEADER"], title = L["CO_HISTORY_HEADER"], description = L["CO_TRACK_HISTORY_DESC"], widgets = historyWidgets } },
 };
