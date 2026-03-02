@@ -56,8 +56,12 @@ local currentTab = TAB_CUSTOMERS;
 local charFilter = nil; -- nil = current character
 local sortKey = "count";
 local sortAscending = false;
-local dataRows = {};
-local headerButtons = {};
+local rowPool = {};      -- persistent pool of row frames (indexed by number)
+local activeRowCount = 0; -- how many pool entries are currently in use
+local headerPool = {};    -- persistent pool of header buttons (indexed by number)
+local activeHeaderCount = 0;
+local dashPool = {};      -- persistent pool of dashboard elements (indexed by number)
+local activeDashCount = 0;
 local scrollChild = nil;
 local scrollFrame = nil;
 local filterDropdown = nil;
@@ -122,56 +126,72 @@ end
 -- Row pool
 -------------------------------------------------------------------------------
 
-local function ClearRows()
-    for _, row in ipairs(dataRows) do
-        row:Hide();
-        row:SetParent(nil);
+local function HideAllRows()
+    for i = 1, #rowPool do
+        rowPool[i]:Hide();
     end
-    dataRows = {};
+    activeRowCount = 0;
 end
 
-local function CreateRow(parent, index)
-    local rowName = "LanternCO_AnalyticsRow_" .. index;
-    local row = CreateFrame("Frame", rowName, parent);
-    row:SetHeight(ROW_HEIGHT);
-    row:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -((index - 1) * ROW_HEIGHT));
-    row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, -((index - 1) * ROW_HEIGHT));
-    row:EnableMouse(true);
+local function AcquireRow(parent, index)
+    local row = rowPool[index];
+    if (not row) then
+        -- Create a new row and add to pool
+        local rowName = "LanternCO_AnalyticsRow_" .. index;
+        row = CreateFrame("Frame", rowName, parent);
+        row:SetHeight(ROW_HEIGHT);
+        row:EnableMouse(true);
 
-    -- Alternating background
-    local bg = row:CreateTexture(rowName .. "_Bg", "BACKGROUND");
-    bg:SetAllPoints();
-    bg:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.04 or 0.0);
-    row.bg = bg;
+        -- Alternating background
+        local bg = row:CreateTexture(rowName .. "_Bg", "BACKGROUND");
+        bg:SetAllPoints();
+        row.bg = bg;
 
-    -- Highlight
-    local highlight = row:CreateTexture(rowName .. "_Highlight", "HIGHLIGHT");
-    highlight:SetAllPoints();
-    highlight:SetColorTexture(1, 1, 1, 0.08);
+        -- Highlight
+        local highlight = row:CreateTexture(rowName .. "_Highlight", "HIGHLIGHT");
+        highlight:SetAllPoints();
+        highlight:SetColorTexture(1, 1, 1, 0.08);
 
-    row.cells = {};
+        row.cells = {};
+        rowPool[index] = row;
+    end
+
+    -- Update parent (in case it changed) and alternating background
+    row:SetParent(parent);
+    row.bg:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.04 or 0.0);
+    row:ClearAllPoints();
+    row:Show();
+    activeRowCount = index;
     return row;
 end
 
 local function EnsureRowCells(row, columns, rowIndex)
-    -- Clear existing cells
-    if (row.cells) then
-        for _, cell in ipairs(row.cells) do
-            cell:Hide();
-        end
+    if (not row.cells) then
+        row.cells = {};
     end
-    row.cells = {};
 
     local xOffset = 8;
     for i, col in ipairs(columns) do
-        local cellName = row:GetName() .. "_Cell_" .. i;
-        local cell = row:CreateFontString(cellName, "OVERLAY", "GameFontHighlightSmall");
+        local cell = row.cells[i];
+        if (not cell) then
+            -- Only create a new FontString if one doesn't already exist at this index
+            local cellName = row:GetName() .. "_Cell_" .. i;
+            cell = row:CreateFontString(cellName, "OVERLAY", "GameFontHighlightSmall");
+            cell:SetWordWrap(false);
+            row.cells[i] = cell;
+        end
+        cell:ClearAllPoints();
         cell:SetPoint("LEFT", row, "LEFT", xOffset, 0);
         cell:SetWidth(col.width - 8);
         cell:SetJustifyH(col.align);
-        cell:SetWordWrap(false);
-        row.cells[i] = cell;
+        cell:SetText("");
+        cell:Show();
         xOffset = xOffset + col.width;
+    end
+
+    -- Hide excess cells from a previous layout with more columns
+    for i = #columns + 1, #row.cells do
+        row.cells[i]:Hide();
     end
 end
 
@@ -181,18 +201,15 @@ end
 
 local headerFrame = nil;
 
-local function ClearHeaders()
-    if (headerButtons) then
-        for _, btn in ipairs(headerButtons) do
-            btn:Hide();
-            btn:SetParent(nil);
-        end
+local function HideAllHeaders()
+    for i = 1, #headerPool do
+        headerPool[i]:Hide();
     end
-    headerButtons = {};
+    activeHeaderCount = 0;
 end
 
 local function CreateHeaders(parent, columns)
-    ClearHeaders();
+    HideAllHeaders();
 
     if (not headerFrame) then
         headerFrame = CreateFrame("Frame", "LanternCO_AnalyticsHeaders", parent);
@@ -222,52 +239,69 @@ local function CreateHeaders(parent, columns)
 
     local xOffset = 8;
     for i, col in ipairs(columns) do
-        local btnName = "LanternCO_AnalyticsHeader_" .. i;
-        local btn = CreateFrame("Button", btnName, headerFrame);
+        local btn = headerPool[i];
+        if (not btn) then
+            -- Create a new header button and add to pool
+            local btnName = "LanternCO_AnalyticsHeader_" .. i;
+            btn = CreateFrame("Button", btnName, headerFrame);
+
+            local label = btn:CreateFontString(btnName .. "_Text", "OVERLAY", "GameFontNormalSmall");
+            label:SetPoint("LEFT", btn, "LEFT", 0, 0);
+            label:SetPoint("RIGHT", btn, "RIGHT", -4, 0);
+            btn.label = label;
+
+            -- Sort arrow
+            local arrow = btn:CreateFontString(btnName .. "_Arrow", "OVERLAY", "GameFontNormalSmall");
+            btn.arrow = arrow;
+
+            -- Hover highlight
+            local hoverTex = btn:CreateTexture(btnName .. "_Hover", "HIGHLIGHT");
+            hoverTex:SetAllPoints();
+            hoverTex:SetColorTexture(1, 1, 1, 0.05);
+
+            headerPool[i] = btn;
+        end
+
+        -- Update per-refresh properties
+        btn:SetParent(headerFrame);
         btn:SetHeight(HEADER_HEIGHT);
         btn:SetWidth(col.width);
+        btn:ClearAllPoints();
         btn:SetPoint("LEFT", headerFrame, "LEFT", xOffset, 0);
 
-        local label = btn:CreateFontString(btnName .. "_Text", "OVERLAY", "GameFontNormalSmall");
-        label:SetPoint("LEFT", btn, "LEFT", 0, 0);
-        label:SetPoint("RIGHT", btn, "RIGHT", -4, 0);
-        label:SetJustifyH(col.align);
-        label:SetText(L[col.label] or col.label);
-        btn.label = label;
+        btn.label:SetJustifyH(col.align);
+        btn.label:SetText(L[col.label] or col.label);
 
-        -- Sort arrow
-        local arrow = btn:CreateFontString(btnName .. "_Arrow", "OVERLAY", "GameFontNormalSmall");
+        btn.arrow:ClearAllPoints();
         if (col.align == "LEFT") then
-            arrow:SetPoint("LEFT", label, "RIGHT", 2, 0);
+            btn.arrow:SetPoint("LEFT", btn.label, "RIGHT", 2, 0);
         else
-            arrow:SetPoint("RIGHT", label, "LEFT", -2, 0);
+            btn.arrow:SetPoint("RIGHT", btn.label, "LEFT", -2, 0);
         end
-        arrow:SetText("");
-        btn.arrow = arrow;
+        btn.arrow:SetText("");
 
-        -- Hover highlight
-        local hoverTex = btn:CreateTexture(btnName .. "_Hover", "HIGHLIGHT");
-        hoverTex:SetAllPoints();
-        hoverTex:SetColorTexture(1, 1, 1, 0.05);
-
+        -- Capture col.key for the closure
+        local colKey = col.key;
         btn:SetScript("OnClick", function()
-            if (sortKey == col.key) then
+            if (sortKey == colKey) then
                 sortAscending = not sortAscending;
             else
-                sortKey = col.key;
+                sortKey = colKey;
                 sortAscending = false;
             end
             CraftingOrders:RefreshAnalytics();
         end);
 
-        table.insert(headerButtons, btn);
+        btn:Show();
+        activeHeaderCount = i;
         xOffset = xOffset + col.width;
     end
 end
 
 local function UpdateSortArrows(columns)
-    for i, btn in ipairs(headerButtons) do
-        if (btn.arrow) then
+    for i = 1, activeHeaderCount do
+        local btn = headerPool[i];
+        if (btn and btn.arrow) then
             if (columns[i] and columns[i].key == sortKey) then
                 btn.arrow:SetText(sortAscending and " ^" or " v");
                 local ar, ag, ab = GetThemeColor("accent", 0.88, 0.56, 0.18, 1);
@@ -293,8 +327,21 @@ local function SortData(data, key, ascending)
         if (va == nil and vb == nil) then return false; end
         if (va == nil) then return ascending; end
         if (vb == nil) then return not ascending; end
-        -- String compare for string values
-        if (type(va) == "string" and type(vb) == "string") then
+
+        local ta = type(va);
+        local tb = type(vb);
+
+        -- Mixed types: sort numbers before strings for a stable order
+        if (ta ~= tb) then
+            if (ta == "number") then return ascending; end
+            if (tb == "number") then return not ascending; end
+            -- Fallback: compare type names for any other mixed types
+            if (ascending) then return ta < tb; end
+            return ta > tb;
+        end
+
+        -- String compare
+        if (ta == "string") then
             if (ascending) then
                 return va:lower() < vb:lower();
             else
@@ -314,8 +361,20 @@ end
 -- Tab: Customers
 -------------------------------------------------------------------------------
 
+-- Persistent "no data" frames (created on first use, one per tab)
+local customersNoData = nil;
+local itemsNoData = nil;
+local dashNoData = nil;
+
+local function HideAllNoData()
+    if (customersNoData) then customersNoData:Hide(); end
+    if (itemsNoData) then itemsNoData:Hide(); end
+    if (dashNoData) then dashNoData:Hide(); end
+end
+
 local function PopulateCustomers()
-    ClearRows();
+    HideAllRows();
+    HideAllNoData();
     if (headerFrame) then headerFrame:Show(); end
 
     local filter = GetCharFilterForAPI();
@@ -326,20 +385,25 @@ local function PopulateCustomers()
     UpdateSortArrows(CUSTOMER_COLUMNS);
 
     if (#data == 0) then
-        local noData = CreateFrame("Frame", "LanternCO_AnalyticsNoData", scrollChild);
-        noData:SetSize(FRAME_WIDTH - 40, 40);
-        noData:SetPoint("TOP", scrollChild, "TOP", 0, -(HEADER_HEIGHT + 20));
-        local text = noData:CreateFontString("LanternCO_AnalyticsNoData_Text", "OVERLAY", "GameFontNormal");
-        text:SetPoint("CENTER");
-        text:SetText(L["CO_DASH_NO_DATA"]);
-        text:SetTextColor(0.5, 0.5, 0.5);
-        table.insert(dataRows, noData);
+        if (not customersNoData) then
+            customersNoData = CreateFrame("Frame", "LanternCO_CustomersNoData", scrollChild);
+            customersNoData:SetSize(FRAME_WIDTH - 40, 40);
+            local text = customersNoData:CreateFontString("LanternCO_CustomersNoData_Text", "OVERLAY", "GameFontNormal");
+            text:SetPoint("CENTER");
+            text:SetTextColor(0.5, 0.5, 0.5);
+            customersNoData.text = text;
+        end
+        customersNoData:SetParent(scrollChild);
+        customersNoData:ClearAllPoints();
+        customersNoData:SetPoint("TOP", scrollChild, "TOP", 0, -(HEADER_HEIGHT + 20));
+        customersNoData.text:SetText(L["CO_DASH_NO_DATA"]);
+        customersNoData:Show();
         scrollChild:SetHeight(HEADER_HEIGHT + 80);
         return;
     end
 
     for i, entry in ipairs(data) do
-        local row = CreateRow(scrollChild, i);
+        local row = AcquireRow(scrollChild, i);
         row:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -(HEADER_HEIGHT + (i - 1) * ROW_HEIGHT));
         row:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -(HEADER_HEIGHT + (i - 1) * ROW_HEIGHT));
         EnsureRowCells(row, CUSTOMER_COLUMNS, i);
@@ -348,8 +412,6 @@ local function PopulateCustomers()
             local value = entry[col.key];
             row.cells[j]:SetText(FormatCellValue(value, col));
         end
-
-        table.insert(dataRows, row);
     end
 
     scrollChild:SetHeight(HEADER_HEIGHT + #data * ROW_HEIGHT + 20);
@@ -360,7 +422,8 @@ end
 -------------------------------------------------------------------------------
 
 local function PopulateItems()
-    ClearRows();
+    HideAllRows();
+    HideAllNoData();
     if (headerFrame) then headerFrame:Show(); end
 
     local filter = GetCharFilterForAPI();
@@ -371,20 +434,25 @@ local function PopulateItems()
     UpdateSortArrows(ITEM_COLUMNS);
 
     if (#data == 0) then
-        local noData = CreateFrame("Frame", "LanternCO_AnalyticsNoData", scrollChild);
-        noData:SetSize(FRAME_WIDTH - 40, 40);
-        noData:SetPoint("TOP", scrollChild, "TOP", 0, -(HEADER_HEIGHT + 20));
-        local text = noData:CreateFontString("LanternCO_AnalyticsNoData_Text", "OVERLAY", "GameFontNormal");
-        text:SetPoint("CENTER");
-        text:SetText(L["CO_DASH_NO_DATA"]);
-        text:SetTextColor(0.5, 0.5, 0.5);
-        table.insert(dataRows, noData);
+        if (not itemsNoData) then
+            itemsNoData = CreateFrame("Frame", "LanternCO_ItemsNoData", scrollChild);
+            itemsNoData:SetSize(FRAME_WIDTH - 40, 40);
+            local text = itemsNoData:CreateFontString("LanternCO_ItemsNoData_Text", "OVERLAY", "GameFontNormal");
+            text:SetPoint("CENTER");
+            text:SetTextColor(0.5, 0.5, 0.5);
+            itemsNoData.text = text;
+        end
+        itemsNoData:SetParent(scrollChild);
+        itemsNoData:ClearAllPoints();
+        itemsNoData:SetPoint("TOP", scrollChild, "TOP", 0, -(HEADER_HEIGHT + 20));
+        itemsNoData.text:SetText(L["CO_DASH_NO_DATA"]);
+        itemsNoData:Show();
         scrollChild:SetHeight(HEADER_HEIGHT + 80);
         return;
     end
 
     for i, entry in ipairs(data) do
-        local row = CreateRow(scrollChild, i);
+        local row = AcquireRow(scrollChild, i);
         row:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -(HEADER_HEIGHT + (i - 1) * ROW_HEIGHT));
         row:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -(HEADER_HEIGHT + (i - 1) * ROW_HEIGHT));
         EnsureRowCells(row, ITEM_COLUMNS, i);
@@ -393,8 +461,6 @@ local function PopulateItems()
             local value = entry[col.key];
             row.cells[j]:SetText(FormatCellValue(value, col));
         end
-
-        table.insert(dataRows, row);
     end
 
     scrollChild:SetHeight(HEADER_HEIGHT + #data * ROW_HEIGHT + 20);
@@ -404,107 +470,158 @@ end
 -- Tab: Dashboard
 -------------------------------------------------------------------------------
 
-local dashElements = {};
-
-local function ClearDashboard()
-    for _, elem in ipairs(dashElements) do
-        elem:Hide();
-        elem:SetParent(nil);
+local function HideAllDashElements()
+    for i = 1, #dashPool do
+        dashPool[i]:Hide();
     end
-    dashElements = {};
+    activeDashCount = 0;
+end
+
+local function AcquireDashElement(parent, height)
+    activeDashCount = activeDashCount + 1;
+    local idx = activeDashCount;
+    local elem = dashPool[idx];
+    if (not elem) then
+        local elemName = "LanternCO_DashElem_" .. idx;
+        elem = CreateFrame("Frame", elemName, parent);
+        dashPool[idx] = elem;
+    end
+    elem:SetParent(parent);
+    elem:SetHeight(height);
+    elem:ClearAllPoints();
+    elem:Show();
+    return elem;
 end
 
 local function CreateDashStatRow(parent, yOffset, labelText, valueText)
-    local row = CreateFrame("Frame", "LanternCO_DashStat_" .. (#dashElements + 1), parent);
-    row:SetHeight(24);
+    local row = AcquireDashElement(parent, 24);
     row:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, yOffset);
     row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -12, yOffset);
 
-    local label = row:CreateFontString(row:GetName() .. "_Label", "OVERLAY", "GameFontNormal");
-    label:SetPoint("LEFT", row, "LEFT", 0, 0);
-    label:SetJustifyH("LEFT");
-    label:SetText(labelText);
-    label:SetTextColor(0.72, 0.72, 0.72);
+    if (not row.label) then
+        row.label = row:CreateFontString(row:GetName() .. "_Label", "OVERLAY", "GameFontNormal");
+        row.label:SetPoint("LEFT", row, "LEFT", 0, 0);
+        row.label:SetJustifyH("LEFT");
+    end
+    row.label:SetText(labelText);
+    row.label:SetTextColor(0.72, 0.72, 0.72);
+    row.label:Show();
 
-    local value = row:CreateFontString(row:GetName() .. "_Value", "OVERLAY", "GameFontHighlight");
-    value:SetPoint("RIGHT", row, "RIGHT", 0, 0);
-    value:SetJustifyH("RIGHT");
-    value:SetText(valueText);
+    if (not row.value) then
+        row.value = row:CreateFontString(row:GetName() .. "_Value", "OVERLAY", "GameFontHighlight");
+        row.value:SetPoint("RIGHT", row, "RIGHT", 0, 0);
+        row.value:SetJustifyH("RIGHT");
+    end
+    row.value:SetText(valueText);
+    row.value:Show();
 
-    table.insert(dashElements, row);
+    -- Hide sub-elements from other dashboard element types if this frame was reused
+    if (row.bg) then row.bg:Hide(); end
+    if (row.rankLabel) then row.rankLabel:Hide(); end
+    if (row.nameLabel) then row.nameLabel:Hide(); end
+    if (row.valueLabel) then row.valueLabel:Hide(); end
+
     return row;
 end
 
 local function CreateDashSectionHeader(parent, yOffset, text)
-    local header = CreateFrame("Frame", "LanternCO_DashHeader_" .. (#dashElements + 1), parent);
-    header:SetHeight(28);
+    local header = AcquireDashElement(parent, 28);
     header:SetPoint("TOPLEFT", parent, "TOPLEFT", 8, yOffset);
     header:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -8, yOffset);
 
     -- Background
-    local bg = header:CreateTexture(header:GetName() .. "_Bg", "BACKGROUND");
-    bg:SetAllPoints();
-    bg:SetColorTexture(GetThemeColor("cardBg", 1, 1, 1, 0.035));
+    if (not header.bg) then
+        header.bg = header:CreateTexture(header:GetName() .. "_Bg", "BACKGROUND");
+        header.bg:SetAllPoints();
+    end
+    header.bg:SetColorTexture(GetThemeColor("cardBg", 1, 1, 1, 0.035));
+    header.bg:Show();
 
-    local label = header:CreateFontString(header:GetName() .. "_Label", "OVERLAY", "GameFontNormal");
-    label:SetPoint("LEFT", header, "LEFT", 6, 0);
-    label:SetJustifyH("LEFT");
-    label:SetText(text);
+    if (not header.label) then
+        header.label = header:CreateFontString(header:GetName() .. "_Label", "OVERLAY", "GameFontNormal");
+        header.label:SetPoint("LEFT", header, "LEFT", 6, 0);
+        header.label:SetJustifyH("LEFT");
+    end
+    header.label:SetText(text);
     local ar, ag, ab = GetThemeColor("accent", 0.88, 0.56, 0.18, 1);
-    label:SetTextColor(ar, ag, ab);
+    header.label:SetTextColor(ar, ag, ab);
+    header.label:Show();
 
-    table.insert(dashElements, header);
+    -- Hide sub-elements from other dashboard element types if this frame was reused
+    if (header.value) then header.value:Hide(); end
+    if (header.rankLabel) then header.rankLabel:Hide(); end
+    if (header.nameLabel) then header.nameLabel:Hide(); end
+    if (header.valueLabel) then header.valueLabel:Hide(); end
+
     return header;
 end
 
 local function CreateDashRankedRow(parent, yOffset, rank, name, valueText)
-    local row = CreateFrame("Frame", "LanternCO_DashRank_" .. (#dashElements + 1), parent);
-    row:SetHeight(20);
+    local row = AcquireDashElement(parent, 20);
     row:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, yOffset);
     row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -12, yOffset);
 
-    local rankLabel = row:CreateFontString(row:GetName() .. "_Rank", "OVERLAY", "GameFontHighlightSmall");
-    rankLabel:SetPoint("LEFT", row, "LEFT", 0, 0);
-    rankLabel:SetWidth(20);
-    rankLabel:SetJustifyH("LEFT");
-    rankLabel:SetText(rank .. ".");
-    rankLabel:SetTextColor(0.5, 0.5, 0.5);
+    if (not row.rankLabel) then
+        row.rankLabel = row:CreateFontString(row:GetName() .. "_Rank", "OVERLAY", "GameFontHighlightSmall");
+        row.rankLabel:SetPoint("LEFT", row, "LEFT", 0, 0);
+        row.rankLabel:SetWidth(20);
+        row.rankLabel:SetJustifyH("LEFT");
+    end
+    row.rankLabel:SetText(rank .. ".");
+    row.rankLabel:SetTextColor(0.5, 0.5, 0.5);
+    row.rankLabel:Show();
 
-    local nameLabel = row:CreateFontString(row:GetName() .. "_Name", "OVERLAY", "GameFontHighlightSmall");
-    nameLabel:SetPoint("LEFT", rankLabel, "RIGHT", 4, 0);
-    nameLabel:SetPoint("RIGHT", row, "RIGHT", -100, 0);
-    nameLabel:SetJustifyH("LEFT");
-    nameLabel:SetText(name);
-    nameLabel:SetWordWrap(false);
+    if (not row.nameLabel) then
+        row.nameLabel = row:CreateFontString(row:GetName() .. "_Name", "OVERLAY", "GameFontHighlightSmall");
+        row.nameLabel:SetPoint("LEFT", row.rankLabel, "RIGHT", 4, 0);
+        row.nameLabel:SetPoint("RIGHT", row, "RIGHT", -100, 0);
+        row.nameLabel:SetJustifyH("LEFT");
+        row.nameLabel:SetWordWrap(false);
+    end
+    row.nameLabel:SetText(name);
+    row.nameLabel:Show();
 
-    local valueLabel = row:CreateFontString(row:GetName() .. "_Value", "OVERLAY", "GameFontHighlightSmall");
-    valueLabel:SetPoint("RIGHT", row, "RIGHT", 0, 0);
-    valueLabel:SetWidth(90);
-    valueLabel:SetJustifyH("RIGHT");
-    valueLabel:SetText(valueText);
-    valueLabel:SetTextColor(0.72, 0.72, 0.72);
+    if (not row.valueLabel) then
+        row.valueLabel = row:CreateFontString(row:GetName() .. "_Value", "OVERLAY", "GameFontHighlightSmall");
+        row.valueLabel:SetPoint("RIGHT", row, "RIGHT", 0, 0);
+        row.valueLabel:SetWidth(90);
+        row.valueLabel:SetJustifyH("RIGHT");
+    end
+    row.valueLabel:SetText(valueText);
+    row.valueLabel:SetTextColor(0.72, 0.72, 0.72);
+    row.valueLabel:Show();
 
-    table.insert(dashElements, row);
+    -- Hide sub-elements from other dashboard element types if this frame was reused
+    if (row.bg) then row.bg:Hide(); end
+    if (row.label) then row.label:Hide(); end
+    if (row.value) then row.value:Hide(); end
+
     return row;
 end
 
 local function PopulateDashboard()
-    ClearRows();
-    ClearDashboard();
+    HideAllRows();
+    HideAllNoData();
+    HideAllDashElements();
     if (headerFrame) then headerFrame:Hide(); end
 
     local filter = GetCharFilterForAPI();
     local stats = CraftingOrders:GetDashboardStats(filter);
 
     if (stats.totalOrders == 0) then
-        local noData = CreateFrame("Frame", "LanternCO_DashNoData", scrollChild);
-        noData:SetSize(FRAME_WIDTH - 40, 40);
-        noData:SetPoint("TOP", scrollChild, "TOP", 0, -40);
-        local text = noData:CreateFontString("LanternCO_DashNoData_Text", "OVERLAY", "GameFontNormal");
-        text:SetPoint("CENTER");
-        text:SetText(L["CO_DASH_NO_DATA"]);
-        text:SetTextColor(0.5, 0.5, 0.5);
-        table.insert(dashElements, noData);
+        if (not dashNoData) then
+            dashNoData = CreateFrame("Frame", "LanternCO_DashNoData", scrollChild);
+            dashNoData:SetSize(FRAME_WIDTH - 40, 40);
+            local text = dashNoData:CreateFontString("LanternCO_DashNoData_Text", "OVERLAY", "GameFontNormal");
+            text:SetPoint("CENTER");
+            text:SetTextColor(0.5, 0.5, 0.5);
+            dashNoData.text = text;
+        end
+        dashNoData:SetParent(scrollChild);
+        dashNoData:ClearAllPoints();
+        dashNoData:SetPoint("TOP", scrollChild, "TOP", 0, -40);
+        dashNoData.text:SetText(L["CO_DASH_NO_DATA"]);
+        dashNoData:Show();
         scrollChild:SetHeight(120);
         return;
     end
@@ -544,14 +661,23 @@ local function PopulateDashboard()
         y = y - 22;
     end
     if (count == 0) then
-        local empty = CreateFrame("Frame", "LanternCO_DashEmptyCust", scrollChild);
-        empty:SetSize(200, 20);
+        -- Use the dashboard pool for the empty placeholder
+        local empty = AcquireDashElement(scrollChild, 20);
         empty:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, y);
-        local emptyText = empty:CreateFontString("LanternCO_DashEmptyCust_Text", "OVERLAY", "GameFontHighlightSmall");
-        emptyText:SetPoint("LEFT");
-        emptyText:SetText("-");
-        emptyText:SetTextColor(0.5, 0.5, 0.5);
-        table.insert(dashElements, empty);
+        empty:SetWidth(200);
+        if (not empty.label) then
+            empty.label = empty:CreateFontString(empty:GetName() .. "_Label", "OVERLAY", "GameFontHighlightSmall");
+            empty.label:SetPoint("LEFT");
+        end
+        empty.label:SetText("-");
+        empty.label:SetTextColor(0.5, 0.5, 0.5);
+        empty.label:Show();
+        -- Hide sub-elements from other types
+        if (empty.bg) then empty.bg:Hide(); end
+        if (empty.value) then empty.value:Hide(); end
+        if (empty.rankLabel) then empty.rankLabel:Hide(); end
+        if (empty.nameLabel) then empty.nameLabel:Hide(); end
+        if (empty.valueLabel) then empty.valueLabel:Hide(); end
         y = y - 22;
     end
 
@@ -572,14 +698,23 @@ local function PopulateDashboard()
         y = y - 22;
     end
     if (count == 0) then
-        local empty = CreateFrame("Frame", "LanternCO_DashEmptyItems", scrollChild);
-        empty:SetSize(200, 20);
+        -- Use the dashboard pool for the empty placeholder
+        local empty = AcquireDashElement(scrollChild, 20);
         empty:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, y);
-        local emptyText = empty:CreateFontString("LanternCO_DashEmptyItems_Text", "OVERLAY", "GameFontHighlightSmall");
-        emptyText:SetPoint("LEFT");
-        emptyText:SetText("-");
-        emptyText:SetTextColor(0.5, 0.5, 0.5);
-        table.insert(dashElements, empty);
+        empty:SetWidth(200);
+        if (not empty.label) then
+            empty.label = empty:CreateFontString(empty:GetName() .. "_Label", "OVERLAY", "GameFontHighlightSmall");
+            empty.label:SetPoint("LEFT");
+        end
+        empty.label:SetText("-");
+        empty.label:SetTextColor(0.5, 0.5, 0.5);
+        empty.label:Show();
+        -- Hide sub-elements from other types
+        if (empty.bg) then empty.bg:Hide(); end
+        if (empty.value) then empty.value:Hide(); end
+        if (empty.rankLabel) then empty.rankLabel:Hide(); end
+        if (empty.nameLabel) then empty.nameLabel:Hide(); end
+        if (empty.valueLabel) then empty.valueLabel:Hide(); end
         y = y - 22;
     end
 
@@ -741,7 +876,8 @@ local function CreateAnalyticsFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", frame.Inset, "BOTTOMRIGHT", -22, 4);
 
     scrollChild = CreateFrame("Frame", "LanternCO_AnalyticsScrollChild", scrollFrame);
-    scrollChild:SetWidth(scrollFrame:GetWidth() or (FRAME_WIDTH - 60));
+    local w = scrollFrame:GetWidth();
+    scrollChild:SetWidth((w > 0) and w or (FRAME_WIDTH - 60));
     scrollChild:SetHeight(1);
     scrollFrame:SetScrollChild(scrollChild);
 
