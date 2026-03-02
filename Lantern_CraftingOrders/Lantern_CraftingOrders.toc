@@ -7,6 +7,7 @@
 ## Dependencies: Lantern, LanternUX
 ## X-Curse-Project-ID: 1410314
 ## DefaultState: enabled
+## SavedVariables: LanternCraftingOrdersDB
 
 Locales\Locale.lua
 Locales\enUS.lua
@@ -22,4 +23,5 @@ Locales\zhCN.lua
 Locales\zhTW.lua
 
 CraftingOrders.lua
+Analytics.lua
 WidgetOptions.lua

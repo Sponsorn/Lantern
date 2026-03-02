@@ -446,6 +446,37 @@ function CraftingOrders:HandleFulfillResponse(...)
     self._awaitFulfillTip = tipCopper;
 end
 
+function CraftingOrders:TryRecordFulfillment(...)
+    local orderID, result = parseFulfillArgs(...);
+    if (not isFulfillOk(result)) then return; end
+
+    local info = getOrderInfoByID(orderID);
+    if (not info) then return; end
+
+    local itemLink = info.outputItemHyperlink or info.outputItemLink;
+    local customer = stripRealm(info.customerName or info.recipient);
+    local grossTip = info.tipAmount or info.tip or 0;
+    local cut = info.consortiumCut or info.consortiumFee or 0;
+    local netTip = math.max(grossTip - cut, 0);
+
+    local orderType = "unknown";
+    if (isGuildOrderType(info.orderType)) then
+        orderType = "guild";
+    elseif (isPersonalOrderType(info.orderType)) then
+        orderType = "personal";
+    end
+
+    if (self.RecordOrder) then
+        self:RecordOrder({
+            customer = customer,
+            item = itemLink,
+            tip = netTip,
+            cut = cut,
+            orderType = orderType,
+        });
+    end
+end
+
 function CraftingOrders:HandleSystemMessage(msg)
     if (not self._awaitingFulfill) then return; end
     if (self._awaitDeadline and GetTime() > self._awaitDeadline) then
@@ -621,6 +652,7 @@ function CraftingOrders:OnEnable()
         self:HandlePlacement();
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_FULFILL_ORDER_RESPONSE", function(_, _, ...)
+        self:TryRecordFulfillment(...);
         self:HandleFulfillResponse(...);
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function()
