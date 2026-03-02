@@ -186,6 +186,16 @@ local function personalWidgets()
             end,
             preview = CraftingOrders._previewSound,
         },
+        {
+            type = "toggle",
+            label = L["CO_SOUND_BACKGROUND"],
+            desc = L["CO_SOUND_BACKGROUND_DESC"],
+            disabled = soundDisabled,
+            get = function() return db.personalSoundBackground; end,
+            set = function(val)
+                db.personalSoundBackground = val and true or false;
+            end,
+        },
 
         -----------------------------------------------------------------------
         -- Notification Appearance

@@ -27,6 +27,7 @@ local DEFAULTS = {
     notifyPersonal = true,
     personalSoundEnabled = true,
     personalSoundName = "Lantern: Auction Window Open",
+    personalSoundBackground = true,
     personalFont = "Roboto Light",
     personalFontSize = 24,
     personalFontOutline = "OUTLINE",
@@ -150,18 +151,32 @@ local function getSoundValues()
     return values;
 end
 
+local BG_SOUND_CVAR = "Sound_EnableSoundWhenGameIsInBG";
+
 local function playPersonalSound(self)
     if (not self.db or not self.db.personalSoundEnabled) then return; end
     if (not LibSharedMedia or not LibSharedMedia.Fetch) then return; end
     local sound = LibSharedMedia:Fetch("sound", self.db.personalSoundName or "RaidWarning");
     if (not sound) then return; end
+
+    -- Temporarily enable background sound so the notification is audible
+    -- even when the game is not in focus
+    local bgSoundWasOff = self.db.personalSoundBackground and GetCVar(BG_SOUND_CVAR) == "0";
+    if (bgSoundWasOff) then
+        SetCVar(BG_SOUND_CVAR, "1");
+    end
+
     local soundId = tonumber(sound);
     if (soundId and PlaySound) then
         PlaySound(soundId, "Master");
-        return;
-    end
-    if (PlaySoundFile) then
+    elseif (PlaySoundFile) then
         PlaySoundFile(sound, "Master");
+    end
+
+    if (bgSoundWasOff) then
+        C_Timer.After(2, function()
+            SetCVar(BG_SOUND_CVAR, "0");
+        end);
     end
 end
 

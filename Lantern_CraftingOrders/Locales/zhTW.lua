@@ -79,6 +79,8 @@ ns:RegisterLocale("zhTW", {
     -- CO_PLAY_SOUND_DESC                           = "Play a sound when a personal crafting order is received.",
     -- CO_SOUND_SELECT                              = "Sound",
     -- CO_SOUND_SELECT_DESC                         = "Sound to play when a personal crafting order is received. Click the speaker icon to preview.",
+    -- CO_SOUND_BACKGROUND                          = "Play when game is in background",
+    -- CO_SOUND_BACKGROUND_DESC                     = "Temporarily enables background sound so the notification is audible even when the game is not in focus.",
 
     -- Notification Appearance section
     -- CO_APPEARANCE_HEADER                         = "Notification Appearance",
