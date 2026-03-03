@@ -21,6 +21,7 @@ Widgets\Group.lua
 Widgets\SearchResult.lua
 Widgets\DropSlot.lua
 Widgets\Renderer.lua
+Widgets\DataTable.lua
 Panel.lua
 Search.lua
 Draggable.lua
