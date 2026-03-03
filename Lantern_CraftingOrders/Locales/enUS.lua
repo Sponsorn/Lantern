@@ -150,8 +150,8 @@ ns:RegisterLocale("enUS", {
     CO_DASH_AVG_TIP                              = "Average Tip",
     CO_DASH_THIS_WEEK                            = "This Week",
     CO_DASH_THIS_MONTH                           = "This Month",
-    CO_DASH_TOP_CUSTOMERS                        = "Top Customers",
-    CO_DASH_TOP_ITEMS                            = "Top Items",
+    CO_DASH_TOP_CUSTOMERS                        = "Top 5 Customers",
+    CO_DASH_TOP_ITEMS                            = "Top 5 Items",
     CO_DASH_NO_DATA                              = "No orders recorded yet.",
 
     -- Orders page
