@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.4 - 2026-03-03
+- Add: Reset Minimap Zoom module — automatically zooms the minimap back out after a configurable delay
+- Add: Skip Cinematics module — automatically skips movies, cinematics, and cutscenes (hold pause modifier to watch)
+- Add: Flight Path Line module — draws a dotted directional line on the world map while flying
+- Add: Flight Path Line style options — solid, dotted, and thick styles with color picker and length slider
+- Fix: Auto Quest no longer runs in instance map 2513 to avoid taint
+- Add: Map Pins module — shows custom pins on the world map and minimap (profession trainers to start, more categories planned)
+- Add: New "Map" settings category
+
 ## 0.6.3 - 2026-03-01
 - Fix: Custom fonts (Roboto) showing as default WoW font — for real this time. SafeSetFont now uses Font Objects (CreateFont + SetFontObject) instead of direct SetFont calls, letting WoW handle late-loading font files transparently
 - Add: Secret value utility (IsSecret, SafeValue) with polyfill — centralizes WoW 12.0 secret value guards

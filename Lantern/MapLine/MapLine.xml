@@ -1,0 +1,5 @@
+<Ui>
+    <Frame name="LanternMapLinePinTemplate" hidden="true" mixin="LanternMapLinePinMixin" virtual="true">
+        <Size x="1" y="1"/>
+    </Frame>
+</Ui>

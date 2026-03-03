@@ -121,6 +121,8 @@ Lantern:RegisterLocale("ruRU", {
     -- Category headers
     -- CATEGORY_GENERAL                        = "General",
     -- CATEGORY_DUNGEONS                       = "Dungeons & M+",
+    -- CATEGORY_MYTHICPLUS                     = "Mythic+",
+    -- CATEGORY_MAP                            = "Map",
     -- CATEGORY_QUESTING                       = "Questing & World",
 
     -- Messages (Options.lua / ui.lua)
@@ -619,4 +621,25 @@ Lantern:RegisterLocale("ruRU", {
     -- TOOLTIP_HINT_COPY                       = "Ctrl+C to copy",
     -- TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
     -- TOOLTIP_COPY_HINT                       = "Ctrl+C to copy, Esc to close",
+
+    -- Reset Minimap Zoom
+    -- RESETMINIMAPZOOM_TITLE                  = "Reset Minimap Zoom",
+    -- RESETMINIMAPZOOM_DESC                   = "Automatically zooms the minimap back out after a delay.",
+    -- RESETMINIMAPZOOM_ENABLE_DESC            = "Automatically reset minimap zoom to fully zoomed out after a delay.",
+    -- RESETMINIMAPZOOM_DELAY                  = "Reset Delay",
+    -- RESETMINIMAPZOOM_DELAY_DESC             = "Seconds to wait before resetting the minimap zoom.",
+
+    -- Map Pins
+    -- MAPPINS_TITLE                           = "Map Pins",
+    -- MAPPINS_DESC                            = "Shows custom pins on the world map and minimap.",
+    -- MAPPINS_ENABLE_DESC                     = "Show custom map pins on the world map and minimap.",
+    -- MAPPINS_SHOW_MINIMAP                    = "Show on Minimap",
+    -- MAPPINS_SHOW_MINIMAP_DESC               = "Display pins on the minimap when nearby.",
+    -- MAPPINS_PIN_SIZE                        = "Pin Size",
+    -- MAPPINS_PIN_SIZE_DESC                   = "Size of map pin icons in pixels.",
+    -- MAPPINS_SHOW_LABELS                     = "Show Labels",
+    -- MAPPINS_SHOW_LABELS_DESC                = "Display pin names below the icons.",
+    -- MAPPINS_GROUP_CATEGORIES                = "Categories",
+    -- MAPPINS_CAT_TRAINERS                    = "Profession Trainers",
+    -- MAPPINS_CAT_TRAINERS_DESC               = "Show profession trainer locations.",
 });

@@ -16,8 +16,17 @@ local DEFAULTS = {
     skipTrivialQuests = false,
 };
 
+local EXCLUDED_INSTANCE_MAPS = {
+    [2513] = true, -- Tainted by quest automation
+};
+
 local function shouldPause()
     return Lantern:IsModifierDown();
+end
+
+local function isExcludedMap()
+    local instanceID = select(8, GetInstanceInfo());
+    return instanceID and EXCLUDED_INSTANCE_MAPS[instanceID] or false;
 end
 
 -------------------------------------------------------------------------------
@@ -214,7 +223,7 @@ function module:LogAutomatedQuest(questName, questID)
 end
 
 local function handleAvailableQuests(self)
-    if (not self.db.autoAccept or shouldPause() or self:IsCurrentNPCBlocked()) then return; end
+    if (not self.db.autoAccept or shouldPause() or isExcludedMap() or self:IsCurrentNPCBlocked()) then return; end
     if (C_GossipInfo and C_GossipInfo.GetAvailableQuests) then
         local quests = C_GossipInfo.GetAvailableQuests();
         for _, q in ipairs(quests or {}) do
@@ -232,7 +241,7 @@ local function handleAvailableQuests(self)
 end
 
 local function handleActiveQuests(self)
-    if (not self.db.autoTurnIn or shouldPause() or self:IsCurrentNPCBlocked()) then return; end
+    if (not self.db.autoTurnIn or shouldPause() or isExcludedMap() or self:IsCurrentNPCBlocked()) then return; end
     if (C_GossipInfo and C_GossipInfo.GetActiveQuests) then
         local quests = C_GossipInfo.GetActiveQuests();
         for _, q in ipairs(quests or {}) do
@@ -261,7 +270,7 @@ function module:OnGossipShow()
 end
 
 function module:OnQuestGreeting()
-    if (shouldPause()) then return; end
+    if (shouldPause() or isExcludedMap()) then return; end
     if (self.db.autoTurnIn and GetNumActiveQuests and GetActiveTitle and SelectActiveQuest) then
         local count = GetNumActiveQuests() or 0;
         for i = 1, count do
@@ -287,7 +296,7 @@ function module:OnQuestGreeting()
 end
 
 function module:OnQuestDetail()
-    if (shouldPause() or not self.db.autoAccept or self:IsCurrentNPCBlocked()) then return; end
+    if (shouldPause() or not self.db.autoAccept or isExcludedMap() or self:IsCurrentNPCBlocked()) then return; end
     local questID = GetQuestID and GetQuestID();
     if (self:IsQuestBlocked(questID)) then return; end
     if (self.db.skipTrivialQuests and isQuestTrivial(questID)) then return; end
@@ -305,7 +314,7 @@ function module:OnQuestDetail()
 end
 
 function module:OnQuestProgress()
-    if (shouldPause() or not self.db.autoTurnIn or self:IsCurrentNPCBlocked()) then return; end
+    if (shouldPause() or not self.db.autoTurnIn or isExcludedMap() or self:IsCurrentNPCBlocked()) then return; end
     local questID = GetQuestID and GetQuestID();
     if (IsQuestCompletable() or isQuestReadyForTurnIn(questID)) then
         if (self:IsQuestBlocked(questID)) then return; end
@@ -320,7 +329,7 @@ function module:OnQuestProgress()
 end
 
 function module:OnQuestComplete()
-    if (shouldPause() or not self.db.autoTurnIn or self:IsCurrentNPCBlocked()) then return; end
+    if (shouldPause() or not self.db.autoTurnIn or isExcludedMap() or self:IsCurrentNPCBlocked()) then return; end
     local numChoices = GetNumQuestChoices() or 0;
     local questID = GetQuestID and GetQuestID();
     if (self:IsQuestBlocked(questID)) then return; end

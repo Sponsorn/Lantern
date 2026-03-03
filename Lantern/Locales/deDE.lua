@@ -121,6 +121,8 @@ Lantern:RegisterLocale("deDE", {
     -- Category headers
     CATEGORY_GENERAL                        = "Allgemein",
     CATEGORY_DUNGEONS                       = "Dungeons & M+",
+    CATEGORY_MYTHICPLUS                     = "Mythic+",
+    CATEGORY_MAP                            = "Karte",
     CATEGORY_QUESTING                       = "Quests & Welt",
 
     -- Messages (Options.lua / ui.lua)
@@ -619,4 +621,25 @@ Lantern:RegisterLocale("deDE", {
     TOOLTIP_HINT_COPY                       = "Ctrl+C zum Kopieren",
     TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
     TOOLTIP_COPY_HINT                       = "Ctrl+C zum Kopieren, Esc zum Schliessen",
+
+    -- Reset Minimap Zoom
+    RESETMINIMAPZOOM_TITLE                  = "Minimap-Zoom zuruecksetzen",
+    RESETMINIMAPZOOM_DESC                   = "Setzt den Minimap-Zoom nach einer Verzoegerung automatisch zurueck.",
+    RESETMINIMAPZOOM_ENABLE_DESC            = "Minimap-Zoom nach einer Verzoegerung automatisch vollstaendig herauszoomen.",
+    RESETMINIMAPZOOM_DELAY                  = "Verzoegerung",
+    RESETMINIMAPZOOM_DELAY_DESC             = "Sekunden, bevor der Minimap-Zoom zurueckgesetzt wird.",
+
+    -- Map Pins
+    MAPPINS_TITLE                           = "Kartenmarkierungen",
+    MAPPINS_DESC                            = "Zeigt benutzerdefinierte Markierungen auf der Weltkarte und Minimap.",
+    MAPPINS_ENABLE_DESC                     = "Benutzerdefinierte Kartenmarkierungen auf der Weltkarte und Minimap anzeigen.",
+    MAPPINS_SHOW_MINIMAP                    = "Auf Minimap anzeigen",
+    MAPPINS_SHOW_MINIMAP_DESC               = "Markierungen auf der Minimap anzeigen, wenn in der Naehe.",
+    MAPPINS_PIN_SIZE                        = "Markierungsgroesse",
+    MAPPINS_PIN_SIZE_DESC                   = "Groesse der Kartenmarkierungssymbole in Pixeln.",
+    MAPPINS_SHOW_LABELS                     = "Beschriftungen anzeigen",
+    MAPPINS_SHOW_LABELS_DESC                = "Markierungsnamen unter den Symbolen anzeigen.",
+    MAPPINS_GROUP_CATEGORIES                = "Kategorien",
+    MAPPINS_CAT_TRAINERS                    = "Berufslehrer",
+    MAPPINS_CAT_TRAINERS_DESC               = "Standorte von Berufslehrern anzeigen.",
 });

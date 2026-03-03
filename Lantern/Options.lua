@@ -35,13 +35,17 @@ local CORE_KEY = {
     DeleteConfirm        = "deleteConfirm",
     DisableAutoAddSpells = "disableAutoAddSpells",
     MissingPet           = "missingPet",
-    AutoPlaystyle        = "autoPlaystyle",
+    AutoPlaystyle        = "mythicplus_general",
     FasterLoot           = "fasterLoot",
-    AutoKeystone         = "autoKeystone",
+    AutoKeystone         = "mythicplus_general",
     ReleaseProtection    = "releaseProtection",
     CombatTimer          = "combatTimer",
     CombatAlert          = "combatAlert",
+    MapLine              = "map_general",
+    MapPins              = "mapPins",
+    ResetMinimapZoom     = "map_general",
     RangeCheck           = "rangeCheck",
+    SkipCinematics       = "skipCinematics",
     Tooltip              = "tooltip",
 };
 
@@ -63,12 +67,33 @@ local MODULE_CATEGORIES = {
             "AutoKeystone", "AutoPlaystyle", "AutoQueue",
             "CombatAlert", "CombatTimer", "MissingPet", "RangeCheck", "ReleaseProtection",
         },
+        combinedPages = {
+            {
+                key     = "mythicplus_general",
+                label   = L["CATEGORY_MYTHICPLUS"],
+                modules = { "AutoKeystone", "AutoPlaystyle" },
+            },
+        },
+    },
+    {
+        key   = "map",
+        label = L["CATEGORY_MAP"],
+        modules = {
+            "MapLine", "MapPins", "ResetMinimapZoom",
+        },
+        combinedPages = {
+            {
+                key     = "map_general",
+                label   = L["SECTION_GENERAL"],
+                modules = { "MapLine", "ResetMinimapZoom" },
+            },
+        },
     },
     {
         key   = "questing",
         label = L["CATEGORY_QUESTING"],
         modules = {
-            "AutoQuest", "FasterLoot",
+            "AutoQuest", "FasterLoot", "SkipCinematics",
         },
     },
 };
@@ -139,6 +164,118 @@ CUSTOM_OPTIONS["disableAutoAddSpells"] = function()
     };
 end
 
+CUSTOM_OPTIONS["mapLine"] = function()
+    local function db()
+        Lantern.db.mapLine = Lantern.db.mapLine or {};
+        return Lantern.db.mapLine;
+    end
+
+    local isDisabled = function()
+        return not moduleEnabled("MapLine");
+    end
+
+    local styleValues = {
+        solid  = L["MAPLINE_STYLE_SOLID"],
+        dotted = L["MAPLINE_STYLE_DOTTED"],
+        thick  = L["MAPLINE_STYLE_THICK"],
+    };
+    local styleSorting = { "solid", "dotted", "thick" };
+
+    return {
+        moduleToggle("MapLine", L["ENABLE"], L["MAPLINE_ENABLE_DESC"]),
+        {
+            type = "select",
+            label = L["MAPLINE_STYLE"],
+            desc = L["MAPLINE_STYLE_DESC"],
+            values = styleValues,
+            sorting = styleSorting,
+            disabled = isDisabled,
+            get = function() return db().lineStyle or "solid"; end,
+            set = function(val) db().lineStyle = val; end,
+        },
+        {
+            type = "color",
+            label = L["MAPLINE_COLOR"],
+            desc = L["MAPLINE_COLOR_DESC"],
+            disabled = isDisabled,
+            get = function()
+                local c = db().color or { 1, 1, 1, 0.8 };
+                return c[1], c[2], c[3], c[4];
+            end,
+            set = function(r, g, b, a)
+                db().color = { r, g, b, a };
+            end,
+        },
+        {
+            type = "range",
+            label = L["MAPLINE_LENGTH"],
+            desc = L["MAPLINE_LENGTH_DESC"],
+            min = 200,
+            max = 1200,
+            step = 50,
+            disabled = isDisabled,
+            get = function() return db().lineSize or 400; end,
+            set = function(val) db().lineSize = val; end,
+        },
+    };
+end
+
+CUSTOM_OPTIONS["resetMinimapZoom"] = function()
+    local function db()
+        Lantern.db.resetMinimapZoom = Lantern.db.resetMinimapZoom or {};
+        return Lantern.db.resetMinimapZoom;
+    end
+
+    local isDisabled = function()
+        return not moduleEnabled("ResetMinimapZoom");
+    end
+
+    return {
+        moduleToggle("ResetMinimapZoom", L["ENABLE"], L["RESETMINIMAPZOOM_ENABLE_DESC"]),
+        {
+            type = "range",
+            label = L["RESETMINIMAPZOOM_DELAY"],
+            desc = L["RESETMINIMAPZOOM_DELAY_DESC"],
+            min = 5,
+            max = 60,
+            step = 5,
+            disabled = isDisabled,
+            get = function() return db().delay or 15; end,
+            set = function(val) db().delay = val; end,
+        },
+    };
+end
+
+CUSTOM_OPTIONS["map_general"] = function()
+    local widgets = {};
+
+    -- Flight Path Line
+    local mapLineOpts = CUSTOM_OPTIONS["mapLine"];
+    if (mapLineOpts) then
+        table.insert(widgets, { type = "group", text = L["MAPLINE_TITLE"], expanded = true });
+        for _, w in ipairs(mapLineOpts()) do
+            table.insert(widgets, w);
+        end
+    end
+
+    -- Reset Minimap Zoom
+    local resetZoomOpts = CUSTOM_OPTIONS["resetMinimapZoom"];
+    if (resetZoomOpts) then
+        table.insert(widgets, { type = "group", text = L["RESETMINIMAPZOOM_TITLE"], expanded = true });
+        for _, w in ipairs(resetZoomOpts()) do
+            table.insert(widgets, w);
+        end
+    end
+
+    return widgets;
+end
+
+CUSTOM_OPTIONS["skipCinematics"] = function()
+    return {
+        moduleToggle("SkipCinematics", L["ENABLE"], format(L["SKIPCINEMATICS_ENABLE_DESC"], Lantern:GetModifierName())),
+    };
+end
+
 CUSTOM_OPTIONS["autoQueue"] = function()
     local function db()
         Lantern.db.autoQueue = Lantern.db.autoQueue or {};
@@ -191,6 +328,31 @@ CUSTOM_OPTIONS["autoKeystone"] = function()
     return {
         moduleToggle("AutoKeystone", L["ENABLE"], format(L["AUTOKEYSTONE_ENABLE_DESC"], Lantern:GetModifierName())),
     };
+end
+
+CUSTOM_OPTIONS["mythicplus_general"] = function()
+    local widgets = {};
+
+    -- Auto Keystone
+    local keystoneOpts = CUSTOM_OPTIONS["autoKeystone"];
+    if (keystoneOpts) then
+        local mod = Lantern.modules["AutoKeystone"];
+        table.insert(widgets, { type = "group", text = (mod and mod.opts and mod.opts.title) or "Auto Keystone", expanded = true });
+        for _, w in ipairs(keystoneOpts()) do
+            table.insert(widgets, w);
+        end
+    end
+
+    -- Auto Playstyle
+    local playstyleMod = Lantern.modules["AutoPlaystyle"];
+    if (playstyleMod and playstyleMod.widgetOptions) then
+        table.insert(widgets, { type = "group", text = (playstyleMod.opts and playstyleMod.opts.title) or "Auto Playstyle", expanded = true });
+        for _, w in ipairs(playstyleMod.widgetOptions()) do
+            table.insert(widgets, w);
+        end
+    end
+
+    return widgets;
 end
 
 CUSTOM_OPTIONS["releaseProtection"] = function()
@@ -908,19 +1070,55 @@ loginFrame:SetScript("OnEvent", function()
             label   = category.label,
             section = "modules",
         });
-        for _, moduleName in ipairs(category.modules) do
-            local mod = Lantern.modules[moduleName];
-            if (mod) then
-                local key = CORE_KEY[moduleName];
-                local optionsFn = mod.widgetOptions or CUSTOM_OPTIONS[key];
-                panel:AddPage(key, {
-                    label        = (mod.opts and mod.opts.title) or moduleName,
-                    section      = "modules",
-                    sidebarGroup = category.key,
-                    title        = (mod.opts and mod.opts.title) or moduleName,
-                    description  = mod.opts and mod.opts.desc,
-                    widgets      = optionsFn or nil,
-                });
+        if (category.singlePage) then
+            panel:AddPage(category.singlePage, {
+                label        = L["SECTION_GENERAL"],
+                section      = "modules",
+                sidebarGroup = category.key,
+                title        = category.label,
+                widgets      = CUSTOM_OPTIONS[category.singlePage],
+            });
+        else
+            -- Build set of modules handled by combinedPages
+            local combined = {};
+            if (category.combinedPages) then
+                for _, cp in ipairs(category.combinedPages) do
+                    for _, mn in ipairs(cp.modules) do
+                        combined[mn] = true;
+                    end
+                end
+            end
+
+            -- Individual module pages
+            for _, moduleName in ipairs(category.modules) do
+                if (not combined[moduleName]) then
+                    local mod = Lantern.modules[moduleName];
+                    if (mod) then
+                        local key = CORE_KEY[moduleName];
+                        local optionsFn = mod.widgetOptions or CUSTOM_OPTIONS[key];
+                        panel:AddPage(key, {
+                            label        = (mod.opts and mod.opts.title) or moduleName,
+                            section      = "modules",
+                            sidebarGroup = category.key,
+                            title        = (mod.opts and mod.opts.title) or moduleName,
+                            description  = mod.opts and mod.opts.desc,
+                            widgets      = optionsFn or nil,
+                        });
+                    end
+                end
+            end
+
+            -- Combined pages
+            if (category.combinedPages) then
+                for _, cp in ipairs(category.combinedPages) do
+                    panel:AddPage(cp.key, {
+                        label        = cp.label,
+                        section      = "modules",
+                        sidebarGroup = category.key,
+                        title        = cp.label,
+                        widgets      = CUSTOM_OPTIONS[cp.key],
+                    });
+                end
             end
         end
     end
