@@ -327,14 +327,6 @@ local function historyWidgets()
             end,
         },
         {
-            type = "description",
-            text = string.format(L["CO_HISTORY_COUNT"],
-                CraftingOrders.GetCharacterOrderCount
-                    and CraftingOrders:GetCharacterOrderCount() or 0),
-            fontSize = "medium",
-        },
-        { type = "header", text = "" },
-        {
             type = "execute",
             label = L["CO_OPEN_ANALYTICS"],
             desc = L["CO_OPEN_ANALYTICS_DESC"],
