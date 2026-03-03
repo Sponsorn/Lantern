@@ -122,6 +122,7 @@ Lantern:RegisterLocale("frFR", {
     CATEGORY_GENERAL                        = "General",
     CATEGORY_DUNGEONS                       = "Donjons & M+",
     CATEGORY_MYTHICPLUS                     = "Mythic+",
+    CATEGORY_MAP                            = "Carte",
     CATEGORY_QUESTING                       = "Quetes & Monde",
 
     -- Messages (Options.lua / ui.lua)
@@ -627,4 +628,18 @@ Lantern:RegisterLocale("frFR", {
     RESETMINIMAPZOOM_ENABLE_DESC            = "Reinitialiser automatiquement le zoom de la minicarte apres un delai.",
     RESETMINIMAPZOOM_DELAY                  = "Delai de reinitialisation",
     RESETMINIMAPZOOM_DELAY_DESC             = "Secondes avant de reinitialiser le zoom de la minicarte.",
+
+    -- Map Pins
+    MAPPINS_TITLE                           = "Marqueurs de carte",
+    MAPPINS_DESC                            = "Affiche des marqueurs personnalises sur la carte du monde et la minicarte.",
+    MAPPINS_ENABLE_DESC                     = "Afficher des marqueurs personnalises sur la carte du monde et la minicarte.",
+    MAPPINS_SHOW_MINIMAP                    = "Afficher sur la minicarte",
+    MAPPINS_SHOW_MINIMAP_DESC               = "Afficher les marqueurs sur la minicarte lorsque vous etes a proximite.",
+    MAPPINS_PIN_SIZE                        = "Taille des marqueurs",
+    MAPPINS_PIN_SIZE_DESC                   = "Taille des icones de marqueurs en pixels.",
+    MAPPINS_SHOW_LABELS                     = "Afficher les noms",
+    MAPPINS_SHOW_LABELS_DESC                = "Afficher les noms des marqueurs sous les icones.",
+    MAPPINS_GROUP_CATEGORIES                = "Categories",
+    MAPPINS_CAT_TRAINERS                    = "Maitres de profession",
+    MAPPINS_CAT_TRAINERS_DESC               = "Afficher les emplacements des maitres de profession.",
 });

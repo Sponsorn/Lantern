@@ -6,6 +6,7 @@
 - Add: Flight Path Line module — draws a dotted directional line on the world map while flying
 - Add: Flight Path Line style options — solid, dotted, and thick styles with color picker and length slider
 - Fix: Auto Quest no longer runs in instance map 2513 to avoid taint
+- Add: Map Pins module — shows custom pins on the world map and minimap (profession trainers to start, more categories planned)
 - Add: New "Map" settings category
 
 ## 0.6.3 - 2026-03-01

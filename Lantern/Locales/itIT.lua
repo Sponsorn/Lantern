@@ -122,6 +122,7 @@ Lantern:RegisterLocale("itIT", {
     CATEGORY_GENERAL                        = "Generale",
     CATEGORY_DUNGEONS                       = "Spedizioni & M+",
     CATEGORY_MYTHICPLUS                     = "Mythic+",
+    CATEGORY_MAP                            = "Mappa",
     CATEGORY_QUESTING                       = "Missioni & Mondo",
 
     -- Messages (Options.lua / ui.lua)
@@ -627,4 +628,18 @@ Lantern:RegisterLocale("itIT", {
     RESETMINIMAPZOOM_ENABLE_DESC            = "Reimpostare automaticamente lo zoom della minimappa dopo un ritardo.",
     RESETMINIMAPZOOM_DELAY                  = "Ritardo",
     RESETMINIMAPZOOM_DELAY_DESC             = "Secondi prima di reimpostare lo zoom della minimappa.",
+
+    -- Map Pins
+    MAPPINS_TITLE                           = "Segnaposti mappa",
+    MAPPINS_DESC                            = "Mostra segnaposti personalizzati sulla mappa del mondo e sulla minimappa.",
+    MAPPINS_ENABLE_DESC                     = "Mostrare segnaposti personalizzati sulla mappa del mondo e sulla minimappa.",
+    MAPPINS_SHOW_MINIMAP                    = "Mostra sulla minimappa",
+    MAPPINS_SHOW_MINIMAP_DESC               = "Mostrare i segnaposti sulla minimappa quando sei nelle vicinanze.",
+    MAPPINS_PIN_SIZE                        = "Dimensione segnaposto",
+    MAPPINS_PIN_SIZE_DESC                   = "Dimensione delle icone dei segnaposti in pixel.",
+    MAPPINS_SHOW_LABELS                     = "Mostra nomi",
+    MAPPINS_SHOW_LABELS_DESC                = "Mostrare i nomi dei segnaposti sotto le icone.",
+    MAPPINS_GROUP_CATEGORIES                = "Categorie",
+    MAPPINS_CAT_TRAINERS                    = "Istruttori di professione",
+    MAPPINS_CAT_TRAINERS_DESC               = "Mostrare le posizioni degli istruttori di professione.",
 });

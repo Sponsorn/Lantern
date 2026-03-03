@@ -122,6 +122,7 @@ Lantern:RegisterLocale("esES", {
     CATEGORY_GENERAL                        = "General",
     CATEGORY_DUNGEONS                       = "Mazmorras y M+",
     CATEGORY_MYTHICPLUS                     = "Mythic+",
+    CATEGORY_MAP                            = "Mapa",
     CATEGORY_QUESTING                       = "Misiones y mundo",
 
     -- Messages (Options.lua / ui.lua)
@@ -627,4 +628,18 @@ Lantern:RegisterLocale("esES", {
     RESETMINIMAPZOOM_ENABLE_DESC            = "Restablecer automaticamente el zoom del minimapa despues de un retraso.",
     RESETMINIMAPZOOM_DELAY                  = "Retraso",
     RESETMINIMAPZOOM_DELAY_DESC             = "Segundos antes de restablecer el zoom del minimapa.",
+
+    -- Map Pins
+    MAPPINS_TITLE                           = "Marcadores de mapa",
+    MAPPINS_DESC                            = "Muestra marcadores personalizados en el mapa del mundo y el minimapa.",
+    MAPPINS_ENABLE_DESC                     = "Mostrar marcadores personalizados en el mapa del mundo y el minimapa.",
+    MAPPINS_SHOW_MINIMAP                    = "Mostrar en minimapa",
+    MAPPINS_SHOW_MINIMAP_DESC               = "Mostrar marcadores en el minimapa cuando estes cerca.",
+    MAPPINS_PIN_SIZE                        = "Tamano del marcador",
+    MAPPINS_PIN_SIZE_DESC                   = "Tamano de los iconos de marcadores en pixeles.",
+    MAPPINS_SHOW_LABELS                     = "Mostrar nombres",
+    MAPPINS_SHOW_LABELS_DESC                = "Mostrar los nombres de los marcadores debajo de los iconos.",
+    MAPPINS_GROUP_CATEGORIES                = "Categorias",
+    MAPPINS_CAT_TRAINERS                    = "Instructores de profesion",
+    MAPPINS_CAT_TRAINERS_DESC               = "Mostrar ubicaciones de instructores de profesion.",
 });

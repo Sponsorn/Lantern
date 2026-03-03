@@ -236,6 +236,20 @@ Lantern:RegisterLocale("enUS", {
     MAPLINE_TITLE                           = "Flight Path Line",
     MAPLINE_DESC                            = "Draws a dotted directional line on the world map while flying.",
 
+    -- Map Pins
+    MAPPINS_TITLE                           = "Map Pins",
+    MAPPINS_DESC                            = "Shows custom pins on the world map and minimap.",
+    MAPPINS_ENABLE_DESC                     = "Show custom map pins on the world map and minimap.",
+    MAPPINS_SHOW_MINIMAP                    = "Show on Minimap",
+    MAPPINS_SHOW_MINIMAP_DESC               = "Display pins on the minimap when nearby.",
+    MAPPINS_PIN_SIZE                        = "Pin Size",
+    MAPPINS_PIN_SIZE_DESC                   = "Size of map pin icons in pixels.",
+    MAPPINS_SHOW_LABELS                     = "Show Labels",
+    MAPPINS_SHOW_LABELS_DESC                = "Display pin names below the icons.",
+    MAPPINS_GROUP_CATEGORIES                = "Categories",
+    MAPPINS_CAT_TRAINERS                    = "Profession Trainers",
+    MAPPINS_CAT_TRAINERS_DESC               = "Show profession trainer locations.",
+
     -- Reset Minimap Zoom
     RESETMINIMAPZOOM_TITLE                  = "Reset Minimap Zoom",
     RESETMINIMAPZOOM_DESC                   = "Automatically zooms the minimap back out after a delay.",

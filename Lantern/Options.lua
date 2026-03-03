@@ -42,6 +42,7 @@ local CORE_KEY = {
     CombatTimer          = "combatTimer",
     CombatAlert          = "combatAlert",
     MapLine              = "map_general",
+    MapPins              = "mapPins",
     ResetMinimapZoom     = "map_general",
     RangeCheck           = "rangeCheck",
     SkipCinematics       = "skipCinematics",
@@ -77,9 +78,15 @@ local MODULE_CATEGORIES = {
     {
         key   = "map",
         label = L["CATEGORY_MAP"],
-        singlePage = "map_general",
         modules = {
-            "MapLine", "ResetMinimapZoom",
+            "MapLine", "MapPins", "ResetMinimapZoom",
+        },
+        combinedPages = {
+            {
+                key     = "map_general",
+                label   = L["SECTION_GENERAL"],
+                modules = { "MapLine", "ResetMinimapZoom" },
+            },
         },
     },
     {
