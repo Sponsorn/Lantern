@@ -121,6 +121,7 @@ Lantern:RegisterLocale("deDE", {
     -- Category headers
     CATEGORY_GENERAL                        = "Allgemein",
     CATEGORY_DUNGEONS                       = "Dungeons & M+",
+    CATEGORY_MYTHICPLUS                     = "Mythic+",
     CATEGORY_QUESTING                       = "Quests & Welt",
 
     -- Messages (Options.lua / ui.lua)
@@ -619,4 +620,11 @@ Lantern:RegisterLocale("deDE", {
     TOOLTIP_HINT_COPY                       = "Ctrl+C zum Kopieren",
     TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
     TOOLTIP_COPY_HINT                       = "Ctrl+C zum Kopieren, Esc zum Schliessen",
+
+    -- Reset Minimap Zoom
+    RESETMINIMAPZOOM_TITLE                  = "Minimap-Zoom zuruecksetzen",
+    RESETMINIMAPZOOM_DESC                   = "Setzt den Minimap-Zoom nach einer Verzoegerung automatisch zurueck.",
+    RESETMINIMAPZOOM_ENABLE_DESC            = "Minimap-Zoom nach einer Verzoegerung automatisch vollstaendig herauszoomen.",
+    RESETMINIMAPZOOM_DELAY                  = "Verzoegerung",
+    RESETMINIMAPZOOM_DELAY_DESC             = "Sekunden, bevor der Minimap-Zoom zurueckgesetzt wird.",
 });

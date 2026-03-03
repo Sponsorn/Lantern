@@ -121,6 +121,7 @@ Lantern:RegisterLocale("frFR", {
     -- Category headers
     CATEGORY_GENERAL                        = "General",
     CATEGORY_DUNGEONS                       = "Donjons & M+",
+    CATEGORY_MYTHICPLUS                     = "Mythic+",
     CATEGORY_QUESTING                       = "Quetes & Monde",
 
     -- Messages (Options.lua / ui.lua)
@@ -619,4 +620,11 @@ Lantern:RegisterLocale("frFR", {
     TOOLTIP_HINT_COPY                       = "Ctrl+C pour copier",
     TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
     TOOLTIP_COPY_HINT                       = "Ctrl+C pour copier, Esc pour fermer",
+
+    -- Reset Minimap Zoom
+    RESETMINIMAPZOOM_TITLE                  = "Reinitialiser le zoom de la minicarte",
+    RESETMINIMAPZOOM_DESC                   = "Dezoome automatiquement la minicarte apres un delai.",
+    RESETMINIMAPZOOM_ENABLE_DESC            = "Reinitialiser automatiquement le zoom de la minicarte apres un delai.",
+    RESETMINIMAPZOOM_DELAY                  = "Delai de reinitialisation",
+    RESETMINIMAPZOOM_DELAY_DESC             = "Secondes avant de reinitialiser le zoom de la minicarte.",
 });

@@ -121,6 +121,7 @@ Lantern:RegisterLocale("esES", {
     -- Category headers
     CATEGORY_GENERAL                        = "General",
     CATEGORY_DUNGEONS                       = "Mazmorras y M+",
+    CATEGORY_MYTHICPLUS                     = "Mythic+",
     CATEGORY_QUESTING                       = "Misiones y mundo",
 
     -- Messages (Options.lua / ui.lua)
@@ -619,4 +620,11 @@ Lantern:RegisterLocale("esES", {
     TOOLTIP_HINT_COPY                       = "Ctrl+C para copiar",
     TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
     TOOLTIP_COPY_HINT                       = "Ctrl+C para copiar, Esc para cerrar",
+
+    -- Reset Minimap Zoom
+    RESETMINIMAPZOOM_TITLE                  = "Restablecer zoom del minimapa",
+    RESETMINIMAPZOOM_DESC                   = "Aleja automaticamente el minimapa despues de un retraso.",
+    RESETMINIMAPZOOM_ENABLE_DESC            = "Restablecer automaticamente el zoom del minimapa despues de un retraso.",
+    RESETMINIMAPZOOM_DELAY                  = "Retraso",
+    RESETMINIMAPZOOM_DELAY_DESC             = "Segundos antes de restablecer el zoom del minimapa.",
 });
