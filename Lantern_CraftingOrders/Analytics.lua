@@ -19,6 +19,7 @@ local function ensureHistoryDB()
     db.characters = db.characters or {};
     if (db.trackHistory == nil) then db.trackHistory = true; end
     if (db.maxOrders == nil) then db.maxOrders = MAX_ORDERS_DEFAULT; end
+    if (db.excludedCustomers == nil) then db.excludedCustomers = {}; end
     return db;
 end
 
@@ -101,11 +102,14 @@ end
 
 local function iterateOrders(charFilter, callback)
     local db = ensureHistoryDB();
+    local excluded = db.excludedCustomers;
     if (charFilter == "all") then
         for _, charData in pairs(db.characters) do
             if (charData.orders) then
                 for _, order in ipairs(charData.orders) do
-                    callback(order);
+                    if (not order.customer or not excluded[order.customer:lower()]) then
+                        callback(order);
+                    end
                 end
             end
         end
@@ -113,7 +117,9 @@ local function iterateOrders(charFilter, callback)
         local charData = ensureCharacterData(db);
         if (charData and charData.orders) then
             for _, order in ipairs(charData.orders) do
-                callback(order);
+                if (not order.customer or not excluded[order.customer:lower()]) then
+                    callback(order);
+                end
             end
         end
     end
@@ -232,6 +238,87 @@ function CraftingOrders:GetCharacterKeys()
     end
     table.sort(keys);
     return keys;
+end
+
+function CraftingOrders:GetOrderList(charFilter)
+    local db = ensureHistoryDB();
+    local excluded = db.excludedCustomers;
+    local list = {};
+    if (charFilter == "all") then
+        for charKey, charData in pairs(db.characters) do
+            if (charData.orders) then
+                for idx, order in ipairs(charData.orders) do
+                    if (not order.customer or not excluded[order.customer:lower()]) then
+                        table.insert(list, {
+                            charKey = charKey,
+                            index = idx,
+                            customer = order.customer,
+                            item = order.item,
+                            itemID = order.itemID,
+                            tip = order.tip or 0,
+                            orderType = order.orderType,
+                            timestamp = order.timestamp or 0,
+                        });
+                    end
+                end
+            end
+        end
+    else
+        local charData, charKey = ensureCharacterData(db);
+        if (charData and charData.orders and charKey) then
+            for idx, order in ipairs(charData.orders) do
+                if (not order.customer or not excluded[order.customer:lower()]) then
+                    table.insert(list, {
+                        charKey = charKey,
+                        index = idx,
+                        customer = order.customer,
+                        item = order.item,
+                        itemID = order.itemID,
+                        tip = order.tip or 0,
+                        orderType = order.orderType,
+                        timestamp = order.timestamp or 0,
+                    });
+                end
+            end
+        end
+    end
+    -- Sort newest first
+    table.sort(list, function(a, b) return (a.timestamp or 0) > (b.timestamp or 0); end);
+    return list;
+end
+
+function CraftingOrders:RemoveOrder(charKey, index)
+    local db = ensureHistoryDB();
+    if (not charKey or not index) then return; end
+    local charData = db.characters and db.characters[charKey];
+    if (not charData or not charData.orders) then return; end
+    if (index < 1 or index > #charData.orders) then return; end
+    table.remove(charData.orders, index);
+end
+
+-------------------------------------------------------------------------------
+-- Customer exclusion
+-------------------------------------------------------------------------------
+
+function CraftingOrders:GetExcludedCustomers()
+    local db = ensureHistoryDB();
+    return db.excludedCustomers;
+end
+
+function CraftingOrders:AddExcludedCustomer(name)
+    if (not name) then return false; end
+    name = strtrim(name):lower();
+    if (name == "") then return false; end
+    local db = ensureHistoryDB();
+    if (db.excludedCustomers[name]) then return false; end
+    db.excludedCustomers[name] = true;
+    return true;
+end
+
+function CraftingOrders:RemoveExcludedCustomer(name)
+    if (not name) then return; end
+    local db = ensureHistoryDB();
+    db.excludedCustomers[name:lower()] = nil;
 end
 
 -------------------------------------------------------------------------------

@@ -127,6 +127,8 @@ ns:RegisterLocale("enUS", {
     CO_TAB_CUSTOMERS                             = "Customers",
     CO_TAB_ITEMS                                 = "Items",
     CO_TAB_DASHBOARD                             = "Dashboard",
+    CO_TAB_ORDERS                                = "Orders",
+    CO_TAB_FILTERS                               = "Filters",
 
     -- Column headers
     CO_COL_CUSTOMER                              = "Customer",
@@ -138,6 +140,9 @@ ns:RegisterLocale("enUS", {
     CO_COL_CRAFTS                                = "Crafts",
     CO_COL_REVENUE                               = "Revenue",
     CO_COL_CUSTOMERS                             = "Customers",
+    CO_COL_TIP                                   = "Tip",
+    CO_COL_TYPE                                  = "Type",
+    CO_COL_DATE                                  = "Date",
 
     -- Dashboard
     CO_DASH_TOTAL_ORDERS                         = "Total Orders",
@@ -148,6 +153,15 @@ ns:RegisterLocale("enUS", {
     CO_DASH_TOP_CUSTOMERS                        = "Top Customers",
     CO_DASH_TOP_ITEMS                            = "Top Items",
     CO_DASH_NO_DATA                              = "No orders recorded yet.",
+
+    -- Orders page
+    CO_ORDERS_REMOVE                             = "Remove",
+
+    -- Filters page
+    CO_FILTERS_DESC                              = "Excluded customers are hidden from all analytics pages.",
+    CO_FILTERS_ADD                               = "Add",
+    CO_FILTERS_REMOVE                            = "Remove",
+    CO_FILTERS_EMPTY                             = "No customers excluded.",
 
     -- Character filter
     CO_FILTER_CURRENT                            = "Current Character",

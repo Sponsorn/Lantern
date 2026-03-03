@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.6.0
+- Add: Filters page in analytics — exclude specific customers from all analytics views
 - Add: Order history tracking — automatically records fulfilled crafting orders (guild and personal)
 - Add: Analytics window with Dashboard, Customers, and Items pages using native LanternUX panel (`/lantern orders`)
 - Add: Per-customer stats: order count, total tips, average tip, last order

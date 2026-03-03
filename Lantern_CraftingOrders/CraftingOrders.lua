@@ -446,7 +446,7 @@ function CraftingOrders:HandleFulfillResponse(...)
     self._awaitFulfillTip = tipCopper;
 end
 
--- Record all fulfilled order types (guild AND personal) for analytics,
+-- Record personal and guild order fulfillments for analytics,
 -- independent of the guild-announce setting in HandleFulfillResponse.
 function CraftingOrders:TryRecordFulfillment(...)
     local orderID, result = parseFulfillArgs(...);
@@ -456,16 +456,18 @@ function CraftingOrders:TryRecordFulfillment(...)
     if (not info) then return; end
 
     local itemLink = info.outputItemHyperlink or info.outputItemLink;
-    local customer = stripRealm(info.customerName or info.recipient);
+    local customer = info.customerName or info.recipient;
     local grossTip = info.tipAmount or info.tip or 0;
     local cut = info.consortiumCut or info.consortiumFee or 0;
     local netTip = math.max(grossTip - cut, 0);
 
-    local orderType = "unknown";
+    local orderType;
     if (isGuildOrderType(info.orderType)) then
         orderType = "guild";
     elseif (isPersonalOrderType(info.orderType)) then
         orderType = "personal";
+    else
+        return; -- Skip patron/public orders
     end
 
     if (self.RecordOrder) then
@@ -628,20 +630,38 @@ function CraftingOrders:EnsureAnalyticsButton()
     if (not view) then return; end
     if (view._lanternAnalyticsButton) then return; end
 
-    local anchor = getRightButton(view);
-    if (not anchor) then return; end
-
     local button = CreateFrame("Button", "LanternCO_AnalyticsBtn", view, "UIPanelButtonTemplate");
     button:SetText(L["CO_ANALYTICS_BTN"]);
-    button:SetHeight(anchor:GetHeight() or 22);
+    button:SetHeight(22);
     button:SetWidth(100);
+    button:SetFrameStrata("HIGH");
+    button:SetFrameLevel(500);
     button:ClearAllPoints();
-    button:SetPoint("RIGHT", anchor, "LEFT", -8, 0);
+    button:SetPoint("TOPRIGHT", view, "TOPRIGHT", -8, -25);
     button:SetScript("OnClick", function()
         self:ToggleAnalytics();
     end);
 
     view._lanternAnalyticsButton = button;
+end
+
+function CraftingOrders:EnsureAnalyticsBrowseButton()
+    local ordersPage = ProfessionsFrame and ProfessionsFrame.OrdersPage;
+    local browseFrame = ordersPage and ordersPage.BrowseFrame;
+    if (not browseFrame) then return; end
+    if (browseFrame._lanternAnalyticsButton) then return; end
+
+    local button = CreateFrame("Button", "LanternCO_AnalyticsBrowseBtn", browseFrame, "UIPanelButtonTemplate");
+    button:SetText(L["CO_ANALYTICS_BTN"]);
+    button:SetHeight(22);
+    button:SetWidth(100);
+    button:ClearAllPoints();
+    button:SetPoint("BOTTOMLEFT", browseFrame.SearchButton, "TOPLEFT", 0, 4);
+    button:SetScript("OnClick", function()
+        self:ToggleAnalytics();
+    end);
+
+    browseFrame._lanternAnalyticsButton = button;
 end
 
 function CraftingOrders:HandleDebugUnlockClick()
@@ -671,6 +691,7 @@ function CraftingOrders:OnEnable()
     self._personalCount = getPersonalOrderCount();
     self:EnsureWhisperButton();
     self:EnsureAnalyticsButton();
+    self:EnsureAnalyticsBrowseButton();
     self:UpdateWhisperButton();
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", function()
         self:HandlePlacement();
@@ -701,6 +722,7 @@ function CraftingOrders:OnEnable()
         ProfessionsFrame:HookScript("OnShow", function()
             self:EnsureWhisperButton();
             self:EnsureAnalyticsButton();
+            self:EnsureAnalyticsBrowseButton();
             self:UpdateWhisperButton();
         end);
     end
