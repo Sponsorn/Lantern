@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.5 - 2026-03-04
+- Fix: Auto Quest pauses automatically for Lady Liadrin (NPC 256203), to enable weekly quests to be picked up
+
 ## 0.6.4 - 2026-03-03
 - Add: Reset Minimap Zoom module — automatically zooms the minimap back out after a configurable delay
 - Add: Skip Cinematics module — automatically skips movies, cinematics, and cutscenes (hold pause modifier to watch)

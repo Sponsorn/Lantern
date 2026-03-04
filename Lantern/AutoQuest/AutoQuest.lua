@@ -20,6 +20,10 @@ local EXCLUDED_INSTANCE_MAPS = {
     [2513] = true, -- Tainted by quest automation
 };
 
+local BLOCKED_NPC_IDS = {
+    [256203] = true, -- Lady Liadrin (weekly quest selection)
+};
+
 local function shouldPause()
     return Lantern:IsModifierDown();
 end
@@ -154,6 +158,19 @@ function module:GetCurrentNPCKey()
 end
 
 function module:IsCurrentNPCBlocked()
+    -- Check hardcoded NPC ID blocklist (check both units since "npc" can be the player)
+    for _, unit in ipairs({"npc", "target"}) do
+        if (UnitExists(unit) and not UnitIsPlayer(unit)) then
+            local guid = UnitGUID(unit);
+            if (guid) then
+                local npcID = select(6, strsplit("-", guid));
+                if (npcID and BLOCKED_NPC_IDS[tonumber(npcID)]) then
+                    return true;
+                end
+            end
+        end
+    end
+    -- Check user-configured NPC blocklist
     local key = self:GetCurrentNPCKey();
     if (not key) then return false; end
     return self.db and self.db.blockedNPCs and self.db.blockedNPCs[key] or false;
@@ -270,7 +287,7 @@ function module:OnGossipShow()
 end
 
 function module:OnQuestGreeting()
-    if (shouldPause() or isExcludedMap()) then return; end
+    if (shouldPause() or isExcludedMap() or self:IsCurrentNPCBlocked()) then return; end
     if (self.db.autoTurnIn and GetNumActiveQuests and GetActiveTitle and SelectActiveQuest) then
         local count = GetNumActiveQuests() or 0;
         for i = 1, count do
