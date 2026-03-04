@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4 - 2026-03-04
+- Add: DataTable widget — sortable, scrollable data table for analytics and list views
+- Add: Outer border on settings panel for better visual definition
+
 ## 0.2.3 - 2026-02-25
 - Add: Collapse button on the title bar — click to minimize the panel to just the title bar
 
