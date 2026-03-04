@@ -17,7 +17,6 @@ Libs\LibSink-2.0\LibSink-2.0\LibSink-2.0.lua
 Libs\LibSharedMedia-3.0\lib.xml
 Libs\LibDDI-1.0\lib.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
-Libs\HereBeDragons-2.0\lib.xml
 
 Locales\Locale.lua
 Locales\enUS.lua
@@ -58,9 +57,6 @@ AutoPlaystyle\WidgetOptions.lua
 FasterLoot\FasterLoot.lua
 MapLine\MapLine.xml
 MapLine\MapLine.lua
-MapPins\Data.lua
-MapPins\MapPins.lua
-MapPins\WidgetOptions.lua
 ResetMinimapZoom\ResetMinimapZoom.lua
 AutoKeystone\AutoKeystone.lua
 ReleaseProtection\ReleaseProtection.lua

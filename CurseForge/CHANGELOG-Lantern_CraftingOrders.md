@@ -1,15 +1,17 @@
 # Changelog
 
-## 0.6.0
+## 0.6.0 - 2026-03-04
 - Add: Filters page in analytics — exclude specific customers from all analytics views
+- Add: Orders page in analytics — view and remove individual recorded orders
 - Add: Order history tracking — automatically records fulfilled crafting orders (guild and personal)
-- Add: Analytics window with Dashboard, Customers, and Items pages using native LanternUX panel (`/lantern orders`)
+- Add: Analytics window with Dashboard, Customers, Items, Orders, and Filters pages using native LanternUX panel (`/lantern orders`)
 - Add: Per-customer stats: order count, total tips, average tip, last order
 - Add: Per-item stats: craft count, average tip, total revenue, unique customers
 - Add: Dashboard with overall stats, top 5 customers, and top 5 items
 - Add: Character filter to view current character or all characters
 - Add: Analytics button in the crafting window
 - Add: Order History settings page with tracking toggle, max orders limit, and clear history
+- Change: Customer names now preserve realm suffix for cross-realm guild orders
 - Add: Background sound option for personal order notifications
 
 ## 0.5.0 - 2026-02-23
