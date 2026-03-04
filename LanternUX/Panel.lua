@@ -560,6 +560,17 @@ function PanelMixin:_Build()
     frame:SetBackdropColor(unpack(T.bg));
     frame:SetBackdropBorderColor(unpack(T.border));
 
+    local border = CreateFrame("Frame", config.name .. "_Border", frame, "BackdropTemplate");
+    border:SetFrameLevel(math.max(frame:GetFrameLevel() - 1, 0));
+    border:SetPoint("TOPLEFT", frame, "TOPLEFT", -3, 3);
+    border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 3, -3);
+    border:SetBackdrop({
+        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+        edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    });
+    border:SetBackdropBorderColor(0, 0, 0, 0.5);
+
     self._frame = frame;
 
     ---------------------------------------------------------------------------
