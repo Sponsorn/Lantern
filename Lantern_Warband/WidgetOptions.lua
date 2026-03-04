@@ -951,6 +951,35 @@ local function warehousingWidgets()
 end
 
 -------------------------------------------------------------------------------
+-- Treatise Tab
+-------------------------------------------------------------------------------
+
+local function treatiseWidgets()
+    local widgets = {
+        {
+            type = "description",
+            text = L["WARBAND_TREATISE_DESCRIPTION"],
+            fontSize = "medium",
+        },
+        {
+            type = "toggle",
+            label = L["WARBAND_TREATISE_ENABLE"],
+            desc = L["WARBAND_TREATISE_ENABLE_DESC"],
+            get = function()
+                return Warband.db and Warband.db.treatise and Warband.db.treatise.enabled;
+            end,
+            set = function(val)
+                if (Warband.db and Warband.db.treatise) then
+                    Warband.db.treatise.enabled = val and true or false;
+                end
+            end,
+        },
+    };
+
+    return widgets;
+end
+
+-------------------------------------------------------------------------------
 -- Register uxPages
 -------------------------------------------------------------------------------
 
@@ -959,4 +988,5 @@ Warband.uxPages = {
     { key = "warband_groups",       opts = { label = L["WARBAND_PAGE_GROUPS"],       title = L["WARBAND_PAGE_GROUPS_TITLE"],       description = L["WARBAND_PAGE_GROUPS_DESC"],       widgets = groupsWidgets } },
     { key = "warband_characters",   opts = { label = L["WARBAND_PAGE_CHARACTERS"],   title = L["WARBAND_PAGE_CHARACTERS_TITLE"],   description = L["WARBAND_PAGE_CHARACTERS_DESC"],   widgets = charactersWidgets } },
     { key = "warband_warehousing",  opts = { label = L["WARBAND_PAGE_WAREHOUSING"],  title = L["WARBAND_PAGE_WAREHOUSING_TITLE"],  description = L["WARBAND_PAGE_WAREHOUSING_DESC"],  widgets = warehousingWidgets } },
+    { key = "warband_treatise",     opts = { label = L["WARBAND_PAGE_TREATISE"],     title = L["WARBAND_PAGE_TREATISE_TITLE"],     description = L["WARBAND_PAGE_TREATISE_DESC"],     widgets = treatiseWidgets } },
 };

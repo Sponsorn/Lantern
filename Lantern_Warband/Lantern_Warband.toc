@@ -28,3 +28,5 @@ WidgetOptions.lua
 Warehousing\Data.lua
 Warehousing\Engine.lua
 Warehousing\UI.lua
+Treatise\Treatise.lua
+Treatise\UI.lua

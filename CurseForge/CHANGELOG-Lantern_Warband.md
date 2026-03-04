@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.2 - 2026-03-04
+- Add: Treatise module — shows which Midnight treatises are in your warbank, highlights your professions, tracks weekly quest completion, and provides a one-click "Take 1 for each skill" button
+
 ## 0.4.1
 - Fix: Warehousing engine looping indefinitely when warbank is full instead of stopping after retries
 - Fix: Warehousing panel now uses the game's default fonts instead of Roboto Bold

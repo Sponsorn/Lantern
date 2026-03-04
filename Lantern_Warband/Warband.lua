@@ -54,6 +54,14 @@ local function ensureDB(self)
     if (type(self.db.warehousing.groups) ~= "table") then
         self.db.warehousing.groups = {};
     end
+
+    -- Ensure treatise schema
+    if (type(self.db.treatise) ~= "table") then
+        self.db.treatise = {};
+    end
+    if (self.db.treatise.enabled == nil) then
+        self.db.treatise.enabled = true;
+    end
 end
 
 local function getCurrentCharacterGroup(self)
