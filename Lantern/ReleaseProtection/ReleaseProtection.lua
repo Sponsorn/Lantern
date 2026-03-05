@@ -5,7 +5,6 @@ local L = Lantern.L;
 local module = Lantern:NewModule("ReleaseProtection", {
     title = L["RELEASEPROTECT_TITLE"],
     desc = L["RELEASEPROTECT_DESC"],
-    defaultEnabled = false,
 });
 
 local DEFAULTS = {
@@ -161,6 +160,7 @@ function module:OnEnable()
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_ALIVE", hideOverlay);
     self.addon:ModuleRegisterEvent(self, "PLAYER_UNGHOST", hideOverlay);
+    self.addon:ModuleRegisterEvent(self, "RESURRECT_REQUEST", hideOverlay);
 end
 
 function module:OnDisable()

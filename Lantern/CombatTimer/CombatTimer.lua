@@ -10,7 +10,6 @@ local module = Lantern:NewModule("CombatTimer", {
     title = L["COMBATTIMER_TITLE"],
     desc = L["COMBATTIMER_DESC"],
     skipOptions = true,
-    defaultEnabled = false,
 });
 
 local DEFAULTS = {

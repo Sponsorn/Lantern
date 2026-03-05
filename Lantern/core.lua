@@ -126,11 +126,7 @@ function Lantern:RegisterModule(module)
         end
         self.db.modules = self.db.modules or {};
         if (self.db.modules[module.name] == nil) then
-            local default = true;
-            if (module.opts and module.opts.defaultEnabled == false) then
-                default = false;
-            end
-            self.db.modules[module.name] = default;
+            self.db.modules[module.name] = self.db.options.autoEnableNewModules or false;
         end
         module.enabled = self.db.modules[module.name];
         if (module.enabled) then
@@ -255,11 +251,7 @@ Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
         -- Initialize module.enabled from saved variables
         Lantern.db.modules = Lantern.db.modules or {};
         if (Lantern.db.modules[module.name] == nil) then
-            local default = true;
-            if (module.opts and module.opts.defaultEnabled == false) then
-                default = false;
-            end
-            Lantern.db.modules[module.name] = default;
+            Lantern.db.modules[module.name] = Lantern.db.options.autoEnableNewModules or false;
         end
         module.enabled = Lantern.db.modules[module.name];
         -- Only call OnInit/OnEnable if module is enabled

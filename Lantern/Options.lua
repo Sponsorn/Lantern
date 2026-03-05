@@ -118,6 +118,16 @@ CUSTOM_OPTIONS["general"] = function()
     return {
         {
             type = "toggle",
+            label = L["GENERAL_AUTO_ENABLE_NEW"],
+            desc = L["GENERAL_AUTO_ENABLE_NEW_DESC"],
+            get = function() return Lantern.db.options and Lantern.db.options.autoEnableNewModules or false; end,
+            set = function(val)
+                Lantern.db.options = Lantern.db.options or {};
+                Lantern.db.options.autoEnableNewModules = val;
+            end,
+        },
+        {
+            type = "toggle",
             label = L["GENERAL_MINIMAP_SHOW"],
             desc = L["GENERAL_MINIMAP_SHOW_DESC"],
             get = function() return not (Lantern.db.minimap and Lantern.db.minimap.hide); end,

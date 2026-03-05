@@ -20,6 +20,7 @@ end
 function module:OnPlayMovie(_, movieID)
     if (not self.enabled or shouldPause()) then return; end
     MovieFrame:StopMovie();
+    Lantern:Print(L["SKIPCINEMATICS_SKIPPED"]);
 end
 
 function module:OnCinematicStart()
@@ -35,6 +36,7 @@ function module:OnCinematicStart()
             CancelScene();
         end
     end);
+    Lantern:Print(L["SKIPCINEMATICS_SKIPPED"]);
 end
 
 Lantern:RegisterModule(module);

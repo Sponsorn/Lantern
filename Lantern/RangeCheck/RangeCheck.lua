@@ -10,7 +10,6 @@ local L = Lantern.L;
 local module = Lantern:NewModule("RangeCheck", {
     title = L["RANGECHECK_TITLE"],
     desc = L["RANGECHECK_DESC"],
-    defaultEnabled = false,
 });
 
 local DEFAULTS = {

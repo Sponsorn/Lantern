@@ -6,7 +6,6 @@ local IsSecret = Lantern.utils.IsSecret;
 local module = Lantern:NewModule("Tooltip", {
     title = L["TOOLTIP_TITLE"],
     desc = L["TOOLTIP_DESC"],
-    defaultEnabled = false,
 });
 
 -------------------------------------------------------------------------------

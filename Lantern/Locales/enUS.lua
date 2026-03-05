@@ -22,6 +22,8 @@ Lantern:RegisterLocale("enUS", {
     GENERAL_MINIMAP_SHOW_DESC               = "Show or hide the Lantern minimap button.",
     GENERAL_MINIMAP_MODERN                  = "Modern minimap icon",
     GENERAL_MINIMAP_MODERN_DESC             = "Remove the border and background from the minimap button for a modern look with a lantern glow on hover.",
+    GENERAL_AUTO_ENABLE_NEW                 = "Auto-enable new features",
+    GENERAL_AUTO_ENABLE_NEW_DESC            = "Automatically enable newly added modules. When off, new modules start disabled and must be turned on manually.",
     GENERAL_PAUSE_MODIFIER                  = "Pause modifier key",
     GENERAL_PAUSE_MODIFIER_DESC             = "Hold this key to temporarily pause auto-features (Auto Quest, Auto Queue, Auto Repair, etc.).",
 
@@ -231,6 +233,7 @@ Lantern:RegisterLocale("enUS", {
     -- Skip Cinematics
     SKIPCINEMATICS_TITLE                    = "Skip Cinematics",
     SKIPCINEMATICS_DESC                     = "Automatically skip movies, cinematics, and cutscenes.",
+    SKIPCINEMATICS_SKIPPED                  = "Cinematic skipped.",
 
     -- Map Line
     MAPLINE_TITLE                           = "Flight Path Line",

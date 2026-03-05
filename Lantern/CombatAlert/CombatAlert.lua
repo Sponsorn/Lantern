@@ -10,7 +10,6 @@ local module = Lantern:NewModule("CombatAlert", {
     title = L["COMBATALERT_TITLE"],
     desc = L["COMBATALERT_DESC"],
     skipOptions = true,
-    defaultEnabled = false,
 });
 
 local DEFAULTS = {

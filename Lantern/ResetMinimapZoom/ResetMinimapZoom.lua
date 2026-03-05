@@ -5,7 +5,6 @@ local L = Lantern.L;
 local module = Lantern:NewModule("ResetMinimapZoom", {
     title = L["RESETMINIMAPZOOM_TITLE"],
     desc = L["RESETMINIMAPZOOM_DESC"],
-    defaultEnabled = false,
     DEFAULTS = { delay = 15 },
 });
 
