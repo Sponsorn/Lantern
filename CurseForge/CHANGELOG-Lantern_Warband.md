@@ -4,6 +4,7 @@
 - Add: Treatise module — shows which Midnight treatises are in your warbank, highlights your professions, tracks weekly quest completion, and provides a one-click "Take 1 for each skill" button
 - Change: Treatise button is now disabled by default — enable it in Warband settings
 - Fix: Engineering treatise quest ID
+- Fix: Treatise "Take 1 for each skill" now uses event-driven item handling instead of fixed timers, fixing "couldn't split those items" errors
 
 ## 0.4.1
 - Fix: Warehousing engine looping indefinitely when warbank is full instead of stopping after retries

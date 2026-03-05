@@ -23,6 +23,155 @@ end
 -- Take treatises
 -------------------------------------------------------------------------------
 
+local TAKE_TIMEOUT = 5;   -- seconds before giving up on a single item
+local MAX_RETRIES = 3;    -- max retries per item if locked
+
+local takeState = nil;    -- current take operation state
+local takeEventFrame = CreateFrame("Frame", "LanternTreatise_TakeFrame");
+
+local function finishTake(message)
+    isTaking = false;
+    if (bankButton) then bankButton:SetEnabled(true); end
+    takeEventFrame:UnregisterEvent("ITEM_LOCK_CHANGED");
+    if (takeState and takeState.timeoutTicker) then
+        takeState.timeoutTicker:Cancel();
+    end
+    if (message) then
+        Lantern:Print(message);
+    end
+    takeState = nil;
+end
+
+local function reportTaken(taken)
+    if (#taken > 0) then
+        local count = #taken;
+        local names = table.concat(taken, ", ");
+        Lantern:Print(string.format(L["WARBAND_TREATISE_MSG_TOOK"], count, count == 1 and "" or "s", names));
+    end
+end
+
+local takeNext;  -- forward declaration
+
+local function attemptPickup()
+    if (not takeState or not isTaking) then return; end
+
+    local entry = takeState.toTake[takeState.index];
+    local firstSlot = entry.slots[1];
+
+    -- Check if item is locked (still mid-operation)
+    local info = C_Container.GetContainerItemInfo(firstSlot.bag, firstSlot.slot);
+    if (not info) then
+        -- Item gone (already moved), skip to next
+        takeState.index = takeState.index + 1;
+        takeNext();
+        return;
+    end
+    if (info.isLocked) then
+        takeState.retries = takeState.retries + 1;
+        if (takeState.retries > MAX_RETRIES) then
+            -- Skip this item, move on
+            takeState.index = takeState.index + 1;
+            takeNext();
+        end
+        -- Otherwise wait for ITEM_LOCK_CHANGED to retry
+        return;
+    end
+
+    -- Find free bag slot
+    local freeBag, freeSlot = Treatise:FindFreeBagSlot();
+    if (not freeBag) then
+        finishTake(L["WARBAND_TREATISE_UI_NO_BAG_SPACE"]);
+        reportTaken(takeState.taken);
+        return;
+    end
+
+    -- Set up state to wait for completion
+    takeState.phase = "picking";
+    takeState.srcBag = firstSlot.bag;
+    takeState.srcSlot = firstSlot.slot;
+    takeState.dstBag = freeBag;
+    takeState.dstSlot = freeSlot;
+
+    -- Pick up or split
+    if (info.stackCount > 1) then
+        C_Container.SplitContainerItem(firstSlot.bag, firstSlot.slot, 1);
+    else
+        C_Container.PickupContainerItem(firstSlot.bag, firstSlot.slot);
+    end
+
+    -- For single stacks, the cursor may be ready immediately
+    if (GetCursorInfo() == "item") then
+        takeState.phase = "placing";
+        C_Container.PickupContainerItem(freeBag, freeSlot);
+        table.insert(takeState.taken, entry.name);
+        -- Wait for ITEM_LOCK_CHANGED to confirm placement before next
+        return;
+    end
+    -- Otherwise wait for ITEM_LOCK_CHANGED (split is async for warbank)
+end
+
+takeNext = function()
+    if (not takeState or not isTaking) then return; end
+
+    if (takeState.index > #takeState.toTake) then
+        local taken = takeState.taken;
+        finishTake(nil);
+        reportTaken(taken);
+        return;
+    end
+
+    takeState.retries = 0;
+    takeState.phase = "idle";
+
+    -- Reset timeout for this item
+    if (takeState.timeoutTicker) then
+        takeState.timeoutTicker:Cancel();
+    end
+    takeState.timeoutTicker = C_Timer.NewTimer(TAKE_TIMEOUT, function()
+        if (not takeState or not isTaking) then return; end
+        -- Timed out on this item, skip it
+        ClearCursor();
+        takeState.index = takeState.index + 1;
+        takeNext();
+    end);
+
+    attemptPickup();
+end
+
+takeEventFrame:SetScript("OnEvent", function(_, event)
+    if (event ~= "ITEM_LOCK_CHANGED" or not takeState or not isTaking) then return; end
+
+    if (takeState.phase == "picking") then
+        -- Item unlocked after split, cursor should have the item now
+        if (GetCursorInfo() == "item") then
+            takeState.phase = "placing";
+            C_Container.PickupContainerItem(takeState.dstBag, takeState.dstSlot);
+            local entry = takeState.toTake[takeState.index];
+            table.insert(takeState.taken, entry.name);
+            -- Wait for another ITEM_LOCK_CHANGED to confirm placement
+        else
+            -- Split didn't produce a cursor item, retry
+            takeState.retries = takeState.retries + 1;
+            if (takeState.retries > MAX_RETRIES) then
+                ClearCursor();
+                takeState.index = takeState.index + 1;
+                takeNext();
+            else
+                C_Timer.After(0.1, attemptPickup);
+            end
+        end
+    elseif (takeState.phase == "placing") then
+        -- Item placed in bag, move to next
+        if (takeState.timeoutTicker) then
+            takeState.timeoutTicker:Cancel();
+        end
+        takeState.index = takeState.index + 1;
+        takeState.phase = "idle";
+        -- Small delay to let the UI settle
+        C_Timer.After(0.1, takeNext);
+    end
+end);
+
 local function TakeAll()
     if (isTaking) then return; end
 
@@ -38,7 +187,6 @@ local function TakeAll()
     end
 
     if (#toTake == 0) then
-        -- Check if all player professions are completed this week
         local allDone = true;
         for _, entry in ipairs(status) do
             if (entry.playerHas and not entry.completedThisWeek) then
@@ -53,52 +201,16 @@ local function TakeAll()
     isTaking = true;
     if (bankButton) then bankButton:SetEnabled(false); end
 
-    local taken = {};
-    local index = 1;
+    takeState = {
+        toTake = toTake,
+        taken = {},
+        index = 1,
+        retries = 0,
+        phase = "idle",
+        timeoutTicker = nil,
+    };
 
-    local function takeNext()
-        if (not isTaking) then return; end
-        if (index > #toTake) then
-            isTaking = false;
-            if (bankButton) then bankButton:SetEnabled(true); end
-            local count = #taken;
-            local names = table.concat(taken, ", ");
-            Lantern:Print(string.format(L["WARBAND_TREATISE_MSG_TOOK"], count, count == 1 and "" or "s", names));
-            return;
-        end
-
-        local entry = toTake[index];
-        local firstSlot = entry.slots[1];
-
-        local freeBag, freeSlot = Treatise:FindFreeBagSlot();
-        if (not freeBag) then
-            isTaking = false;
-            if (bankButton) then bankButton:SetEnabled(true); end
-            Lantern:Print(L["WARBAND_TREATISE_UI_NO_BAG_SPACE"]);
-            if (#taken > 0) then
-                local names = table.concat(taken, ", ");
-                Lantern:Print(string.format(L["WARBAND_TREATISE_MSG_TOOK"], #taken, #taken == 1 and "" or "s", names));
-            end
-            return;
-        end
-
-        local info = C_Container.GetContainerItemInfo(firstSlot.bag, firstSlot.slot);
-        if (info and info.stackCount > 1) then
-            C_Container.SplitContainerItem(firstSlot.bag, firstSlot.slot, 1);
-        else
-            C_Container.PickupContainerItem(firstSlot.bag, firstSlot.slot);
-        end
-        if (GetCursorInfo() == "item") then
-            C_Container.PickupContainerItem(freeBag, freeSlot);
-            table.insert(taken, entry.name);
-        else
-            ClearCursor();
-        end
-
-        index = index + 1;
-        C_Timer.After(0.7, takeNext);
-    end
-
+    takeEventFrame:RegisterEvent("ITEM_LOCK_CHANGED");
     takeNext();
 end
 
@@ -182,8 +294,10 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
             bankButton:Hide();
         end
         if (isTaking) then
-            isTaking = false;
-            if (bankButton) then bankButton:SetEnabled(true); end
+            ClearCursor();
+            local taken = takeState and takeState.taken or {};
+            finishTake(nil);
+            reportTaken(taken);
         end
     end
 end);
