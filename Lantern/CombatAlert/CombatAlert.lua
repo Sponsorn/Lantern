@@ -9,6 +9,7 @@ local SafeSetFont = Lantern.utils.SafeSetFont;
 local module = Lantern:NewModule("CombatAlert", {
     title = L["COMBATALERT_TITLE"],
     desc = L["COMBATALERT_DESC"],
+    defaultEnabled = false,
     skipOptions = true,
 });
 

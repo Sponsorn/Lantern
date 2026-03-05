@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("AutoPlaystyle", {
     title = L["AUTOPLAYSTYLE_TITLE"],
     desc = L["AUTOPLAYSTYLE_DESC"],
+    defaultEnabled = true,
 });
 
 local function ensureDB(self)

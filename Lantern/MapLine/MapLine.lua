@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("MapLine", {
     title = L["MAPLINE_TITLE"],
     desc = L["MAPLINE_DESC"],
+    defaultEnabled = false,
     skipOptions = true,
 });
 

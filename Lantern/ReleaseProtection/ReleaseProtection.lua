@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("ReleaseProtection", {
     title = L["RELEASEPROTECT_TITLE"],
     desc = L["RELEASEPROTECT_DESC"],
+    defaultEnabled = false,
 });
 
 local DEFAULTS = {

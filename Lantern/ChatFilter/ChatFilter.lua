@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("ChatFilter", {
     title = L["CHATFILTER_TITLE"],
     desc = L["CHATFILTER_DESC"],
+    defaultEnabled = false,
 });
 
 local FILTERED_EVENTS = {

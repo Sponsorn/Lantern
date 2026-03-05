@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("AutoSell", {
     title = L["AUTOSELL_TITLE"],
     desc = L["AUTOSELL_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

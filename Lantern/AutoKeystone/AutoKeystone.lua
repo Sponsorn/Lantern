@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("AutoKeystone", {
     title = L["AUTOKEYSTONE_TITLE"],
     desc = L["AUTOKEYSTONE_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

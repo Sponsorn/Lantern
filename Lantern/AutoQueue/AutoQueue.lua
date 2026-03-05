@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("AutoQueue", {
     title = L["AUTOQUEUE_TITLE"],
     desc = L["AUTOQUEUE_DESC"],
+    defaultEnabled = false,
     skipOptions = true,
 });
 

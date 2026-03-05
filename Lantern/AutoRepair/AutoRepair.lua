@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("AutoRepair", {
     title = L["AUTOREPAIR_TITLE"],
     desc = L["AUTOREPAIR_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

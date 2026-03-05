@@ -9,6 +9,7 @@ local SafeSetFont = Lantern.utils.SafeSetFont;
 local module = Lantern:NewModule("CombatTimer", {
     title = L["COMBATTIMER_TITLE"],
     desc = L["COMBATTIMER_DESC"],
+    defaultEnabled = false,
     skipOptions = true,
 });
 

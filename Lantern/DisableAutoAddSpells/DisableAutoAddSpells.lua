@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("DisableAutoAddSpells", {
     title = L["DISABLEAUTOADD_TITLE"],
     desc = L["DISABLEAUTOADD_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

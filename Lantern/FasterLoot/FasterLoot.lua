@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("FasterLoot", {
     title = L["FASTERLOOT_TITLE"],
     desc = L["FASTERLOOT_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

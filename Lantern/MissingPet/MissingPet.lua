@@ -9,6 +9,7 @@ local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
 local module = Lantern:NewModule("MissingPet", {
     title = L["MISSINGPET_TITLE"],
     desc = L["MISSINGPET_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

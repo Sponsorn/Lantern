@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("AutoQuest", {
     title = L["AUTOQUEST_TITLE"],
     desc = L["AUTOQUEST_DESC"],
+    defaultEnabled = true,
     skipOptions = true, -- options are shown under Lantern > General Options instead
 });
 

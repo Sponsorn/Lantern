@@ -6,6 +6,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("DeleteConfirm", {
     title = L["DELETECONFIRM_TITLE"],
     desc = L["DELETECONFIRM_DESC"],
+    defaultEnabled = true,
     skipOptions = true,
 });
 

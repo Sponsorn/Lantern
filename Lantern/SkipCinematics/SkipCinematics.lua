@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("SkipCinematics", {
     title = L["SKIPCINEMATICS_TITLE"],
     desc = L["SKIPCINEMATICS_DESC"],
+    defaultEnabled = false,
     skipOptions = true,
 });
 

@@ -5,6 +5,7 @@ local L = Lantern.L;
 local module = Lantern:NewModule("CursorRing", {
     title = L["CURSORRING_TITLE"],
     desc = L["CURSORRING_DESC"],
+    defaultEnabled = false,
     skipOptions = true,
 });
 
