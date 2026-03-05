@@ -8,7 +8,6 @@ Lantern.eventHandlers = Lantern.eventHandlers or {};
 Lantern.messageHandlers = Lantern.messageHandlers or {};
 
 local L = Lantern.L;
-local tinsert = table.insert;
 
 -- Protected call wrapper for module callbacks
 local function safeCall(fn, context, ...)
@@ -91,27 +90,48 @@ local MODIFIER_FN = {
 };
 
 function Lantern:IsModifierDown()
-    local key = self.db and self.db.options and self.db.options.pauseModifier or "shift";
+    local key = (self.db and self.db.options and self.db.options.pauseModifier) or "shift";
     local fn = MODIFIER_FN[key] or IsShiftKeyDown;
     return fn();
 end
 
 function Lantern:GetModifierName()
-    local key = self.db and self.db.options and self.db.options.pauseModifier or "shift";
+    local key = (self.db and self.db.options and self.db.options.pauseModifier) or "shift";
     return key:sub(1, 1):upper() .. key:sub(2);
 end
 
 function Lantern:NewModule(name, opts)
     local module = {
         name = name,
-        enabled = true,
+        enabled = false,
         opts = opts or {},
         addon = self,
         _events = {},
-        _messages = {},
     };
     setmetatable(module, { __index = self });
     return module;
+end
+
+-- Initialize a module's enabled state from saved variables and call lifecycle methods
+local function initializeModule(module)
+    Lantern.db.modules = Lantern.db.modules or {};
+    if (Lantern.db.modules[module.name] == nil) then
+        if (module.opts.defaultEnabled ~= nil) then
+            Lantern.db.modules[module.name] = module.opts.defaultEnabled;
+        else
+            Lantern.db.modules[module.name] = Lantern.db.options.autoEnableNewModules or false;
+        end
+    end
+    module.enabled = Lantern.db.modules[module.name];
+    if (module.enabled) then
+        if (module.OnInit) then
+            safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
+            module._initialized = true;
+        end
+        if (module.OnEnable) then
+            safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
+        end
+    end
 end
 
 function Lantern:RegisterModule(module)
@@ -120,29 +140,11 @@ function Lantern:RegisterModule(module)
     end
     self.modules[module.name] = module;
     if (self.ready) then
-        -- Addon is ready, DB is loaded, initialize now
         if (not self.db) then
             self:SetupDB();
         end
-        self.db.modules = self.db.modules or {};
-        if (self.db.modules[module.name] == nil) then
-            if (module.opts.defaultEnabled ~= nil) then
-                self.db.modules[module.name] = module.opts.defaultEnabled;
-            else
-                self.db.modules[module.name] = self.db.options.autoEnableNewModules or false;
-            end
-        end
-        module.enabled = self.db.modules[module.name];
-        if (module.enabled) then
-            if (module.OnInit) then
-                safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
-            end
-            if (module.OnEnable) then
-                safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
-            end
-        end
+        initializeModule(module);
     else
-        -- Addon not ready yet, defer initialization until ADDON_LOADED
         table.insert(self._pendingModules, module);
     end
 end
@@ -152,6 +154,10 @@ function Lantern:EnableModule(name)
     if (module and not module.enabled) then
         module.enabled = true;
         self.db.modules[name] = true;
+        if (not module._initialized and module.OnInit) then
+            safeCall(module.OnInit, "module " .. name .. " OnInit", module);
+            module._initialized = true;
+        end
         if (module.OnEnable) then
             safeCall(module.OnEnable, "module " .. name .. " OnEnable", module);
         end
@@ -178,7 +184,7 @@ end
 
 function Lantern:RegisterEvent(event, handler)
     if (not self.eventFrame) then
-        self.eventFrame = CreateFrame("Frame");
+        self.eventFrame = CreateFrame("Frame", "LanternCoreEventFrame");
         self.eventFrame:SetScript("OnEvent", function(_, ev, ...)
             local listeners = Lantern.eventHandlers[ev];
             if (listeners) then
@@ -189,7 +195,7 @@ function Lantern:RegisterEvent(event, handler)
         end);
     end
     self.eventHandlers[event] = self.eventHandlers[event] or {};
-    tinsert(self.eventHandlers[event], handler);
+    table.insert(self.eventHandlers[event], handler);
     self.eventFrame:RegisterEvent(event);
 end
 
@@ -222,7 +228,7 @@ end
 
 function Lantern:RegisterMessage(message, handler)
     self.messageHandlers[message] = self.messageHandlers[message] or {};
-    tinsert(self.messageHandlers[message], handler);
+    table.insert(self.messageHandlers[message], handler);
 end
 
 function Lantern:SendMessage(message, ...)
@@ -234,8 +240,9 @@ function Lantern:SendMessage(message, ...)
     end
 end
 
-Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
+local function onAddonLoaded(event, name)
     if (name ~= ADDON_NAME) then return; end
+    Lantern:UnregisterEvent("ADDON_LOADED", onAddonLoaded);
     Lantern:SetupDB();
 
     -- Register Roboto fonts with LibSharedMedia (available in font selectors)
@@ -252,27 +259,10 @@ Lantern:RegisterEvent("ADDON_LOADED", function(event, name)
     local pending = Lantern._pendingModules;
     Lantern._pendingModules = {};
     for _, module in ipairs(pending) do
-        -- Initialize module.enabled from saved variables
-        Lantern.db.modules = Lantern.db.modules or {};
-        if (Lantern.db.modules[module.name] == nil) then
-            if (module.opts.defaultEnabled ~= nil) then
-                Lantern.db.modules[module.name] = module.opts.defaultEnabled;
-            else
-                Lantern.db.modules[module.name] = Lantern.db.options.autoEnableNewModules or false;
-            end
-        end
-        module.enabled = Lantern.db.modules[module.name];
-        -- Only call OnInit/OnEnable if module is enabled
-        if (module.enabled) then
-            if (module.OnInit) then
-                safeCall(module.OnInit, "module " .. module.name .. " OnInit", module);
-            end
-            if (module.OnEnable) then
-                safeCall(module.OnEnable, "module " .. module.name .. " OnEnable", module);
-            end
-        end
+        initializeModule(module);
     end
-end);
+end
+Lantern:RegisterEvent("ADDON_LOADED", onAddonLoaded);
 
 Lantern:RegisterEvent("PLAYER_LOGIN", function()
     Lantern:UpdateCharacterLogin();

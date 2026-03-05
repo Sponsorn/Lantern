@@ -5,6 +5,8 @@
 - Add: Skip Cinematics now prints a chat message when a cinematic is skipped if enabled (toggleable in settings)
 - Add: "Show chat message" toggle for Auto Repair and Auto Sell modules
 - Fix: Auto Sell now correctly sells items from the reagent bag
+- Fix: Modules disabled at startup now properly initialize when enabled mid-session
+- Chore: Core framework cleanup — deduplicated module init, named event frame, self-unregistering ADDON_LOADED
 
 ## 0.6.5 - 2026-03-04
 - Fix: Auto Quest pauses automatically for Lady Liadrin (NPC 256203), to enable weekly quests to be picked up
