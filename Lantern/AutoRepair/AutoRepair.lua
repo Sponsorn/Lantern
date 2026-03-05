@@ -10,6 +10,7 @@ local module = Lantern:NewModule("AutoRepair", {
 
 local DEFAULTS = {
     source = "personal", -- "personal", "guild_first", "guild_only"
+    showMessage = true,
 };
 
 local function ensureDB(self)
@@ -62,18 +63,26 @@ function module:OnMerchantShow()
     local useGuild = (source ~= "personal") and canUseGuildRepair(repairCost);
 
     if (source == "guild_only" and not useGuild) then
-        Lantern:Print(L["AUTOREPAIR_MSG_GUILD_UNAVAILABLE"]);
+        if (self.db.showMessage) then
+            Lantern:Print(L["AUTOREPAIR_MSG_GUILD_UNAVAILABLE"]);
+        end
         return;
     end
 
     if (useGuild) then
         RepairAllItems(true);
-        Lantern:Print(format(L["AUTOREPAIR_MSG_REPAIRED_GUILD"], costText));
+        if (self.db.showMessage) then
+            Lantern:Print(format(L["AUTOREPAIR_MSG_REPAIRED_GUILD"], costText));
+        end
     elseif (GetMoney() >= repairCost) then
         RepairAllItems(false);
-        Lantern:Print(format(L["AUTOREPAIR_MSG_REPAIRED"], costText));
+        if (self.db.showMessage) then
+            Lantern:Print(format(L["AUTOREPAIR_MSG_REPAIRED"], costText));
+        end
     else
-        Lantern:Print(format(L["AUTOREPAIR_MSG_NOT_ENOUGH_GOLD"], costText));
+        if (self.db.showMessage) then
+            Lantern:Print(format(L["AUTOREPAIR_MSG_NOT_ENOUGH_GOLD"], costText));
+        end
     end
 end
 

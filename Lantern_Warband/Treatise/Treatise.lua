@@ -38,31 +38,14 @@ Treatise.MIDNIGHT_TREATISES = MIDNIGHT_TREATISES;
 -- Profession Detection
 -------------------------------------------------------------------------------
 
--- Returns a set of base skillLineIDs the player has: { [skillLineID] = true }
+-- Returns a set of base skillLineIDs the current character has: { [skillLineID] = true }
 function Treatise:GetPlayerProfessions()
     local result = {};
 
-    -- Primary approach: C_TradeSkillUI
-    if (C_TradeSkillUI and C_TradeSkillUI.GetAllProfessionTradeSkillLines) then
-        local skillLines = C_TradeSkillUI.GetAllProfessionTradeSkillLines();
-        if (skillLines and #skillLines > 0) then
-            for _, skillLineID in ipairs(skillLines) do
-                local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(skillLineID);
-                if (info and info.parentProfessionID) then
-                    result[info.parentProfessionID] = true;
-                end
-                -- Also add the skillLineID itself in case it's a base ID
-                result[skillLineID] = true;
-            end
-            return result;
-        end
-    end
-
-    -- Fallback: GetProfessions()
+    -- GetProfessions() is character-specific (unlike GetAllProfessionTradeSkillLines which is warband-wide)
     if (GetProfessions) then
-        local prof1, prof2, archaeology, fishing, cooking = GetProfessions();
-        local indices = { prof1, prof2, archaeology, fishing, cooking };
-        for _, idx in ipairs(indices) do
+        local prof1, prof2 = GetProfessions();
+        for _, idx in ipairs({ prof1, prof2 }) do
             if (idx) then
                 local _, _, _, _, _, _, skillLineID = GetProfessionInfo(idx);
                 if (skillLineID) then
@@ -143,6 +126,26 @@ end
 -------------------------------------------------------------------------------
 -- Bag Utilities
 -------------------------------------------------------------------------------
+
+-- Returns a set of treatise itemIDs the player has in bags: { [itemID] = true }
+function Treatise:GetInventoryTreatises()
+    local found = {};
+    local treatiseItems = {};
+    for _, t in ipairs(MIDNIGHT_TREATISES) do
+        treatiseItems[t.itemID] = true;
+    end
+
+    for bag = INVENTORY_START, INVENTORY_END do
+        local numSlots = C_Container.GetContainerNumSlots(bag);
+        for slot = 1, numSlots do
+            local info = C_Container.GetContainerItemInfo(bag, slot);
+            if (info and info.itemID and treatiseItems[info.itemID]) then
+                found[info.itemID] = true;
+            end
+        end
+    end
+    return found;
+end
 
 -- Find first empty bag slot (bags 0-4)
 function Treatise:FindFreeBagSlot()

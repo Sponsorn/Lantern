@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.6.6
+- Add: Auto-enable new features toggle in General settings, controls whether newly added modules are enabled or disabled by default (off by default)
+- Add: Skip Cinematics now prints a chat message when a cinematic is skipped if enabled (toggleable in settings)
+- Add: "Show chat message" toggle for Auto Repair and Auto Sell modules
+- Fix: Auto Sell now correctly sells items from the reagent bag
+
 ## 0.6.5 - 2026-03-04
-- Add: Auto-enable new features toggle in General settings — controls whether newly added modules are enabled or disabled by default (off by default)
-- Add: Skip Cinematics now prints a chat message when a cinematic is skipped
 - Fix: Auto Quest pauses automatically for Lady Liadrin (NPC 256203), to enable weekly quests to be picked up
 
 ## 0.6.4 - 2026-03-03

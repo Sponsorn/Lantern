@@ -16,6 +16,7 @@ Lantern:RegisterLocale("enUS", {
     SHARED_PREVIEW                          = "Preview",
     SHARED_GROUP_DISPLAY                    = "Display",
     SHARED_ANIMATION_STYLE                  = "Animation Style",
+    SHARED_SHOW_CHAT_MESSAGE                = "Show chat message",
 
     -- General settings
     GENERAL_MINIMAP_SHOW                    = "Show minimap icon",
@@ -40,6 +41,7 @@ Lantern:RegisterLocale("enUS", {
 
     -- Skip Cinematics
     SKIPCINEMATICS_ENABLE_DESC              = "Skip in-game movies, cinematics, and cutscenes automatically. Hold %s to watch.",
+    SKIPCINEMATICS_SHOW_MESSAGE_DESC        = "Print a message in chat when a cinematic is skipped.",
 
     -- Map Line
     MAPLINE_ENABLE_DESC                     = "Show a dotted line on the world map indicating your flight direction.",
@@ -57,8 +59,7 @@ Lantern:RegisterLocale("enUS", {
     AUTOQUEUE_ENABLE_DESC                   = "Enable or disable Auto Queue.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Auto-accept role checks",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accept LFG role checks automatically.",
-    AUTOQUEUE_ANNOUNCE                      = "Chat announce",
-    AUTOQUEUE_ANNOUNCE_DESC                 = "Print a chat message when a role check is auto-accepted.",
+    AUTOQUEUE_ANNOUNCE_DESC                 = "Print a message in chat when a role check is auto-accepted.",
     AUTOQUEUE_CALLOUT                       = "Hold %s to temporarily pause. Roles are set in the LFG tool.",
 
     -- Faster Loot
@@ -103,6 +104,7 @@ Lantern:RegisterLocale("enUS", {
     AUTOREPAIR_SOURCE_PERSONAL              = "Personal gold",
     AUTOREPAIR_SOURCE_GUILD_FIRST           = "Guild funds first",
     AUTOREPAIR_SOURCE_GUILD_ONLY            = "Guild funds only",
+    AUTOREPAIR_SHOW_MESSAGE_DESC            = "Print a chat message when gear is auto-repaired.",
     AUTOREPAIR_CALLOUT                      = "Hold %s when opening a vendor to skip auto-repair.",
 
     -- Splash page
@@ -344,6 +346,7 @@ Lantern:RegisterLocale("enUS", {
     AUTOSELL_ENABLE_DESC                    = "Enable or disable Auto Sell.",
     AUTOSELL_SELL_GRAYS                     = "Sell gray items",
     AUTOSELL_SELL_GRAYS_DESC                = "Automatically sell all poor quality (gray) items.",
+    AUTOSELL_SHOW_MESSAGE_DESC              = "Print a chat message when items are auto-sold.",
     AUTOSELL_CALLOUT                        = "Hold %s when opening a vendor to skip auto-sell.",
     AUTOSELL_DRAG_DROP                      = "Drag and drop:",
     AUTOSELL_DRAG_GLOBAL_DESC               = "Drag an item from your bags and drop it here to add it to the global sell list.",

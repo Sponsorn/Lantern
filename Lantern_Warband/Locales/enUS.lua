@@ -257,30 +257,24 @@ ns:RegisterLocale("enUS", {
     WARBAND_PAGE_TREATISE_TITLE                 = "Treatise",
     WARBAND_PAGE_TREATISE_DESC                  = "Weekly treatise tracking.",
 
-    WARBAND_TREATISE_DESCRIPTION                = "Shows which Midnight treatises are in your warbank when visiting the Account Bank. Highlights your professions and tracks weekly quest completion.",
-    WARBAND_TREATISE_ENABLE                     = "Enable treatise panel",
-    WARBAND_TREATISE_ENABLE_DESC                = "Show the treatise panel button on the bank frame when the Account Bank tab is active.",
+    WARBAND_TREATISE_DESCRIPTION                = "Adds a button to the Account Bank that withdraws one treatise for each of your professions that hasn't been completed this week.",
+    WARBAND_TREATISE_ENABLE                     = "Enable treatise button",
+    WARBAND_TREATISE_ENABLE_DESC                = "Show the treatise button on the bank frame when the Account Bank tab is active.",
 
     ---------------------------------------------------------------------------
     -- Treatise/UI.lua: UI strings
     ---------------------------------------------------------------------------
 
-    WARBAND_TREATISE_UI_TITLE                   = "Treatises",
     WARBAND_TREATISE_UI_BANK_BTN                = "Treatise",
     WARBAND_TREATISE_UI_BANK_TOOLTIP            = "Lantern Treatise",
-    WARBAND_TREATISE_UI_BANK_TOOLTIP_DESC       = "View warbank treatises and take for your professions.",
-    WARBAND_TREATISE_UI_TAKE_BTN                = "Take 1 for each skill",
-    WARBAND_TREATISE_UI_TAKE_TOOLTIP            = "Withdraw Treatises",
-    WARBAND_TREATISE_UI_TAKE_TOOLTIP_DESC       = "Take one treatise for each of your professions that hasn't been completed this week.",
-    WARBAND_TREATISE_UI_NOTHING                 = "Nothing to take.",
+    WARBAND_TREATISE_UI_BANK_TOOLTIP_DESC       = "Take one treatise for each of your professions that hasn't been completed this week.",
     WARBAND_TREATISE_UI_NO_BAG_SPACE            = "No free bag space.",
-    WARBAND_TREATISE_UI_COMPLETED               = "Completed",
-    WARBAND_TREATISE_UI_REASON_BANK_CLOSED      = "Bank closed",
 
     ---------------------------------------------------------------------------
     -- Treatise/Treatise.lua: print messages
     ---------------------------------------------------------------------------
 
     WARBAND_TREATISE_MSG_TOOK                   = "Took %d treatise%s: %s.",
+    WARBAND_TREATISE_MSG_ALL_DONE               = "All treatises completed this week.",
     WARBAND_TREATISE_MSG_TOOK_NONE              = "No treatises to take.",
 });

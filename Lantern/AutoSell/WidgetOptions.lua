@@ -121,6 +121,14 @@ module.widgetOptions = function()
         set = function(val) db().sellGrays = val and true or false; end,
     });
     table.insert(widgets, {
+        type = "toggle",
+        label = L["SHARED_SHOW_CHAT_MESSAGE"],
+        desc = L["AUTOSELL_SHOW_MESSAGE_DESC"],
+        disabled = isDisabled,
+        get = function() return db().showMessage ~= false; end,
+        set = function(val) db().showMessage = val; end,
+    });
+    table.insert(widgets, {
         type = "callout",
         text = format(L["AUTOSELL_CALLOUT"], Lantern:GetModifierName()),
         severity = "notice",

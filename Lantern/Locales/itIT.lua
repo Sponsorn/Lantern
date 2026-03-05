@@ -16,12 +16,15 @@ Lantern:RegisterLocale("itIT", {
     SHARED_PREVIEW                          = "Anteprima",
     SHARED_GROUP_DISPLAY                    = "Visualizzazione",
     SHARED_ANIMATION_STYLE                  = "Stile animazione",
+    SHARED_SHOW_CHAT_MESSAGE                = "Mostra messaggio in chat",
 
     -- General settings
     GENERAL_MINIMAP_SHOW                    = "Mostra icona minimappa",
     GENERAL_MINIMAP_SHOW_DESC               = "Mostra o nascondi il pulsante di Lantern sulla minimappa.",
     GENERAL_MINIMAP_MODERN                  = "Icona minimappa moderna",
     GENERAL_MINIMAP_MODERN_DESC             = "Rimuove il bordo e lo sfondo dal pulsante della minimappa per un aspetto moderno con un bagliore di lanterna al passaggio del mouse.",
+    GENERAL_AUTO_ENABLE_NEW                 = "Attiva automaticamente le nuove funzionalita",
+    GENERAL_AUTO_ENABLE_NEW_DESC            = "Attiva automaticamente i moduli appena aggiunti. Se disattivato, i nuovi moduli iniziano disattivati e devono essere attivati manualmente.",
     GENERAL_PAUSE_MODIFIER                  = "Tasto modificatore pausa",
     GENERAL_PAUSE_MODIFIER_DESC             = "Tieni premuto questo tasto per mettere in pausa temporaneamente le funzioni automatiche (Auto Quest, Auto Queue, Auto Repair, ecc.).",
 
@@ -40,7 +43,6 @@ Lantern:RegisterLocale("itIT", {
     AUTOQUEUE_ENABLE_DESC                   = "Attiva o disattiva Auto Queue.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Accetta automaticamente i controlli ruolo",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accetta automaticamente i controlli ruolo LFG.",
-    AUTOQUEUE_ANNOUNCE                      = "Annuncio in chat",
     AUTOQUEUE_ANNOUNCE_DESC                 = "Invia un messaggio in chat quando un controllo ruolo viene accettato automaticamente.",
     AUTOQUEUE_CALLOUT                       = "Tieni premuto %s per mettere in pausa temporaneamente. I ruoli sono impostati nello strumento LFG.",
 
@@ -86,6 +88,7 @@ Lantern:RegisterLocale("itIT", {
     AUTOREPAIR_SOURCE_PERSONAL              = "Oro personale",
     AUTOREPAIR_SOURCE_GUILD_FIRST           = "Prima fondi gilda",
     AUTOREPAIR_SOURCE_GUILD_ONLY            = "Solo fondi gilda",
+    AUTOREPAIR_SHOW_MESSAGE_DESC            = "Mostra un messaggio in chat quando l'equipaggiamento viene riparato automaticamente.",
     AUTOREPAIR_CALLOUT                      = "Tieni premuto %s quando apri un mercante per saltare la riparazione automatica.",
 
     -- Splash page
@@ -311,6 +314,7 @@ Lantern:RegisterLocale("itIT", {
     AUTOSELL_ENABLE_DESC                    = "Attiva o disattiva Auto Sell.",
     AUTOSELL_SELL_GRAYS                     = "Vendi oggetti grigi",
     AUTOSELL_SELL_GRAYS_DESC                = "Vende automaticamente tutti gli oggetti di qualita scadente (grigi).",
+    AUTOSELL_SHOW_MESSAGE_DESC              = "Mostra un messaggio in chat quando gli oggetti vengono venduti automaticamente.",
     AUTOSELL_CALLOUT                        = "Tieni premuto %s quando apri un mercante per saltare la vendita automatica.",
     AUTOSELL_DRAG_DROP                      = "Trascina e rilascia:",
     AUTOSELL_DRAG_GLOBAL_DESC               = "Trascina un oggetto dalle borse e rilascialo qui per aggiungerlo alla lista di vendita globale.",
@@ -642,4 +646,25 @@ Lantern:RegisterLocale("itIT", {
     MAPPINS_GROUP_CATEGORIES                = "Categorie",
     MAPPINS_CAT_TRAINERS                    = "Istruttori di professione",
     MAPPINS_CAT_TRAINERS_DESC               = "Mostrare le posizioni degli istruttori di professione.",
+
+    -- Flight Path Line
+    MAPLINE_TITLE                           = "Linea percorso di volo",
+    MAPLINE_DESC                            = "Disegna una linea direzionale sulla mappa del mondo durante il volo.",
+    MAPLINE_ENABLE_DESC                     = "Mostrare una linea tratteggiata sulla mappa del mondo che indica la direzione di volo.",
+    MAPLINE_STYLE                           = "Stile linea",
+    MAPLINE_STYLE_DESC                      = "Come appare la linea direzionale sulla mappa.",
+    MAPLINE_STYLE_SOLID                     = "Continua",
+    MAPLINE_STYLE_DOTTED                    = "Tratteggiata",
+    MAPLINE_STYLE_THICK                     = "Spessa",
+    MAPLINE_COLOR                           = "Colore linea",
+    MAPLINE_COLOR_DESC                      = "Colore e opacita della linea direzionale.",
+    MAPLINE_LENGTH                          = "Lunghezza linea",
+    MAPLINE_LENGTH_DESC                     = "Quanto si estende la linea direzionale dalla tua posizione.",
+
+    -- Skip Cinematics
+    SKIPCINEMATICS_TITLE                    = "Salta filmati",
+    SKIPCINEMATICS_DESC                     = "Salta automaticamente filmati, cinematiche e scene.",
+    SKIPCINEMATICS_ENABLE_DESC              = "Salta automaticamente filmati, cinematiche e scene di gioco. Tieni premuto %s per guardare.",
+    SKIPCINEMATICS_SKIPPED                  = "Filmato saltato.",
+    SKIPCINEMATICS_SHOW_MESSAGE_DESC        = "Mostra un messaggio in chat quando un filmato viene saltato.",
 });

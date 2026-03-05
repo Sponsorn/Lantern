@@ -281,8 +281,21 @@ CUSTOM_OPTIONS["map_general"] = function()
 end
 
 CUSTOM_OPTIONS["skipCinematics"] = function()
+    local function db()
+        Lantern.db.skipCinematics = Lantern.db.skipCinematics or {};
+        return Lantern.db.skipCinematics;
+    end
+
     return {
         moduleToggle("SkipCinematics", L["ENABLE"], format(L["SKIPCINEMATICS_ENABLE_DESC"], Lantern:GetModifierName())),
+        {
+            type = "toggle",
+            label = L["SHARED_SHOW_CHAT_MESSAGE"],
+            desc = L["SKIPCINEMATICS_SHOW_MESSAGE_DESC"],
+            disabled = function() return not moduleEnabled("SkipCinematics"); end,
+            get = function() return db().showMessage ~= false; end,
+            set = function(val) db().showMessage = val; end,
+        },
     };
 end
 
@@ -314,7 +327,7 @@ CUSTOM_OPTIONS["autoQueue"] = function()
         },
         {
             type = "toggle",
-            label = L["AUTOQUEUE_ANNOUNCE"],
+            label = L["SHARED_SHOW_CHAT_MESSAGE"],
             desc = L["AUTOQUEUE_ANNOUNCE_DESC"],
             disabled = isDisabled,
             get = function() return db().announce; end,
@@ -535,6 +548,14 @@ CUSTOM_OPTIONS["autoRepair"] = function()
             disabled = isDisabled,
             get = function() return db().source; end,
             set = function(val) db().source = val; end,
+        },
+        {
+            type = "toggle",
+            label = L["SHARED_SHOW_CHAT_MESSAGE"],
+            desc = L["AUTOREPAIR_SHOW_MESSAGE_DESC"],
+            disabled = isDisabled,
+            get = function() return db().showMessage ~= false; end,
+            set = function(val) db().showMessage = val; end,
         },
         {
             type = "callout",

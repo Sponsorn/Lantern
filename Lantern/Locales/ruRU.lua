@@ -16,12 +16,15 @@ Lantern:RegisterLocale("ruRU", {
     -- SHARED_PREVIEW                          = "Preview",
     -- SHARED_GROUP_DISPLAY                    = "Display",
     -- SHARED_ANIMATION_STYLE                  = "Animation Style",
+    -- SHARED_SHOW_CHAT_MESSAGE                = "Show chat message",
 
     -- General settings
     -- GENERAL_MINIMAP_SHOW                    = "Show minimap icon",
     -- GENERAL_MINIMAP_SHOW_DESC               = "Show or hide the Lantern minimap button.",
     -- GENERAL_MINIMAP_MODERN                  = "Modern minimap icon",
     -- GENERAL_MINIMAP_MODERN_DESC             = "Remove the border and background from the minimap button for a modern look with a lantern glow on hover.",
+    -- GENERAL_AUTO_ENABLE_NEW                 = "Auto-enable new features",
+    -- GENERAL_AUTO_ENABLE_NEW_DESC            = "Automatically enable newly added modules. When off, new modules start disabled and must be turned on manually.",
     -- GENERAL_PAUSE_MODIFIER                  = "Pause modifier key",
     -- GENERAL_PAUSE_MODIFIER_DESC             = "Hold this key to temporarily pause auto-features (Auto Quest, Auto Queue, Auto Repair, etc.).",
 
@@ -40,7 +43,6 @@ Lantern:RegisterLocale("ruRU", {
     -- AUTOQUEUE_ENABLE_DESC                   = "Enable or disable Auto Queue.",
     -- AUTOQUEUE_AUTO_ACCEPT                   = "Auto-accept role checks",
     -- AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accept LFG role checks automatically.",
-    -- AUTOQUEUE_ANNOUNCE                      = "Chat announce",
     -- AUTOQUEUE_ANNOUNCE_DESC                 = "Print a chat message when a role check is auto-accepted.",
     -- AUTOQUEUE_CALLOUT                       = "Hold %s to temporarily pause. Roles are set in the LFG tool.",
 
@@ -86,6 +88,7 @@ Lantern:RegisterLocale("ruRU", {
     -- AUTOREPAIR_SOURCE_PERSONAL              = "Personal gold",
     -- AUTOREPAIR_SOURCE_GUILD_FIRST           = "Guild funds first",
     -- AUTOREPAIR_SOURCE_GUILD_ONLY            = "Guild funds only",
+    -- AUTOREPAIR_SHOW_MESSAGE_DESC            = "Print a chat message when gear is auto-repaired.",
     -- AUTOREPAIR_CALLOUT                      = "Hold %s when opening a vendor to skip auto-repair.",
 
     -- Splash page
@@ -311,6 +314,7 @@ Lantern:RegisterLocale("ruRU", {
     -- AUTOSELL_ENABLE_DESC                    = "Enable or disable Auto Sell.",
     -- AUTOSELL_SELL_GRAYS                     = "Sell gray items",
     -- AUTOSELL_SELL_GRAYS_DESC                = "Automatically sell all poor quality (gray) items.",
+    -- AUTOSELL_SHOW_MESSAGE_DESC              = "Print a chat message when items are auto-sold.",
     -- AUTOSELL_CALLOUT                        = "Hold %s when opening a vendor to skip auto-sell.",
     -- AUTOSELL_DRAG_DROP                      = "Drag and drop:",
     -- AUTOSELL_DRAG_GLOBAL_DESC               = "Drag an item from your bags and drop it here to add it to the global sell list.",
@@ -642,4 +646,25 @@ Lantern:RegisterLocale("ruRU", {
     -- MAPPINS_GROUP_CATEGORIES                = "Categories",
     -- MAPPINS_CAT_TRAINERS                    = "Profession Trainers",
     -- MAPPINS_CAT_TRAINERS_DESC               = "Show profession trainer locations.",
+
+    -- Flight Path Line
+    -- MAPLINE_TITLE                           = "Flight Path Line",
+    -- MAPLINE_DESC                            = "Draws a dotted directional line on the world map while flying.",
+    -- MAPLINE_ENABLE_DESC                     = "Show a dotted line on the world map indicating your flight direction.",
+    -- MAPLINE_STYLE                           = "Line Style",
+    -- MAPLINE_STYLE_DESC                      = "How the directional line appears on the map.",
+    -- MAPLINE_STYLE_SOLID                     = "Solid",
+    -- MAPLINE_STYLE_DOTTED                    = "Dotted",
+    -- MAPLINE_STYLE_THICK                     = "Thick",
+    -- MAPLINE_COLOR                           = "Line Color",
+    -- MAPLINE_COLOR_DESC                      = "Color and opacity of the directional line.",
+    -- MAPLINE_LENGTH                          = "Line Length",
+    -- MAPLINE_LENGTH_DESC                     = "How far the directional line extends from your position.",
+
+    -- Skip Cinematics
+    -- SKIPCINEMATICS_TITLE                    = "Skip Cinematics",
+    -- SKIPCINEMATICS_DESC                     = "Automatically skip movies, cinematics, and cutscenes.",
+    -- SKIPCINEMATICS_ENABLE_DESC              = "Skip in-game movies, cinematics, and cutscenes automatically. Hold %s to watch.",
+    -- SKIPCINEMATICS_SKIPPED                  = "Cinematic skipped.",
+    -- SKIPCINEMATICS_SHOW_MESSAGE_DESC        = "Print a message in chat when a cinematic is skipped.",
 });

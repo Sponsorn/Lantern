@@ -16,12 +16,15 @@ Lantern:RegisterLocale("deDE", {
     SHARED_PREVIEW                          = "Vorschau",
     SHARED_GROUP_DISPLAY                    = "Anzeige",
     SHARED_ANIMATION_STYLE                  = "Animationsstil",
+    SHARED_SHOW_CHAT_MESSAGE                = "Chat-Nachricht anzeigen",
 
     -- General settings
     GENERAL_MINIMAP_SHOW                    = "Minimap-Symbol anzeigen",
     GENERAL_MINIMAP_SHOW_DESC               = "Lantern Minimap-Symbol ein- oder ausblenden.",
     GENERAL_MINIMAP_MODERN                  = "Modernes Minimap-Symbol",
     GENERAL_MINIMAP_MODERN_DESC             = "Rahmen und Hintergrund des Minimap-Symbols entfernen fuer ein modernes Aussehen mit Laternen-Leuchten beim Ueberfahren.",
+    GENERAL_AUTO_ENABLE_NEW                 = "Neue Features automatisch aktivieren",
+    GENERAL_AUTO_ENABLE_NEW_DESC            = "Neu hinzugefuegte Module automatisch aktivieren. Wenn deaktiviert, starten neue Module deaktiviert und muessen manuell eingeschaltet werden.",
     GENERAL_PAUSE_MODIFIER                  = "Pause-Zusatztaste",
     GENERAL_PAUSE_MODIFIER_DESC             = "Halte diese Taste gedrueckt, um Auto-Funktionen voruebergehend zu pausieren (Auto Quest, Auto Queue, Auto Repair, usw.).",
 
@@ -40,7 +43,6 @@ Lantern:RegisterLocale("deDE", {
     AUTOQUEUE_ENABLE_DESC                   = "Auto Queue aktivieren oder deaktivieren.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Rollenpruefungen automatisch annehmen",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "LFG-Rollenpruefungen automatisch annehmen.",
-    AUTOQUEUE_ANNOUNCE                      = "Chat-Benachrichtigung",
     AUTOQUEUE_ANNOUNCE_DESC                 = "Chat-Nachricht ausgeben, wenn eine Rollenpruefung automatisch angenommen wurde.",
     AUTOQUEUE_CALLOUT                       = "Halte %s gedrueckt, um voruebergehend zu pausieren. Rollen werden im LFG-Tool festgelegt.",
 
@@ -86,6 +88,7 @@ Lantern:RegisterLocale("deDE", {
     AUTOREPAIR_SOURCE_PERSONAL              = "Eigenes Gold",
     AUTOREPAIR_SOURCE_GUILD_FIRST           = "Gildenbank zuerst",
     AUTOREPAIR_SOURCE_GUILD_ONLY            = "Nur Gildenbank",
+    AUTOREPAIR_SHOW_MESSAGE_DESC            = "Eine Chat-Nachricht ausgeben, wenn Ausruestung automatisch repariert wird.",
     AUTOREPAIR_CALLOUT                      = "Halte %s beim Oeffnen eines Haendlers, um Auto-Reparatur zu ueberspringen.",
 
     -- Splash page
@@ -311,6 +314,7 @@ Lantern:RegisterLocale("deDE", {
     AUTOSELL_ENABLE_DESC                    = "Auto Sell aktivieren oder deaktivieren.",
     AUTOSELL_SELL_GRAYS                     = "Graue Gegenstaende verkaufen",
     AUTOSELL_SELL_GRAYS_DESC                = "Automatisch alle Gegenstaende schlechter Qualitaet (grau) verkaufen.",
+    AUTOSELL_SHOW_MESSAGE_DESC              = "Eine Chat-Nachricht ausgeben, wenn Gegenstaende automatisch verkauft werden.",
     AUTOSELL_CALLOUT                        = "Halte %s beim Oeffnen eines Haendlers, um Auto-Verkauf zu ueberspringen.",
     AUTOSELL_DRAG_DROP                      = "Drag & Drop:",
     AUTOSELL_DRAG_GLOBAL_DESC               = "Ziehe einen Gegenstand aus deinen Taschen und lege ihn hier ab, um ihn zur globalen Verkaufsliste hinzuzufuegen.",
@@ -642,4 +646,25 @@ Lantern:RegisterLocale("deDE", {
     MAPPINS_GROUP_CATEGORIES                = "Kategorien",
     MAPPINS_CAT_TRAINERS                    = "Berufslehrer",
     MAPPINS_CAT_TRAINERS_DESC               = "Standorte von Berufslehrern anzeigen.",
+
+    -- Flight Path Line
+    MAPLINE_TITLE                           = "Flugweg-Linie",
+    MAPLINE_DESC                            = "Zeichnet eine gerichtete Linie auf der Weltkarte waehrend des Fluges.",
+    MAPLINE_ENABLE_DESC                     = "Eine gepunktete Linie auf der Weltkarte anzeigen, die deine Flugrichtung angibt.",
+    MAPLINE_STYLE                           = "Linienstil",
+    MAPLINE_STYLE_DESC                      = "Wie die Richtungslinie auf der Karte dargestellt wird.",
+    MAPLINE_STYLE_SOLID                     = "Durchgehend",
+    MAPLINE_STYLE_DOTTED                    = "Gepunktet",
+    MAPLINE_STYLE_THICK                     = "Dick",
+    MAPLINE_COLOR                           = "Linienfarbe",
+    MAPLINE_COLOR_DESC                      = "Farbe und Deckkraft der Richtungslinie.",
+    MAPLINE_LENGTH                          = "Linienlaenge",
+    MAPLINE_LENGTH_DESC                     = "Wie weit sich die Richtungslinie von deiner Position erstreckt.",
+
+    -- Skip Cinematics
+    SKIPCINEMATICS_TITLE                    = "Filmsequenzen ueberspringen",
+    SKIPCINEMATICS_DESC                     = "Filme, Filmsequenzen und Zwischensequenzen automatisch ueberspringen.",
+    SKIPCINEMATICS_ENABLE_DESC              = "Filme, Filmsequenzen und Zwischensequenzen automatisch ueberspringen. Halte %s zum Ansehen.",
+    SKIPCINEMATICS_SKIPPED                  = "Filmsequenz uebersprungen.",
+    SKIPCINEMATICS_SHOW_MESSAGE_DESC        = "Eine Nachricht im Chat ausgeben, wenn eine Filmsequenz uebersprungen wird.",
 });

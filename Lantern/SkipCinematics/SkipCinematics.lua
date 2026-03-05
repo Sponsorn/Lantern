@@ -8,11 +8,33 @@ local module = Lantern:NewModule("SkipCinematics", {
     skipOptions = true,
 });
 
+local DEFAULTS = {
+    showMessage = true,
+};
+
+local function ensureDB(self)
+    if (not self.addon.db) then return; end
+    if (not self.addon.db.skipCinematics) then
+        self.addon.db.skipCinematics = {};
+    end
+    self.db = self.addon.db.skipCinematics;
+    for k, v in pairs(DEFAULTS) do
+        if (self.db[k] == nil) then
+            self.db[k] = v;
+        end
+    end
+end
+
 local function shouldPause()
     return Lantern:IsModifierDown();
 end
 
+function module:OnInit()
+    ensureDB(self);
+end
+
 function module:OnEnable()
+    ensureDB(self);
     self.addon:ModuleRegisterEvent(self, "PLAY_MOVIE", self.OnPlayMovie);
     self.addon:ModuleRegisterEvent(self, "CINEMATIC_START", self.OnCinematicStart);
 end
@@ -20,7 +42,9 @@ end
 function module:OnPlayMovie(_, movieID)
     if (not self.enabled or shouldPause()) then return; end
     MovieFrame:StopMovie();
-    Lantern:Print(L["SKIPCINEMATICS_SKIPPED"]);
+    if (self.db.showMessage) then
+        Lantern:Print(L["SKIPCINEMATICS_SKIPPED"]);
+    end
 end
 
 function module:OnCinematicStart()
@@ -36,7 +60,9 @@ function module:OnCinematicStart()
             CancelScene();
         end
     end);
-    Lantern:Print(L["SKIPCINEMATICS_SKIPPED"]);
+    if (self.db.showMessage) then
+        Lantern:Print(L["SKIPCINEMATICS_SKIPPED"]);
+    end
 end
 
 Lantern:RegisterModule(module);

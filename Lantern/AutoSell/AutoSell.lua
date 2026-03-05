@@ -10,6 +10,7 @@ local module = Lantern:NewModule("AutoSell", {
 
 local DEFAULTS = {
     sellGrays = true,
+    showMessage = true,
 };
 
 local function ensureDB(self)
@@ -78,7 +79,7 @@ function module:OnMerchantShow()
     local queue = {};
     local totalCopper = 0;
 
-    for bag = 0, NUM_BAG_SLOTS do
+    for bag = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
         local numSlots = C_Container.GetContainerNumSlots(bag);
         for slot = 1, numSlots do
             local info = C_Container.GetContainerItemInfo(bag, slot);
@@ -125,8 +126,10 @@ function module:OnMerchantShow()
         end
     end, #queue);
 
-    local costText = Lantern:Convert("money:format_copper", totalCopper);
-    Lantern:Print(format(L["AUTOSELL_MSG_SOLD_ITEMS"], itemCount, costText));
+    if (self.db.showMessage) then
+        local costText = Lantern:Convert("money:format_copper", totalCopper);
+        Lantern:Print(format(L["AUTOSELL_MSG_SOLD_ITEMS"], itemCount, costText));
+    end
 end
 
 Lantern:RegisterModule(module);
