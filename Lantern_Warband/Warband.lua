@@ -60,7 +60,7 @@ local function ensureDB(self)
         self.db.treatise = {};
     end
     if (self.db.treatise.enabled == nil) then
-        self.db.treatise.enabled = true;
+        self.db.treatise.enabled = false;
     end
 end
 

@@ -22,7 +22,7 @@ local MIDNIGHT_TREATISES = {
     { name = "Alchemy",        skillLineID = 171, itemID = 245755, questID = 95127 },
     { name = "Blacksmithing",  skillLineID = 164, itemID = 245763, questID = 95128 },
     { name = "Enchanting",     skillLineID = 333, itemID = 245759, questID = 95129 },
-    { name = "Engineering",    skillLineID = 202, itemID = 245809, questID = 83728 },
+    { name = "Engineering",    skillLineID = 202, itemID = 245809, questID = 95138 },
     { name = "Herbalism",      skillLineID = 182, itemID = 245761, questID = 95130 },
     { name = "Inscription",    skillLineID = 773, itemID = 245757, questID = 95131 },
     { name = "Jewelcrafting",  skillLineID = 755, itemID = 245760, questID = 95133 },

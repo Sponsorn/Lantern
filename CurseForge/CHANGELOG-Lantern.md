@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.6.6
-- Add: Auto-enable new features toggle in General settings, controls whether newly added modules are enabled or disabled by default (off by default)
+- Add: Auto-enable new features toggle in General settings, controls whether newly added modules are enabled or disabled by default (off by default). Sorry for any inconvenience caused by new modules being enabled automatically in previous versions!
 - Add: Skip Cinematics now prints a chat message when a cinematic is skipped if enabled (toggleable in settings)
 - Add: "Show chat message" toggle for Auto Repair and Auto Sell modules
 - Fix: Auto Sell now correctly sells items from the reagent bag
