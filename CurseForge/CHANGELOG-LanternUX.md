@@ -1,7 +1,11 @@
 # Changelog
 
+## 0.2.5 - 2026-03-07
+- Fix: DataTable column header sort arrows now stay inside column bounds instead of blending into adjacent columns
+- Change: DataTable column headers and cells have improved padding for better readability
+
 ## 0.2.4 - 2026-03-04
-- Add: DataTable widget — sortable, scrollable data table for analytics and list views
+- Add: DataTable widget — sortable, scrollable data table with pagination footer for analytics and list views
 - Add: Outer border on settings panel for better visual definition
 
 ## 0.2.3 - 2026-02-25

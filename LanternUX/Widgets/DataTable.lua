@@ -29,11 +29,15 @@ function LanternUX.CreateDataTable(parent, config)
     dt._columns     = config.columns or {};
     dt._rowHeight   = config.rowHeight or DEFAULT_ROW_HEIGHT;
     dt._onRowClick  = config.onRowClick;
+    dt._rowTooltip  = config.rowTooltip;
     dt._data        = {};
     dt._sortKey     = config.defaultSort and config.defaultSort.key or nil;
     dt._sortAsc     = config.defaultSort and config.defaultSort.ascending or false;
     dt._rowPool     = {};
     dt._activeRows  = 0;
+    dt._page        = 1;
+    dt._pageSize    = config.pageSize or nil;
+    dt._totalPages  = 1;
 
     -- Outer container frame
     local frameName = NextName("LUX_DT_");
@@ -73,25 +77,29 @@ function LanternUX.CreateDataTable(parent, config)
         btn:SetWidth(col.width);
         btn:SetPoint("LEFT", headerFrame, "LEFT", xOffset, 0);
 
+        local arrow = btn:CreateFontString(btnName .. "_Arrow", "OVERLAY");
+        arrow:SetFontObject(T.fontSmallBold);
+        arrow:SetText("");
+        arrow:SetTextColor(unpack(T.accent));
+        btn._arrow = arrow;
+
         local label = btn:CreateFontString(btnName .. "_Text", "OVERLAY");
         label:SetFontObject(T.fontSmallBold);
-        label:SetPoint("LEFT", btn, "LEFT", 0, 0);
-        label:SetPoint("RIGHT", btn, "RIGHT", -4, 0);
         label:SetJustifyH(col.align or "LEFT");
         label:SetText(col.label or "");
         label:SetTextColor(unpack(T.textDim));
         btn._label = label;
 
-        local arrow = btn:CreateFontString(btnName .. "_Arrow", "OVERLAY");
-        arrow:SetFontObject(T.fontSmallBold);
+        -- Anchor arrow inside the button edge, label fills remaining space
         if (col.align == "RIGHT") then
-            arrow:SetPoint("RIGHT", label, "LEFT", -1, 0);
+            arrow:SetPoint("LEFT", btn, "LEFT", 2, 0);
+            label:SetPoint("LEFT", arrow, "RIGHT", 2, 0);
+            label:SetPoint("RIGHT", btn, "RIGHT", -4, 0);
         else
-            arrow:SetPoint("LEFT", label, "RIGHT", 1, 0);
+            label:SetPoint("LEFT", btn, "LEFT", 4, 0);
+            arrow:SetPoint("RIGHT", btn, "RIGHT", -4, 0);
+            label:SetPoint("RIGHT", arrow, "LEFT", -2, 0);
         end
-        arrow:SetText("");
-        arrow:SetTextColor(unpack(T.accent));
-        btn._arrow = arrow;
 
         -- Hover highlight
         local hoverTex = btn:CreateTexture(btnName .. "_Hover", "HIGHLIGHT");
@@ -145,6 +153,88 @@ function LanternUX.CreateDataTable(parent, config)
     noDataText:SetText("");
     noDataText:Hide();
     dt._noDataText = noDataText;
+
+    ---------------------------------------------------------------------------
+    -- Pagination footer
+    ---------------------------------------------------------------------------
+
+    local footer, footerPrev, footerNext, footerLabel;
+
+    if (dt._pageSize) then
+        local FOOTER_H = 28;
+
+        scrollArea:ClearAllPoints();
+        scrollArea:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", 0, 0);
+        scrollArea:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, FOOTER_H);
+
+        local footerName = NextName("LUX_DT_");
+        footer = CreateFrame("Frame", footerName .. "_Footer", frame);
+        footer:SetHeight(FOOTER_H);
+        footer:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0);
+        footer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0);
+
+        local footerBg = footer:CreateTexture(footerName .. "_FooterBg", "BACKGROUND");
+        footerBg:SetAllPoints();
+        footerBg:SetColorTexture(unpack(T.cardBg));
+
+        local footerBorder = footer:CreateTexture(footerName .. "_FooterBorder", "ARTWORK");
+        footerBorder:SetHeight(1);
+        footerBorder:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, 0);
+        footerBorder:SetPoint("TOPRIGHT", footer, "TOPRIGHT", 0, 0);
+        footerBorder:SetColorTexture(unpack(T.cardBorder));
+
+        local prevName = NextName("LUX_DT_");
+        footerPrev = CreateFrame("Button", prevName .. "_Prev", footer);
+        footerPrev:SetSize(FOOTER_H, FOOTER_H);
+        footerPrev:SetPoint("LEFT", footer, "LEFT", 0, 0);
+
+        local prevLabel = footerPrev:CreateFontString(prevName .. "_PrevText", "OVERLAY");
+        prevLabel:SetFontObject(T.fontSmallBold);
+        prevLabel:SetPoint("CENTER");
+        prevLabel:SetText("<");
+        prevLabel:SetTextColor(unpack(T.text));
+        footerPrev._label = prevLabel;
+
+        local prevHover = footerPrev:CreateTexture(prevName .. "_PrevHL", "HIGHLIGHT");
+        prevHover:SetAllPoints();
+        prevHover:SetColorTexture(unpack(T.hover));
+
+        footerPrev:SetScript("OnClick", function()
+            if (dt._page > 1) then
+                dt._page = dt._page - 1;
+                dt:Refresh();
+            end
+        end);
+
+        local nextName = NextName("LUX_DT_");
+        footerNext = CreateFrame("Button", nextName .. "_Next", footer);
+        footerNext:SetSize(FOOTER_H, FOOTER_H);
+        footerNext:SetPoint("RIGHT", footer, "RIGHT", 0, 0);
+
+        local nextLabel = footerNext:CreateFontString(nextName .. "_NextText", "OVERLAY");
+        nextLabel:SetFontObject(T.fontSmallBold);
+        nextLabel:SetPoint("CENTER");
+        nextLabel:SetText(">");
+        nextLabel:SetTextColor(unpack(T.text));
+        footerNext._label = nextLabel;
+
+        local nextHover = footerNext:CreateTexture(nextName .. "_NextHL", "HIGHLIGHT");
+        nextHover:SetAllPoints();
+        nextHover:SetColorTexture(unpack(T.hover));
+
+        footerNext:SetScript("OnClick", function()
+            if (dt._page < dt._totalPages) then
+                dt._page = dt._page + 1;
+                dt:Refresh();
+            end
+        end);
+
+        footerLabel = footer:CreateFontString(footerName .. "_PageLabel", "OVERLAY");
+        footerLabel:SetFontObject(T.fontBody);
+        footerLabel:SetPoint("CENTER", footer, "CENTER", 0, 0);
+        footerLabel:SetTextColor(unpack(T.textDim));
+        footerLabel:SetText("");
+    end
 
     ---------------------------------------------------------------------------
     -- Row pool
@@ -208,8 +298,8 @@ function LanternUX.CreateDataTable(parent, config)
                 row._cells[i] = cell;
             end
             cell:ClearAllPoints();
-            cell:SetPoint("LEFT", row, "LEFT", cx, 0);
-            cell:SetWidth(col.width - CELL_PAD);
+            cell:SetPoint("LEFT", row, "LEFT", cx + 4, 0);
+            cell:SetWidth(col.width - CELL_PAD - 4);
             cell:SetJustifyH(col.align or "LEFT");
             cell:SetTextColor(unpack(T.text));
             cell:SetText("");
@@ -291,6 +381,25 @@ function LanternUX.CreateDataTable(parent, config)
         self._noDataText:SetText(text or "");
     end
 
+    function dt:SetPage(n)
+        self._page = n or 1;
+        self:Refresh();
+    end
+
+    function dt:GetPage()
+        return self._page;
+    end
+
+    function dt:GetTotalPages()
+        return self._totalPages;
+    end
+
+    function dt:SetPageSize(n)
+        self._pageSize = n;
+        self._page = 1;
+        self:Refresh();
+    end
+
     function dt:Refresh()
         ReleaseAllRows();
         self._noDataText:Hide();
@@ -310,14 +419,36 @@ function LanternUX.CreateDataTable(parent, config)
         if (#sorted == 0) then
             self._noDataText:Show();
             self._scroll:SetContentHeight(60);
+            if (footerLabel) then
+                footerLabel:SetText("");
+                footerPrev:Disable();
+                footerNext:Disable();
+                footerPrev._label:SetTextColor(unpack(T.textDim));
+                footerNext._label:SetTextColor(unpack(T.textDim));
+            end
             return;
         end
 
+        local startIdx = 1;
+        local endIdx = #sorted;
+        if (self._pageSize and self._pageSize > 0) then
+            self._totalPages = math.ceil(#sorted / self._pageSize);
+            if (self._page > self._totalPages) then self._page = self._totalPages; end
+            if (self._page < 1) then self._page = 1; end
+            startIdx = (self._page - 1) * self._pageSize + 1;
+            endIdx = math.min(self._page * self._pageSize, #sorted);
+        else
+            self._totalPages = 1;
+        end
+
         local rowH = self._rowHeight;
-        for i, entry in ipairs(sorted) do
-            local row = AcquireRow(i);
-            row:SetPoint("TOPLEFT", scroll.scrollChild, "TOPLEFT", 0, -((i - 1) * rowH));
-            row:SetPoint("TOPRIGHT", scroll.scrollChild, "TOPRIGHT", 0, -((i - 1) * rowH));
+        local rowIndex = 0;
+        for i = startIdx, endIdx do
+            local entry = sorted[i];
+            rowIndex = rowIndex + 1;
+            local row = AcquireRow(rowIndex);
+            row:SetPoint("TOPLEFT", scroll.scrollChild, "TOPLEFT", 0, -((rowIndex - 1) * rowH));
+            row:SetPoint("TOPRIGHT", scroll.scrollChild, "TOPRIGHT", 0, -((rowIndex - 1) * rowH));
             EnsureRowCells(row, self._columns);
 
             for j, col in ipairs(self._columns) do
@@ -332,13 +463,11 @@ function LanternUX.CreateDataTable(parent, config)
 
                 row._cells[j]:SetText(displayText);
 
-                -- Special coloring for item links (already have color codes)
                 if (col.isLink and value and type(value) == "string" and value:find("|c")) then
                     row._cells[j]:SetTextColor(1, 1, 1, 1);
                 end
             end
 
-            -- Row click handler
             if (self._onRowClick) then
                 local rowData = entry;
                 row:SetScript("OnMouseUp", function(_, button)
@@ -349,10 +478,45 @@ function LanternUX.CreateDataTable(parent, config)
             else
                 row:SetScript("OnMouseUp", nil);
             end
+
+            if (self._rowTooltip) then
+                local rowData = entry;
+                row:SetScript("OnEnter", function(self_row)
+                    GameTooltip:SetOwner(self_row, "ANCHOR_RIGHT");
+                    dt._rowTooltip(rowData, GameTooltip);
+                    GameTooltip:Show();
+                end);
+                row:SetScript("OnLeave", function()
+                    GameTooltip:Hide();
+                end);
+            else
+                row:SetScript("OnEnter", nil);
+                row:SetScript("OnLeave", nil);
+            end
         end
 
-        local totalHeight = #sorted * rowH + 8;
+        local totalHeight = rowIndex * rowH + 8;
         self._scroll:SetContentHeight(totalHeight);
+
+        if (footerLabel) then
+            footerLabel:SetText("Page " .. self._page .. " / " .. self._totalPages);
+            local canPrev = self._page > 1;
+            local canNext = self._page < self._totalPages;
+            if (canPrev) then
+                footerPrev:Enable();
+                footerPrev._label:SetTextColor(unpack(T.text));
+            else
+                footerPrev:Disable();
+                footerPrev._label:SetTextColor(unpack(T.textDim));
+            end
+            if (canNext) then
+                footerNext:Enable();
+                footerNext._label:SetTextColor(unpack(T.text));
+            else
+                footerNext:Disable();
+                footerNext._label:SetTextColor(unpack(T.textDim));
+            end
+        end
     end
 
     return dt;

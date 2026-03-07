@@ -638,6 +638,101 @@ The `frame` function receives the content area as its parent. It is called once 
 
 ---
 
+## DataTable
+
+A standalone sortable, paginated data table for displaying tabular data (e.g., analytics, order history). This is **not** a widget type -- it's a separate component created via `LanternUX.CreateDataTable()`, typically used inside custom frame pages.
+
+### CreateDataTable
+
+```lua
+local dt = LanternUX.CreateDataTable(parent, config)
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `columns` | table | yes | Array of column definitions (see below). |
+| `rowHeight` | number | no | Row height in pixels (default 24). |
+| `pageSize` | number | no | Rows per page. If set, enables pagination footer. If nil, all rows are shown. |
+| `defaultSort` | table | no | `{ key = "columnKey", ascending = true/false }` -- initial sort. |
+| `onRowClick` | function | no | `function(entry)` -- called on left-click of a row. |
+| `rowTooltip` | function | no | `function(entry, tooltip)` -- populates GameTooltip on row hover. |
+
+#### Column Definition
+
+```lua
+{ key = "name", label = "Name", width = 150, align = "LEFT", format = function(val, entry) ... end, isLink = false }
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Data field key used for display and sorting. |
+| `label` | string | Column header text. |
+| `width` | number | Column width in pixels. |
+| `align` | string | Text alignment: `"LEFT"` (default) or `"RIGHT"`. |
+| `format` | function | Optional `function(value, entry)` returning display string. |
+| `isLink` | boolean | If true, preserves WoW item link coloring in cells. |
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `dt:SetData(data)` | Sets the data array. Each entry is a table with keys matching column keys. |
+| `dt:Refresh()` | Re-sorts and re-renders all visible rows. |
+| `dt:SetSortKey(key, ascending)` | Changes the sort column and direction. |
+| `dt:SetNoDataText(text)` | Text shown when the data array is empty. |
+| `dt:SetPage(n)` | Jump to page n (pagination mode only). |
+| `dt:GetPage()` | Returns current page number. |
+| `dt:GetTotalPages()` | Returns total page count. |
+| `dt:SetPageSize(n)` | Changes rows per page and resets to page 1. |
+
+### Properties
+
+| Property | Description |
+|----------|-------------|
+| `dt.frame` | The outer container Frame. Anchor and size this in your layout. |
+
+### Example
+
+```lua
+panel:AddPage("orders", {
+    label = "Orders",
+    frame = function(parent)
+        local f = CreateFrame("Frame", "MyAddon_OrdersPage", parent)
+        f:SetAllPoints()
+
+        local dt = LanternUX.CreateDataTable(f, {
+            columns = {
+                { key = "item",     label = "Item",     width = 200 },
+                { key = "customer", label = "Customer", width = 150 },
+                { key = "tip",      label = "Tip",      width = 100, align = "RIGHT",
+                  format = function(val) return FormatMoney(val) end },
+            },
+            pageSize = 20,
+            defaultSort = { key = "tip", ascending = false },
+            onRowClick = function(entry)
+                if IsShiftKeyDown() then removeOrder(entry) end
+            end,
+            rowTooltip = function(entry, tooltip)
+                tooltip:AddLine(entry.item, 1, 1, 1)
+                tooltip:AddLine("Shift-click to remove", 0.7, 0.7, 0.7)
+            end,
+        })
+
+        dt.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+        dt.frame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
+        dt:SetNoDataText("No orders recorded.")
+        dt:SetData(myOrdersData)
+        dt:Refresh()
+
+        return f
+    end,
+})
+```
+
+Column headers are clickable to sort. Clicking a header toggles between descending and ascending. The active sort column is highlighted with an arrow indicator.
+
+---
+
 ## Tips
 
 ### Dynamic Widget Lists
