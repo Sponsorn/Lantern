@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.1 - 2026-03-06
+- Add: Order type filtering in analytics — choose which order types (guild, personal) to track and display
+- Change: Renamed analytics "Filters" tab to "Settings" and reorganized with order type toggles and customer exclusion sections
+- Fix: Guild order fulfillments not being recorded in analytics — use GetClaimedOrder API as primary lookup instead of relying on view frame state
+- Fix: Incorrect enum fallback values for guild/personal order type detection
+- Add: Pagination on analytics Orders page for large order histories
+- Add: "Orders per page" setting to control how many orders are shown per page
+- Change: Increased max order history limit from 2000 to 10000 (default now 2000)
+- Change: Orders page now uses sortable columns (click headers to sort)
+- Change: Removing orders now requires Shift-click to prevent accidental deletion
+- Change: Dashboard stat cards now use compact money formatting (e.g., "1.2k g" instead of full amounts)
+- Add: Hover tooltips on dashboard tip stat cards showing the full money amount
+- Fix: Background sound notification not playing when game is in the background — delay playback briefly after enabling sound engine
+
 ## 0.6.0 - 2026-03-04
 - Add: Filters page in analytics — exclude specific customers from all analytics views
 - Add: Orders page in analytics — view and remove individual recorded orders

@@ -97,10 +97,12 @@ end
 
 local function getOrderInfoByID(orderID)
     if (not orderID) then return nil; end
-    if (C_CraftingOrders and C_CraftingOrders.GetOrderInfo) then
-        local info = C_CraftingOrders.GetOrderInfo(orderID);
+    -- Try the claimed order API first (official, doesn't need orderID matching)
+    if (C_CraftingOrders and C_CraftingOrders.GetClaimedOrder) then
+        local info = C_CraftingOrders.GetClaimedOrder();
         if (info) then return info; end
     end
+    -- Fallback: read directly from the order view
     local ordersPage = ProfessionsFrame and ProfessionsFrame.OrdersPage;
     local view = ordersPage and ordersPage.OrderView;
     if (view and view.order and view.order.orderID == orderID) then
@@ -114,7 +116,7 @@ local function isGuildOrderType(orderType)
     if (Enum and Enum.CraftingOrderType) then
         return orderType == Enum.CraftingOrderType.Guild;
     end
-    return orderType == 2;
+    return orderType == 1; -- Public=0, Guild=1, Personal=2, Npc=3
 end
 
 local function isPersonalOrderType(orderType)
@@ -122,7 +124,7 @@ local function isPersonalOrderType(orderType)
     if (Enum and Enum.CraftingOrderType) then
         return orderType == Enum.CraftingOrderType.Personal;
     end
-    return orderType == 0;
+    return orderType == 2; -- Public=0, Guild=1, Personal=2, Npc=3
 end
 
 local function formatPersonalOrderMessage()
@@ -153,6 +155,15 @@ end
 
 local BG_SOUND_CVAR = "Sound_EnableSoundWhenGameIsInBG";
 
+local function doPlaySound(sound)
+    local soundId = tonumber(sound);
+    if (soundId and PlaySound) then
+        PlaySound(soundId, "Master");
+    elseif (PlaySoundFile) then
+        PlaySoundFile(sound, "Master");
+    end
+end
+
 local function playPersonalSound(self)
     if (not self.db or not self.db.personalSoundEnabled) then return; end
     if (not LibSharedMedia or not LibSharedMedia.Fetch) then return; end
@@ -160,23 +171,19 @@ local function playPersonalSound(self)
     if (not sound) then return; end
 
     -- Temporarily enable background sound so the notification is audible
-    -- even when the game is not in focus
+    -- even when the game is not in focus.  Delay playback briefly so the
+    -- sound engine has time to activate after the CVar change.
     local bgSoundWasOff = self.db.personalSoundBackground and GetCVar(BG_SOUND_CVAR) == "0";
     if (bgSoundWasOff) then
         SetCVar(BG_SOUND_CVAR, "1");
-    end
-
-    local soundId = tonumber(sound);
-    if (soundId and PlaySound) then
-        PlaySound(soundId, "Master");
-    elseif (PlaySoundFile) then
-        PlaySoundFile(sound, "Master");
-    end
-
-    if (bgSoundWasOff) then
-        C_Timer.After(2, function()
-            SetCVar(BG_SOUND_CVAR, "0");
+        C_Timer.After(0.2, function()
+            doPlaySound(sound);
+            C_Timer.After(2, function()
+                SetCVar(BG_SOUND_CVAR, "0");
+            end);
         end);
+    else
+        doPlaySound(sound);
     end
 end
 
@@ -470,7 +477,7 @@ function CraftingOrders:TryRecordFulfillment(...)
         return; -- Skip patron/public orders
     end
 
-    if (self.RecordOrder) then
+    if (self.RecordOrder and self:IsOrderTypeTracked(orderType)) then
         self:RecordOrder({
             customer = customer,
             item = itemLink,

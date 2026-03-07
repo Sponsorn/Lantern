@@ -128,7 +128,7 @@ ns:RegisterLocale("deDE", {
     -- CO_TAB_ITEMS                                 = "Items",
     -- CO_TAB_DASHBOARD                             = "Dashboard",
     -- CO_TAB_ORDERS                                = "Orders",
-    -- CO_TAB_FILTERS                               = "Filters",
+    -- CO_TAB_SETTINGS                              = "Settings",
 
     -- Column headers
     -- CO_COL_CUSTOMER                              = "Customer",
@@ -156,12 +156,18 @@ ns:RegisterLocale("deDE", {
 
     -- Orders page
     -- CO_ORDERS_REMOVE                             = "Remove",
+    -- CO_ORDERS_SHIFT_CLICK_REMOVE                 = "Shift-click to remove this order.",
 
-    -- Filters page
-    -- CO_FILTERS_DESC                              = "Excluded customers are hidden from all analytics pages.",
-    -- CO_FILTERS_ADD                               = "Add",
-    -- CO_FILTERS_REMOVE                            = "Remove",
-    -- CO_FILTERS_EMPTY                             = "No customers excluded.",
+    -- Settings page
+    -- CO_SETTINGS_ORDER_TYPES                      = "Order Types",
+    -- CO_SETTINGS_ORDER_TYPES_DESC                 = "Choose which order types to track and display in analytics.",
+    -- CO_SETTINGS_TRACK_GUILD                      = "Guild Orders",
+    -- CO_SETTINGS_TRACK_PERSONAL                   = "Personal Orders",
+    -- CO_SETTINGS_EXCLUDED_CUSTOMERS               = "Excluded Customers",
+    -- CO_SETTINGS_EXCLUDED_DESC                    = "Excluded customers are hidden from all analytics pages.",
+    -- CO_SETTINGS_ADD                              = "Add",
+    -- CO_SETTINGS_REMOVE                           = "Remove",
+    -- CO_SETTINGS_EXCLUDED_EMPTY                   = "No customers excluded.",
 
     -- Character filter
     -- CO_FILTER_CURRENT                            = "Current Character",
@@ -185,6 +191,8 @@ ns:RegisterLocale("deDE", {
     -- CO_CLEAR_HISTORY_CONFIRM                     = "Are you sure you want to delete all order history for this character? This cannot be undone.",
     -- CO_MAX_ORDERS                                = "Max orders to keep",
     -- CO_MAX_ORDERS_DESC                           = "Maximum number of orders to store per character. Oldest orders are removed first.",
+    -- CO_ORDERS_PER_PAGE                           = "",
+    -- CO_ORDERS_PER_PAGE_DESC                      = "",
 
     -- Repeat customer indicator
     -- CO_REPEAT_CUSTOMER                           = "Repeat",

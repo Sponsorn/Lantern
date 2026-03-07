@@ -5,7 +5,7 @@ if (not Lantern) then return; end
 local CraftingOrders = Lantern.modules and Lantern.modules.CraftingOrders;
 if (not CraftingOrders) then return; end
 
-local MAX_ORDERS_DEFAULT = 500;
+local MAX_ORDERS_DEFAULT = 2000;
 
 -------------------------------------------------------------------------------
 -- Database
@@ -20,6 +20,7 @@ local function ensureHistoryDB()
     if (db.trackHistory == nil) then db.trackHistory = true; end
     if (db.maxOrders == nil) then db.maxOrders = MAX_ORDERS_DEFAULT; end
     if (db.excludedCustomers == nil) then db.excludedCustomers = {}; end
+    if (db.trackOrderTypes == nil) then db.trackOrderTypes = { guild = true, personal = true }; end
     return db;
 end
 
@@ -100,6 +101,14 @@ end
 -- Aggregation
 -------------------------------------------------------------------------------
 
+local function isOrderTypeVisible(db, orderType)
+    local types = db.trackOrderTypes;
+    if (not types) then return true; end
+    if (orderType == "guild") then return types.guild ~= false; end
+    if (orderType == "personal") then return types.personal ~= false; end
+    return true;
+end
+
 local function iterateOrders(charFilter, callback)
     local db = ensureHistoryDB();
     local excluded = db.excludedCustomers;
@@ -108,7 +117,9 @@ local function iterateOrders(charFilter, callback)
             if (charData.orders) then
                 for _, order in ipairs(charData.orders) do
                     if (not order.customer or not excluded[order.customer:lower()]) then
-                        callback(order);
+                        if (isOrderTypeVisible(db, order.orderType)) then
+                            callback(order);
+                        end
                     end
                 end
             end
@@ -118,7 +129,9 @@ local function iterateOrders(charFilter, callback)
         if (charData and charData.orders) then
             for _, order in ipairs(charData.orders) do
                 if (not order.customer or not excluded[order.customer:lower()]) then
-                    callback(order);
+                    if (isOrderTypeVisible(db, order.orderType)) then
+                        callback(order);
+                    end
                 end
             end
         end
@@ -248,7 +261,7 @@ function CraftingOrders:GetOrderList(charFilter)
         for charKey, charData in pairs(db.characters) do
             if (charData.orders) then
                 for idx, order in ipairs(charData.orders) do
-                    if (not order.customer or not excluded[order.customer:lower()]) then
+                    if ((not order.customer or not excluded[order.customer:lower()]) and isOrderTypeVisible(db, order.orderType)) then
                         table.insert(list, {
                             charKey = charKey,
                             index = idx,
@@ -267,7 +280,7 @@ function CraftingOrders:GetOrderList(charFilter)
         local charData, charKey = ensureCharacterData(db);
         if (charData and charData.orders and charKey) then
             for idx, order in ipairs(charData.orders) do
-                if (not order.customer or not excluded[order.customer:lower()]) then
+                if ((not order.customer or not excluded[order.customer:lower()]) and isOrderTypeVisible(db, order.orderType)) then
                     table.insert(list, {
                         charKey = charKey,
                         index = idx,
@@ -319,6 +332,25 @@ function CraftingOrders:RemoveExcludedCustomer(name)
     if (not name) then return; end
     local db = ensureHistoryDB();
     db.excludedCustomers[name:lower()] = nil;
+end
+
+-------------------------------------------------------------------------------
+-- Order type tracking
+-------------------------------------------------------------------------------
+
+function CraftingOrders:GetTrackOrderTypes()
+    local db = ensureHistoryDB();
+    return db.trackOrderTypes;
+end
+
+function CraftingOrders:SetTrackOrderType(orderType, enabled)
+    local db = ensureHistoryDB();
+    db.trackOrderTypes[orderType] = enabled;
+end
+
+function CraftingOrders:IsOrderTypeTracked(orderType)
+    local db = ensureHistoryDB();
+    return isOrderTypeVisible(db, orderType);
 end
 
 -------------------------------------------------------------------------------

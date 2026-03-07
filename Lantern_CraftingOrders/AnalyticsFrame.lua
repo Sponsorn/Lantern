@@ -31,6 +31,24 @@ local function FormatMoney(copper)
     return string.format("%dc", amount % 100);
 end
 
+local function FormatMoneyCompact(copper)
+    local amount = tonumber(copper) or 0;
+    if (amount <= 0) then return "0g"; end
+    local gold = math.floor(amount / 10000);
+    if (gold >= 1000000) then
+        return string.format("%.1fM g", gold / 1000000);
+    elseif (gold >= 1000) then
+        return string.format("%.1fk g", gold / 1000);
+    elseif (gold > 0) then
+        return string.format("%dg", gold);
+    end
+    local silver = math.floor((amount % 10000) / 100);
+    if (silver > 0) then
+        return string.format("%ds", silver);
+    end
+    return string.format("%dc", amount % 100);
+end
+
 local function FormatTimeAgo(timestamp)
     if (not timestamp or timestamp == 0) then return ""; end
     local diff = time() - timestamp;
@@ -259,12 +277,13 @@ local function AcquireDashFrame(parent, height)
     return elem;
 end
 
-local function CreateStatCard(parent, yOffset, labelText, valueText)
+local function CreateStatCard(parent, yOffset, labelText, valueText, tooltipText)
     local CARD_W = 140;
     local CARD_H = 56;
 
     local card = AcquireDashFrame(parent, CARD_H);
     card:SetWidth(CARD_W);
+    card:EnableMouse(tooltipText ~= nil);
 
     -- Card background
     if (not card._bg) then
@@ -307,6 +326,19 @@ local function CreateStatCard(parent, yOffset, labelText, valueText)
     card._label:SetText(labelText);
     card._label:SetTextColor(unpack(T.textDim));
     card._label:Show();
+
+    -- Tooltip
+    if (tooltipText) then
+        card:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM");
+            GameTooltip:AddLine(tooltipText, 1, 1, 1);
+            GameTooltip:Show();
+        end);
+        card:SetScript("OnLeave", function() GameTooltip:Hide(); end);
+    else
+        card:SetScript("OnEnter", nil);
+        card:SetScript("OnLeave", nil);
+    end
 
     -- Hide sub-elements from other reuse types
     if (card._rankLabel) then card._rankLabel:Hide(); end
@@ -505,8 +537,8 @@ local function PopulateDashboard()
     local CARD_GAP = 8;
     local cardsData = {
         { label = L["CO_DASH_TOTAL_ORDERS"], value = tostring(stats.totalOrders) },
-        { label = L["CO_DASH_TOTAL_TIPS"],   value = FormatMoney(stats.totalTips) },
-        { label = L["CO_DASH_AVG_TIP"],      value = FormatMoney(stats.avgTip) },
+        { label = L["CO_DASH_TOTAL_TIPS"],   value = FormatMoneyCompact(stats.totalTips), tooltip = FormatMoney(stats.totalTips) },
+        { label = L["CO_DASH_AVG_TIP"],      value = FormatMoneyCompact(stats.avgTip),    tooltip = FormatMoney(stats.avgTip) },
         { label = L["CO_DASH_THIS_WEEK"],    value = tostring(stats.weekOrders) },
         { label = L["CO_DASH_THIS_MONTH"],   value = tostring(stats.monthOrders) },
     };
@@ -514,7 +546,7 @@ local function PopulateDashboard()
     local startX = 16;
 
     for i, cd in ipairs(cardsData) do
-        local card = CreateStatCard(f, y, cd.label, cd.value);
+        local card = CreateStatCard(f, y, cd.label, cd.value, cd.tooltip);
         card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (CARD_W + CARD_GAP), y);
     end
 
@@ -546,7 +578,7 @@ local function PopulateDashboard()
         y = y - 20;
         for i = 1, count do
             local c = customerData[i];
-            CreateDashRankedRow(f, y, i, c.name, tostring(c.count), FormatMoney(c.totalTip));
+            CreateDashRankedRow(f, y, i, c.name, tostring(c.count), FormatMoneyCompact(c.totalTip));
             y = y - 22;
         end
     end
@@ -580,7 +612,7 @@ local function PopulateDashboard()
         for i = 1, count do
             local it = itemData[i];
             local displayName = it.itemLink or ("Item #" .. tostring(it.itemID));
-            CreateDashRankedRow(f, y, i, displayName, tostring(it.count), FormatMoney(it.totalTip));
+            CreateDashRankedRow(f, y, i, displayName, tostring(it.count), FormatMoneyCompact(it.totalTip));
             y = y - 22;
         end
     end
@@ -673,13 +705,18 @@ local function CreateCustomersContent(parent)
         columns = {
             { key = "name",       label = L["CO_COL_CUSTOMER"],   width = 160, align = "LEFT" },
             { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" },
-            { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoney(v or 0); end },
-            { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoney(v or 0); end },
+            { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
+            { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
             { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" },
             { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end },
         },
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
+        rowTooltip = function(entry, tip)
+            tip:AddLine(entry.name or "", 1, 1, 1);
+            tip:AddLine(L["CO_COL_TOTAL_TIPS"] .. ": " .. FormatMoney(entry.totalTip or 0), unpack(T.text));
+            tip:AddLine(L["CO_COL_AVG_TIP"] .. ": " .. FormatMoney(entry.avgTip or 0), unpack(T.text));
+        end,
     });
 
     customersTable.frame:SetAllPoints(tableFrame);
@@ -732,12 +769,18 @@ local function CreateItemsContent(parent)
                     return v or ("Item #" .. tostring(entry.itemID or "?"));
                 end },
             { key = "count",           label = L["CO_COL_CRAFTS"],    width = 70,  align = "RIGHT" },
-            { key = "avgTip",          label = L["CO_COL_AVG_TIP"],   width = 100, align = "RIGHT", format = function(v) return FormatMoney(v or 0); end },
-            { key = "totalTip",        label = L["CO_COL_REVENUE"],   width = 110, align = "RIGHT", format = function(v) return FormatMoney(v or 0); end },
+            { key = "avgTip",          label = L["CO_COL_AVG_TIP"],   width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
+            { key = "totalTip",        label = L["CO_COL_REVENUE"],   width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
             { key = "uniqueCustomers", label = L["CO_COL_CUSTOMERS"], width = 80,  align = "RIGHT" },
         },
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
+        rowTooltip = function(entry, tip)
+            local name = entry.itemLink or ("Item #" .. tostring(entry.itemID or "?"));
+            tip:AddLine(name, 1, 1, 1);
+            tip:AddLine(L["CO_COL_AVG_TIP"] .. ": " .. FormatMoney(entry.avgTip or 0), unpack(T.text));
+            tip:AddLine(L["CO_COL_REVENUE"] .. ": " .. FormatMoney(entry.totalTip or 0), unpack(T.text));
+        end,
     });
 
     itemsTable.frame:SetAllPoints(tableFrame);
@@ -749,186 +792,19 @@ end
 -- Page 4: Orders (individual order list with remove)
 -------------------------------------------------------------------------------
 
-local ordersFilter, ordersScroll;
-local ordersRowPool = {};
-local ordersActiveRows = 0;
+local ordersFilter, ordersTable;
 
 local RefreshOrders; -- forward declaration
-local RefreshFilters; -- forward declaration
-
-local function ReleaseAllOrderRows()
-    for i = 1, ordersActiveRows do
-        local row = ordersRowPool[i];
-        if (row) then row:Hide(); end
-    end
-    ordersActiveRows = 0;
-end
-
-local function AcquireOrderRow(parent, index)
-    local ROW_H = 24;
-    local row = ordersRowPool[index];
-    if (not row) then
-        local rowName = NextName("LanternCO_OrderRow_");
-        row = CreateFrame("Frame", rowName, parent);
-        row:SetHeight(ROW_H);
-        row:EnableMouse(true);
-
-        local bg = row:CreateTexture(rowName .. "_Bg", "BACKGROUND");
-        bg:SetAllPoints();
-        row._bg = bg;
-
-        local highlight = row:CreateTexture(rowName .. "_HL", "HIGHLIGHT");
-        highlight:SetAllPoints();
-        highlight:SetColorTexture(unpack(T.hover));
-
-        -- Date
-        local dateLabel = row:CreateFontString(rowName .. "_Date", "OVERLAY");
-        dateLabel:SetFontObject(T.fontBody);
-        dateLabel:SetPoint("LEFT", row, "LEFT", 8, 0);
-        dateLabel:SetWidth(80);
-        dateLabel:SetJustifyH("LEFT");
-        dateLabel:SetWordWrap(false);
-        row._date = dateLabel;
-
-        -- Customer
-        local custLabel = row:CreateFontString(rowName .. "_Cust", "OVERLAY");
-        custLabel:SetFontObject(T.fontBody);
-        custLabel:SetPoint("LEFT", row, "LEFT", 96, 0);
-        custLabel:SetWidth(120);
-        custLabel:SetJustifyH("LEFT");
-        custLabel:SetWordWrap(false);
-        row._customer = custLabel;
-
-        -- Item
-        local itemLabel = row:CreateFontString(rowName .. "_Item", "OVERLAY");
-        itemLabel:SetFontObject(T.fontBody);
-        itemLabel:SetPoint("LEFT", row, "LEFT", 224, 0);
-        itemLabel:SetWidth(250);
-        itemLabel:SetJustifyH("LEFT");
-        itemLabel:SetWordWrap(false);
-        row._item = itemLabel;
-
-        -- Tip
-        local tipLabel = row:CreateFontString(rowName .. "_Tip", "OVERLAY");
-        tipLabel:SetFontObject(T.fontBody);
-        tipLabel:SetPoint("LEFT", row, "LEFT", 482, 0);
-        tipLabel:SetWidth(90);
-        tipLabel:SetJustifyH("RIGHT");
-        row._tip = tipLabel;
-
-        -- Type
-        local typeLabel = row:CreateFontString(rowName .. "_Type", "OVERLAY");
-        typeLabel:SetFontObject(T.fontBody);
-        typeLabel:SetPoint("LEFT", row, "LEFT", 580, 0);
-        typeLabel:SetWidth(60);
-        typeLabel:SetJustifyH("LEFT");
-        row._type = typeLabel;
-
-        -- Remove button (LanternUX themed)
-        local removeBtn = CreateFrame("Button", rowName .. "_Remove", row, "BackdropTemplate");
-        removeBtn:SetSize(60, 20);
-        removeBtn:SetPoint("RIGHT", row, "RIGHT", -8, 0);
-        removeBtn:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-        });
-        removeBtn:SetBackdropColor(unpack(T.buttonBg));
-        removeBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
-        local removeBtnText = removeBtn:CreateFontString(nil, "ARTWORK", T.fontBody);
-        removeBtnText:SetPoint("CENTER");
-        removeBtnText:SetText(L["CO_ORDERS_REMOVE"]);
-        removeBtnText:SetTextColor(unpack(T.buttonText));
-        removeBtn:SetScript("OnEnter", function()
-            removeBtn:SetBackdropColor(unpack(T.buttonHover));
-            removeBtn:SetBackdropBorderColor(unpack(T.inputFocus));
-        end);
-        removeBtn:SetScript("OnLeave", function()
-            removeBtn:SetBackdropColor(unpack(T.buttonBg));
-            removeBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
-        end);
-        row._removeBtn = removeBtn;
-
-        ordersRowPool[index] = row;
-    end
-
-    row:SetParent(parent);
-    row:ClearAllPoints();
-
-    if (index % 2 == 0) then
-        row._bg:SetColorTexture(unpack(T.cardBg));
-    else
-        row._bg:SetColorTexture(0, 0, 0, 0);
-    end
-
-    row:Show();
-    ordersActiveRows = index;
-    return row;
-end
+local RefreshSettings; -- forward declaration
 
 RefreshOrders = function()
-    if (not ordersScroll) then return; end
-    ReleaseAllOrderRows();
-
+    if (not ordersTable) then return; end
     local filter = GetCharFilterForAPI();
     local data = CraftingOrders:GetOrderList(filter);
-    local scrollChild = ordersScroll.scrollChild;
-
-    if (not ordersScroll._noDataText) then
-        ordersScroll._noDataText = scrollChild:CreateFontString(NextName("LanternCO_OrdersNoData_"), "OVERLAY");
-        ordersScroll._noDataText:SetFontObject(T.fontBody);
-        ordersScroll._noDataText:SetPoint("TOP", scrollChild, "TOP", 0, -20);
-        ordersScroll._noDataText:SetTextColor(unpack(T.textDim));
-    end
-
-    if (#data == 0) then
-        ordersScroll._noDataText:SetText(L["CO_DASH_NO_DATA"]);
-        ordersScroll._noDataText:Show();
-        ordersScroll:SetContentHeight(60);
-        return;
-    end
-
-    ordersScroll._noDataText:Hide();
-
-    local ROW_H = 24;
-    for i, entry in ipairs(data) do
-        local row = AcquireOrderRow(scrollChild, i);
-        row:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -((i - 1) * ROW_H));
-        row:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -((i - 1) * ROW_H));
-
-        row._date:SetText(FormatTimeAgo(entry.timestamp));
-        row._date:SetTextColor(unpack(T.textDim));
-
-        row._customer:SetText(entry.customer or "Unknown");
-        row._customer:SetTextColor(unpack(T.text));
-
-        local itemText = entry.item or ("Item #" .. tostring(entry.itemID or "?"));
-        row._item:SetText(itemText);
-        if (entry.item and entry.item:find("|c")) then
-            row._item:SetTextColor(1, 1, 1, 1);
-        else
-            row._item:SetTextColor(unpack(T.text));
-        end
-
-        row._tip:SetText(FormatMoney(entry.tip));
-        row._tip:SetTextColor(unpack(T.textDim));
-
-        row._type:SetText(entry.orderType or "");
-        row._type:SetTextColor(unpack(T.textDim));
-
-        local charKey = entry.charKey;
-        local orderIndex = entry.index;
-        row._removeBtn:SetScript("OnClick", function()
-            CraftingOrders:RemoveOrder(charKey, orderIndex);
-            RefreshOrders();
-            -- Also refresh other pages if they exist
-            PopulateDashboard();
-            if (customersTable) then RefreshCustomers(); end
-            if (itemsTable) then RefreshItems(); end
-        end);
-    end
-
-    ordersScroll:SetContentHeight(#data * ROW_H + 8);
+    local db = _G.LanternCraftingOrdersDB or {};
+    ordersTable:SetPageSize(db.ordersPerPage or 50);
+    ordersTable:SetData(data);
+    ordersTable:Refresh();
 end
 
 local function CreateOrdersContent(parent)
@@ -949,76 +825,62 @@ local function CreateOrdersContent(parent)
     title:SetText(L["CO_TAB_ORDERS"]);
     title:SetTextColor(unpack(T.textBright));
 
-    -- Column headers
-    local headerFrame = CreateFrame("Frame", "LanternCO_OrdersHeader", container);
-    headerFrame:SetHeight(26);
-    headerFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
-    headerFrame:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, -42);
+    -- DataTable
+    local db = _G.LanternCraftingOrdersDB or {};
+    local tableFrame = CreateFrame("Frame", "LanternCO_OrdersTableFrame", container);
+    tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
+    tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
-    local headerBg = headerFrame:CreateTexture("LanternCO_OrdersHeaderBg", "BACKGROUND");
-    headerBg:SetAllPoints();
-    headerBg:SetColorTexture(unpack(T.cardBg));
-
-    local headerBorder = headerFrame:CreateTexture("LanternCO_OrdersHeaderBorder", "ARTWORK");
-    headerBorder:SetHeight(1);
-    headerBorder:SetPoint("BOTTOMLEFT");
-    headerBorder:SetPoint("BOTTOMRIGHT");
-    headerBorder:SetColorTexture(unpack(T.cardBorder));
-
-    local headers = {
-        { text = L["CO_COL_DATE"],     x = 8,   w = 80 },
-        { text = L["CO_COL_CUSTOMER"], x = 96,  w = 120 },
-        { text = L["CO_COL_ITEM"],     x = 224, w = 250 },
-        { text = L["CO_COL_TIP"],      x = 482, w = 90,  align = "RIGHT" },
-        { text = L["CO_COL_TYPE"],     x = 580, w = 60 },
-    };
-    for _, h in ipairs(headers) do
-        local hl = headerFrame:CreateFontString(nil, "OVERLAY");
-        hl:SetFontObject(T.fontSmallBold);
-        hl:SetPoint("LEFT", headerFrame, "LEFT", h.x, 0);
-        hl:SetWidth(h.w);
-        hl:SetJustifyH(h.align or "LEFT");
-        hl:SetText(h.text);
-        hl:SetTextColor(unpack(T.textDim));
-    end
-
-    -- Scroll area below headers
-    local scrollArea = CreateFrame("Frame", "LanternCO_OrdersScrollArea", container);
-    scrollArea:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", 0, 0);
-    scrollArea:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
-
-    ordersScroll = LanternUX.CreateScrollContainer(scrollArea);
-
-    scrollArea:SetScript("OnSizeChanged", function(_, w)
-        if (w and w > 0) then
-            ordersScroll.scrollChild:SetWidth(w);
-        end
-    end);
+    ordersTable = LanternUX.CreateDataTable(tableFrame, {
+        columns = {
+            { key = "timestamp", label = L["CO_COL_DATE"],     width = 88,  format = function(v) return FormatTimeAgo(v); end },
+            { key = "customer",  label = L["CO_COL_CUSTOMER"], width = 128 },
+            { key = "item",      label = L["CO_COL_ITEM"],     width = 250, isLink = true },
+            { key = "tip",       label = L["CO_COL_TIP"],      width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end },
+            { key = "orderType", label = L["CO_COL_TYPE"],     width = 60 },
+        },
+        defaultSort = { key = "timestamp", ascending = false },
+        pageSize = db.ordersPerPage or 50,
+        onRowClick = function(entry)
+            if (not IsShiftKeyDown()) then return; end
+            CraftingOrders:RemoveOrder(entry.charKey, entry.index);
+            RefreshOrders();
+            PopulateDashboard();
+            if (customersTable) then RefreshCustomers(); end
+            if (itemsTable) then RefreshItems(); end
+        end,
+        rowTooltip = function(entry, tooltip)
+            tooltip:AddLine(entry.item or "", 1, 1, 1);
+            tooltip:AddLine(L["CO_ORDERS_SHIFT_CLICK_REMOVE"], 0.7, 0.7, 0.7);
+        end,
+    });
+    ordersTable.frame:SetAllPoints(tableFrame);
+    ordersTable:SetNoDataText(L["CO_DASH_NO_DATA"]);
 
     return container;
 end
 
 -------------------------------------------------------------------------------
--- Page 5: Filters (customer exclusion)
+-- Page 5: Settings (order type tracking + customer exclusion)
 -------------------------------------------------------------------------------
 
-local filtersScroll;
-local filtersRowPool = {};
-local filtersActiveRows = 0;
+local settingsScroll;
+local settingsRowPool = {};
+local settingsActiveRows = 0;
 
-local function ReleaseAllFilterRows()
-    for i = 1, filtersActiveRows do
-        local row = filtersRowPool[i];
+local function ReleaseAllSettingsRows()
+    for i = 1, settingsActiveRows do
+        local row = settingsRowPool[i];
         if (row) then row:Hide(); end
     end
-    filtersActiveRows = 0;
+    settingsActiveRows = 0;
 end
 
-local function AcquireFilterRow(parent, index)
+local function AcquireSettingsRow(parent, index)
     local ROW_H = 28;
-    local row = filtersRowPool[index];
+    local row = settingsRowPool[index];
     if (not row) then
-        local rowName = NextName("LanternCO_FilterRow_");
+        local rowName = NextName("LanternCO_SettingsRow_");
         row = CreateFrame("Frame", rowName, parent);
         row:SetHeight(ROW_H);
 
@@ -1046,7 +908,7 @@ local function AcquireFilterRow(parent, index)
         removeBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
         local removeBtnText = removeBtn:CreateFontString(nil, "ARTWORK", T.fontBody);
         removeBtnText:SetPoint("CENTER");
-        removeBtnText:SetText(L["CO_FILTERS_REMOVE"]);
+        removeBtnText:SetText(L["CO_SETTINGS_REMOVE"]);
         removeBtnText:SetTextColor(unpack(T.buttonText));
         removeBtn:SetScript("OnEnter", function()
             removeBtn:SetBackdropColor(unpack(T.buttonHover));
@@ -1058,7 +920,7 @@ local function AcquireFilterRow(parent, index)
         end);
         row._removeBtn = removeBtn;
 
-        filtersRowPool[index] = row;
+        settingsRowPool[index] = row;
     end
 
     row:SetParent(parent);
@@ -1071,18 +933,33 @@ local function AcquireFilterRow(parent, index)
     end
 
     row:Show();
-    filtersActiveRows = index;
+    settingsActiveRows = index;
     return row;
 end
 
-local filtersEmptyText;
+local settingsEmptyText;
+local settingsGuildCheck, settingsPersonalCheck;
 
-RefreshFilters = function()
-    if (not filtersScroll) then return; end
-    ReleaseAllFilterRows();
+local function RefreshAllPages()
+    PopulateDashboard();
+    if (customersTable) then RefreshCustomers(); end
+    if (itemsTable) then RefreshItems(); end
+    RefreshOrders();
+end
+
+local toggleFactory = LanternUX._W.factories.toggle;
+local toggleRefresher = LanternUX._W.refreshers.toggle;
+
+RefreshSettings = function()
+    if (not settingsScroll) then return; end
+    ReleaseAllSettingsRows();
+
+    -- Update toggle states
+    if (settingsGuildCheck) then toggleRefresher(settingsGuildCheck); end
+    if (settingsPersonalCheck) then toggleRefresher(settingsPersonalCheck); end
 
     local excluded = CraftingOrders:GetExcludedCustomers();
-    local scrollChild = filtersScroll.scrollChild;
+    local scrollChild = settingsScroll.scrollChild;
 
     -- Build sorted list of excluded names
     local names = {};
@@ -1091,25 +968,25 @@ RefreshFilters = function()
     end
     table.sort(names);
 
-    if (not filtersEmptyText) then
-        filtersEmptyText = scrollChild:CreateFontString(NextName("LanternCO_FiltersEmpty_"), "OVERLAY");
-        filtersEmptyText:SetFontObject(T.fontBody);
-        filtersEmptyText:SetPoint("TOP", scrollChild, "TOP", 0, -20);
-        filtersEmptyText:SetTextColor(unpack(T.textDim));
+    if (not settingsEmptyText) then
+        settingsEmptyText = scrollChild:CreateFontString(NextName("LanternCO_SettingsEmpty_"), "OVERLAY");
+        settingsEmptyText:SetFontObject(T.fontBody);
+        settingsEmptyText:SetPoint("TOP", scrollChild, "TOP", 0, -20);
+        settingsEmptyText:SetTextColor(unpack(T.textDim));
     end
 
     if (#names == 0) then
-        filtersEmptyText:SetText(L["CO_FILTERS_EMPTY"]);
-        filtersEmptyText:Show();
-        filtersScroll:SetContentHeight(60);
+        settingsEmptyText:SetText(L["CO_SETTINGS_EXCLUDED_EMPTY"]);
+        settingsEmptyText:Show();
+        settingsScroll:SetContentHeight(60);
         return;
     end
 
-    filtersEmptyText:Hide();
+    settingsEmptyText:Hide();
 
     local ROW_H = 28;
     for i, name in ipairs(names) do
-        local row = AcquireFilterRow(scrollChild, i);
+        local row = AcquireSettingsRow(scrollChild, i);
         row:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -((i - 1) * ROW_H));
         row:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -((i - 1) * ROW_H));
 
@@ -1118,45 +995,86 @@ RefreshFilters = function()
 
         row._removeBtn:SetScript("OnClick", function()
             CraftingOrders:RemoveExcludedCustomer(name);
-            RefreshFilters();
-            -- Refresh other pages so exclusions take effect immediately
-            PopulateDashboard();
-            if (customersTable) then RefreshCustomers(); end
-            if (itemsTable) then RefreshItems(); end
-            RefreshOrders();
+            RefreshSettings();
+            RefreshAllPages();
         end);
     end
 
-    filtersScroll:SetContentHeight(#names * ROW_H + 8);
+    settingsScroll:SetContentHeight(#names * ROW_H + 8);
 end
 
-local function CreateFiltersContent(parent)
-    local container = CreateFrame("Frame", "LanternCO_FiltersPage", parent);
+local function CreateSettingsContent(parent)
+    local container = CreateFrame("Frame", "LanternCO_SettingsPage", parent);
     container:SetAllPoints();
 
-    -- Title
-    local title = container:CreateFontString("LanternCO_FiltersTitle", "OVERLAY");
-    title:SetFontObject(T.fontHeading);
-    title:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -12);
-    title:SetText(L["CO_TAB_FILTERS"]);
-    title:SetTextColor(unpack(T.textBright));
+    -- Order Types section
+    local otTitle = container:CreateFontString("LanternCO_SettingsOTTitle", "OVERLAY");
+    otTitle:SetFontObject(T.fontHeading);
+    otTitle:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -12);
+    otTitle:SetText(L["CO_SETTINGS_ORDER_TYPES"]);
+    otTitle:SetTextColor(unpack(T.textBright));
 
-    -- Description
-    local desc = container:CreateFontString("LanternCO_FiltersDesc", "OVERLAY");
-    desc:SetFontObject(T.fontBody);
-    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4);
-    desc:SetPoint("RIGHT", container, "RIGHT", -16, 0);
-    desc:SetJustifyH("LEFT");
-    desc:SetText(L["CO_FILTERS_DESC"]);
-    desc:SetTextColor(unpack(T.textDim));
+    local otDesc = container:CreateFontString("LanternCO_SettingsOTDesc", "OVERLAY");
+    otDesc:SetFontObject(T.fontBody);
+    otDesc:SetPoint("TOPLEFT", otTitle, "BOTTOMLEFT", 0, -4);
+    otDesc:SetPoint("RIGHT", container, "RIGHT", -16, 0);
+    otDesc:SetJustifyH("LEFT");
+    otDesc:SetText(L["CO_SETTINGS_ORDER_TYPES_DESC"]);
+    otDesc:SetTextColor(unpack(T.textDim));
+
+    settingsGuildCheck = toggleFactory.create(container);
+    toggleFactory.setup(settingsGuildCheck, container, {
+        label = L["CO_SETTINGS_TRACK_GUILD"],
+        get = function() return CraftingOrders:IsOrderTypeTracked("guild"); end,
+        set = function(val)
+            CraftingOrders:SetTrackOrderType("guild", val);
+            RefreshAllPages();
+        end,
+    }, 200);
+    settingsGuildCheck.frame:ClearAllPoints();
+    settingsGuildCheck.frame:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -52);
+
+    settingsPersonalCheck = toggleFactory.create(container);
+    toggleFactory.setup(settingsPersonalCheck, container, {
+        label = L["CO_SETTINGS_TRACK_PERSONAL"],
+        get = function() return CraftingOrders:IsOrderTypeTracked("personal"); end,
+        set = function(val)
+            CraftingOrders:SetTrackOrderType("personal", val);
+            RefreshAllPages();
+        end,
+    }, 200);
+    settingsPersonalCheck.frame:ClearAllPoints();
+    settingsPersonalCheck.frame:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -78);
+
+    -- Divider
+    local divider = container:CreateTexture("LanternCO_SettingsDivider", "ARTWORK");
+    divider:SetHeight(1);
+    divider:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -108);
+    divider:SetPoint("RIGHT", container, "RIGHT", -16, 0);
+    divider:SetColorTexture(unpack(T.inputBorder));
+
+    -- Excluded Customers section
+    local exTitle = container:CreateFontString("LanternCO_SettingsExTitle", "OVERLAY");
+    exTitle:SetFontObject(T.fontHeading);
+    exTitle:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -120);
+    exTitle:SetText(L["CO_SETTINGS_EXCLUDED_CUSTOMERS"]);
+    exTitle:SetTextColor(unpack(T.textBright));
+
+    local exDesc = container:CreateFontString("LanternCO_SettingsExDesc", "OVERLAY");
+    exDesc:SetFontObject(T.fontBody);
+    exDesc:SetPoint("TOPLEFT", exTitle, "BOTTOMLEFT", 0, -4);
+    exDesc:SetPoint("RIGHT", container, "RIGHT", -16, 0);
+    exDesc:SetJustifyH("LEFT");
+    exDesc:SetText(L["CO_SETTINGS_EXCLUDED_DESC"]);
+    exDesc:SetTextColor(unpack(T.textDim));
 
     -- Input row
-    local inputRow = CreateFrame("Frame", "LanternCO_FiltersInput", container);
+    local inputRow = CreateFrame("Frame", "LanternCO_SettingsInput", container);
     inputRow:SetHeight(28);
-    inputRow:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -56);
-    inputRow:SetPoint("TOPRIGHT", container, "TOPRIGHT", -16, -56);
+    inputRow:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -160);
+    inputRow:SetPoint("TOPRIGHT", container, "TOPRIGHT", -16, -160);
 
-    local editBox = CreateFrame("EditBox", "LanternCO_FiltersEditBox", inputRow, "BackdropTemplate");
+    local editBox = CreateFrame("EditBox", "LanternCO_SettingsEditBox", inputRow, "BackdropTemplate");
     editBox:SetHeight(28);
     editBox:SetPoint("LEFT", inputRow, "LEFT", 0, 0);
     editBox:SetPoint("RIGHT", inputRow, "RIGHT", -74, 0);
@@ -1172,7 +1090,7 @@ local function CreateFiltersContent(parent)
     editBox:SetTextInsets(8, 8, 0, 0);
     editBox:SetAutoFocus(false);
 
-    local addBtn = CreateFrame("Button", "LanternCO_FiltersAddBtn", inputRow, "BackdropTemplate");
+    local addBtn = CreateFrame("Button", "LanternCO_SettingsAddBtn", inputRow, "BackdropTemplate");
     addBtn:SetSize(64, 28);
     addBtn:SetPoint("RIGHT", inputRow, "RIGHT", 0, 0);
     addBtn:SetBackdrop({
@@ -1184,7 +1102,7 @@ local function CreateFiltersContent(parent)
     addBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
     local addBtnText = addBtn:CreateFontString(nil, "ARTWORK", T.fontBody);
     addBtnText:SetPoint("CENTER");
-    addBtnText:SetText(L["CO_FILTERS_ADD"]);
+    addBtnText:SetText(L["CO_SETTINGS_ADD"]);
     addBtnText:SetTextColor(unpack(T.buttonText));
     addBtn:SetScript("OnEnter", function()
         addBtn:SetBackdropColor(unpack(T.buttonHover));
@@ -1212,12 +1130,8 @@ local function CreateFiltersContent(parent)
             return;
         end
         editBox:SetText("");
-        RefreshFilters();
-        -- Refresh other pages so exclusions take effect immediately
-        PopulateDashboard();
-        if (customersTable) then RefreshCustomers(); end
-        if (itemsTable) then RefreshItems(); end
-        RefreshOrders();
+        RefreshSettings();
+        RefreshAllPages();
     end
 
     addBtn:SetScript("OnClick", DoAdd);
@@ -1236,15 +1150,15 @@ local function CreateFiltersContent(parent)
     end);
 
     -- Scroll area below input row
-    local scrollArea = CreateFrame("Frame", "LanternCO_FiltersScrollArea", container);
+    local scrollArea = CreateFrame("Frame", "LanternCO_SettingsScrollArea", container);
     scrollArea:SetPoint("TOPLEFT", inputRow, "BOTTOMLEFT", -16, -8);
     scrollArea:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
-    filtersScroll = LanternUX.CreateScrollContainer(scrollArea);
+    settingsScroll = LanternUX.CreateScrollContainer(scrollArea);
 
     scrollArea:SetScript("OnSizeChanged", function(_, w)
         if (w and w > 0) then
-            filtersScroll.scrollChild:SetWidth(w);
+            settingsScroll.scrollChild:SetWidth(w);
         end
     end);
 
@@ -1320,13 +1234,13 @@ local function EnsurePanel()
         end,
     });
 
-    panel:AddPage("filters", {
-        label  = L["CO_TAB_FILTERS"],
-        frame  = CreateFiltersContent,
+    panel:AddPage("settings", {
+        label  = L["CO_TAB_SETTINGS"],
+        frame  = CreateSettingsContent,
         onShow = function()
-            activePage = "filters";
+            activePage = "settings";
             CloseDropdownMenu();
-            RefreshFilters();
+            RefreshSettings();
         end,
     });
 
@@ -1365,8 +1279,8 @@ function CraftingOrders:RefreshAnalytics()
         RefreshItems();
     elseif (activePage == "orders") then
         RefreshOrders();
-    elseif (activePage == "filters") then
-        RefreshFilters();
+    elseif (activePage == "settings") then
+        RefreshSettings();
     end
 end
 

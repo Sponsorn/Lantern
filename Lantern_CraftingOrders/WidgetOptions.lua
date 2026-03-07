@@ -320,10 +320,20 @@ local function historyWidgets()
             type = "range",
             label = L["CO_MAX_ORDERS"],
             desc = L["CO_MAX_ORDERS_DESC"],
-            min = 100, max = 2000, step = 100, default = 500,
-            get = function() return db.maxOrders or 500; end,
+            min = 500, max = 10000, step = 500, default = 2000,
+            get = function() return db.maxOrders or 2000; end,
             set = function(val)
                 db.maxOrders = val;
+            end,
+        },
+        {
+            type = "range",
+            label = L["CO_ORDERS_PER_PAGE"],
+            desc = L["CO_ORDERS_PER_PAGE_DESC"],
+            min = 25, max = 200, step = 25, default = 50,
+            get = function() return db.ordersPerPage or 50; end,
+            set = function(val)
+                db.ordersPerPage = val;
             end,
         },
         {
