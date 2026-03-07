@@ -165,6 +165,8 @@ ns:RegisterLocale("ptBR", {
 
     -- Delete group
     -- WARBAND_WH_DELETE_GROUP                     = "Delete Group",
+    -- WARBAND_WH_RENAME_GROUP                     = "Rename Group",
+    -- WARBAND_WH_RENAME_GROUP_DESC                = "Type a new name and press Enter to rename this group.",
     -- WARBAND_WH_DELETE_GROUP_DESC                = "Delete this warehousing group and all its items.",
     -- WARBAND_WH_DELETE_CONFIRM                   = "Delete?",
     -- WARBAND_WH_NO_GROUPS                        = "No warehousing groups created yet. Use the form above to create your first group.",
@@ -176,6 +178,7 @@ ns:RegisterLocale("ptBR", {
     -- WARBAND_WH_MSG_ADDED_ITEM                   = "Added %s to '%s'.",
     -- WARBAND_WH_MSG_INVALID_ITEM_ID              = "Invalid item ID.",
     -- WARBAND_WH_MSG_REMOVED_ITEM                 = "Removed %s from '%s'.",
+    -- WARBAND_WH_MSG_RENAMED_GROUP                = "Renamed warehousing group '%s' to '%s'.",
     -- WARBAND_WH_MSG_DELETED_GROUP                = "Deleted warehousing group '%s'.",
 
     ---------------------------------------------------------------------------

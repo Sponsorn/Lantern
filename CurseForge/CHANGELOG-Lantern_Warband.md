@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3
+- Add: Rename warehousing groups — edit the group name directly in settings without deleting and recreating
+- Add: Current character's gold group is highlighted green in Groups and Characters tabs for quick identification
+
 ## 0.4.2 - 2026-03-04
 - Add: Treatise module — shows which Midnight treatises are in your warbank, highlights your professions, tracks weekly quest completion, and provides a one-click "Take 1 for each skill" button
 - Change: Treatise button is now disabled by default — enable it in Warband settings

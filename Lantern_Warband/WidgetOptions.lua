@@ -239,9 +239,15 @@ local function groupsWidgets()
         return (a.name or ""):lower() < (b.name or ""):lower();
     end);
 
+    local currentChar = Warband:GetCurrentCharacter();
+    local currentCharGroup = Warband:GetCharacterGroup(currentChar);
+    local currentGroupName = currentCharGroup and currentCharGroup.name or nil;
+
     for _, group in ipairs(groups) do
         local memberCount = group.members and #group.members or 0;
-        local groupLabel = string.format(L["WARBAND_GROUP_MEMBER_COUNT"], group.name, memberCount, memberCount == 1 and "" or "s");
+        local isCurrentGroup = (currentGroupName and currentGroupName == group.name);
+        local displayName = isCurrentGroup and ("|cff55cc55" .. group.name .. "|r") or group.name;
+        local groupLabel = string.format(L["WARBAND_GROUP_MEMBER_COUNT"], displayName, memberCount, memberCount == 1 and "" or "s");
 
         local children = {};
 
@@ -343,9 +349,11 @@ local function groupsWidgets()
                 local lastLogin = Lantern:GetCharacterLastLogin(memberKey);
                 local timeAgo = formatTimeAgo(lastLogin);
 
+                local isCurrentMember = (memberKey == currentChar);
+                local memberDisplay = isCurrentMember and ("|cff55cc55" .. memberKey .. "|r") or memberKey;
                 table.insert(children, {
                     type = "label_action",
-                    text = memberKey .. "  |cff888888(" .. timeAgo .. ")|r",
+                    text = memberDisplay .. "  |cff888888(" .. timeAgo .. ")|r",
                     buttonLabel = L["WARBAND_REMOVE"],
                     desc = string.format(L["WARBAND_REMOVE_MEMBER_DESC"], memberKey),
                     confirm = L["WARBAND_REMOVE_CONFIRM"],
@@ -497,8 +505,10 @@ local function charactersWidgets()
         local displayName = name and realm and (name .. " - " .. realm) or entry.key;
 
         local text;
+        local isCurrentChar = (entry.key == currentChar);
         if (group) then
-            text = string.format("|cff00ff00%s|r  ->  %s (%s)",
+            local nameColor = isCurrentChar and "|cff55cc55" or "|cff00ff00";
+            text = string.format(nameColor .. "%s|r  ->  %s (%s)",
                 displayName,
                 entry.groupName,
                 string.format(L["WARBAND_CHAR_GROUP_THRESHOLD"], formatGoldThousands(group.goldThreshold or 0)));
@@ -904,10 +914,28 @@ local function warehousingWidgets()
             end
 
             -------------------------------------------------------------------
-            -- Delete Group
+            -- Rename / Delete Group
             -------------------------------------------------------------------
 
             table.insert(children, { type = "divider" });
+
+            table.insert(children, {
+                type = "input",
+                label = L["WARBAND_WH_RENAME_GROUP"],
+                desc = L["WARBAND_WH_RENAME_GROUP_DESC"],
+                get = function() return groupName; end,
+                set = function(val)
+                    if (not val or val == "" or val == groupName) then return; end
+                    local success = Warehousing:RenameGroup(groupName, val);
+                    if (success) then
+                        Lantern:Print(string.format(L["WARBAND_WH_MSG_RENAMED_GROUP"], groupName, val));
+                        syncBankUI();
+                        refreshPage();
+                    else
+                        Lantern:Print(string.format(L["WARBAND_WH_MSG_GROUP_EXISTS"], val));
+                    end
+                end,
+            });
 
             table.insert(children, {
                 type = "execute",

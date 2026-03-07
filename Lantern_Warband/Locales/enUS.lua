@@ -163,7 +163,9 @@ ns:RegisterLocale("enUS", {
     WARBAND_WH_REMOVE_ITEM_DESC                 = "Remove this item from the group.",
     WARBAND_WH_NO_ITEMS                         = "No items yet. Enter an item ID or paste an item link above.",
 
-    -- Delete group
+    -- Rename / Delete group
+    WARBAND_WH_RENAME_GROUP                     = "Rename Group",
+    WARBAND_WH_RENAME_GROUP_DESC                = "Type a new name and press Enter to rename this group.",
     WARBAND_WH_DELETE_GROUP                     = "Delete Group",
     WARBAND_WH_DELETE_GROUP_DESC                = "Delete this warehousing group and all its items.",
     WARBAND_WH_DELETE_CONFIRM                   = "Delete?",
@@ -176,6 +178,7 @@ ns:RegisterLocale("enUS", {
     WARBAND_WH_MSG_ADDED_ITEM                   = "Added %s to '%s'.",
     WARBAND_WH_MSG_INVALID_ITEM_ID              = "Invalid item ID.",
     WARBAND_WH_MSG_REMOVED_ITEM                 = "Removed %s from '%s'.",
+    WARBAND_WH_MSG_RENAMED_GROUP                = "Renamed warehousing group '%s' to '%s'.",
     WARBAND_WH_MSG_DELETED_GROUP                = "Deleted warehousing group '%s'.",
 
     ---------------------------------------------------------------------------

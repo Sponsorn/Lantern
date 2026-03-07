@@ -78,6 +78,30 @@ function Warehousing:CreateGroup(name)
     return true;
 end
 
+function Warehousing:RenameGroup(oldName, newName)
+    local db = getDB();
+    if (not db) then return false; end
+    if (not oldName or not newName or newName == "") then return false; end
+    if (not db.groups[oldName]) then return false; end
+    if (db.groups[newName]) then return false; end
+
+    db.groups[newName] = db.groups[oldName];
+    db.groups[newName].name = newName;
+    db.groups[oldName] = nil;
+
+    -- Update per-character selections
+    if (db.selectedGroupsByChar) then
+        for charKey, selections in pairs(db.selectedGroupsByChar) do
+            if (selections[oldName] ~= nil) then
+                selections[newName] = selections[oldName];
+                selections[oldName] = nil;
+            end
+        end
+    end
+
+    return true;
+end
+
 function Warehousing:DeleteGroup(name)
     local db = getDB();
     if (not db) then return false; end
