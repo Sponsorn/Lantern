@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.2
+- Fix: Complete+Whisper button and analytics button not appearing when Professions window loads after addon initialization
+
 ## 0.6.1 - 2026-03-06
 - Add: Order type filtering in analytics — choose which order types (guild, personal) to track and display
 - Change: Renamed analytics "Filters" tab to "Settings" and reorganized with order type toggles and customer exclusion sections

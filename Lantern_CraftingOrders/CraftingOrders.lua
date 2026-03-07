@@ -724,13 +724,36 @@ function CraftingOrders:OnEnable()
         if (IsInInstance()) then return; end
         self:HandleSystemMessage(msg);
     end);
-    -- Hook ProfessionsFrame to create button when it becomes available
-    if (ProfessionsFrame and ProfessionsFrame.HookScript) then
+    -- Hook ProfessionsFrame to create buttons when it becomes available.
+    -- ProfessionsFrame is load-on-demand (Blizzard_Professions), so it may
+    -- not exist yet at OnEnable time.
+    local function hookProfessionsFrame()
+        if (not ProfessionsFrame or not ProfessionsFrame.HookScript) then return; end
+        if (self._profFrameHooked) then return; end
+        self._profFrameHooked = true;
         ProfessionsFrame:HookScript("OnShow", function()
             self:EnsureWhisperButton();
             self:EnsureAnalyticsButton();
             self:EnsureAnalyticsBrowseButton();
             self:UpdateWhisperButton();
+        end);
+        -- If it's already shown, set up buttons now
+        if (ProfessionsFrame:IsShown()) then
+            self:EnsureWhisperButton();
+            self:EnsureAnalyticsButton();
+            self:EnsureAnalyticsBrowseButton();
+            self:UpdateWhisperButton();
+        end
+    end
+
+    if (ProfessionsFrame) then
+        hookProfessionsFrame();
+    else
+        -- Wait for the load-on-demand addon to load
+        self.addon:ModuleRegisterEvent(self, "ADDON_LOADED", function(_, _, addonName)
+            if (addonName == "Blizzard_Professions") then
+                hookProfessionsFrame();
+            end
         end);
     end
 end
@@ -740,6 +763,7 @@ function CraftingOrders:OnDisable()
     self._awaitDeadline = 0;
     self._awaitFulfillWho = nil;
     self._awaitFulfillTip = nil;
+    self._profFrameHooked = nil;
 end
 
 -------------------------------------------------------------------------------
