@@ -22,7 +22,7 @@ local moduleToggle = Lantern.moduleToggle;
 
 local function guildWidgets()
     local widgets = {
-        moduleToggle("CraftingOrders", L["ENABLE"], L["CO_DESC"]),
+        moduleToggle("CraftingOrders"),
     };
 
     if (not moduleEnabled("CraftingOrders")) then return widgets; end
@@ -144,7 +144,7 @@ end
 
 local function personalWidgets()
     local widgets = {
-        moduleToggle("CraftingOrders", L["ENABLE"], L["CO_DESC"]),
+        moduleToggle("CraftingOrders"),
     };
 
     if (not moduleEnabled("CraftingOrders")) then return widgets; end
@@ -326,9 +326,15 @@ end
 -------------------------------------------------------------------------------
 
 local function historyWidgets()
+    if (not moduleEnabled("CraftingOrders")) then
+        return { moduleToggle("CraftingOrders") };
+    end
+
     local db = _G.LanternCraftingOrdersDB or {};
 
     local widgets = {
+        moduleToggle("CraftingOrders"),
+        { type = "divider" },
         {
             type = "toggle",
             label = L["CO_TRACK_HISTORY"],

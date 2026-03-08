@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.4
+- Fix: Module was disabled by default on fresh installs with no toggle to enable it
+
 ## 0.4.3
 - Add: Rename warehousing groups — edit the group name directly in settings without deleting and recreating
 - Add: Current character's gold group is highlighted green in Groups and Characters tabs for quick identification

@@ -18,17 +18,26 @@ local function getUtils()
 end
 
 local refreshPage = Lantern.refreshPage;
+local moduleEnabled = Lantern.moduleEnabled;
+local moduleToggle = Lantern.moduleToggle;
 
 -------------------------------------------------------------------------------
 -- General Tab
 -------------------------------------------------------------------------------
 
 local function generalWidgets()
+    local widgets = {
+        moduleToggle("Warband"),
+    };
+
+    if (not moduleEnabled("Warband")) then return widgets; end
+
     local utils = getUtils();
     local formatGoldThousands = utils.formatGoldThousands;
     local parseGold = utils.parseGold;
 
-    local widgets = {
+    local rest = {
+        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_GENERAL_DESCRIPTION"],
@@ -100,10 +109,14 @@ local function generalWidgets()
         infoText = string.format("|cff00ff00%s|r %s\n|cffff0000%s|r%s", L["WARBAND_CURRENT_CHAR_LABEL"], key or L["WARBAND_UNKNOWN"], L["WARBAND_NOT_ASSIGNED"], thresholdText);
     end
 
-    table.insert(widgets, {
+    rest[#rest + 1] = {
         type = "label",
         text = infoText,
-    });
+    };
+
+    for _, w in ipairs(rest) do
+        widgets[#widgets + 1] = w;
+    end
 
     return widgets;
 end
@@ -113,6 +126,10 @@ end
 -------------------------------------------------------------------------------
 
 local function groupsWidgets()
+    if (not moduleEnabled("Warband")) then
+        return { moduleToggle("Warband") };
+    end
+
     local utils = getUtils();
     local formatGoldThousands = utils.formatGoldThousands;
     local parseGold = utils.parseGold;
@@ -128,7 +145,10 @@ local function groupsWidgets()
         };
     end
 
-    local widgets = {};
+    local widgets = {
+        moduleToggle("Warband"),
+        { type = "divider" },
+    };
 
     ---------------------------------------------------------------------------
     -- Create New Group section
@@ -437,10 +457,16 @@ end
 -------------------------------------------------------------------------------
 
 local function charactersWidgets()
+    if (not moduleEnabled("Warband")) then
+        return { moduleToggle("Warband") };
+    end
+
     local utils = getUtils();
     local formatGoldThousands = utils.formatGoldThousands;
 
     local widgets = {
+        moduleToggle("Warband"),
+        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_CHARS_DESCRIPTION"],
@@ -539,6 +565,10 @@ end
 -------------------------------------------------------------------------------
 
 local function warehousingWidgets()
+    if (not moduleEnabled("Warband")) then
+        return { moduleToggle("Warband") };
+    end
+
     local Warehousing = Warband.Warehousing;
     local WarehousingUI = Warband.WarehousingUI;
 
@@ -567,6 +597,8 @@ local function warehousingWidgets()
     end
 
     local widgets = {
+        moduleToggle("Warband"),
+        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_WH_DESCRIPTION"],
@@ -983,7 +1015,13 @@ end
 -------------------------------------------------------------------------------
 
 local function treatiseWidgets()
+    if (not moduleEnabled("Warband")) then
+        return { moduleToggle("Warband") };
+    end
+
     local widgets = {
+        moduleToggle("Warband"),
+        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_TREATISE_DESCRIPTION"],

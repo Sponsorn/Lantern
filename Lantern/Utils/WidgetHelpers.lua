@@ -8,6 +8,11 @@ function Lantern.moduleEnabled(name)
 end
 
 function Lantern.moduleToggle(name, label, desc)
+    if (not desc) then
+        local mod = Lantern.modules and Lantern.modules[name];
+        local title = (mod and mod.opts and mod.opts.title) or name;
+        desc = string.format(L["MODULE_ENABLE_DESC"], title);
+    end
     return {
         type = "toggle",
         label = label or L["ENABLE"],
