@@ -11,6 +11,7 @@ ignore:
   - Lantern
   - LanternUX
   - Lantern_CraftingOrders
+  - Lantern_GoldFlow
   - CurseForge
   - docs
   - scratchpad

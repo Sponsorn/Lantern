@@ -11,6 +11,7 @@ ignore:
   - Lantern
   - LanternUX
   - Lantern_Warband
+  - Lantern_GoldFlow
   - CurseForge
   - docs
   - scratchpad
