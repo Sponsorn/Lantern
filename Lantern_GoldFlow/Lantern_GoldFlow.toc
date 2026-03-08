@@ -10,7 +10,6 @@
 ## DefaultState: enabled
 
 Core.lua
-Data.lua
 Scanner.lua
 Transactions.lua
 Listings.lua

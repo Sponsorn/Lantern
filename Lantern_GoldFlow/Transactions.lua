@@ -12,7 +12,6 @@ if (not module) then return; end
 local C_AuctionHouse = C_AuctionHouse;
 local GetInboxNumItems = GetInboxNumItems;
 local GetInboxHeaderInfo = GetInboxHeaderInfo;
-local GetInboxText = GetInboxText;
 local GetInboxInvoiceInfo = GetInboxInvoiceInfo;
 
 -------------------------------------------------------------------------------
@@ -27,8 +26,6 @@ local pendingPost = nil;
 -------------------------------------------------------------------------------
 
 function module.RegisterTransactionEvents(self)
-    if (not module.Setting("trackTransactions")) then return; end
-
     self.addon:ModuleRegisterEvent(self, "COMMODITY_PURCHASE_SUCCEEDED", self.OnCommodityPurchased);
     self.addon:ModuleRegisterEvent(self, "AUCTION_HOUSE_PURCHASE_COMPLETED", self.OnAuctionPurchaseCompleted);
     self.addon:ModuleRegisterEvent(self, "AUCTION_HOUSE_AUCTION_CREATED", self.OnAuctionCreated);
@@ -78,48 +75,76 @@ end
 -------------------------------------------------------------------------------
 
 function module:OnAuctionCreated()
+    if (not module.Setting("trackTransactions")) then return; end
     if (not pendingPost) then return; end
+
+    local p = pendingPost;
+    local itemName = "Unknown";
+    if (p.itemID and p.itemID > 0) then
+        itemName = C_Item.GetItemNameByID(p.itemID) or "Unknown";
+    end
 
     module.AddTransaction({
         type = "list",
-        itemID = pendingPost.itemID,
-        quantity = pendingPost.quantity,
-        unitPrice = pendingPost.unitPrice,
-        buyout = pendingPost.buyout,
+        itemId = p.itemID or 0,
+        itemName = itemName,
+        quantity = p.quantity or 1,
+        pricePerUnit = p.unitPrice or 0,
+        totalPrice = (p.unitPrice or 0) * (p.quantity or 1),
     });
 
     pendingPost = nil;
 end
 
 function module:OnCommodityPurchased()
+    if (not module.Setting("trackTransactions")) then return; end
     if (not pendingCommodity) then return; end
 
-    -- Estimate price from commodity search results if available
-    local unitPrice = nil;
-    if (C_AuctionHouse and C_AuctionHouse.GetCommoditySearchResultInfo) then
-        local numResults = C_AuctionHouse.GetNumCommoditySearchResults(pendingCommodity.itemID) or 0;
-        if (numResults > 0) then
-            local result = C_AuctionHouse.GetCommoditySearchResultInfo(pendingCommodity.itemID, 1);
-            if (result) then
-                unitPrice = result.unitPrice;
+    local itemID = pendingCommodity.itemID;
+    local quantity = pendingCommodity.quantity;
+    pendingCommodity = nil;
+
+    local itemName = C_Item.GetItemNameByID(itemID) or "Unknown";
+    local unitPrice = 0;
+    local totalPrice = 0;
+
+    if (C_AuctionHouse.GetNumCommoditySearchResults) then
+        local numResults = C_AuctionHouse.GetNumCommoditySearchResults(itemID) or 0;
+        local remaining = quantity;
+        for i = 1, numResults do
+            local result = C_AuctionHouse.GetCommoditySearchResultInfo(itemID, i);
+            if (result and remaining > 0) then
+                local take = math.min(remaining, result.quantity);
+                totalPrice = totalPrice + (take * result.unitPrice);
+                remaining = remaining - take;
+                if (remaining <= 0) then break; end
             end
+        end
+        if (quantity > 0) then
+            unitPrice = math.floor(totalPrice / quantity);
         end
     end
 
     module.AddTransaction({
         type = "buy",
-        itemID = pendingCommodity.itemID,
-        quantity = pendingCommodity.quantity,
-        unitPrice = unitPrice,
+        itemId = itemID,
+        itemName = itemName,
+        quantity = quantity,
+        pricePerUnit = unitPrice,
+        totalPrice = totalPrice,
     });
-
-    pendingCommodity = nil;
 end
 
 function module:OnAuctionPurchaseCompleted(_, auctionID)
+    if (not module.Setting("trackTransactions")) then return; end
+
     module.AddTransaction({
         type = "buy",
-        auctionID = auctionID,
+        itemId = 0,
+        itemName = "Auction #" .. tostring(auctionID),
+        quantity = 1,
+        pricePerUnit = 0,
+        totalPrice = 0,
     });
 end
 
@@ -127,63 +152,78 @@ end
 -- Mail Processing
 -------------------------------------------------------------------------------
 
-local processedMailKeys = {};
-
-local function ProcessAuctionMail(mailIndex, money)
-    -- GetInboxText returns: packageIcon, stationeryIcon, sender, subject, money, CODAmount, daysLeft, hasItem, wasRead, wasReturned, textCreated, canReply, isGM, itemTextCreated, isInvoice
-    local _, _, _, _, _, _, _, _, _, _, _, _, _, _, isInvoice = GetInboxText(mailIndex);
-
-    if (isInvoice) then
-        local invoiceType, itemName, playerName, bid, buyout, deposit, consignment, moneyDelay, etaHour, etaMin, count = GetInboxInvoiceInfo(mailIndex);
-
-        -- Skip temporary seller invoices (pending sales)
-        if (invoiceType == "seller_temp_invoice") then return; end
-
-        if (invoiceType == "seller") then
-            module.AddTransaction({
-                type = "sale",
-                itemName = itemName,
-                buyer = playerName,
-                buyout = buyout,
-                deposit = deposit,
-                consignment = consignment,
-                quantity = count,
-            });
-        elseif (invoiceType == "buyer") then
-            module.AddTransaction({
-                type = "buy",
-                itemName = itemName,
-                seller = playerName,
-                buyout = buyout,
-                bid = bid,
-                quantity = count,
-            });
-        end
-    else
-        -- Check for expired/returned auctions: has attachments but no money
-        local _, _, _, _, mailMoney, _, _, hasItem = GetInboxHeaderInfo(mailIndex);
-        if (hasItem and (not mailMoney or mailMoney == 0)) then
-            local _, _, _, subject = GetInboxHeaderInfo(mailIndex);
-            module.AddTransaction({
-                type = "expired",
-                subject = subject,
-            });
-        end
-    end
-end
-
 function module:OnMailInboxUpdate()
     if (not module.Setting("trackTransactions")) then return; end
 
     local numItems = GetInboxNumItems();
+    if (not numItems or numItems == 0) then return; end
+
+    if (not module._processedMails) then
+        module._processedMails = {};
+    end
+
     for i = 1, numItems do
         local _, _, sender, subject, money, _, daysLeft = GetInboxHeaderInfo(i);
-
-        -- Build a key to avoid processing the same mail twice per session
-        local mailKey = (subject or "") .. ":" .. tostring(money or 0) .. ":" .. tostring(daysLeft or 0);
-        if (not processedMailKeys[mailKey]) then
-            processedMailKeys[mailKey] = true;
-            ProcessAuctionMail(i, money);
+        if (subject) then
+            local mailKey = format("%s:%d:%.2f", subject, money or 0, daysLeft or 0);
+            if (not module._processedMails[mailKey]) then
+                module._processedMails[mailKey] = true;
+                module:ProcessAuctionMail(i, money);
+            end
         end
+    end
+end
+
+function module:ProcessAuctionMail(mailIndex, money)
+    -- Try GetInboxInvoiceInfo directly — returns nil for non-AH mail, no side effects
+    local invoiceType, itemName, playerName, bid, buyout, deposit, consignment, moneyDelay, etaHour, etaMin, count = GetInboxInvoiceInfo(mailIndex);
+
+    if (invoiceType) then
+        if (invoiceType == "seller_temp_invoice") then return; end
+
+        if (invoiceType == "seller") then
+            local qty = count or 1;
+            local total = buyout or 0;
+            local perUnit = (qty > 0) and math.floor(total / qty) or 0;
+
+            module.AddTransaction({
+                type = "sale",
+                itemId = 0,
+                itemName = itemName or "Unknown",
+                quantity = qty,
+                pricePerUnit = perUnit,
+                totalPrice = total,
+                deposit = deposit or 0,
+                consignment = consignment or 0,
+            });
+        elseif (invoiceType == "buyer") then
+            local qty = count or 1;
+            local total = buyout or bid or 0;
+            local perUnit = (qty > 0) and math.floor(total / qty) or 0;
+
+            module.AddTransaction({
+                type = "buy",
+                itemId = 0,
+                itemName = itemName or "Unknown",
+                quantity = qty,
+                pricePerUnit = perUnit,
+                totalPrice = total,
+            });
+        end
+        return;
+    end
+
+    -- Non-invoice mail with attachments and no money = likely expired/returned auction
+    local _, _, _, _, _, _, _, numAttachments = GetInboxHeaderInfo(mailIndex);
+    if (numAttachments and numAttachments > 0 and (not money or money == 0)) then
+        local _, _, _, subject = GetInboxHeaderInfo(mailIndex);
+        module.AddTransaction({
+            type = "expired",
+            itemId = 0,
+            itemName = subject or "Unknown",
+            quantity = numAttachments,
+            pricePerUnit = 0,
+            totalPrice = 0,
+        });
     end
 end

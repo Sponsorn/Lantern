@@ -63,7 +63,7 @@ local function EnsureCharacter()
     if (not db.characters[key]) then
         local name = UnitName("player");
         local realm = GetRealmName();
-        local realmSlug = realm and realm:gsub("%s", ""):lower() or "";
+        local realmSlug = GetNormalizedRealmName() or "";
         local _, classFile = UnitClass("player");
 
         db.characters[key] = {
@@ -94,7 +94,7 @@ local function AddTransaction(tx)
     local db = module.db;
     if (not db or not db.settings.trackTransactions) then return; end
 
-    tx.timestamp = tx.timestamp or time();
+    tx.timestamp = tx.timestamp or GetServerTime();
     tx.character = tx.character or GetCharKey();
 
     table.insert(db.transactions, 1, tx);
@@ -111,7 +111,7 @@ end
 
 local function UpdateTimestamp()
     if (module.db) then
-        module.db.lastUpdated = time();
+        module.db.lastUpdated = GetServerTime();
     end
 end
 

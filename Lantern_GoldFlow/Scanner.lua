@@ -29,7 +29,7 @@ local recipesScannedThisSession = false;
 -------------------------------------------------------------------------------
 
 function module.RegisterScannerEvents(self)
-    self.addon:ModuleRegisterEvent(self, "PLAYER_ENTERING_WORLD", self.OnPlayerLogin);
+    self.addon:ModuleRegisterEvent(self, "PLAYER_ENTERING_WORLD", self.OnPlayerEnteringWorld);
     self.addon:ModuleRegisterEvent(self, "PLAYER_MONEY", self.OnPlayerMoney);
     self.addon:ModuleRegisterEvent(self, "ACCOUNT_MONEY", self.OnAccountMoney);
     self.addon:ModuleRegisterEvent(self, "BAG_UPDATE", self.OnBagUpdate);
@@ -52,10 +52,10 @@ local function ScanCharacter()
 
     char.name = name;
     char.realm = realm;
-    char.realmSlug = realm and realm:gsub("%s", ""):lower() or "";
+    char.realmSlug = GetNormalizedRealmName() or "";
     char.class = classFile;
     char.gold = GetMoney();
-    char.lastSeen = time();
+    char.lastSeen = GetServerTime();
 end
 
 -------------------------------------------------------------------------------
@@ -149,49 +149,75 @@ local function ScanProfessionsBasic()
     local char = module.EnsureCharacter();
     if (not char) then return; end
 
-    char.professions = char.professions or {};
+    local prof1, prof2, archaeology, fishing, cooking = GetProfessions();
+    local professions = {};
 
-    local prof1, prof2 = GetProfessions();
-    local indices = { prof1, prof2 };
-
-    for _, index in ipairs(indices) do
-        if (index) then
-            local name, icon, skillLevel, maxSkillLevel, _, _, skillLine, skillModifier, specIndex, specOffset = GetProfessionInfo(index);
-            if (name and skillLine) then
-                char.professions[skillLine] = char.professions[skillLine] or {};
-                local entry = char.professions[skillLine];
-                entry.name = name;
-                entry.skillLevel = skillLevel;
-                entry.maxSkillLevel = maxSkillLevel;
-                entry.specialization = specIndex;
-                entry.recipes = entry.recipes or {};
+    local indices = { prof1, prof2, archaeology, fishing, cooking };
+    for _, idx in ipairs(indices) do
+        if (idx) then
+            local name, _, skillLevel, maxSkillLevel = GetProfessionInfo(idx);
+            if (name) then
+                table.insert(professions, {
+                    name = name,
+                    skillLevel = skillLevel or 0,
+                    maxSkillLevel = maxSkillLevel or 0,
+                    specialization = nil,
+                    recipes = {},
+                });
             end
         end
     end
 
+    char.professions = professions;
     module.UpdateTimestamp();
 end
 
 local function ScanRecipes()
     if (not module.Setting("scanProfessions")) then return; end
     if (recipesScannedThisSession) then return; end
-    if (not C_TradeSkillUI or not C_TradeSkillUI.GetAllRecipeIDs) then return; end
     if (not C_TradeSkillUI.IsTradeSkillReady or not C_TradeSkillUI.IsTradeSkillReady()) then return; end
 
     local char = module.EnsureCharacter();
     if (not char) then return; end
 
-    local recipeIDs = C_TradeSkillUI.GetAllRecipeIDs();
-    if (not recipeIDs or #recipeIDs == 0) then return; end
+    local baseProfInfo = C_TradeSkillUI.GetBaseProfessionInfo and C_TradeSkillUI.GetBaseProfessionInfo();
+    if (not baseProfInfo or not baseProfInfo.professionName) then return; end
 
-    local baseInfo = C_TradeSkillUI.GetBaseProfessionInfo and C_TradeSkillUI.GetBaseProfessionInfo();
-    local skillLine = baseInfo and baseInfo.professionID;
-    if (not skillLine) then return; end
+    -- Find matching profession entry
+    local profEntry = nil;
+    for _, prof in ipairs(char.professions or {}) do
+        if (prof.name == baseProfInfo.professionName) then
+            profEntry = prof;
+            break;
+        end
+    end
+    if (not profEntry) then return; end
 
-    char.professions = char.professions or {};
-    char.professions[skillLine] = char.professions[skillLine] or {};
-    char.professions[skillLine].recipes = recipeIDs;
+    profEntry.skillLevel = baseProfInfo.skillLevel or profEntry.skillLevel;
+    profEntry.maxSkillLevel = baseProfInfo.maxSkillLevel or profEntry.maxSkillLevel;
 
+    local recipeIDs = C_TradeSkillUI.GetFilteredRecipeIDs();
+    if (not recipeIDs) then return; end
+
+    local recipes = {};
+    for _, recipeID in ipairs(recipeIDs) do
+        local recipeInfo = C_TradeSkillUI.GetRecipeInfo(recipeID);
+        if (recipeInfo and recipeInfo.learned) then
+            local categories = {};
+            if (recipeInfo.categoryID) then
+                local catInfo = C_TradeSkillUI.GetCategoryInfo(recipeInfo.categoryID);
+                if (catInfo and catInfo.name) then
+                    table.insert(categories, catInfo.name);
+                end
+            end
+            recipes[recipeID] = {
+                rank = recipeInfo.unlockedRecipeLevel or 1,
+                categories = categories,
+            };
+        end
+    end
+
+    profEntry.recipes = recipes;
     recipesScannedThisSession = true;
     module.UpdateTimestamp();
 end
@@ -200,7 +226,7 @@ end
 -- Event Handlers
 -------------------------------------------------------------------------------
 
-function module:OnPlayerLogin()
+function module:OnPlayerEnteringWorld()
     ScanCharacter();
     ScanWarbandGold();
     ScanBags();
@@ -211,7 +237,7 @@ function module:OnPlayerMoney()
     local char = module.EnsureCharacter();
     if (char) then
         char.gold = GetMoney();
-        char.lastSeen = time();
+        char.lastSeen = GetServerTime();
     end
     module.UpdateTimestamp();
 end

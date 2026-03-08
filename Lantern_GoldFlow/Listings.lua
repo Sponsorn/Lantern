@@ -21,8 +21,6 @@ local TIME_LEFT_DURATIONS = {
 -------------------------------------------------------------------------------
 
 function module.RegisterListingEvents(self)
-    if (not module.Setting("trackListings")) then return; end
-
     self.addon:ModuleRegisterEvent(self, "AUCTION_HOUSE_SHOW", self.OnAuctionHouseShow);
     self.addon:ModuleRegisterEvent(self, "OWNED_AUCTIONS_UPDATED", self.OnOwnedAuctionsUpdated);
 end
@@ -49,20 +47,22 @@ function module:OnOwnedAuctionsUpdated()
     for i = 1, numAuctions do
         local auction = C_AuctionHouse.GetOwnedAuctionInfo(i);
         if (auction) then
-            local itemId = nil;
-            if (auction.itemKey and auction.itemKey.itemID) then
-                itemId = auction.itemKey.itemID;
-            end
+            local itemID = auction.itemKey and auction.itemKey.itemID or 0;
+            local quantity = auction.quantity or 1;
+            local buyoutAmount = auction.buyoutAmount or 0;
+            local buyoutPerUnit = (quantity > 0) and math.floor(buyoutAmount / quantity) or 0;
+            local timeLeftSeconds = auction.timeLeftSeconds or 0;
+            local timeLeftIndex = auction.timeLeft or 3;
+
+            local totalDuration = TIME_LEFT_DURATIONS[timeLeftIndex] or 172800;
+            local listedAt = GetServerTime() - (totalDuration - timeLeftSeconds);
 
             table.insert(listings, {
-                itemId = itemId,
-                quantity = auction.quantity or 1,
-                buyoutPerUnit = auction.buyoutAmount and auction.quantity and auction.quantity > 0
-                    and math.floor(auction.buyoutAmount / auction.quantity) or auction.buyoutAmount,
-                timeLeftIndex = auction.timeLeftSeconds and nil or auction.timeLeft,
-                listedAt = auction.timeLeftSeconds
-                    and (time() - (TIME_LEFT_DURATIONS[auction.timeLeft] or 172800) + (auction.timeLeftSeconds or 0))
-                    or time(),
+                itemId = itemID,
+                quantity = quantity,
+                buyoutPerUnit = buyoutPerUnit,
+                timeLeftIndex = timeLeftIndex,
+                listedAt = listedAt,
             });
         end
     end
