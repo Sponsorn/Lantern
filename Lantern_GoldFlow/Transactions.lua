@@ -58,10 +58,12 @@ function module.RegisterTransactionEvents(self)
         if (C_AuctionHouse.PostItem) then
             hooksecurefunc(C_AuctionHouse, "PostItem", function(item, duration, quantity, bid, buyout)
                 local ok, itemID = pcall(C_Item.GetItemID, item);
+                local qty = quantity or 1;
+                local price = buyout or 0;
                 pendingPost = {
                     itemID = ok and itemID or nil,
-                    quantity = quantity,
-                    buyout = buyout,
+                    quantity = qty,
+                    unitPrice = (qty > 0) and math.floor(price / qty) or 0,
                 };
             end);
         end
@@ -92,8 +94,9 @@ function module:OnAuctionCreated()
         pricePerUnit = p.unitPrice or 0,
         totalPrice = (p.unitPrice or 0) * (p.quantity or 1),
     });
-
-    pendingPost = nil;
+    -- Do NOT clear pendingPost here — multisell fires this event
+    -- multiple times for the same item. The hook overwrites pendingPost
+    -- when a different item is posted.
 end
 
 function module:OnCommodityPurchased()

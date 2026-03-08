@@ -30,12 +30,14 @@ end
 -------------------------------------------------------------------------------
 
 function module:OnAuctionHouseShow()
+    if (not module.Setting("trackListings")) then return; end
     if (C_AuctionHouse and C_AuctionHouse.QueryOwnedAuctions) then
         C_AuctionHouse.QueryOwnedAuctions({});
     end
 end
 
 function module:OnOwnedAuctionsUpdated()
+    if (not module.Setting("trackListings")) then return; end
     if (not C_AuctionHouse or not C_AuctionHouse.GetNumOwnedAuctions) then return; end
 
     local char = module.EnsureCharacter();
