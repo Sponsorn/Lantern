@@ -1,0 +1,17 @@
+## Interface: 120000, 120001
+## Title: Lantern: GoldFlow
+## Notes: Economic data tracker for the Lantern companion app.
+## Author: Dede in-game / Sponsorn on curseforge & github
+## Version: @project-version@
+## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
+## Dependencies: Lantern
+## OptionalDeps: LanternUX
+## SavedVariables: GoldFlowDB
+## DefaultState: enabled
+
+Core.lua
+Data.lua
+Scanner.lua
+Transactions.lua
+Listings.lua
+WidgetOptions.lua
