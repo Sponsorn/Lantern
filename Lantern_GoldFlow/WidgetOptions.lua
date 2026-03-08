@@ -122,7 +122,14 @@ module.widgetOptions = function()
     end
     table.insert(lines, string.format("|cff00ff00Warband Gold:|r %s", warbandFormatted or "0g"));
     table.insert(lines, string.format("|cff00ff00Total Gold:|r %s", grandFormatted or "0g"));
-    table.insert(lines, string.format("|cff00ff00Transactions:|r %d", txCount));
+    table.insert(lines, string.format("|cff00ff00Transactions:|r %d / %d", txCount, module.MAX_TRANSACTIONS));
+
+    local lastSynced = db.lastSyncedTimestamp or 0;
+    local lastSyncedText = "Never";
+    if (lastSynced > 0) then
+        lastSyncedText = date("%Y-%m-%d %H:%M:%S", lastSynced);
+    end
+    table.insert(lines, string.format("|cff00ff00Last Synced:|r %s", lastSyncedText));
     table.insert(lines, string.format("|cff00ff00Last Updated:|r %s", lastUpdatedText));
 
     table.insert(widgets, {

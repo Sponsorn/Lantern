@@ -10,11 +10,19 @@ if (not module) then return; end
 -------------------------------------------------------------------------------
 
 local C_Container = C_Container;
+local C_Item = C_Item;
 local C_TradeSkillUI = C_TradeSkillUI;
 local GetProfessions = GetProfessions;
 local GetProfessionInfo = GetProfessionInfo;
+local GetItemInfoInstant = GetItemInfoInstant;
 local C_Bank = C_Bank;
 local GetMoney = GetMoney;
+
+-- Item class IDs to skip (not tradeable / not useful for companion app)
+local SKIP_CLASS_IDS = {
+    [12] = true,  -- Quest items
+    [17] = true,  -- Battle pets
+};
 
 -------------------------------------------------------------------------------
 -- State
@@ -71,6 +79,28 @@ local function ScanWarbandGold()
 end
 
 -------------------------------------------------------------------------------
+-- Inventory Filtering
+-------------------------------------------------------------------------------
+
+local function ShouldSkipItem(itemID)
+    if (not itemID) then return true; end
+    local ok, _, _, _, _, _, classID, subClassID = pcall(GetItemInfoInstant, itemID);
+    if (not ok or not classID) then return false; end
+    if (SKIP_CLASS_IDS[classID]) then return true; end
+    -- Skip mounts (Miscellaneous classID=15, subClassID=5)
+    if (classID == 15 and subClassID == 5) then return true; end
+    return false;
+end
+
+local function IsItemBound(bagID, slot)
+    if (not ItemLocation) then return false; end
+    local ok, itemLocation = pcall(ItemLocation.CreateFromBagAndSlot, ItemLocation, bagID, slot);
+    if (not ok or not itemLocation or not itemLocation:IsValid()) then return false; end
+    local ok2, bound = pcall(C_Item.IsBound, itemLocation);
+    return ok2 and bound;
+end
+
+-------------------------------------------------------------------------------
 -- Inventory Scanning
 -------------------------------------------------------------------------------
 
@@ -87,7 +117,9 @@ local function ScanBags()
         for slot = 1, numSlots do
             local info = C_Container.GetContainerItemInfo(bagID, slot);
             if (info and info.itemID) then
-                bags[info.itemID] = (bags[info.itemID] or 0) + (info.stackCount or 1);
+                if (not ShouldSkipItem(info.itemID) and not IsItemBound(bagID, slot)) then
+                    bags[info.itemID] = (bags[info.itemID] or 0) + (info.stackCount or 1);
+                end
             end
         end
     end
@@ -110,7 +142,9 @@ local function ScanBank()
         for slot = 1, numSlots do
             local info = C_Container.GetContainerItemInfo(bagID, slot);
             if (info and info.itemID) then
-                bank[info.itemID] = (bank[info.itemID] or 0) + (info.stackCount or 1);
+                if (not ShouldSkipItem(info.itemID) and not IsItemBound(bagID, slot)) then
+                    bank[info.itemID] = (bank[info.itemID] or 0) + (info.stackCount or 1);
+                end
             end
         end
     end
@@ -130,7 +164,10 @@ local function ScanAccountBank()
         for slot = 1, numSlots do
             local info = C_Container.GetContainerItemInfo(bagID, slot);
             if (info and info.itemID) then
-                items[info.itemID] = (items[info.itemID] or 0) + (info.stackCount or 1);
+                -- Account bank items are shared, only filter by classID (not bound check)
+                if (not ShouldSkipItem(info.itemID)) then
+                    items[info.itemID] = (items[info.itemID] or 0) + (info.stackCount or 1);
+                end
             end
         end
     end
@@ -152,16 +189,54 @@ local function ScanProfessionsBasic()
     local prof1, prof2, archaeology, fishing, cooking = GetProfessions();
     local professions = {};
 
+    -- Build a lookup of concentration by parent profession name.
+    -- GetProfessionInfo returns the parent skillLine (e.g. 165 for Leatherworking),
+    -- but concentration is per-expansion. We need the expansion-specific professionID.
+    local concentrationByParent = {};
+    if (C_TradeSkillUI.GetAllProfessionTradeSkillLines and C_TradeSkillUI.GetConcentrationCurrencyID) then
+        local allLines = C_TradeSkillUI.GetAllProfessionTradeSkillLines();
+        for _, lineID in ipairs(allLines) do
+            local ok, info = pcall(C_TradeSkillUI.GetProfessionInfoBySkillLineID, lineID);
+            if (ok and info and info.parentProfessionName) then
+                local ok2, currencyID = pcall(C_TradeSkillUI.GetConcentrationCurrencyID, info.professionID);
+                if (ok2 and currencyID and currencyID > 0) then
+                    local ok3, currencyInfo = pcall(C_CurrencyInfo.GetCurrencyInfo, currencyID);
+                    if (ok3 and currencyInfo and currencyInfo.quantity and currencyInfo.quantity > 0) then
+                        -- Keep the highest professionID (latest expansion) per parent
+                        local existing = concentrationByParent[info.parentProfessionName];
+                        if (not existing or info.professionID > existing.professionID) then
+                            concentrationByParent[info.parentProfessionName] = {
+                                professionID = info.professionID,
+                                current = currencyInfo.quantity,
+                                max = currencyInfo.maxQuantity or 0,
+                            };
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     local indices = { prof1, prof2, archaeology, fishing, cooking };
     for _, idx in ipairs(indices) do
         if (idx) then
             local name, _, skillLevel, maxSkillLevel = GetProfessionInfo(idx);
             if (name) then
+                local conc = concentrationByParent[name];
+                local concentration = nil;
+                if (conc) then
+                    concentration = {
+                        current = conc.current,
+                        max = conc.max,
+                    };
+                end
+
                 table.insert(professions, {
                     name = name,
                     skillLevel = skillLevel or 0,
                     maxSkillLevel = maxSkillLevel or 0,
                     specialization = nil,
+                    concentration = concentration,
                     recipes = {},
                 });
             end
@@ -227,6 +302,8 @@ end
 -------------------------------------------------------------------------------
 
 function module:OnPlayerEnteringWorld()
+    self._initialScanDone = true;
+    module.EnsureDB();
     ScanCharacter();
     ScanWarbandGold();
     ScanBags();

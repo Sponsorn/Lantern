@@ -15,17 +15,19 @@ ns.module = module;
 -------------------------------------------------------------------------------
 
 local DB_VERSION = 1;
-local MAX_TRANSACTIONS = 10000;
+local MAX_TRANSACTIONS = 1000;
 
 -------------------------------------------------------------------------------
 -- Database
 -------------------------------------------------------------------------------
 
 local function EnsureDB()
-    if (not _G.GoldFlowDB) then
-        _G.GoldFlowDB = {};
-    end
+    -- Always re-read the global in case WoW replaced it after SavedVariables load.
     local db = _G.GoldFlowDB;
+    if (not db) then
+        db = {};
+        _G.GoldFlowDB = db;
+    end
 
     db.version = db.version or DB_VERSION;
     db.lastUpdated = db.lastUpdated or 0;
@@ -34,6 +36,7 @@ local function EnsureDB()
     db.warbandGold = db.warbandGold or 0;
     db.accountBankItems = db.accountBankItems or {};
     db.settings = db.settings or {};
+    db.lastSyncedTimestamp = db.lastSyncedTimestamp or 0;
 
     local s = db.settings;
     if (s.scanInventory == nil) then s.scanInventory = true; end
@@ -42,6 +45,18 @@ local function EnsureDB()
     if (s.trackListings == nil) then s.trackListings = true; end
 
     module.db = db;
+
+    -- Trim transactions older than lastSyncedTimestamp (once per session)
+    if (not module._trimmedThisSession and db.lastSyncedTimestamp > 0 and #db.transactions > 0) then
+        module._trimmedThisSession = true;
+        local trimmed = {};
+        for _, tx in ipairs(db.transactions) do
+            if (tx.timestamp and tx.timestamp >= db.lastSyncedTimestamp) then
+                table.insert(trimmed, tx);
+            end
+        end
+        db.transactions = trimmed;
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -140,10 +155,20 @@ module.MAX_TRANSACTIONS = MAX_TRANSACTIONS;
 -------------------------------------------------------------------------------
 
 function module:OnEnable()
-    EnsureDB();
+    -- Don't call EnsureDB here — SavedVariables may not be loaded yet if
+    -- initializeModule runs during file execution. Defer to OnInit or first use.
     self.RegisterScannerEvents(self);
     self.RegisterTransactionEvents(self);
     self.RegisterListingEvents(self);
+
+    -- PLAYER_ENTERING_WORLD may have already fired before this external addon
+    -- registered for it. Do a delayed initial scan as a safety net.
+    C_Timer.After(2, function()
+        if (not self.enabled) then return; end
+        if (not self._initialScanDone) then
+            self:OnPlayerEnteringWorld();
+        end
+    end);
 end
 
 function module:OnDisable()
