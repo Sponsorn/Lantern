@@ -40,7 +40,6 @@ Lantern:RegisterLocale("itIT", {
     DISABLEAUTOADD_ENABLE_DESC              = "Impedisce l'aggiunta automatica degli incantesimi alla barra delle azioni.",
 
     -- Auto Queue
-    AUTOQUEUE_ENABLE_DESC                   = "Attiva o disattiva Auto Queue.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Accetta automaticamente i controlli ruolo",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accetta automaticamente i controlli ruolo LFG.",
     AUTOQUEUE_ANNOUNCE_DESC                 = "Invia un messaggio in chat quando un controllo ruolo viene accettato automaticamente.",
@@ -82,7 +81,6 @@ Lantern:RegisterLocale("itIT", {
     RELEASEPROTECT_BATTLEGROUNDS_DESC       = "Protegge nei campi di battaglia PvP.",
 
     -- Auto Repair
-    AUTOREPAIR_ENABLE_DESC                  = "Attiva o disattiva Auto Repair.",
     AUTOREPAIR_SOURCE                       = "Fonte riparazione",
     AUTOREPAIR_SOURCE_DESC                  = "Oro personale: usa sempre il tuo oro. Prima fondi gilda: prova la banca di gilda, poi ripieghi sull'oro personale. Solo fondi gilda: usa solo la banca di gilda (avvisa se non disponibile).",
     AUTOREPAIR_SOURCE_PERSONAL              = "Oro personale",
@@ -268,7 +266,6 @@ Lantern:RegisterLocale("itIT", {
     -- Phase 3: AutoQuest WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOQUEST_ENABLE_DESC                   = "Attiva o disattiva Auto Quest.",
     AUTOQUEST_AUTO_ACCEPT                   = "Accetta missioni automaticamente",
     AUTOQUEST_AUTO_ACCEPT_DESC              = "Accetta automaticamente le missioni dagli NPC.",
     AUTOQUEST_AUTO_TURNIN                   = "Consegna missioni automaticamente",
@@ -311,7 +308,6 @@ Lantern:RegisterLocale("itIT", {
     -- Phase 3: AutoSell WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOSELL_ENABLE_DESC                    = "Attiva o disattiva Auto Sell.",
     AUTOSELL_SELL_GRAYS                     = "Vendi oggetti grigi",
     AUTOSELL_SELL_GRAYS_DESC                = "Vende automaticamente tutti gli oggetti di qualita scadente (grigi).",
     AUTOSELL_SHOW_MESSAGE_DESC              = "Mostra un messaggio in chat quando gli oggetti vengono venduti automaticamente.",

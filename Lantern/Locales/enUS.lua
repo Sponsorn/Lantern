@@ -57,7 +57,6 @@ Lantern:RegisterLocale("enUS", {
     MAPLINE_LENGTH_DESC                     = "How far the directional line extends from your position.",
 
     -- Auto Queue
-    AUTOQUEUE_ENABLE_DESC                   = "Enable or disable Auto Queue.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Auto-accept role checks",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accept LFG role checks automatically.",
     AUTOQUEUE_ANNOUNCE_DESC                 = "Print a message in chat when a role check is auto-accepted.",
@@ -99,7 +98,6 @@ Lantern:RegisterLocale("enUS", {
     RELEASEPROTECT_BATTLEGROUNDS_DESC       = "Protect in PvP battlegrounds.",
 
     -- Auto Repair
-    AUTOREPAIR_ENABLE_DESC                  = "Enable or disable Auto Repair.",
     AUTOREPAIR_SOURCE                       = "Repair source",
     AUTOREPAIR_SOURCE_DESC                  = "Personal gold: always use your own gold. Guild funds first: try guild bank, fall back to personal. Guild funds only: only use guild bank (warns if unavailable).",
     AUTOREPAIR_SOURCE_PERSONAL              = "Personal gold",
@@ -301,7 +299,6 @@ Lantern:RegisterLocale("enUS", {
     -- Phase 3: AutoQuest WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOQUEST_ENABLE_DESC                   = "Enable or disable Auto Quest.",
     AUTOQUEST_AUTO_ACCEPT                   = "Auto-accept quests",
     AUTOQUEST_AUTO_ACCEPT_DESC              = "Automatically accept quests from NPCs.",
     AUTOQUEST_AUTO_TURNIN                   = "Auto turn-in quests",
@@ -344,7 +341,6 @@ Lantern:RegisterLocale("enUS", {
     -- Phase 3: AutoSell WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOSELL_ENABLE_DESC                    = "Enable or disable Auto Sell.",
     AUTOSELL_SELL_GRAYS                     = "Sell gray items",
     AUTOSELL_SELL_GRAYS_DESC                = "Automatically sell all poor quality (gray) items.",
     AUTOSELL_SHOW_MESSAGE_DESC              = "Print a chat message when items are auto-sold.",

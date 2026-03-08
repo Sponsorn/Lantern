@@ -316,7 +316,7 @@ CUSTOM_OPTIONS["autoQueue"] = function()
     end
 
     return {
-        moduleToggle("AutoQueue", L["ENABLE"], L["AUTOQUEUE_ENABLE_DESC"]),
+        moduleToggle("AutoQueue"),
         {
             type = "toggle",
             label = L["AUTOQUEUE_AUTO_ACCEPT"],
@@ -538,7 +538,7 @@ CUSTOM_OPTIONS["autoRepair"] = function()
     local sourceSorting = { "personal", "guild_first", "guild_only" };
 
     return {
-        moduleToggle("AutoRepair", L["ENABLE"], L["AUTOREPAIR_ENABLE_DESC"]),
+        moduleToggle("AutoRepair"),
         {
             type = "select",
             label = L["AUTOREPAIR_SOURCE"],

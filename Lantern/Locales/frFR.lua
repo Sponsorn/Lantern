@@ -40,7 +40,6 @@ Lantern:RegisterLocale("frFR", {
     DISABLEAUTOADD_ENABLE_DESC              = "Empecher l'ajout automatique de sorts dans la barre d'action.",
 
     -- Auto Queue
-    AUTOQUEUE_ENABLE_DESC                   = "Activer ou desactiver Auto Queue.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Accepter automatiquement les verifications de role",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accepter automatiquement les verifications de role LFG.",
     AUTOQUEUE_ANNOUNCE_DESC                 = "Afficher un message dans le chat quand une verification de role est auto-acceptee.",
@@ -82,7 +81,6 @@ Lantern:RegisterLocale("frFR", {
     RELEASEPROTECT_BATTLEGROUNDS_DESC       = "Proteger dans les champs de bataille JcJ.",
 
     -- Auto Repair
-    AUTOREPAIR_ENABLE_DESC                  = "Activer ou desactiver Auto Repair.",
     AUTOREPAIR_SOURCE                       = "Source de reparation",
     AUTOREPAIR_SOURCE_DESC                  = "Or personnel : toujours utiliser votre or. Fonds de guilde d'abord : essayer la banque de guilde, puis l'or personnel. Fonds de guilde uniquement : utiliser seulement la banque de guilde (avertit si indisponible).",
     AUTOREPAIR_SOURCE_PERSONAL              = "Or personnel",
@@ -268,7 +266,6 @@ Lantern:RegisterLocale("frFR", {
     -- Phase 3: AutoQuest WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOQUEST_ENABLE_DESC                   = "Activer ou desactiver Auto Quest.",
     AUTOQUEST_AUTO_ACCEPT                   = "Accepter automatiquement les quetes",
     AUTOQUEST_AUTO_ACCEPT_DESC              = "Accepter automatiquement les quetes aupres des PNJ.",
     AUTOQUEST_AUTO_TURNIN                   = "Rendre automatiquement les quetes",
@@ -311,7 +308,6 @@ Lantern:RegisterLocale("frFR", {
     -- Phase 3: AutoSell WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOSELL_ENABLE_DESC                    = "Activer ou desactiver Auto Sell.",
     AUTOSELL_SELL_GRAYS                     = "Vendre les objets gris",
     AUTOSELL_SELL_GRAYS_DESC                = "Vendre automatiquement tous les objets de qualite mediocre (gris).",
     AUTOSELL_SHOW_MESSAGE_DESC              = "Afficher un message dans le chat lorsque des objets sont vendus automatiquement.",

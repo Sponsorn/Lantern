@@ -40,7 +40,6 @@ Lantern:RegisterLocale("deDE", {
     DISABLEAUTOADD_ENABLE_DESC              = "Verhindert das automatische Hinzufuegen von Zaubern zur Aktionsleiste.",
 
     -- Auto Queue
-    AUTOQUEUE_ENABLE_DESC                   = "Auto Queue aktivieren oder deaktivieren.",
     AUTOQUEUE_AUTO_ACCEPT                   = "Rollenpruefungen automatisch annehmen",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "LFG-Rollenpruefungen automatisch annehmen.",
     AUTOQUEUE_ANNOUNCE_DESC                 = "Chat-Nachricht ausgeben, wenn eine Rollenpruefung automatisch angenommen wurde.",
@@ -82,7 +81,6 @@ Lantern:RegisterLocale("deDE", {
     RELEASEPROTECT_BATTLEGROUNDS_DESC       = "Schutz in PvP-Schlachtfeldern.",
 
     -- Auto Repair
-    AUTOREPAIR_ENABLE_DESC                  = "Auto Repair aktivieren oder deaktivieren.",
     AUTOREPAIR_SOURCE                       = "Reparaturquelle",
     AUTOREPAIR_SOURCE_DESC                  = "Eigenes Gold: immer eigenes Gold verwenden. Gildenbank zuerst: versucht Gildenbank, faellt auf eigenes Gold zurueck. Nur Gildenbank: nur Gildenbank verwenden (warnt, wenn nicht verfuegbar).",
     AUTOREPAIR_SOURCE_PERSONAL              = "Eigenes Gold",
@@ -268,7 +266,6 @@ Lantern:RegisterLocale("deDE", {
     -- Phase 3: AutoQuest WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOQUEST_ENABLE_DESC                   = "Auto Quest aktivieren oder deaktivieren.",
     AUTOQUEST_AUTO_ACCEPT                   = "Quests automatisch annehmen",
     AUTOQUEST_AUTO_ACCEPT_DESC              = "Quests automatisch von NPCs annehmen.",
     AUTOQUEST_AUTO_TURNIN                   = "Quests automatisch abgeben",
@@ -311,7 +308,6 @@ Lantern:RegisterLocale("deDE", {
     -- Phase 3: AutoSell WidgetOptions
     ---------------------------------------------------------------------------
 
-    AUTOSELL_ENABLE_DESC                    = "Auto Sell aktivieren oder deaktivieren.",
     AUTOSELL_SELL_GRAYS                     = "Graue Gegenstaende verkaufen",
     AUTOSELL_SELL_GRAYS_DESC                = "Automatisch alle Gegenstaende schlechter Qualitaet (grau) verkaufen.",
     AUTOSELL_SHOW_MESSAGE_DESC              = "Eine Chat-Nachricht ausgeben, wenn Gegenstaende automatisch verkauft werden.",

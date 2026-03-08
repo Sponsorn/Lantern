@@ -111,7 +111,7 @@ module.widgetOptions = function()
     local widgets = {};
 
     -- Enable + sell grays
-    table.insert(widgets, moduleToggle("AutoSell", L["ENABLE"], L["AUTOSELL_ENABLE_DESC"]));
+    table.insert(widgets, moduleToggle("AutoSell"));
     table.insert(widgets, {
         type = "toggle",
         label = L["AUTOSELL_SELL_GRAYS"],

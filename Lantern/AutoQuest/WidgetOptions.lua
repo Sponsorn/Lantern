@@ -117,7 +117,7 @@ module.widgetOptions = function()
     ---------------------------------------------------------------------------
     -- Toggles
     ---------------------------------------------------------------------------
-    table.insert(widgets, moduleToggle("AutoQuest", L["ENABLE"], L["AUTOQUEST_ENABLE_DESC"]));
+    table.insert(widgets, moduleToggle("AutoQuest"));
     table.insert(widgets, {
         type = "toggle",
         label = L["AUTOQUEST_AUTO_ACCEPT"],
