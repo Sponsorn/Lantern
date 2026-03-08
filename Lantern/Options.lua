@@ -1178,10 +1178,11 @@ loginFrame:SetScript("OnEvent", function()
                     pageInfo.opts.sidebarGroup = groupKey;
                     panel:AddPage(pageInfo.key, pageInfo.opts);
                 end
-            else
+            elseif (mod.widgetOptions) then
                 panel:AddPage("module_" .. moduleName, {
                     label     = (mod.opts and mod.opts.title) or moduleName,
                     section   = "addons",
+                    widgets   = mod.widgetOptions,
                 });
             end
         end
