@@ -3,6 +3,7 @@ Lantern:RegisterLocale("deDE", {
 
     -- Shared
     ENABLE                                  = "Aktivieren",
+    MODULE_ENABLE_DESC                      = "%s aktivieren oder deaktivieren.",
     SHARED_FONT                             = "Schriftart",
     SHARED_FONT_SIZE                        = "Schriftgroesse",
     SHARED_FONT_OUTLINE                     = "Schriftumriss",

@@ -3,6 +3,7 @@ Lantern:RegisterLocale("itIT", {
 
     -- Shared
     ENABLE                                  = "Attiva",
+    MODULE_ENABLE_DESC                      = "Attiva o disattiva %s.",
     SHARED_FONT                             = "Carattere",
     SHARED_FONT_SIZE                        = "Dimensione carattere",
     SHARED_FONT_OUTLINE                     = "Contorno carattere",

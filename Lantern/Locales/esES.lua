@@ -3,6 +3,7 @@ Lantern:RegisterLocale("esES", {
 
     -- Shared
     ENABLE                                  = "Activar",
+    MODULE_ENABLE_DESC                      = "Activar o desactivar %s.",
     SHARED_FONT                             = "Fuente",
     SHARED_FONT_SIZE                        = "Tamano de fuente",
     SHARED_FONT_OUTLINE                     = "Contorno de fuente",

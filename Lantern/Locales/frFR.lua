@@ -3,6 +3,7 @@ Lantern:RegisterLocale("frFR", {
 
     -- Shared
     ENABLE                                  = "Activer",
+    MODULE_ENABLE_DESC                      = "Activer ou desactiver %s.",
     SHARED_FONT                             = "Police",
     SHARED_FONT_SIZE                        = "Taille de police",
     SHARED_FONT_OUTLINE                     = "Contour de police",
