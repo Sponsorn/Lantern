@@ -13,16 +13,24 @@ local T = LanternUX.Theme;
 -------------------------------------------------------------------------------
 
 local refreshPage = Lantern.refreshPage;
+local moduleEnabled = Lantern.moduleEnabled;
+local moduleToggle = Lantern.moduleToggle;
 
 -------------------------------------------------------------------------------
 -- Guild Orders page
 -------------------------------------------------------------------------------
 
 local function guildWidgets()
-    local db = CraftingOrders.db;
-    if (not db) then return {}; end
-
     local widgets = {
+        moduleToggle("CraftingOrders", L["ENABLE"], L["CO_DESC"]),
+    };
+
+    if (not moduleEnabled("CraftingOrders")) then return widgets; end
+
+    local db = CraftingOrders.db;
+
+    local rest = {
+        { type = "divider" },
         {
             type = "description",
             text = L["CO_GUILD_DESCRIPTION"],
@@ -123,6 +131,10 @@ local function guildWidgets()
         },
     };
 
+    for _, w in ipairs(rest) do
+        widgets[#widgets + 1] = w;
+    end
+
     return widgets;
 end
 
@@ -131,13 +143,19 @@ end
 -------------------------------------------------------------------------------
 
 local function personalWidgets()
+    local widgets = {
+        moduleToggle("CraftingOrders", L["ENABLE"], L["CO_DESC"]),
+    };
+
+    if (not moduleEnabled("CraftingOrders")) then return widgets; end
+
     local db = CraftingOrders.db;
-    if (not db) then return {}; end
 
     local notifyDisabled = function() return not db.notifyPersonal; end;
     local soundDisabled = function() return not db.notifyPersonal or not db.personalSoundEnabled; end;
 
-    local widgets = {
+    local rest = {
+        { type = "divider" },
         {
             type = "description",
             text = L["CO_PERSONAL_DESCRIPTION"],
@@ -295,6 +313,10 @@ local function personalWidgets()
             end,
         },
     };
+
+    for _, w in ipairs(rest) do
+        widgets[#widgets + 1] = w;
+    end
 
     return widgets;
 end

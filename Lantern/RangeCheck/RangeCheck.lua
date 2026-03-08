@@ -58,6 +58,8 @@ local SPEC_SPELLS = {
     [263] = 17364,
     -- Rogue (all specs)
     [259] = 1752, [260] = 1752, [261] = 1752,
+    -- Priest (all specs) — Smite; respects range talents like Phantom Reach
+    [256] = 585, [257] = 585, [258] = 585,
 };
 
 local SPEC_ITEMS = {
@@ -78,8 +80,6 @@ local SPEC_RANGE = {
     [62] = 40, [63] = 40, [64] = 40,
     -- Warlock (all specs)
     [265] = 40, [266] = 40, [267] = 40,
-    -- Priest (all specs)
-    [256] = 40, [257] = 40, [258] = 40,
     -- Evoker (25yd)
     [1467] = 25, [1468] = 25, [1473] = 25,
 };

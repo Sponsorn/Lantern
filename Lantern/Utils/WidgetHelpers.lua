@@ -19,6 +19,7 @@ function Lantern.moduleToggle(name, label, desc)
             else
                 Lantern:DisableModule(name);
             end
+            Lantern.refreshPage();
         end,
     };
 end

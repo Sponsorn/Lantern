@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.6.6
+## 0.6.7
+- Fix: Range Check now respects Priest's Phantom Reach talent (+15% range)
+- Fix: Module toggle now refreshes the settings page immediately after enabling/disabling
+
+## 0.6.6 - 2026-03-05
 - Add: Auto-enable new features toggle in General settings, controls whether newly added modules are enabled or disabled by default (off by default). Sorry for any inconvenience caused by new modules being enabled automatically in previous versions!
 - Add: Skip Cinematics now prints a chat message when a cinematic is skipped if enabled (toggleable in settings)
 - Add: "Show chat message" toggle for Auto Repair and Auto Sell modules

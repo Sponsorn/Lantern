@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.3
+- Fix: Module was disabled by default on fresh installs with no toggle to enable it
+- Fix: Order fulfillments not recorded when using CraftSim's craft queue (or other addons that call FulfillOrder directly)
+
 ## 0.6.2
 - Fix: Complete+Whisper button and analytics button not appearing when Professions window loads after addon initialization
 

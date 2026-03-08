@@ -95,6 +95,8 @@ local function buildGuildPreview(template, isFulfilled)
     return formatGuildMessage(template, itemLink, who, tip);
 end
 
+local cachedClaimedOrder = nil;
+
 local function getOrderInfoByID(orderID)
     if (not orderID) then return nil; end
     -- Try the claimed order API first (official, doesn't need orderID matching)
@@ -107,6 +109,11 @@ local function getOrderInfoByID(orderID)
     local view = ordersPage and ordersPage.OrderView;
     if (view and view.order and view.order.orderID == orderID) then
         return view.order;
+    end
+    -- Fallback: cached order from CRAFTINGORDERS_CLAIMED_ORDER_UPDATED
+    -- (covers addons like CraftSim that call FulfillOrder directly)
+    if (cachedClaimedOrder and cachedClaimedOrder.orderID == orderID) then
+        return cachedClaimedOrder;
     end
     return nil;
 end
@@ -708,6 +715,11 @@ function CraftingOrders:OnEnable()
         self:HandleFulfillResponse(...);
     end);
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function()
+        -- Cache the claimed order so it's available after fulfillment
+        -- (covers addons like CraftSim that call FulfillOrder directly)
+        if (C_CraftingOrders and C_CraftingOrders.GetClaimedOrder) then
+            cachedClaimedOrder = C_CraftingOrders.GetClaimedOrder();
+        end
         self:EnsureWhisperButton();
         self:EnsureAnalyticsButton();
         self:UpdateWhisperButton();
