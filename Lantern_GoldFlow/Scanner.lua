@@ -264,5 +264,12 @@ function module:OnTradeSkillShow()
 end
 
 function module:OnTradeSkillListUpdate()
-    ScanRecipes();
+    -- Defer recipe scan to avoid cascading UI invalidation
+    -- (conflicts with addons like CraftScan that hook the trade skill data provider)
+    if (recipesScannedThisSession) then return; end
+    C_Timer.After(1, function()
+        if (module.enabled and not recipesScannedThisSession) then
+            ScanRecipes();
+        end
+    end);
 end
