@@ -732,6 +732,12 @@ function CraftingOrders:OnEnable()
     self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_UPDATE_PERSONAL_ORDER_COUNTS", function()
         self:HandlePersonalOrderCountUpdate();
     end);
+    -- Also listen for order count updates (fires while crafting window is open)
+    self.addon:ModuleRegisterEvent(self, "CRAFTINGORDERS_UPDATE_ORDER_COUNT", function(_, _, orderType, numOrders)
+        if (isPersonalOrderType(orderType)) then
+            self:HandlePersonalOrderCountUpdate();
+        end
+    end);
     self.addon:ModuleRegisterEvent(self, "CHAT_MSG_SYSTEM", function(_, _, msg)
         if (IsInInstance()) then return; end
         self:HandleSystemMessage(msg);
