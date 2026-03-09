@@ -30,7 +30,7 @@ local SKIP_CLASS_IDS = {
 
 local BAG_UPDATE_INTERVAL = 0.5;
 local bagUpdateTimer = nil;
-local recipesScannedThisSession = false;
+local recipesScannedThisSession = {};
 
 -------------------------------------------------------------------------------
 -- Registration
@@ -60,7 +60,7 @@ local function ScanCharacter()
 
     char.name = name;
     char.realm = realm;
-    char.realmSlug = GetNormalizedRealmName() or "";
+    char.realmSlug = (GetNormalizedRealmName() or ""):lower();
     char.class = classFile;
     char.gold = GetMoney();
     char.lastSeen = GetServerTime();
@@ -249,7 +249,6 @@ end
 
 local function ScanRecipes()
     if (not module.Setting("scanProfessions")) then return; end
-    if (recipesScannedThisSession) then return; end
     if (not C_TradeSkillUI.IsTradeSkillReady or not C_TradeSkillUI.IsTradeSkillReady()) then return; end
 
     local char = module.EnsureCharacter();
@@ -257,6 +256,9 @@ local function ScanRecipes()
 
     local baseProfInfo = C_TradeSkillUI.GetBaseProfessionInfo and C_TradeSkillUI.GetBaseProfessionInfo();
     if (not baseProfInfo or not baseProfInfo.professionName) then return; end
+
+    -- Only scan each profession once per session
+    if (recipesScannedThisSession[baseProfInfo.professionName]) then return; end
 
     -- Find matching profession entry
     local profEntry = nil;
@@ -278,22 +280,28 @@ local function ScanRecipes()
     for _, recipeID in ipairs(recipeIDs) do
         local recipeInfo = C_TradeSkillUI.GetRecipeInfo(recipeID);
         if (recipeInfo and recipeInfo.learned) then
-            local categories = {};
+            local category = nil;
             if (recipeInfo.categoryID) then
                 local catInfo = C_TradeSkillUI.GetCategoryInfo(recipeInfo.categoryID);
                 if (catInfo and catInfo.name) then
-                    table.insert(categories, catInfo.name);
+                    category = catInfo.name;
                 end
             end
-            recipes[recipeID] = {
-                rank = recipeInfo.unlockedRecipeLevel or 1,
-                categories = categories,
+            local entry = {
+                category = category,
             };
+            if (recipeInfo.supportsQualities and recipeInfo.maxQuality) then
+                entry.maxQuality = recipeInfo.maxQuality;
+            end
+            if (recipeInfo.qualityItemIDs) then
+                entry.qualityItemIDs = recipeInfo.qualityItemIDs;
+            end
+            recipes[recipeID] = entry;
         end
     end
 
     profEntry.recipes = recipes;
-    recipesScannedThisSession = true;
+    recipesScannedThisSession[baseProfInfo.professionName] = true;
     module.UpdateTimestamp();
 end
 
@@ -334,6 +342,9 @@ end
 function module:OnBankOpened()
     ScanBank();
     ScanAccountBank();
+    if (self.CheckBuyListOnBankOpened) then
+        self:CheckBuyListOnBankOpened();
+    end
 end
 
 function module:OnTradeSkillShow()
@@ -343,9 +354,8 @@ end
 function module:OnTradeSkillListUpdate()
     -- Defer recipe scan to avoid cascading UI invalidation
     -- (conflicts with addons like CraftScan that hook the trade skill data provider)
-    if (recipesScannedThisSession) then return; end
     C_Timer.After(1, function()
-        if (module.enabled and not recipesScannedThisSession) then
+        if (module.enabled) then
             ScanRecipes();
         end
     end);

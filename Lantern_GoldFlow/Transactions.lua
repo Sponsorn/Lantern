@@ -136,6 +136,11 @@ function module:OnCommodityPurchased()
         pricePerUnit = unitPrice,
         totalPrice = totalPrice,
     });
+
+    -- Auto-clear from buy list
+    if (module.MarkItemPurchased) then
+        module.MarkItemPurchased(itemID);
+    end
 end
 
 function module:OnAuctionPurchaseCompleted(_, auctionID)
@@ -166,9 +171,10 @@ function module:OnMailInboxUpdate()
     end
 
     for i = 1, numItems do
-        local _, _, sender, subject, money, _, daysLeft = GetInboxHeaderInfo(i);
+        local _, _, sender, subject, money, _, daysLeft, _, wasRead = GetInboxHeaderInfo(i);
         if (subject) then
-            local mailKey = format("%s:%d:%.2f", subject, money or 0, daysLeft or 0);
+            -- Use daysLeft rounded to the hour to avoid float drift between events
+            local mailKey = format("%s:%d:%d:%s", subject, money or 0, math.floor((daysLeft or 0) * 24), sender or "");
             if (not module._processedMails[mailKey]) then
                 module._processedMails[mailKey] = true;
                 module:ProcessAuctionMail(i, money);
@@ -186,8 +192,8 @@ function module:ProcessAuctionMail(mailIndex, money)
 
         if (invoiceType == "seller") then
             local qty = count or 1;
-            local total = buyout or 0;
-            local perUnit = (qty > 0) and math.floor(total / qty) or 0;
+            local perUnit = buyout or 0;
+            local total = perUnit * qty;
 
             module.AddTransaction({
                 type = "sale",
@@ -201,8 +207,8 @@ function module:ProcessAuctionMail(mailIndex, money)
             });
         elseif (invoiceType == "buyer") then
             local qty = count or 1;
-            local total = buyout or bid or 0;
-            local perUnit = (qty > 0) and math.floor(total / qty) or 0;
+            local perUnit = buyout or bid or 0;
+            local total = perUnit * qty;
 
             module.AddTransaction({
                 type = "buy",
@@ -216,17 +222,6 @@ function module:ProcessAuctionMail(mailIndex, money)
         return;
     end
 
-    -- Non-invoice mail with attachments and no money = likely expired/returned auction
-    local _, _, _, _, _, _, _, numAttachments = GetInboxHeaderInfo(mailIndex);
-    if (numAttachments and numAttachments > 0 and (not money or money == 0)) then
-        local _, _, _, subject = GetInboxHeaderInfo(mailIndex);
-        module.AddTransaction({
-            type = "expired",
-            itemId = 0,
-            itemName = subject or "Unknown",
-            quantity = numAttachments,
-            pricePerUnit = 0,
-            totalPrice = 0,
-        });
-    end
+    -- Non-invoice mail with attachments and no money = expired/returned auction.
+    -- Not recorded — no useful price data and itemId is unavailable.
 end

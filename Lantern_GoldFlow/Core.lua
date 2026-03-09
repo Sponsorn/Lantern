@@ -78,7 +78,7 @@ local function EnsureCharacter()
     if (not db.characters[key]) then
         local name = UnitName("player");
         local realm = GetRealmName();
-        local realmSlug = GetNormalizedRealmName() or "";
+        local realmSlug = (GetNormalizedRealmName() or ""):lower();
         local _, classFile = UnitClass("player");
 
         db.characters[key] = {
@@ -160,6 +160,9 @@ function module:OnEnable()
     self.RegisterScannerEvents(self);
     self.RegisterTransactionEvents(self);
     self.RegisterListingEvents(self);
+    if (self.RegisterBuyListEvents) then
+        self.RegisterBuyListEvents(self);
+    end
 
     -- PLAYER_ENTERING_WORLD may have already fired before this external addon
     -- registered for it. Do a delayed initial scan as a safety net.

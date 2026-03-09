@@ -30,9 +30,13 @@ end
 -------------------------------------------------------------------------------
 
 function module:OnAuctionHouseShow()
-    if (not module.Setting("trackListings")) then return; end
-    if (C_AuctionHouse and C_AuctionHouse.QueryOwnedAuctions) then
-        C_AuctionHouse.QueryOwnedAuctions({});
+    if (module.Setting("trackListings")) then
+        if (C_AuctionHouse and C_AuctionHouse.QueryOwnedAuctions) then
+            C_AuctionHouse.QueryOwnedAuctions({});
+        end
+    end
+    if (self.CheckBuyListOnAuctionHouseShow) then
+        self:CheckBuyListOnAuctionHouseShow();
     end
 end
 
