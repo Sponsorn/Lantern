@@ -142,26 +142,16 @@ takeEventFrame:SetScript("OnEvent", function(_, event)
     if (event ~= "ITEM_LOCK_CHANGED" or not takeState or not isTaking) then return; end
 
     if (takeState.phase == "picking") then
-        -- Item unlocked after split, cursor should have the item now
-        if (GetCursorInfo() == "item") then
-            takeState.phase = "placing";
-            C_Container.PickupContainerItem(takeState.dstBag, takeState.dstSlot);
-            local entry = takeState.toTake[takeState.index];
-            table.insert(takeState.taken, entry.name);
-            -- Wait for another ITEM_LOCK_CHANGED to confirm placement
-        else
-            -- Split didn't produce a cursor item, retry
-            takeState.retries = takeState.retries + 1;
-            if (takeState.retries > MAX_RETRIES) then
-                ClearCursor();
-                takeState.index = takeState.index + 1;
-                takeNext();
-            else
-                C_Timer.After(0.1, attemptPickup);
-            end
-        end
+        -- Only act when cursor actually has the item (ignore stale events)
+        if (GetCursorInfo() ~= "item") then return; end
+        takeState.phase = "placing";
+        C_Container.PickupContainerItem(takeState.dstBag, takeState.dstSlot);
+        local entry = takeState.toTake[takeState.index];
+        table.insert(takeState.taken, entry.name);
+        -- Wait for cursor to clear confirming placement
     elseif (takeState.phase == "placing") then
-        -- Item placed in bag, move to next
+        -- Only advance when cursor is clear (item actually placed)
+        if (GetCursorInfo() ~= nil) then return; end
         if (takeState.timeoutTicker) then
             takeState.timeoutTicker:Cancel();
         end
