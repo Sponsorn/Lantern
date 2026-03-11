@@ -171,8 +171,10 @@ end
 
 local listenerFrame;
 
-local function OnChatMsgChannel(_, _, msg, _, _, _, _, _, _, _, channelName)
-    if (not channelName or not channelName:match("%d+%.%s*Trade")) then return; end
+local function OnChatMsgChannel(_, _, msg, _, _, channelName, _, _, _, _, channelBaseName)
+    -- channelBaseName is "Trade", channelName is "2. Trade - City"
+    -- Check either — baseName is more reliable across locales
+    if (not channelBaseName or channelBaseName ~= "Trade") then return; end
 
     local tc = ensureTradeChatDB();
     local msgLower = msg:lower();
@@ -271,6 +273,21 @@ function CraftingOrders:RemoveTradeChatKeyword(list, word)
             table.remove(target, i);
             return;
         end
+    end
+end
+
+-- Suspend/resume without persisting the enabled state to the DB.
+-- Called by CraftingOrders:OnDisable() / OnEnable() to tie the listener
+-- to the module lifecycle.
+function CraftingOrders:SuspendTradeChat()
+    UnregisterListener();
+end
+
+function CraftingOrders:ResumeTradeChat()
+    local tc = ensureTradeChatDB();
+    if (tc.enabled) then
+        pruneBuckets(tc);
+        RegisterListener();
     end
 end
 

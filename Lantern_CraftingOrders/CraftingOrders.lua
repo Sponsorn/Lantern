@@ -777,6 +777,9 @@ function CraftingOrders:OnEnable()
             end
         end);
     end
+
+    -- Resume trade chat listener if it was enabled before module was disabled
+    self:ResumeTradeChat();
 end
 
 function CraftingOrders:OnDisable()
@@ -785,6 +788,7 @@ function CraftingOrders:OnDisable()
     self._awaitFulfillWho = nil;
     self._awaitFulfillTip = nil;
     self._profFrameHooked = nil;
+    self:SuspendTradeChat();
 end
 
 -------------------------------------------------------------------------------
