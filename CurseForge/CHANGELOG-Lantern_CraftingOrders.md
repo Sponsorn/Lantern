@@ -5,6 +5,10 @@
 - Add: Reset timer shown on daily and weekly timeframe cards (e.g., "Resets in 4h 23m")
 - Add: Reset timer settings — toggle visibility, choose auto (region-based) or custom reset day/hour
 - Add: Timeframe filter on dashboard top 5 customers and items sections (All Time, Today, This Week, Last 30 Days)
+- Add: Heat Maps analytics tab showing order count, gold earned, and trade chat activity as 7x24 day/hour grids
+- Add: Trade chat tracker — monitors Trade channel for crafting requests with customizable keywords and profession detection
+- Add: Trade chat settings — enable/disable toggle, data retention (30/60/90 days), keyword management
+- Change: Analytics settings page now uses collapsible sections for better organization
 
 ## 0.6.3 - 2026-03-08
 - Fix: Module was disabled by default on fresh installs with no toggle to enable it
