@@ -827,9 +827,10 @@ local function PopulateDashboard()
 
     if (dashTimeframeFilter) then
         dashTimeframeFilter:ClearAllPoints();
-        dashTimeframeFilter:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, y + 2);
+        dashTimeframeFilter:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, y);
         dashTimeframeFilter:Show();
     end
+    y = y - 36;
 
     -- Top 5 Customers
     local customerData = CraftingOrders:GetCustomerList(filter, since);
