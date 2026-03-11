@@ -716,6 +716,16 @@ local function CreateTimeframeDropdown(parent, onChangeCallback, getStateFn, set
     arrow:SetText("v");
     arrow:SetTextColor(unpack(T.textDim));
 
+    function dropFrame:UpdateLabel()
+        local current = getStateFn and getStateFn() or "all";
+        for _, o in ipairs(TIMEFRAME_OPTIONS) do
+            if (o.value == current) then
+                label:SetText(L[o.key]);
+                break;
+            end
+        end
+    end
+
     btn:SetScript("OnEnter", function()
         dropFrame:SetBackdropBorderColor(unpack(T.accent));
     end);
