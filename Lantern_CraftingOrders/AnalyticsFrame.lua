@@ -1437,7 +1437,7 @@ local function CreateHeatMapsContent(parent)
     title:SetTextColor(unpack(T.textBright));
 
     -- Timeframe dropdown
-    heatmapTimeframeFilter = CreateTimeframeDropdown(parent, function()
+    heatmapTimeframeFilter = CreateTimeframeDropdown(scroll.scrollFrame, function()
         PopulateHeatMaps();
     end, function() return heatmapTimeframe; end, function(val) heatmapTimeframe = val; end);
     heatmapTimeframeFilter:SetPoint("TOPRIGHT", heatmapFilter, "TOPLEFT", -8, 0);

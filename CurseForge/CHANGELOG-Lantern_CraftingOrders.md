@@ -14,6 +14,8 @@
 - Fix: Trade chat listener continued running after module was disabled
 - Add: Earnings over time bar chart on the analytics dashboard with adaptive daily/weekly bucketing
 - Change: Dashboard stat cards and timeframe cards now use uniform column widths for a cleaner layout
+- Fix: Heat Maps timeframe dropdown persisting on other pages (e.g., Settings)
+- Fix: Login error when Trade Chat Tracker loaded after module initialization
 
 ## 0.6.3 - 2026-03-08
 - Fix: Module was disabled by default on fresh installs with no toggle to enable it
