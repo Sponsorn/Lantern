@@ -18,6 +18,7 @@ Widgets\ItemRow.lua
 Widgets\Input.lua
 Widgets\Color.lua
 Widgets\Group.lua
+Widgets\HeatMap.lua
 Widgets\SearchResult.lua
 Widgets\DropSlot.lua
 Widgets\Renderer.lua
