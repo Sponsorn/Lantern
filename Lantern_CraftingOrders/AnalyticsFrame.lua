@@ -1078,7 +1078,6 @@ end
 local ordersFilter, ordersTable;
 
 local RefreshOrders; -- forward declaration
-local RefreshSettings; -- forward declaration
 
 RefreshOrders = function()
     if (not ordersTable) then return; end
@@ -1412,474 +1411,328 @@ local function CreateHeatMapsContent(parent)
 end
 
 -------------------------------------------------------------------------------
--- Page 5: Settings (order type tracking + customer exclusion)
+-- Page 5: Settings (widget renderer)
 -------------------------------------------------------------------------------
 
-local settingsScroll;
-local settingsRowPool = {};
-local settingsActiveRows = 0;
+local function GetSettingsWidgets()
+    local refreshPage = function()
+        if (panel) then panel:RefreshCurrentPage(); end
+    end;
 
-local function ReleaseAllSettingsRows()
-    for i = 1, settingsActiveRows do
-        local row = settingsRowPool[i];
-        if (row) then row:Hide(); end
-    end
-    settingsActiveRows = 0;
-end
-
-local function AcquireSettingsRow(parent, index)
-    local ROW_H = 28;
-    local row = settingsRowPool[index];
-    if (not row) then
-        local rowName = NextName("LanternCO_SettingsRow_");
-        row = CreateFrame("Frame", rowName, parent);
-        row:SetHeight(ROW_H);
-
-        local bg = row:CreateTexture(rowName .. "_Bg", "BACKGROUND");
-        bg:SetAllPoints();
-        row._bg = bg;
-
-        local nameLabel = row:CreateFontString(rowName .. "_Name", "OVERLAY");
-        nameLabel:SetFontObject(T.fontBody);
-        nameLabel:SetPoint("LEFT", row, "LEFT", 12, 0);
-        nameLabel:SetPoint("RIGHT", row, "RIGHT", -80, 0);
-        nameLabel:SetJustifyH("LEFT");
-        nameLabel:SetWordWrap(false);
-        row._name = nameLabel;
-
-        local removeBtn = CreateFrame("Button", rowName .. "_Remove", row, "BackdropTemplate");
-        removeBtn:SetSize(60, 20);
-        removeBtn:SetPoint("RIGHT", row, "RIGHT", -8, 0);
-        removeBtn:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-        });
-        removeBtn:SetBackdropColor(unpack(T.buttonBg));
-        removeBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
-        local removeBtnText = removeBtn:CreateFontString(nil, "ARTWORK", T.fontBody);
-        removeBtnText:SetPoint("CENTER");
-        removeBtnText:SetText(L["CO_SETTINGS_REMOVE"]);
-        removeBtnText:SetTextColor(unpack(T.buttonText));
-        removeBtn:SetScript("OnEnter", function()
-            removeBtn:SetBackdropColor(unpack(T.buttonHover));
-            removeBtn:SetBackdropBorderColor(unpack(T.inputFocus));
-        end);
-        removeBtn:SetScript("OnLeave", function()
-            removeBtn:SetBackdropColor(unpack(T.buttonBg));
-            removeBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
-        end);
-        row._removeBtn = removeBtn;
-
-        settingsRowPool[index] = row;
-    end
-
-    row:SetParent(parent);
-    row:ClearAllPoints();
-
-    if (index % 2 == 0) then
-        row._bg:SetColorTexture(unpack(T.cardBg));
-    else
-        row._bg:SetColorTexture(0, 0, 0, 0);
-    end
-
-    row:Show();
-    settingsActiveRows = index;
-    return row;
-end
-
-local settingsEmptyText;
-local settingsGuildCheck, settingsPersonalCheck;
-local settingsResetToggle, settingsResetModeSelect;
-local settingsResetDailyHour, settingsResetWeeklyDay, settingsResetWeeklyHour;
-local settingsCustomResetWidgets = {};
-
-local function RefreshAllPages()
-    PopulateDashboard();
-    if (customersTable) then RefreshCustomers(); end
-    if (itemsTable) then RefreshItems(); end
-    RefreshOrders();
-end
-
-local toggleFactory = LanternUX._W.factories.toggle;
-local toggleRefresher = LanternUX._W.refreshers.toggle;
-
-RefreshSettings = function()
-    if (not settingsScroll) then return; end
-    ReleaseAllSettingsRows();
-
-    -- Update toggle states
-    if (settingsGuildCheck) then toggleRefresher(settingsGuildCheck); end
-    if (settingsPersonalCheck) then toggleRefresher(settingsPersonalCheck); end
-    if (settingsResetToggle) then toggleRefresher(settingsResetToggle); end
-
-    -- Show/hide custom reset widgets based on mode
-    local isCustom = CraftingOrders:GetResetTimerSettings().mode == "custom" and CraftingOrders:GetShowResetTimers();
-    for _, w in ipairs(settingsCustomResetWidgets) do
-        if (w and w.frame) then
-            if (isCustom) then w.frame:Show(); else w.frame:Hide(); end
-        end
-    end
-    if (settingsResetModeSelect) then
-        local selectRefresher = LanternUX._W.refreshers.select;
-        if (selectRefresher) then selectRefresher(settingsResetModeSelect); end
-        if (CraftingOrders:GetShowResetTimers()) then
-            settingsResetModeSelect.frame:Show();
-        else
-            settingsResetModeSelect.frame:Hide();
-        end
-    end
-
-    local excluded = CraftingOrders:GetExcludedCustomers();
-    local sc = settingsScroll.scrollChild;
-
-    -- Build sorted list of excluded names
-    local names = {};
-    for name in pairs(excluded) do
-        table.insert(names, name);
-    end
-    table.sort(names);
-
-    -- Excluded customer rows start below the input row
-    local ROWS_START_Y = 388;
-    local ROW_H = 28;
-
-    if (not settingsEmptyText) then
-        settingsEmptyText = sc:CreateFontString(NextName("LanternCO_SettingsEmpty_"), "OVERLAY");
-        settingsEmptyText:SetFontObject(T.fontBody);
-        settingsEmptyText:SetTextColor(unpack(T.textDim));
-    end
-    settingsEmptyText:ClearAllPoints();
-    settingsEmptyText:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -ROWS_START_Y);
-
-    if (#names == 0) then
-        settingsEmptyText:SetText(L["CO_SETTINGS_EXCLUDED_EMPTY"]);
-        settingsEmptyText:Show();
-        settingsScroll:SetContentHeight(ROWS_START_Y + 40);
-        return;
-    end
-
-    settingsEmptyText:Hide();
-
-    for i, name in ipairs(names) do
-        local row = AcquireSettingsRow(sc, i);
-        row:SetPoint("TOPLEFT", sc, "TOPLEFT", 0, -(ROWS_START_Y + (i - 1) * ROW_H));
-        row:SetPoint("TOPRIGHT", sc, "TOPRIGHT", 0, -(ROWS_START_Y + (i - 1) * ROW_H));
-
-        row._name:SetText(name);
-        row._name:SetTextColor(unpack(T.text));
-
-        row._removeBtn:SetScript("OnClick", function()
-            CraftingOrders:RemoveExcludedCustomer(name);
-            RefreshSettings();
-            RefreshAllPages();
-        end);
-    end
-
-    settingsScroll:SetContentHeight(ROWS_START_Y + (#names * ROW_H) + 16);
-end
-
-local function CreateSettingsContent(parent)
-    local container = CreateFrame("Frame", "LanternCO_SettingsPage", parent);
-    container:SetAllPoints();
-
-    -- Full-page scroll container
-    settingsScroll = LanternUX.CreateScrollContainer(container);
-    local sc = settingsScroll.scrollChild;
-
-    container:SetScript("OnSizeChanged", function(_, w)
-        if (w and w > 0) then
-            sc:SetWidth(w);
-        end
-    end);
-
-    -- Order Types section
-    local otTitle = sc:CreateFontString("LanternCO_SettingsOTTitle", "OVERLAY");
-    otTitle:SetFontObject(T.fontHeading);
-    otTitle:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -12);
-    otTitle:SetText(L["CO_SETTINGS_ORDER_TYPES"]);
-    otTitle:SetTextColor(unpack(T.textBright));
-
-    local otDesc = sc:CreateFontString("LanternCO_SettingsOTDesc", "OVERLAY");
-    otDesc:SetFontObject(T.fontBody);
-    otDesc:SetPoint("TOPLEFT", otTitle, "BOTTOMLEFT", 0, -4);
-    otDesc:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
-    otDesc:SetJustifyH("LEFT");
-    otDesc:SetText(L["CO_SETTINGS_ORDER_TYPES_DESC"]);
-    otDesc:SetTextColor(unpack(T.textDim));
-
-    settingsGuildCheck = toggleFactory.create(sc);
-    toggleFactory.setup(settingsGuildCheck, sc, {
-        label = L["CO_SETTINGS_TRACK_GUILD"],
-        get = function() return CraftingOrders:IsOrderTypeTracked("guild"); end,
-        set = function(val)
-            CraftingOrders:SetTrackOrderType("guild", val);
-            RefreshAllPages();
-        end,
-    }, 200);
-    settingsGuildCheck.frame:ClearAllPoints();
-    settingsGuildCheck.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -52);
-
-    settingsPersonalCheck = toggleFactory.create(sc);
-    toggleFactory.setup(settingsPersonalCheck, sc, {
-        label = L["CO_SETTINGS_TRACK_PERSONAL"],
-        get = function() return CraftingOrders:IsOrderTypeTracked("personal"); end,
-        set = function(val)
-            CraftingOrders:SetTrackOrderType("personal", val);
-            RefreshAllPages();
-        end,
-    }, 200);
-    settingsPersonalCheck.frame:ClearAllPoints();
-    settingsPersonalCheck.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -78);
-
-    -- Divider 1 (after Order Types)
-    local divider1 = sc:CreateTexture("LanternCO_SettingsDivider1", "ARTWORK");
-    divider1:SetHeight(1);
-    divider1:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -108);
-    divider1:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
-    divider1:SetColorTexture(unpack(T.inputBorder));
-
-    -- Reset Timers section
-    local rtTitle = sc:CreateFontString("LanternCO_SettingsRTTitle", "OVERLAY");
-    rtTitle:SetFontObject(T.fontHeading);
-    rtTitle:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -120);
-    rtTitle:SetText(L["CO_SETTINGS_RESET_TIMERS"]);
-    rtTitle:SetTextColor(unpack(T.textBright));
-
-    local rtDesc = sc:CreateFontString("LanternCO_SettingsRTDesc", "OVERLAY");
-    rtDesc:SetFontObject(T.fontBody);
-    rtDesc:SetPoint("TOPLEFT", rtTitle, "BOTTOMLEFT", 0, -4);
-    rtDesc:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
-    rtDesc:SetJustifyH("LEFT");
-    rtDesc:SetText(L["CO_SETTINGS_RESET_TIMERS_DESC"]);
-    rtDesc:SetTextColor(unpack(T.textDim));
-
-    settingsResetToggle = toggleFactory.create(sc);
-    toggleFactory.setup(settingsResetToggle, sc, {
-        label = L["CO_SETTINGS_SHOW_RESET_TIMERS"],
-        get = function() return CraftingOrders:GetShowResetTimers(); end,
-        set = function(val)
-            CraftingOrders:SetShowResetTimers(val);
-            RefreshSettings();
-            RefreshAllPages();
-        end,
-    }, 200);
-    settingsResetToggle.frame:ClearAllPoints();
-    settingsResetToggle.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -152);
-
-    local selectFactory = LanternUX._W.factories.select;
-
-    settingsResetModeSelect = selectFactory.create(sc);
-    selectFactory.setup(settingsResetModeSelect, sc, {
-        label = L["CO_SETTINGS_RESET_MODE"],
-        values = {
-            auto = L["CO_SETTINGS_RESET_AUTO"],
-            custom = L["CO_SETTINGS_RESET_CUSTOM"],
-        },
-        sorting = { "auto", "custom" },
-        get = function() return CraftingOrders:GetResetTimerSettings().mode or "auto"; end,
-        set = function(val)
-            CraftingOrders:SetResetTimerSetting("mode", val);
-            RefreshSettings();
-            RefreshAllPages();
-        end,
-    }, 300);
-    settingsResetModeSelect.frame:ClearAllPoints();
-    settingsResetModeSelect.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -178);
-
-    -- Custom reset settings (visible only when mode=custom)
-    wipe(settingsCustomResetWidgets);
-
-    -- Build hour values for dropdowns (realm time, respect 12h/24h preference)
-    local use24h = GetCVarBool("timeMgrUseMilitaryTime");
-    local hourValues = {};
-    local hourSorting = {};
-    for h = 0, 23 do
-        local key = tostring(h);
-        if (use24h) then
-            hourValues[key] = string.format("%02d:00", h);
-        else
-            local period = h < 12 and "AM" or "PM";
-            local h12 = h % 12;
-            if (h12 == 0) then h12 = 12; end
-            hourValues[key] = string.format("%d:00 %s", h12, period);
-        end
-        table.insert(hourSorting, key);
-    end
-
-    -- Daily reset hour
-    settingsResetDailyHour = selectFactory.create(sc);
-    selectFactory.setup(settingsResetDailyHour, sc, {
-        label = L["CO_SETTINGS_DAILY_RESET_HOUR"],
-        values = hourValues,
-        sorting = hourSorting,
-        get = function()
-            local s = CraftingOrders:GetResetTimerSettings();
-            return tostring(s.dailyHour or 7);
-        end,
-        set = function(val)
-            CraftingOrders:SetResetTimerSetting("dailyHour", tonumber(val));
-            RefreshAllPages();
-        end,
-    }, 300);
-    settingsResetDailyHour.frame:ClearAllPoints();
-    settingsResetDailyHour.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -208);
-    table.insert(settingsCustomResetWidgets, settingsResetDailyHour);
-
-    -- Weekly reset day
     local LL = Lantern.L;
-    local dayValues = {
-        ["0"] = LL["DAY_SUN"],
-        ["1"] = LL["DAY_MON"],
-        ["2"] = LL["DAY_TUE"],
-        ["3"] = LL["DAY_WED"],
-        ["4"] = LL["DAY_THU"],
-        ["5"] = LL["DAY_FRI"],
-        ["6"] = LL["DAY_SAT"],
+    local widgets = {};
+
+    -- Order Types group
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_SETTINGS_ORDER_TYPES"],
+        desc = L["CO_SETTINGS_ORDER_TYPES_DESC"],
+        expanded = true,
+        stateKey = "orderTypes",
+        children = {
+            {
+                type = "toggle",
+                label = L["CO_SETTINGS_TRACK_GUILD"],
+                get = function() return CraftingOrders:IsOrderTypeTracked("guild"); end,
+                set = function(val)
+                    CraftingOrders:SetTrackOrderType("guild", val);
+                end,
+            },
+            {
+                type = "toggle",
+                label = L["CO_SETTINGS_TRACK_PERSONAL"],
+                get = function() return CraftingOrders:IsOrderTypeTracked("personal"); end,
+                set = function(val)
+                    CraftingOrders:SetTrackOrderType("personal", val);
+                end,
+            },
+        },
+    });
+
+    -- Reset Timers group
+    local resetSettings = CraftingOrders:GetResetTimerSettings();
+    local showResetTimers = CraftingOrders:GetShowResetTimers();
+    local resetChildren = {
+        {
+            type = "toggle",
+            label = L["CO_SETTINGS_SHOW_RESET_TIMERS"],
+            get = function() return CraftingOrders:GetShowResetTimers(); end,
+            set = function(val)
+                CraftingOrders:SetShowResetTimers(val);
+                refreshPage();
+            end,
+        },
     };
-    local daySorting = { "0", "1", "2", "3", "4", "5", "6" };
 
-    settingsResetWeeklyDay = selectFactory.create(sc);
-    selectFactory.setup(settingsResetWeeklyDay, sc, {
-        label = L["CO_SETTINGS_WEEKLY_RESET_DAY"],
-        values = dayValues,
-        sorting = daySorting,
-        get = function()
-            local s = CraftingOrders:GetResetTimerSettings();
-            return tostring(s.weeklyDay or 2);
-        end,
-        set = function(val)
-            CraftingOrders:SetResetTimerSetting("weeklyDay", tonumber(val));
-            RefreshAllPages();
-        end,
-    }, 300);
-    settingsResetWeeklyDay.frame:ClearAllPoints();
-    settingsResetWeeklyDay.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -238);
-    table.insert(settingsCustomResetWidgets, settingsResetWeeklyDay);
+    if (showResetTimers) then
+        table.insert(resetChildren, {
+            type = "select",
+            label = L["CO_SETTINGS_RESET_MODE"],
+            get = function() return resetSettings.mode or "auto"; end,
+            set = function(val)
+                CraftingOrders:SetResetTimerSetting("mode", val);
+                refreshPage();
+            end,
+            values = {
+                auto = L["CO_SETTINGS_RESET_AUTO"],
+                custom = L["CO_SETTINGS_RESET_CUSTOM"],
+            },
+            sorting = { "auto", "custom" },
+        });
 
-    -- Weekly reset hour
-    settingsResetWeeklyHour = selectFactory.create(sc);
-    selectFactory.setup(settingsResetWeeklyHour, sc, {
-        label = L["CO_SETTINGS_WEEKLY_RESET_HOUR"],
-        values = hourValues,
-        sorting = hourSorting,
-        get = function()
-            local s = CraftingOrders:GetResetTimerSettings();
-            return tostring(s.weeklyHour or 7);
-        end,
-        set = function(val)
-            CraftingOrders:SetResetTimerSetting("weeklyHour", tonumber(val));
-            RefreshAllPages();
-        end,
-    }, 300);
-    settingsResetWeeklyHour.frame:ClearAllPoints();
-    settingsResetWeeklyHour.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -268);
-    table.insert(settingsCustomResetWidgets, settingsResetWeeklyHour);
-
-    -- Divider 2 (after Reset Timers)
-    local divider2 = sc:CreateTexture("LanternCO_SettingsDivider2", "ARTWORK");
-    divider2:SetHeight(1);
-    divider2:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -300);
-    divider2:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
-    divider2:SetColorTexture(unpack(T.inputBorder));
-
-    -- Excluded Customers section
-    local exTitle = sc:CreateFontString("LanternCO_SettingsExTitle", "OVERLAY");
-    exTitle:SetFontObject(T.fontHeading);
-    exTitle:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -312);
-    exTitle:SetText(L["CO_SETTINGS_EXCLUDED_CUSTOMERS"]);
-    exTitle:SetTextColor(unpack(T.textBright));
-
-    local exDesc = sc:CreateFontString("LanternCO_SettingsExDesc", "OVERLAY");
-    exDesc:SetFontObject(T.fontBody);
-    exDesc:SetPoint("TOPLEFT", exTitle, "BOTTOMLEFT", 0, -4);
-    exDesc:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
-    exDesc:SetJustifyH("LEFT");
-    exDesc:SetText(L["CO_SETTINGS_EXCLUDED_DESC"]);
-    exDesc:SetTextColor(unpack(T.textDim));
-
-    -- Input row
-    local inputRow = CreateFrame("Frame", "LanternCO_SettingsInput", sc);
-    inputRow:SetHeight(28);
-    inputRow:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -352);
-    inputRow:SetPoint("TOPRIGHT", sc, "TOPRIGHT", -16, -352);
-
-    local editBox = CreateFrame("EditBox", "LanternCO_SettingsEditBox", inputRow, "BackdropTemplate");
-    editBox:SetHeight(28);
-    editBox:SetPoint("LEFT", inputRow, "LEFT", 0, 0);
-    editBox:SetPoint("RIGHT", inputRow, "RIGHT", -74, 0);
-    editBox:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    });
-    editBox:SetBackdropColor(unpack(T.inputBg));
-    editBox:SetBackdropBorderColor(unpack(T.inputBorder));
-    editBox:SetFontObject(T.fontBody);
-    editBox:SetTextColor(unpack(T.text));
-    editBox:SetTextInsets(8, 8, 0, 0);
-    editBox:SetAutoFocus(false);
-
-    local addBtn = CreateFrame("Button", "LanternCO_SettingsAddBtn", inputRow, "BackdropTemplate");
-    addBtn:SetSize(64, 28);
-    addBtn:SetPoint("RIGHT", inputRow, "RIGHT", 0, 0);
-    addBtn:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    });
-    addBtn:SetBackdropColor(unpack(T.buttonBg));
-    addBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
-    local addBtnText = addBtn:CreateFontString(nil, "ARTWORK", T.fontBody);
-    addBtnText:SetPoint("CENTER");
-    addBtnText:SetText(L["CO_SETTINGS_ADD"]);
-    addBtnText:SetTextColor(unpack(T.buttonText));
-    addBtn:SetScript("OnEnter", function()
-        addBtn:SetBackdropColor(unpack(T.buttonHover));
-        addBtn:SetBackdropBorderColor(unpack(T.inputFocus));
-    end);
-    addBtn:SetScript("OnLeave", function()
-        addBtn:SetBackdropColor(unpack(T.buttonBg));
-        addBtn:SetBackdropBorderColor(unpack(T.buttonBorder));
-    end);
-
-    local function DoAdd()
-        local text = strtrim(editBox:GetText());
-        if (text == "") then return; end
-        local added = CraftingOrders:AddExcludedCustomer(text);
-        if (not added) then
-            -- Duplicate: flash border red briefly
-            editBox:SetBackdropBorderColor(0.8, 0.2, 0.2, 1);
-            C_Timer.After(0.4, function()
-                if (editBox:HasFocus()) then
-                    editBox:SetBackdropBorderColor(unpack(T.inputFocus));
+        if (resetSettings.mode == "custom") then
+            local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
+            local hourValues = {};
+            local hourSorting = {};
+            for h = 0, 23 do
+                local lbl;
+                if (use12h) then
+                    if (h == 0) then lbl = "12:00 AM";
+                    elseif (h < 12) then lbl = h .. ":00 AM";
+                    elseif (h == 12) then lbl = "12:00 PM";
+                    else lbl = (h - 12) .. ":00 PM"; end
                 else
-                    editBox:SetBackdropBorderColor(unpack(T.inputBorder));
+                    lbl = string.format("%02d:00", h);
                 end
-            end);
-            return;
+                hourValues[h] = lbl;
+                table.insert(hourSorting, h);
+            end
+
+            local dayKeys = { "DAY_SUN", "DAY_MON", "DAY_TUE", "DAY_WED", "DAY_THU", "DAY_FRI", "DAY_SAT" };
+            local dayValues = {};
+            local daySorting = {};
+            for i, key in ipairs(dayKeys) do
+                local dayIdx = i - 1;
+                dayValues[dayIdx] = LL[key] or key;
+                table.insert(daySorting, dayIdx);
+            end
+
+            table.insert(resetChildren, {
+                type = "select",
+                label = L["CO_SETTINGS_DAILY_RESET_HOUR"],
+                get = function() return resetSettings.dailyHour or 7; end,
+                set = function(val) CraftingOrders:SetResetTimerSetting("dailyHour", val); end,
+                values = hourValues,
+                sorting = hourSorting,
+            });
+            table.insert(resetChildren, {
+                type = "select",
+                label = L["CO_SETTINGS_WEEKLY_RESET_DAY"],
+                get = function() return resetSettings.weeklyDay or 2; end,
+                set = function(val) CraftingOrders:SetResetTimerSetting("weeklyDay", val); end,
+                values = dayValues,
+                sorting = daySorting,
+            });
+            table.insert(resetChildren, {
+                type = "select",
+                label = L["CO_SETTINGS_WEEKLY_RESET_HOUR"],
+                get = function() return resetSettings.weeklyHour or 7; end,
+                set = function(val) CraftingOrders:SetResetTimerSetting("weeklyHour", val); end,
+                values = hourValues,
+                sorting = hourSorting,
+            });
         end
-        editBox:SetText("");
-        RefreshSettings();
-        RefreshAllPages();
     end
 
-    addBtn:SetScript("OnClick", DoAdd);
-    editBox:SetScript("OnEnterPressed", function()
-        DoAdd();
-    end);
-    editBox:SetScript("OnEscapePressed", function()
-        editBox:ClearFocus();
-    end);
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_SETTINGS_RESET_TIMERS"],
+        desc = L["CO_SETTINGS_RESET_TIMERS_DESC"],
+        stateKey = "resetTimers",
+        children = resetChildren,
+    });
 
-    editBox:SetScript("OnEditFocusGained", function()
-        editBox:SetBackdropBorderColor(unpack(T.inputFocus));
-    end);
-    editBox:SetScript("OnEditFocusLost", function()
-        editBox:SetBackdropBorderColor(unpack(T.inputBorder));
-    end);
+    -- Trade Chat Tracking group
+    local tradeChildren = {
+        {
+            type = "toggle",
+            label = L["CO_SETTINGS_TRADE_CHAT_ENABLE"],
+            desc = L["CO_SETTINGS_TRADE_CHAT_ENABLE_DESC"],
+            get = function() return CraftingOrders:IsTradeChatEnabled(); end,
+            set = function(val)
+                CraftingOrders:SetTradeChatEnabled(val);
+                refreshPage();
+            end,
+        },
+    };
 
-    return container;
+    if (CraftingOrders:IsTradeChatEnabled()) then
+        table.insert(tradeChildren, {
+            type = "select",
+            label = L["CO_SETTINGS_TRADE_CHAT_RETENTION"],
+            desc = L["CO_SETTINGS_TRADE_CHAT_RETENTION_DESC"],
+            get = function() return CraftingOrders:GetTradeChatRetention(); end,
+            set = function(val) CraftingOrders:SetTradeChatRetention(val); end,
+            values = {
+                [30] = L["CO_SETTINGS_TRADE_CHAT_30"],
+                [60] = L["CO_SETTINGS_TRADE_CHAT_60"],
+                [90] = L["CO_SETTINGS_TRADE_CHAT_90"],
+            },
+            sorting = { 30, 60, 90 },
+        });
+
+        table.insert(tradeChildren, {
+            type = "header",
+            text = L["CO_SETTINGS_INCLUDE_KEYWORDS"],
+            desc = L["CO_SETTINGS_INCLUDE_KEYWORDS_DESC"],
+        });
+        local keywords = CraftingOrders:GetTradeChatKeywords();
+        for _, kw in ipairs(keywords.include) do
+            table.insert(tradeChildren, {
+                type = "label_action",
+                text = kw,
+                buttonLabel = L["CO_SETTINGS_KEYWORD_REMOVE"],
+                func = function()
+                    CraftingOrders:RemoveTradeChatKeyword("include", kw);
+                    refreshPage();
+                end,
+            });
+        end
+        table.insert(tradeChildren, {
+            type = "input",
+            label = L["CO_SETTINGS_KEYWORD_ADD"],
+            get = function() return ""; end,
+            set = function(val)
+                if (CraftingOrders:AddTradeChatKeyword("include", val)) then
+                    refreshPage();
+                end
+            end,
+        });
+
+        table.insert(tradeChildren, {
+            type = "header",
+            text = L["CO_SETTINGS_EXCLUDE_KEYWORDS"],
+            desc = L["CO_SETTINGS_EXCLUDE_KEYWORDS_DESC"],
+        });
+        for _, kw in ipairs(keywords.exclude) do
+            table.insert(tradeChildren, {
+                type = "label_action",
+                text = kw,
+                buttonLabel = L["CO_SETTINGS_KEYWORD_REMOVE"],
+                func = function()
+                    CraftingOrders:RemoveTradeChatKeyword("exclude", kw);
+                    refreshPage();
+                end,
+            });
+        end
+        table.insert(tradeChildren, {
+            type = "input",
+            label = L["CO_SETTINGS_KEYWORD_ADD"],
+            get = function() return ""; end,
+            set = function(val)
+                if (CraftingOrders:AddTradeChatKeyword("exclude", val)) then
+                    refreshPage();
+                end
+            end,
+        });
+    end
+
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_SETTINGS_TRADE_CHAT"],
+        desc = L["CO_SETTINGS_TRADE_CHAT_DESC"],
+        stateKey = "tradeChat",
+        children = tradeChildren,
+    });
+
+    -- Excluded Customers group
+    local customerChildren = {};
+    local excluded = CraftingOrders:GetExcludedCustomers();
+    local sortedNames = {};
+    for name in pairs(excluded) do
+        table.insert(sortedNames, name);
+    end
+    table.sort(sortedNames);
+
+    if (#sortedNames == 0) then
+        table.insert(customerChildren, {
+            type = "label",
+            text = L["CO_SETTINGS_EXCLUDED_EMPTY"],
+        });
+    else
+        for _, name in ipairs(sortedNames) do
+            table.insert(customerChildren, {
+                type = "label_action",
+                text = name,
+                buttonLabel = L["CO_SETTINGS_REMOVE"],
+                func = function()
+                    CraftingOrders:RemoveExcludedCustomer(name);
+                    refreshPage();
+                end,
+            });
+        end
+    end
+    table.insert(customerChildren, {
+        type = "input",
+        label = L["CO_SETTINGS_ADD"],
+        get = function() return ""; end,
+        set = function(val)
+            if (CraftingOrders:AddExcludedCustomer(val)) then
+                refreshPage();
+            end
+        end,
+    });
+
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_SETTINGS_EXCLUDED_CUSTOMERS"],
+        desc = L["CO_SETTINGS_EXCLUDED_DESC"],
+        stateKey = "excludedCustomers",
+        children = customerChildren,
+    });
+
+    -- Order History group
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_SETTINGS_HISTORY"],
+        desc = L["CO_SETTINGS_HISTORY_DESC"],
+        stateKey = "orderHistory",
+        children = {
+            {
+                type = "toggle",
+                label = L["CO_SETTINGS_TRACK_HISTORY"],
+                get = function()
+                    local db = CraftingOrders:GetHistoryDB();
+                    return db.trackHistory;
+                end,
+                set = function(val)
+                    local db = CraftingOrders:GetHistoryDB();
+                    db.trackHistory = val;
+                end,
+            },
+            {
+                type = "select",
+                label = L["CO_SETTINGS_MAX_ORDERS"],
+                get = function()
+                    local db = CraftingOrders:GetHistoryDB();
+                    return db.maxOrders;
+                end,
+                set = function(val)
+                    local db = CraftingOrders:GetHistoryDB();
+                    db.maxOrders = val;
+                end,
+                values = {
+                    [500] = "500",
+                    [1000] = "1,000",
+                    [2000] = "2,000",
+                    [5000] = "5,000",
+                    [10000] = "10,000",
+                },
+                sorting = { 500, 1000, 2000, 5000, 10000 },
+            },
+            {
+                type = "label_action",
+                text = string.format(L["CO_SETTINGS_CLEAR_HISTORY_LABEL"], CraftingOrders:GetCharacterOrderCount()),
+                buttonLabel = L["CO_SETTINGS_CLEAR_HISTORY"],
+                func = function()
+                    CraftingOrders:ClearCharacterHistory();
+                    refreshPage();
+                end,
+            },
+        },
+    });
+
+    return widgets;
 end
 
 -------------------------------------------------------------------------------
@@ -1964,11 +1817,10 @@ local function EnsurePanel()
 
     panel:AddPage("settings", {
         label  = L["CO_TAB_SETTINGS"],
-        frame  = CreateSettingsContent,
+        widgets = GetSettingsWidgets,
         onShow = function()
             activePage = "settings";
             CloseDropdownMenu();
-            RefreshSettings();
         end,
     });
 
@@ -2010,7 +1862,7 @@ function CraftingOrders:RefreshAnalytics()
     elseif (activePage == "heatmaps") then
         PopulateHeatMaps();
     elseif (activePage == "settings") then
-        RefreshSettings();
+        if (panel) then panel:RefreshCurrentPage(); end
     end
 end
 
