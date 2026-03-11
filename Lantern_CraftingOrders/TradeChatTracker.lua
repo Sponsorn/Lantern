@@ -172,9 +172,9 @@ end
 local listenerFrame;
 
 local function OnChatMsgChannel(_, _, msg, _, _, channelName, _, _, _, _, channelBaseName)
-    -- channelBaseName is "Trade", channelName is "2. Trade - City"
-    -- Check either — baseName is more reliable across locales
-    if (not channelBaseName or channelBaseName ~= "Trade") then return; end
+    -- channelBaseName is "Trade - City" or "Trade (Services) - City"
+    -- Match anything starting with "Trade"
+    if (not channelBaseName or channelBaseName:sub(1, 5) ~= "Trade") then return; end
 
     local tc = ensureTradeChatDB();
     local msgLower = msg:lower();
