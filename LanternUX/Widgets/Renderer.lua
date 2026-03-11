@@ -190,3 +190,21 @@ LanternUX.ReleaseAll = ReleaseAll;
 LanternUX.ResetGroupStates = ResetGroupStates;
 LanternUX.ExpandGroups = ExpandGroups;
 LanternUX.widgetPositionMap = _W.widgetPositionMap;
+
+function LanternUX.CreateStandaloneWidget(widgetType, parent, data, width)
+    local factory = _W.factories[widgetType];
+    if (not factory) then return nil; end
+    local w = factory.create(parent);
+    factory.setup(w, parent, data, width);
+    -- Remove from pool so ReleaseAll() won't touch it
+    local pool = _W.pools[widgetType];
+    if (pool) then
+        for i = #pool, 1, -1 do
+            if (pool[i] == w) then
+                table.remove(pool, i);
+                break;
+            end
+        end
+    end
+    return w;
+end
