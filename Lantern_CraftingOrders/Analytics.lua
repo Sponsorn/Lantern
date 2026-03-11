@@ -566,17 +566,31 @@ function CraftingOrders:GetEarningsChartData(charFilter, bucketType, since)
     local months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
+    local function formatLabel(key)
+        local y, m, d = key:match("(%d+)-(%d+)-(%d+)");
+        if (not y) then return ""; end
+        local mon = months[tonumber(m)] or m;
+        local day = tonumber(d);
+        if (bucketType ~= "weekly") then
+            return mon .. " " .. day;
+        end
+        -- Weekly: show range "Mar 3-9" or "Mar 28-Apr 3"
+        local mondayEpoch = time({ year = tonumber(y), month = tonumber(m), day = day, hour = 12 });
+        local sundayEpoch = mondayEpoch + 6 * 86400;
+        local sunM = tonumber(date("!%m", sundayEpoch));
+        local sunD = tonumber(date("!%d", sundayEpoch));
+        if (sunM == tonumber(m)) then
+            return mon .. " " .. day .. "-" .. sunD;
+        else
+            return mon .. " " .. day .. "-" .. (months[sunM] or sunM) .. " " .. sunD;
+        end
+    end
+
     -- Build result with formatted labels
     local result = {};
     for _, key in ipairs(bucketOrder) do
         local value = buckets[key];
-        -- Parse key to build label "Mar 5" format
-        local y, m, d = key:match("(%d+)-(%d+)-(%d+)");
-        local label = "";
-        if (y) then
-            label = (months[tonumber(m)] or m) .. " " .. tonumber(d);
-        end
-        table.insert(result, { label = label, value = value, dateKey = key });
+        table.insert(result, { label = formatLabel(key), value = value, dateKey = key });
         if (value > maxValue) then maxValue = value; end
     end
 
@@ -605,9 +619,7 @@ function CraftingOrders:GetEarningsChartData(charFilter, bucketType, since)
             end
 
             if (not lookup[key]) then
-                local y, m, d = key:match("(%d+)-(%d+)-(%d+)");
-                local label = (months[tonumber(m)] or m) .. " " .. tonumber(d);
-                lookup[key] = { label = label, value = 0, dateKey = key };
+                lookup[key] = { label = formatLabel(key), value = 0, dateKey = key };
             end
 
             cursor = cursor + step;
