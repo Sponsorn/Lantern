@@ -638,7 +638,7 @@ local TIMEFRAME_OPTIONS = {
 
 local function CreateTimeframeDropdown(parent, onChangeCallback, getStateFn, setStateFn)
     local DROPDOWN_W = 150;
-    local DROPDOWN_H = 24;
+    local DROPDOWN_H = 28;
 
     local baseName = NextName("LanternCO_TFFilter_");
 
@@ -656,9 +656,9 @@ local function CreateTimeframeDropdown(parent, onChangeCallback, getStateFn, set
     btn:SetAllPoints();
 
     local label = btn:CreateFontString(baseName .. "_Label", "OVERLAY");
-    label:SetFontObject(T.fontSmall);
-    label:SetPoint("LEFT", 8, 0);
-    label:SetPoint("RIGHT", -16, 0);
+    label:SetFontObject(T.fontBody);
+    label:SetPoint("LEFT", 10, 0);
+    label:SetPoint("RIGHT", -20, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));
     local initialValue = getStateFn and getStateFn() or "all";
@@ -672,7 +672,7 @@ local function CreateTimeframeDropdown(parent, onChangeCallback, getStateFn, set
 
     local arrow = btn:CreateFontString(baseName .. "_Arrow", "OVERLAY");
     arrow:SetFontObject(T.fontSmall);
-    arrow:SetPoint("RIGHT", -4, 0);
+    arrow:SetPoint("RIGHT", -6, 0);
     arrow:SetText("v");
     arrow:SetTextColor(unpack(T.textDim));
 
