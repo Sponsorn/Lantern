@@ -1261,6 +1261,7 @@ local function PopulateHeatMaps()
             data = hmData.gold,
             maxVal = hmData.maxGold,
             tooltipFn = HeatMapGoldTooltip,
+            formatFn = function(v) return v > 0 and FormatMoneyCompact(v) or ""; end,
         }, nil);
     end
 
@@ -1350,6 +1351,7 @@ local function CreateHeatMapsContent(parent)
     heatmapGoldGrid = LUX.CreateStandaloneWidget("heatmap", f, {
         data = {},
         tooltipFn = HeatMapGoldTooltip,
+        formatFn = function(v) return v > 0 and FormatMoneyCompact(v) or ""; end,
     });
     heatmapGoldGrid.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
     heatmapGoldGrid.frame:SetPoint("RIGHT", f, "RIGHT", -16, 0);

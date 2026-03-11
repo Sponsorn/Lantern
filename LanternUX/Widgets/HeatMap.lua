@@ -82,15 +82,17 @@ local function CreateHeatMap(parent)
         w._rowLabels[row] = fs;
     end
 
-    -- Cells (7x24 textures + tooltip buttons)
+    -- Cells (7x24 textures + tooltip buttons + value labels)
     w._cells = {};      -- [col][row] = texture
     w._buttons = {};    -- [col][row] = button
     w._cellData = {};   -- [col][row] = { day, hour, value } for tooltips
+    w._cellLabels = {}; -- [col][row] = fontstring
 
     for col = 1, COLS do
         w._cells[col] = {};
         w._buttons[col] = {};
         w._cellData[col] = {};
+        w._cellLabels[col] = {};
         for row = 1, ROWS do
             local tex = frame:CreateTexture(NextName("LUX_HM_Cell_"), "ARTWORK");
             tex:SetHeight(CELL_H);
@@ -101,6 +103,14 @@ local function CreateHeatMap(parent)
             btn:SetAllPoints(tex);
             w._buttons[col][row] = btn;
             w._cellData[col][row] = { day = 0, hour = 0, value = 0 };
+
+            -- Value label centered on the cell
+            local lbl = btn:CreateFontString(NextName("LUX_HM_Val_"), "OVERLAY");
+            lbl:SetFontObject(T.fontSmall);
+            lbl:SetAllPoints();
+            lbl:SetJustifyH("CENTER");
+            lbl:SetJustifyV("MIDDLE");
+            w._cellLabels[col][row] = lbl;
 
             btn:SetScript("OnEnter", function(self)
                 local cd = w._cellData[col][row];
@@ -170,6 +180,7 @@ local function SetupHeatMap(w, parent, data, contentWidth)
 
     w._desc_text = data.desc;
     w._tooltipFn = data.tooltipFn;
+    w._formatFn = data.formatFn; -- optional: function(value) -> string; nil/empty hides label
 
     -- Determine settings
     local mondayFirst = (data.mondayFirst ~= false); -- default true
@@ -215,6 +226,7 @@ local function SetupHeatMap(w, parent, data, contentWidth)
     -- Apply cell colors and store cell data
     local dayToCol = mondayFirst and DAY_TO_COL_MON or DAY_TO_COL_SUN;
 
+    local formatFn = w._formatFn;
     for day = 0, 6 do
         local col = dayToCol[day];
         local dayData = gridData[day];
@@ -227,6 +239,22 @@ local function SetupHeatMap(w, parent, data, contentWidth)
             w._cellData[col][row].day = day;
             w._cellData[col][row].hour = hour;
             w._cellData[col][row].value = value;
+            -- Cell value label
+            local lbl = w._cellLabels[col][row];
+            if (formatFn) then
+                local txt = formatFn(value);
+                lbl:SetText(txt or "");
+            elseif (value > 0) then
+                lbl:SetText(value);
+            else
+                lbl:SetText("");
+            end
+            -- Use bright text on dark cells, dim on bright cells
+            if (t > 0.5) then
+                lbl:SetTextColor(0, 0, 0, 0.8);
+            else
+                lbl:SetTextColor(1, 1, 1, 0.6);
+            end
         end
     end
 
@@ -250,9 +278,10 @@ end
 _W.factories.heatmap = { create = CreateHeatMap, setup = SetupHeatMap };
 
 _W.refreshers.heatmap = function(w)
-    -- Re-apply cell colors from stored data (called after data changes)
+    -- Re-apply cell colors and labels from stored data (called after data changes)
     if (not w._gridData or not w._dayToCol) then return; end
     local maxVal = w._maxVal or 1;
+    local formatFn = w._formatFn;
     for day = 0, 6 do
         local col = w._dayToCol[day];
         local dayData = w._gridData[day];
@@ -263,6 +292,21 @@ _W.refreshers.heatmap = function(w)
             local r, g, b = LerpColor(w._bgColor, w._accentColor, t);
             w._cells[col][row]:SetColorTexture(r, g, b, 1);
             w._cellData[col][row].value = value;
+            -- Update cell label
+            local lbl = w._cellLabels[col][row];
+            if (formatFn) then
+                local txt = formatFn(value);
+                lbl:SetText(txt or "");
+            elseif (value > 0) then
+                lbl:SetText(value);
+            else
+                lbl:SetText("");
+            end
+            if (t > 0.5) then
+                lbl:SetTextColor(0, 0, 0, 0.8);
+            else
+                lbl:SetTextColor(1, 1, 1, 0.6);
+            end
         end
     end
 end
