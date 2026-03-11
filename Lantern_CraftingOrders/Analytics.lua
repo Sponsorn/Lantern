@@ -528,6 +528,106 @@ function CraftingOrders:GetHeatMapData(charFilter, since)
 end
 
 -------------------------------------------------------------------------------
+-- Earnings chart aggregation
+-------------------------------------------------------------------------------
+
+function CraftingOrders:GetEarningsChartData(charFilter, bucketType, since)
+    local offset = self:GetServerTimeOffset();
+    local buckets = {};
+    local bucketOrder = {};
+    local maxValue = 0;
+
+    iterateOrders(charFilter, function(order)
+        if (not order.timestamp) then return; end
+        local realmTime = order.timestamp + offset;
+        local key;
+        if (bucketType == "weekly") then
+            -- Find Monday of this week
+            local wday = tonumber(date("!%w", realmTime)); -- 0=Sun
+            local mondayOffset = (wday == 0) and 6 or (wday - 1);
+            local mondayEpoch = realmTime - mondayOffset * 86400;
+            key = date("!%Y-%m-%d", mondayEpoch);
+        else
+            key = date("!%Y-%m-%d", realmTime);
+        end
+
+        if (not buckets[key]) then
+            buckets[key] = 0;
+            table.insert(bucketOrder, key);
+        end
+        local tip = order.tip or 0;
+        buckets[key] = buckets[key] + tip;
+    end, since);
+
+    -- Sort bucket keys chronologically
+    table.sort(bucketOrder);
+
+    -- Month abbreviation lookup
+    local months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+    -- Build result with formatted labels
+    local result = {};
+    for _, key in ipairs(bucketOrder) do
+        local value = buckets[key];
+        -- Parse key to build label "Mar 5" format
+        local y, m, d = key:match("(%d+)-(%d+)-(%d+)");
+        local label = "";
+        if (y) then
+            label = (months[tonumber(m)] or m) .. " " .. tonumber(d);
+        end
+        table.insert(result, { label = label, value = value, dateKey = key });
+        if (value > maxValue) then maxValue = value; end
+    end
+
+    -- Fill gaps: ensure every day/week in range has a bucket
+    if (since) then
+        local now = GetServerTime();
+        local realmNow = now + offset;
+        local step = (bucketType == "weekly") and 7 * 86400 or 86400;
+        local cursor = since + offset;
+
+        -- Build lookup from existing buckets
+        local lookup = {};
+        for _, b in ipairs(result) do
+            lookup[b.dateKey] = b;
+        end
+
+        while (cursor <= realmNow) do
+            local key;
+            if (bucketType == "weekly") then
+                local wday = tonumber(date("!%w", cursor));
+                local mondayOffset = (wday == 0) and 6 or (wday - 1);
+                local mondayEpoch = cursor - mondayOffset * 86400;
+                key = date("!%Y-%m-%d", mondayEpoch);
+            else
+                key = date("!%Y-%m-%d", cursor);
+            end
+
+            if (not lookup[key]) then
+                local y, m, d = key:match("(%d+)-(%d+)-(%d+)");
+                local label = (months[tonumber(m)] or m) .. " " .. tonumber(d);
+                lookup[key] = { label = label, value = 0, dateKey = key };
+            end
+
+            cursor = cursor + step;
+        end
+
+        -- Rebuild sorted
+        result = {};
+        for key, b in pairs(lookup) do
+            table.insert(result, b);
+        end
+        table.sort(result, function(a, b) return a.dateKey < b.dateKey; end);
+    end
+
+    return {
+        buckets = result,
+        maxValue = maxValue,
+    };
+end
+
+-------------------------------------------------------------------------------
 -- Expose DB helpers
 -------------------------------------------------------------------------------
 
