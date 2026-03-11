@@ -251,4 +251,13 @@ ns:RegisterLocale("enUS", {
     CO_SETTINGS_EXCLUDE_KEYWORDS_DESC            = "Messages containing any of these keywords are ignored.",
     CO_SETTINGS_KEYWORD_ADD                      = "Add",
     CO_SETTINGS_KEYWORD_REMOVE                   = "Remove",
+
+    ---------------------------------------------------------------------------
+    -- AnalyticsFrame.lua: Earnings chart
+    ---------------------------------------------------------------------------
+
+    CO_DASH_EARNINGS_HEADER                      = "Earnings Over Time",
+    CO_DASH_EARNINGS_DAILY                       = "Daily earnings — last %d days",
+    CO_DASH_EARNINGS_WEEKLY                      = "Weekly earnings — last %d weeks",
+    CO_DASH_EARNINGS_NO_DATA                     = "No earnings data",
 });

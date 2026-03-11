@@ -251,4 +251,9 @@ ns:RegisterLocale("zhCN", {
     -- CO_SETTINGS_EXCLUDE_KEYWORDS_DESC            = "Messages containing any of these keywords are ignored.",
     -- CO_SETTINGS_KEYWORD_ADD                      = "Add",
     -- CO_SETTINGS_KEYWORD_REMOVE                   = "Remove",
+
+    -- CO_DASH_EARNINGS_HEADER                      = "Earnings Over Time",
+    -- CO_DASH_EARNINGS_DAILY                       = "Daily earnings — last %d days",
+    -- CO_DASH_EARNINGS_WEEKLY                      = "Weekly earnings — last %d weeks",
+    -- CO_DASH_EARNINGS_NO_DATA                     = "No earnings data",
 });
