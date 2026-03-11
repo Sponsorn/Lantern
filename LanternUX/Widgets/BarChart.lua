@@ -38,6 +38,7 @@ local function CreateBarChart(parent)
 
     -- Layout function
     w._layoutBars = function()
+        if (w._isEmpty) then return; end
         local totalW = w.frame:GetWidth();
         if (not totalW or totalW <= 0) then return; end
         local barCount = w._barCount;
@@ -191,17 +192,19 @@ local function SetupBarChart(w, parent, data, contentWidth)
     for i = 1, visibleIdx do
         if ((w._barData[i].value or 0) > 0) then hasData = true; break; end
     end
+    w._isEmpty = not hasData;
     if (not hasData) then
         w._emptyText:Show();
         for i = 1, visibleIdx do
             w._bars[i]:Hide();
             w._labels[i]:Hide();
+            w._buttons[i]:Hide();
         end
     else
         w._emptyText:Hide();
+        w._layoutBars();
     end
 
-    w._layoutBars();
     return w;
 end
 
