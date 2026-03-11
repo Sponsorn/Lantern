@@ -636,7 +636,7 @@ local TIMEFRAME_OPTIONS = {
     { value = "month", key = "CO_DASH_TIMEFRAME_MONTH" },
 };
 
-local function CreateTimeframeDropdown(parent, onChangeCallback)
+local function CreateTimeframeDropdown(parent, onChangeCallback, getStateFn, setStateFn)
     local DROPDOWN_W = 150;
     local DROPDOWN_H = 24;
 
@@ -661,7 +661,13 @@ local function CreateTimeframeDropdown(parent, onChangeCallback)
     label:SetPoint("RIGHT", -16, 0);
     label:SetJustifyH("LEFT");
     label:SetTextColor(unpack(T.text));
-    label:SetText(L["CO_DASH_TIMEFRAME_ALL"]);
+    local initialValue = getStateFn and getStateFn() or "all";
+    for _, o in ipairs(TIMEFRAME_OPTIONS) do
+        if (o.value == initialValue) then
+            label:SetText(L[o.key]);
+            break;
+        end
+    end
     dropFrame._label = label;
 
     local arrow = btn:CreateFontString(baseName .. "_Arrow", "OVERLAY");
@@ -729,7 +735,7 @@ local function CreateTimeframeDropdown(parent, onChangeCallback)
         itemLabel:SetText(L[opt.key]);
 
         item:SetScript("OnClick", function()
-            dashTimeframe = opt.value;
+            setStateFn(opt.value);
             label:SetText(L[opt.key]);
             menu:Hide();
             activeDropdownMenu = nil;
@@ -910,7 +916,7 @@ local function CreateDashboardContent(parent)
     -- Timeframe filter for top 5 sections (created once, repositioned in PopulateDashboard)
     dashTimeframeFilter = CreateTimeframeDropdown(f, function()
         PopulateDashboard();
-    end);
+    end, function() return dashTimeframe; end, function(val) dashTimeframe = val; end);
 
     -- Title
     local title = scroll.scrollFrame:CreateFontString("LanternCO_DashTitle", "OVERLAY");
@@ -1135,6 +1141,274 @@ local function CreateOrdersContent(parent)
     ordersTable:SetNoDataText(L["CO_DASH_NO_DATA"]);
 
     return container;
+end
+
+-------------------------------------------------------------------------------
+-- Page 6: Heat Maps
+-------------------------------------------------------------------------------
+
+local heatmapScroll, heatmapFilter, heatmapTimeframeFilter;
+local heatmapTimeframe = "all";
+local heatmapOrdersGrid, heatmapGoldGrid, heatmapTradeGrid;
+
+local function HeatMapOrderTooltip(day, hour, value)
+    local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
+    local dayName = date("%A", 345600 + day * 86400);
+    local hourStr;
+    if (use12h) then
+        if (hour == 0) then hourStr = "12:00 AM";
+        elseif (hour < 12) then hourStr = hour .. ":00 AM";
+        elseif (hour == 12) then hourStr = "12:00 PM";
+        else hourStr = (hour - 12) .. ":00 PM"; end
+    else
+        hourStr = string.format("%02d:00", hour);
+    end
+    if (value == 0) then
+        return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
+    elseif (value == 1) then
+        return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_ORDERS_SINGLE"];
+    end
+    return dayName .. " " .. hourStr .. " -- " .. string.format(L["CO_HEATMAP_TIP_ORDERS"], value);
+end
+
+local function HeatMapGoldTooltip(day, hour, value)
+    local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
+    local dayName = date("%A", 345600 + day * 86400);
+    local hourStr;
+    if (use12h) then
+        if (hour == 0) then hourStr = "12:00 AM";
+        elseif (hour < 12) then hourStr = hour .. ":00 AM";
+        elseif (hour == 12) then hourStr = "12:00 PM";
+        else hourStr = (hour - 12) .. ":00 PM"; end
+    else
+        hourStr = string.format("%02d:00", hour);
+    end
+    if (value == 0) then
+        return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
+    end
+    return dayName .. " " .. hourStr .. " -- " .. string.format(L["CO_HEATMAP_TIP_GOLD"], FormatMoney(value));
+end
+
+local function HeatMapTradeTooltip(profData)
+    return function(day, hour, value)
+        local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
+        local dayName = date("%A", 345600 + day * 86400);
+        local hourStr;
+        if (use12h) then
+            if (hour == 0) then hourStr = "12:00 AM";
+            elseif (hour < 12) then hourStr = hour .. ":00 AM";
+            elseif (hour == 12) then hourStr = "12:00 PM";
+            else hourStr = (hour - 12) .. ":00 PM"; end
+        else
+            hourStr = string.format("%02d:00", hour);
+        end
+        if (value == 0) then
+            return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
+        end
+        local base;
+        if (value == 1) then
+            base = dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_TRADE_SINGLE"];
+        else
+            base = dayName .. " " .. hourStr .. " -- " .. string.format(L["CO_HEATMAP_TIP_TRADE"], value);
+        end
+        local profs = profData and profData[day] and profData[day][hour];
+        if (profs) then
+            local parts = {};
+            for prof, count in pairs(profs) do
+                table.insert(parts, prof .. ": " .. count);
+            end
+            if (#parts > 0) then
+                table.sort(parts);
+                base = base .. "\n(" .. table.concat(parts, ", ") .. ")";
+            end
+        end
+        return base;
+    end;
+end
+
+local function GetHeatmapTimeframeSince()
+    if (heatmapTimeframe == "all") then return nil; end
+    local now = time();
+    if (heatmapTimeframe == "day") then return now - (24 * 3600); end
+    if (heatmapTimeframe == "week") then return now - (7 * 24 * 3600); end
+    if (heatmapTimeframe == "month") then return now - (30 * 24 * 3600); end
+    return nil;
+end
+
+local function PopulateHeatMaps()
+    if (not heatmapScroll) then return; end
+
+    local filter = GetCharFilterForAPI();
+    local since = GetHeatmapTimeframeSince();
+    local f = heatmapScroll.scrollChild;
+
+    -- Order & Gold data
+    local hmData = CraftingOrders:GetHeatMapData(filter, since);
+
+    -- Update or create order grid
+    if (heatmapOrdersGrid) then
+        local setupFn = LanternUX._W.factories.heatmap.setup;
+        setupFn(heatmapOrdersGrid, f, {
+            data = hmData.orders,
+            maxVal = hmData.maxOrders,
+            tooltipFn = HeatMapOrderTooltip,
+        }, nil);
+    end
+
+    -- Update or create gold grid
+    if (heatmapGoldGrid) then
+        local setupFn = LanternUX._W.factories.heatmap.setup;
+        setupFn(heatmapGoldGrid, f, {
+            data = hmData.gold,
+            maxVal = hmData.maxGold,
+            tooltipFn = HeatMapGoldTooltip,
+        }, nil);
+    end
+
+    -- Trade chat grid
+    if (CraftingOrders:IsTradeChatEnabled()) then
+        local tradeData = CraftingOrders:GetTradeChatHeatMapData(since);
+        if (heatmapTradeGrid) then
+            heatmapTradeGrid.frame:Show();
+            local setupFn = LanternUX._W.factories.heatmap.setup;
+            setupFn(heatmapTradeGrid, f, {
+                data = tradeData.grid,
+                maxVal = tradeData.maxTotal,
+                tooltipFn = HeatMapTradeTooltip(tradeData.professions),
+            }, nil);
+        end
+        if (heatmapScroll._disabledMsg) then heatmapScroll._disabledMsg:Hide(); end
+        if (heatmapScroll._enableBtn) then heatmapScroll._enableBtn:Hide(); end
+    else
+        if (heatmapTradeGrid) then heatmapTradeGrid.frame:Hide(); end
+        if (heatmapScroll._disabledMsg) then heatmapScroll._disabledMsg:Show(); end
+        if (heatmapScroll._enableBtn) then heatmapScroll._enableBtn:Show(); end
+    end
+end
+
+local function CreateHeatMapsContent(parent)
+    local scroll = LanternUX.CreateScrollContainer(parent);
+    heatmapScroll = scroll;
+
+    local f = scroll.scrollChild;
+
+    -- Char filter dropdown
+    heatmapFilter = CreateCharFilterDropdown(scroll.scrollFrame, function()
+        PopulateHeatMaps();
+        SyncAllFilters();
+    end);
+    heatmapFilter:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -12, -8);
+
+    -- Title
+    local title = scroll.scrollFrame:CreateFontString("LanternCO_HMTitle", "OVERLAY");
+    title:SetFontObject(T.fontHeading);
+    title:SetPoint("TOPLEFT", parent, "TOPLEFT", 16, -12);
+    title:SetText(L["CO_TAB_HEATMAPS"]);
+    title:SetTextColor(unpack(T.textBright));
+
+    -- Timeframe dropdown
+    heatmapTimeframeFilter = CreateTimeframeDropdown(parent, function()
+        PopulateHeatMaps();
+    end, function() return heatmapTimeframe; end, function(val) heatmapTimeframe = val; end);
+    heatmapTimeframeFilter:SetPoint("TOPRIGHT", heatmapFilter, "TOPLEFT", -8, 0);
+
+    -- Offset scroll content below title/filters
+    scroll.scrollFrame:ClearAllPoints();
+    scroll.scrollFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -42);
+    scroll.scrollFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0);
+
+    scroll.scrollFrame:SetScript("OnSizeChanged", function(_, w)
+        if (w and w > 0) then f:SetWidth(w); end
+    end);
+
+    local y = -12;
+    local LUX = _G.LanternUX;
+
+    -- Section 1: Orders heat map
+    local ordersHeader = f:CreateFontString("LanternCO_HM_OrdersH", "OVERLAY");
+    ordersHeader:SetFontObject(T.fontBodyBold);
+    ordersHeader:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    ordersHeader:SetText(L["CO_HEATMAP_ORDERS"]);
+    ordersHeader:SetTextColor(unpack(T.accent));
+    y = y - 24;
+
+    heatmapOrdersGrid = LUX.CreateStandaloneWidget("heatmap", f, {
+        data = {},
+        tooltipFn = HeatMapOrderTooltip,
+    });
+    heatmapOrdersGrid.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    heatmapOrdersGrid.frame:SetPoint("RIGHT", f, "RIGHT", -16, 0);
+    y = y - (heatmapOrdersGrid.height or 428) - 24;
+
+    -- Section 2: Gold heat map
+    local goldHeader = f:CreateFontString("LanternCO_HM_GoldH", "OVERLAY");
+    goldHeader:SetFontObject(T.fontBodyBold);
+    goldHeader:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    goldHeader:SetText(L["CO_HEATMAP_GOLD"]);
+    goldHeader:SetTextColor(unpack(T.accent));
+    y = y - 24;
+
+    heatmapGoldGrid = LUX.CreateStandaloneWidget("heatmap", f, {
+        data = {},
+        tooltipFn = HeatMapGoldTooltip,
+    });
+    heatmapGoldGrid.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    heatmapGoldGrid.frame:SetPoint("RIGHT", f, "RIGHT", -16, 0);
+    y = y - (heatmapGoldGrid.height or 428) - 24;
+
+    -- Section 3: Trade Chat heat map
+    local tradeHeader = f:CreateFontString("LanternCO_HM_TradeH", "OVERLAY");
+    tradeHeader:SetFontObject(T.fontBodyBold);
+    tradeHeader:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    tradeHeader:SetText(L["CO_HEATMAP_TRADE_CHAT"]);
+    tradeHeader:SetTextColor(unpack(T.accent));
+    y = y - 24;
+
+    -- Trade chat disabled message
+    local disabledMsg = f:CreateFontString("LanternCO_HM_TradeDisabled", "OVERLAY");
+    disabledMsg:SetFontObject(T.fontBody);
+    disabledMsg:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    disabledMsg:SetText(L["CO_HEATMAP_TRADE_DISABLED"]);
+    disabledMsg:SetTextColor(unpack(T.textDim));
+    disabledMsg:Hide();
+    scroll._disabledMsg = disabledMsg;
+
+    -- "Enable in Settings" button
+    local enableBtn = CreateFrame("Button", "LanternCO_HM_EnableBtn", f);
+    enableBtn:SetPoint("TOPLEFT", disabledMsg, "BOTTOMLEFT", 0, -4);
+    enableBtn:SetSize(150, 24);
+    local enableText = enableBtn:CreateFontString(nil, "OVERLAY");
+    enableText:SetFontObject(T.fontBody);
+    enableText:SetAllPoints();
+    enableText:SetJustifyH("LEFT");
+    enableText:SetText(L["CO_HEATMAP_TRADE_ENABLE_LINK"]);
+    enableText:SetTextColor(unpack(T.accent));
+    enableBtn:SetScript("OnClick", function()
+        if (panel) then
+            panel:SelectPage("settings");
+        end
+    end);
+    enableBtn:SetScript("OnEnter", function()
+        enableText:SetTextColor(unpack(T.textBright));
+    end);
+    enableBtn:SetScript("OnLeave", function()
+        enableText:SetTextColor(unpack(T.accent));
+    end);
+    enableBtn:Hide();
+    scroll._enableBtn = enableBtn;
+
+    -- Trade chat grid
+    heatmapTradeGrid = LUX.CreateStandaloneWidget("heatmap", f, {
+        data = {},
+        tooltipFn = HeatMapTradeTooltip({}),
+    });
+    heatmapTradeGrid.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+    heatmapTradeGrid.frame:SetPoint("RIGHT", f, "RIGHT", -16, 0);
+    y = y - (heatmapTradeGrid.height or 428) - 20;
+
+    scroll:SetContentHeight(math.abs(y) + 20);
+
+    return scroll.scrollFrame;
 end
 
 -------------------------------------------------------------------------------
@@ -1617,6 +1891,7 @@ SyncAllFilters = function()
     if (customersFilter) then customersFilter:UpdateLabel(); end
     if (itemsFilter) then itemsFilter:UpdateLabel(); end
     if (ordersFilter) then ordersFilter:UpdateLabel(); end
+    if (heatmapFilter) then heatmapFilter:UpdateLabel(); end
 end
 
 -------------------------------------------------------------------------------
@@ -1677,6 +1952,16 @@ local function EnsurePanel()
         end,
     });
 
+    panel:AddPage("heatmaps", {
+        label  = L["CO_TAB_HEATMAPS"],
+        frame  = CreateHeatMapsContent,
+        onShow = function()
+            activePage = "heatmaps";
+            CloseDropdownMenu();
+            PopulateHeatMaps();
+        end,
+    });
+
     panel:AddPage("settings", {
         label  = L["CO_TAB_SETTINGS"],
         frame  = CreateSettingsContent,
@@ -1722,6 +2007,8 @@ function CraftingOrders:RefreshAnalytics()
         RefreshItems();
     elseif (activePage == "orders") then
         RefreshOrders();
+    elseif (activePage == "heatmaps") then
+        PopulateHeatMaps();
     elseif (activePage == "settings") then
         RefreshSettings();
     end
