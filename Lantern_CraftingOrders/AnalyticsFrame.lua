@@ -1376,7 +1376,7 @@ local function CreateHeatMapsContent(parent)
     local enableBtn = CreateFrame("Button", "LanternCO_HM_EnableBtn", f);
     enableBtn:SetPoint("TOPLEFT", disabledMsg, "BOTTOMLEFT", 0, -4);
     enableBtn:SetSize(150, 24);
-    local enableText = enableBtn:CreateFontString(nil, "OVERLAY");
+    local enableText = enableBtn:CreateFontString("LanternCO_HM_EnableBtnText", "OVERLAY");
     enableText:SetFontObject(T.fontBody);
     enableText:SetAllPoints();
     enableText:SetJustifyH("LEFT");
@@ -1684,13 +1684,14 @@ local function GetSettingsWidgets()
     -- Order History group
     table.insert(widgets, {
         type = "group",
-        text = L["CO_SETTINGS_HISTORY"],
-        desc = L["CO_SETTINGS_HISTORY_DESC"],
+        text = L["CO_HISTORY_HEADER"],
+        desc = L["CO_CLEAR_HISTORY_DESC"],
         stateKey = "orderHistory",
         children = {
             {
                 type = "toggle",
-                label = L["CO_SETTINGS_TRACK_HISTORY"],
+                label = L["CO_TRACK_HISTORY"],
+                desc = L["CO_TRACK_HISTORY_DESC"],
                 get = function()
                     local db = CraftingOrders:GetHistoryDB();
                     return db.trackHistory;
@@ -1702,7 +1703,8 @@ local function GetSettingsWidgets()
             },
             {
                 type = "select",
-                label = L["CO_SETTINGS_MAX_ORDERS"],
+                label = L["CO_MAX_ORDERS"],
+                desc = L["CO_MAX_ORDERS_DESC"],
                 get = function()
                     local db = CraftingOrders:GetHistoryDB();
                     return db.maxOrders;
@@ -1722,8 +1724,8 @@ local function GetSettingsWidgets()
             },
             {
                 type = "label_action",
-                text = string.format(L["CO_SETTINGS_CLEAR_HISTORY_LABEL"], CraftingOrders:GetCharacterOrderCount()),
-                buttonLabel = L["CO_SETTINGS_CLEAR_HISTORY"],
+                text = string.format(L["CO_HISTORY_COUNT"], CraftingOrders:GetCharacterOrderCount()),
+                buttonLabel = L["CO_CLEAR_HISTORY"],
                 func = function()
                     CraftingOrders:ClearCharacterHistory();
                     refreshPage();

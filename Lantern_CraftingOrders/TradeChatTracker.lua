@@ -194,15 +194,22 @@ local function RegisterListener()
     if (not listenerFrame) then
         listenerFrame = CreateFrame("Frame", "LanternCO_TradeChatListener");
     end
+    if (InCombatLockdown()) then
+        C_Timer.After(0, function() RegisterListener(); end);
+        return;
+    end
     listenerFrame:RegisterEvent("CHAT_MSG_CHANNEL");
     listenerFrame:SetScript("OnEvent", OnChatMsgChannel);
 end
 
 local function UnregisterListener()
-    if (listenerFrame) then
-        listenerFrame:UnregisterEvent("CHAT_MSG_CHANNEL");
-        listenerFrame:SetScript("OnEvent", nil);
+    if (not listenerFrame) then return; end
+    if (InCombatLockdown()) then
+        C_Timer.After(0, function() UnregisterListener(); end);
+        return;
     end
+    listenerFrame:UnregisterEvent("CHAT_MSG_CHANNEL");
+    listenerFrame:SetScript("OnEvent", nil);
 end
 
 -------------------------------------------------------------------------------
@@ -328,7 +335,7 @@ local function InitTradeChat()
 end
 
 -- Initialize on PLAYER_LOGIN (DB is available by then)
-local initFrame = CreateFrame("Frame");
+local initFrame = CreateFrame("Frame", "LanternCO_TradeChatInit");
 initFrame:RegisterEvent("PLAYER_LOGIN");
 initFrame:SetScript("OnEvent", function(self)
     self:UnregisterEvent("PLAYER_LOGIN");
