@@ -72,6 +72,7 @@ local function CreateBarChart(parent)
             btn:ClearAllPoints();
             btn:SetPoint("BOTTOMLEFT", w.frame, "BOTTOMLEFT", xOff, LABEL_H);
             btn:SetSize(barW, chartH);
+            btn:Show();
 
             -- X-axis label
             local lbl = w._labels[i];
@@ -79,6 +80,7 @@ local function CreateBarChart(parent)
             lbl:SetPoint("TOP", bar, "BOTTOM", 0, -1);
             lbl:SetWidth(barW);
             lbl:SetText(data and data.label or "");
+            lbl:Show();
         end
     end;
 
