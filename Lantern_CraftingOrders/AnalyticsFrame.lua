@@ -259,6 +259,9 @@ end
 -------------------------------------------------------------------------------
 
 local dashScroll, dashFilter, dashTimeframeFilter;
+local dashChart; -- barchart widget, created once
+local dashChartHeader; -- section header frame
+local dashChartSubtitle; -- info text fontstring
 local dashTimeframe = "all"; -- "all", "day", "week", "month"
 local dashElements = {};
 local dashElementCount = 0;
@@ -268,6 +271,9 @@ local function HideAllDashElements()
         if (dashElements[i]) then dashElements[i]:Hide(); end
     end
     dashElementCount = 0;
+    if (dashChartHeader) then dashChartHeader:Hide(); end
+    if (dashChartSubtitle) then dashChartSubtitle:Hide(); end
+    if (dashChart) then dashChart.frame:Hide(); end
 end
 
 local function AcquireDashFrame(parent, height)
@@ -647,6 +653,22 @@ local function GetDashTimeframeSince()
     return nil;
 end
 
+local function GetChartParams()
+    if (dashTimeframe == "day") then
+        local since = GetServerTime() - 7 * 86400;
+        return "daily", since, 7;
+    elseif (dashTimeframe == "week") then
+        local since = GetServerTime() - 14 * 86400;
+        return "daily", since, 14;
+    elseif (dashTimeframe == "month") then
+        local since = GetServerTime() - 30 * 86400;
+        return "daily", since, 30;
+    else -- "all"
+        local since = GetServerTime() - 12 * 7 * 86400;
+        return "weekly", since, 12;
+    end
+end
+
 local TIMEFRAME_OPTIONS = {
     { value = "all",   key = "CO_DASH_TIMEFRAME_ALL" },
     { value = "day",   key = "CO_DASH_TIMEFRAME_DAY" },
@@ -805,27 +827,29 @@ local function PopulateDashboard()
 
     local y = -12;
 
-    -- Row 1: All-time stats (3 cards)
-    local CARD_W = 140;
+    -- Dynamic card width for uniform 3-column grid
+    local contentW = f:GetWidth();
+    if (not contentW or contentW <= 0) then contentW = 600; end
+    local startX = 16;
     local CARD_GAP = 8;
+    local cardWidth = math.floor((contentW - 2 * CARD_GAP - 2 * startX) / 3);
+
+    -- Row 1: All-time stats (3 cards)
     local allTimeCards = {
         { label = L["CO_DASH_TOTAL_ORDERS"], value = tostring(stats.totalOrders) },
         { label = L["CO_DASH_TOTAL_TIPS"],   value = FormatMoneyCompact(stats.totalTips), tooltip = FormatMoney(stats.totalTips) },
         { label = L["CO_DASH_AVG_TIP"],      value = FormatMoneyCompact(stats.avgTip),    tooltip = FormatMoney(stats.avgTip) },
     };
 
-    local startX = 16;
-
     for i, cd in ipairs(allTimeCards) do
         local card = CreateStatCard(f, y, cd.label, cd.value, cd.tooltip);
-        card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (CARD_W + CARD_GAP), y);
+        card:SetWidth(cardWidth);
+        card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (cardWidth + CARD_GAP), y);
     end
 
     y = y - 70;
 
     -- Row 2: Timeframe cards (daily, weekly, monthly) with orders + tips
-    local TF_CARD_W = 220;
-    local TF_CARD_GAP = 8;
     local nextDailyReset, nextWeeklyReset = CraftingOrders:GetResetEpochs();
     local timeframeCards = {
         { label = L["CO_DASH_TODAY"],      orders = stats.dayOrders,   tips = stats.dayTips,   reset = nextDailyReset },
@@ -835,10 +859,58 @@ local function PopulateDashboard()
 
     for i, tf in ipairs(timeframeCards) do
         local card = CreateTimeframeCard(f, y, tf.label, tf.orders, tf.tips, tf.reset);
-        card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (TF_CARD_W + TF_CARD_GAP), y);
+        card:SetWidth(cardWidth);
+        card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (cardWidth + CARD_GAP), y);
     end
 
     y = y - 84;
+
+    -- Earnings chart
+    if (dashChart and dashChartHeader) then
+        local bucketType, chartSince, rangeNum = GetChartParams();
+        local chartData = CraftingOrders:GetEarningsChartData(filter, bucketType, chartSince);
+
+        -- Section header
+        dashChartHeader:ClearAllPoints();
+        dashChartHeader:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+        dashChartHeader:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, y);
+        dashChartHeader:Show();
+        y = y - 28;
+
+        -- Subtitle
+        local subtitleText;
+        if (bucketType == "weekly") then
+            subtitleText = string.format(L["CO_DASH_EARNINGS_WEEKLY"], rangeNum);
+        else
+            subtitleText = string.format(L["CO_DASH_EARNINGS_DAILY"], rangeNum);
+        end
+        dashChartSubtitle:ClearAllPoints();
+        dashChartSubtitle:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+        dashChartSubtitle:SetText(subtitleText);
+        dashChartSubtitle:Show();
+        y = y - 18;
+
+        -- Chart widget
+        local chartFactory = LanternUX._W.factories.barchart;
+        if (chartFactory) then
+            chartFactory.setup(dashChart, f, {
+                bars = chartData.buckets,
+                maxVal = chartData.maxValue,
+                height = 120,
+                emptyText = L["CO_DASH_EARNINGS_NO_DATA"],
+                tooltipFn = function(barEntry)
+                    if (not barEntry) then return nil; end
+                    local goldText = FormatMoney(barEntry.value or 0);
+                    return barEntry.label .. ": " .. goldText;
+                end,
+            });
+            dashChart.frame:ClearAllPoints();
+            dashChart.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, y);
+            dashChart.frame:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, y);
+            dashChart.frame:Show();
+            y = y - (dashChart.height or 136) - 12;
+        end
+    end
 
     -- Timeframe filter for top 5 sections
     local since = GetDashTimeframeSince();
@@ -923,6 +995,33 @@ local function CreateDashboardContent(parent)
     dashScroll = scroll;
 
     local f = scroll.scrollChild;
+
+    -- Earnings chart (created once, repositioned in PopulateDashboard)
+    dashChartHeader = CreateFrame("Frame", "LanternCO_DashChartHeader", f);
+    dashChartHeader:SetHeight(24);
+    local chartHeaderLabel = dashChartHeader:CreateFontString("LanternCO_DashChartHL", "OVERLAY");
+    chartHeaderLabel:SetFontObject(T.fontBodyBold);
+    chartHeaderLabel:SetPoint("LEFT", dashChartHeader, "LEFT", 0, 0);
+    chartHeaderLabel:SetJustifyH("LEFT");
+    chartHeaderLabel:SetText(L["CO_DASH_EARNINGS_HEADER"]);
+    chartHeaderLabel:SetTextColor(unpack(T.accent));
+    local chartDivider = dashChartHeader:CreateTexture("LanternCO_DashChartDiv", "ARTWORK");
+    chartDivider:SetHeight(1);
+    chartDivider:SetPoint("BOTTOMLEFT", dashChartHeader, "BOTTOMLEFT", 0, 0);
+    chartDivider:SetPoint("BOTTOMRIGHT", dashChartHeader, "BOTTOMRIGHT", 0, 0);
+    chartDivider:SetColorTexture(unpack(T.divider));
+    dashChartHeader:Hide();
+
+    dashChartSubtitle = f:CreateFontString("LanternCO_DashChartSub", "OVERLAY");
+    dashChartSubtitle:SetFontObject(T.fontSmall);
+    dashChartSubtitle:SetTextColor(unpack(T.textDim));
+    dashChartSubtitle:Hide();
+
+    local chartFactory = LanternUX._W.factories.barchart;
+    if (chartFactory) then
+        dashChart = chartFactory.create(f);
+        dashChart.frame:Hide();
+    end
 
     -- Filter dropdown at top
     dashFilter = CreateCharFilterDropdown(scroll.scrollFrame, function()
