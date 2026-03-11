@@ -462,6 +462,52 @@ function CraftingOrders:GetResetEpochs()
 end
 
 -------------------------------------------------------------------------------
+-- Heat map aggregation
+-------------------------------------------------------------------------------
+
+function CraftingOrders:GetHeatMapData(charFilter, since)
+    local offset = self:GetServerTimeOffset();
+    local orders = {};
+    local gold = {};
+    local maxOrders = 0;
+    local maxGold = 0;
+
+    for day = 0, 6 do
+        orders[day] = {};
+        gold[day] = {};
+        for hour = 0, 23 do
+            orders[day][hour] = 0;
+            gold[day][hour] = 0;
+        end
+    end
+
+    iterateOrders(charFilter, function(order)
+        if (not order.timestamp) then return; end
+        local realmTime = order.timestamp + offset;
+        local wday = tonumber(date("!%w", realmTime));
+        local hour = tonumber(date("!%H", realmTime));
+
+        orders[wday][hour] = orders[wday][hour] + 1;
+        if (orders[wday][hour] > maxOrders) then
+            maxOrders = orders[wday][hour];
+        end
+
+        local tip = order.tip or 0;
+        gold[wday][hour] = gold[wday][hour] + tip;
+        if (gold[wday][hour] > maxGold) then
+            maxGold = gold[wday][hour];
+        end
+    end, since);
+
+    return {
+        orders = orders,
+        gold = gold,
+        maxOrders = maxOrders,
+        maxGold = maxGold,
+    };
+end
+
+-------------------------------------------------------------------------------
 -- Expose DB helpers
 -------------------------------------------------------------------------------
 
