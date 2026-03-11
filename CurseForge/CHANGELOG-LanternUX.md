@@ -3,6 +3,7 @@
 ## 0.2.6
 - Add: New `heatmap` widget type — 7x24 day/hour grid with color scaling, tooltips, and responsive sizing
 - Add: `LanternUX.CreateStandaloneWidget()` API for creating widgets outside the page renderer
+- Add: DataTable expandable rows — click a parent row to reveal child rows inline with accent border and indent
 
 ## 0.2.5 - 2026-03-07
 - Fix: DataTable column header sort arrows now stay inside column bounds instead of blending into adjacent columns

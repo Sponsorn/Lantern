@@ -77,7 +77,7 @@ end
 
 -- Word-boundary-aware check: keyword must be at start/end of message
 -- or surrounded by space, punctuation, or bracket characters.
-local BOUNDARY_PATTERN = "[%s%p%[%]]";
+local BOUNDARY_PATTERN = "[%s%p]";
 
 local function isWordBoundary(msg, pos)
     if (pos < 1 or pos > #msg) then return true; end
@@ -192,26 +192,54 @@ local function OnChatMsgChannel(_, _, msg, _, _, channelName, _, _, _, _, channe
     incrementBucket(tc, profession);
 end
 
-local function RegisterListener()
+local pendingAction; -- "register" or "unregister", deferred until combat ends
+local combatFrame;
+
+local function ApplyListenerState(action)
     if (not listenerFrame) then
         listenerFrame = CreateFrame("Frame", "LanternCO_TradeChatListener");
     end
+    if (action == "register") then
+        listenerFrame:RegisterEvent("CHAT_MSG_CHANNEL");
+        listenerFrame:SetScript("OnEvent", OnChatMsgChannel);
+    else
+        listenerFrame:UnregisterEvent("CHAT_MSG_CHANNEL");
+        listenerFrame:SetScript("OnEvent", nil);
+    end
+end
+
+local function DeferUntilCombatEnds(action)
+    pendingAction = action;
+    if (not combatFrame) then
+        combatFrame = CreateFrame("Frame", "LanternCO_TradeChatCombat");
+        combatFrame:SetScript("OnEvent", function(self)
+            self:UnregisterEvent("PLAYER_REGEN_ENABLED");
+            if (pendingAction) then
+                ApplyListenerState(pendingAction);
+                pendingAction = nil;
+            end
+        end);
+    end
+    combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
+end
+
+local function RegisterListener()
     if (InCombatLockdown()) then
-        C_Timer.After(0, function() RegisterListener(); end);
+        DeferUntilCombatEnds("register");
         return;
     end
-    listenerFrame:RegisterEvent("CHAT_MSG_CHANNEL");
-    listenerFrame:SetScript("OnEvent", OnChatMsgChannel);
+    pendingAction = nil;
+    ApplyListenerState("register");
 end
 
 local function UnregisterListener()
-    if (not listenerFrame) then return; end
     if (InCombatLockdown()) then
-        C_Timer.After(0, function() UnregisterListener(); end);
+        DeferUntilCombatEnds("unregister");
         return;
     end
-    listenerFrame:UnregisterEvent("CHAT_MSG_CHANNEL");
-    listenerFrame:SetScript("OnEvent", nil);
+    pendingAction = nil;
+    if (not listenerFrame) then return; end
+    ApplyListenerState("unregister");
 end
 
 -------------------------------------------------------------------------------
@@ -311,12 +339,14 @@ function CraftingOrders:GetTradeChatHeatMapData(since)
 
     for dateKey, dayBuckets in pairs(tc.buckets) do
         if (not sinceDate or dateKey >= sinceDate) then
-            -- Get the day-of-week for this date key
-            -- Parse date key to get epoch, then get weekday
             local y, m, d = dateKey:match("(%d+)-(%d+)-(%d+)");
             if (y) then
-                local epoch = time({ year = tonumber(y), month = tonumber(m), day = tonumber(d), hour = 12 }); -- noon avoids timezone boundary issues
-                local wday = tonumber(date("!%w", epoch));
+                -- Day of week via Tomohiko Sakamoto's algorithm (avoids time()/date() timezone mismatch)
+                local yn, mn, dn = tonumber(y), tonumber(m), tonumber(d);
+                local t = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };
+                if (mn < 3) then yn = yn - 1; end
+                local wday = (yn + math.floor(yn / 4) - math.floor(yn / 100) + math.floor(yn / 400) + t[mn] + dn) % 7;
+                -- Result: 0=Sun, 1=Mon, ..., 6=Sat (matches date("%w") convention)
                 for hour, bucket in pairs(dayBuckets) do
                     if (type(hour) == "number") then
                         grid[wday][hour] = grid[wday][hour] + bucket.total;

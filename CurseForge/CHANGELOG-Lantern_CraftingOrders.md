@@ -8,7 +8,10 @@
 - Add: Heat Maps analytics tab showing order count, gold earned, and trade chat activity as 7x24 day/hour grids
 - Add: Trade chat tracker — monitors Trade channel for crafting requests with customizable keywords and profession detection
 - Add: Trade chat settings — enable/disable toggle, data retention (30/60/90 days), keyword management
+- Add: Expandable customer rows — click a customer to see their individual order history inline
 - Change: Analytics settings page now uses collapsible sections for better organization
+- Fix: Trade chat tracker not detecting Trade channel messages (wrong event argument position)
+- Fix: Trade chat listener continued running after module was disabled
 
 ## 0.6.3 - 2026-03-08
 - Fix: Module was disabled by default on fresh installs with no toggle to enable it
