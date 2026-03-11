@@ -12,6 +12,8 @@
 - Change: Analytics settings page now uses collapsible sections for better organization
 - Fix: Trade chat tracker not detecting Trade channel messages (wrong event argument position)
 - Fix: Trade chat listener continued running after module was disabled
+- Add: Earnings over time bar chart on the analytics dashboard with adaptive daily/weekly bucketing
+- Change: Dashboard stat cards and timeframe cards now use uniform column widths for a cleaner layout
 
 ## 0.6.3 - 2026-03-08
 - Fix: Module was disabled by default on fresh installs with no toggle to enable it
