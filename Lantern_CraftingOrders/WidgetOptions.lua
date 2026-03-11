@@ -336,25 +336,6 @@ local function historyWidgets()
         moduleToggle("CraftingOrders"),
         { type = "divider" },
         {
-            type = "toggle",
-            label = L["CO_TRACK_HISTORY"],
-            desc = L["CO_TRACK_HISTORY_DESC"],
-            get = function() return db.trackHistory ~= false; end,
-            set = function(val)
-                db.trackHistory = val and true or false;
-            end,
-        },
-        {
-            type = "range",
-            label = L["CO_MAX_ORDERS"],
-            desc = L["CO_MAX_ORDERS_DESC"],
-            min = 500, max = 10000, step = 500, default = 2000,
-            get = function() return db.maxOrders or 2000; end,
-            set = function(val)
-                db.maxOrders = val;
-            end,
-        },
-        {
             type = "range",
             label = L["CO_ORDERS_PER_PAGE"],
             desc = L["CO_ORDERS_PER_PAGE_DESC"],
@@ -372,33 +353,10 @@ local function historyWidgets()
                 CraftingOrders:ToggleAnalytics();
             end,
         },
-        {
-            type = "execute",
-            label = L["CO_CLEAR_HISTORY"],
-            desc = L["CO_CLEAR_HISTORY_DESC"],
-            func = function()
-                StaticPopup_Show("LANTERN_CO_CLEAR_HISTORY");
-            end,
-        },
     };
 
     return widgets;
 end
-
--- Confirmation dialog for clearing history
-StaticPopupDialogs["LANTERN_CO_CLEAR_HISTORY"] = {
-    text = L["CO_CLEAR_HISTORY_CONFIRM"] or "Are you sure?",
-    button1 = YES,
-    button2 = NO,
-    OnAccept = function()
-        CraftingOrders:ClearCharacterHistory();
-        if (refreshPage) then refreshPage(); end
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-};
 
 -------------------------------------------------------------------------------
 -- Register uxPages
