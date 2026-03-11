@@ -822,15 +822,7 @@ local function PopulateDashboard()
 
     y = y - 84;
 
-    -- Timeframe filter for top 5 sections
     local since = GetDashTimeframeSince();
-
-    if (dashTimeframeFilter) then
-        dashTimeframeFilter:SetParent(f);
-        dashTimeframeFilter:ClearAllPoints();
-        dashTimeframeFilter:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, y + 2);
-        dashTimeframeFilter:Show();
-    end
 
     -- Top 5 Customers
     local customerData = CraftingOrders:GetCustomerList(filter, since);
@@ -913,10 +905,11 @@ local function CreateDashboardContent(parent)
     end);
     dashFilter:SetPoint("TOPRIGHT", scroll.scrollFrame, "TOPRIGHT", -12, -8);
 
-    -- Timeframe filter for top 5 sections (created once, repositioned in PopulateDashboard)
-    dashTimeframeFilter = CreateTimeframeDropdown(f, function()
+    -- Timeframe filter for top 5 sections (anchored next to char filter, always visible)
+    dashTimeframeFilter = CreateTimeframeDropdown(parent, function()
         PopulateDashboard();
     end, function() return dashTimeframe; end, function(val) dashTimeframe = val; end);
+    dashTimeframeFilter:SetPoint("TOPRIGHT", dashFilter, "TOPLEFT", -8, 0);
 
     -- Title
     local title = scroll.scrollFrame:CreateFontString("LanternCO_DashTitle", "OVERLAY");
