@@ -609,6 +609,18 @@ Lantern:RegisterLocale("frFR", {
     ANIMATION_HEARTBEAT                     = "Battement",
 
     ---------------------------------------------------------------------------
+    -- Shared: Day names
+    ---------------------------------------------------------------------------
+
+    DAY_SUN                                 = "Dimanche",
+    DAY_MON                                 = "Lundi",
+    DAY_TUE                                 = "Mardi",
+    DAY_WED                                 = "Mercredi",
+    DAY_THU                                 = "Jeudi",
+    DAY_FRI                                 = "Vendredi",
+    DAY_SAT                                 = "Samedi",
+
+    ---------------------------------------------------------------------------
     -- Shared: Confirm/Remove labels
     ---------------------------------------------------------------------------
 

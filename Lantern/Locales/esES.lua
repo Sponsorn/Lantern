@@ -609,6 +609,18 @@ Lantern:RegisterLocale("esES", {
     ANIMATION_HEARTBEAT                     = "Latido",
 
     ---------------------------------------------------------------------------
+    -- Shared: Day names
+    ---------------------------------------------------------------------------
+
+    DAY_SUN                                 = "Domingo",
+    DAY_MON                                 = "Lunes",
+    DAY_TUE                                 = "Martes",
+    DAY_WED                                 = "Miercoles",
+    DAY_THU                                 = "Jueves",
+    DAY_FRI                                 = "Viernes",
+    DAY_SAT                                 = "Sabado",
+
+    ---------------------------------------------------------------------------
     -- Shared: Confirm/Remove labels
     ---------------------------------------------------------------------------
 

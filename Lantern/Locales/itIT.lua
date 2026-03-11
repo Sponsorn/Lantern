@@ -609,6 +609,18 @@ Lantern:RegisterLocale("itIT", {
     ANIMATION_HEARTBEAT                     = "Battito",
 
     ---------------------------------------------------------------------------
+    -- Shared: Day names
+    ---------------------------------------------------------------------------
+
+    DAY_SUN                                 = "Domenica",
+    DAY_MON                                 = "Lunedi",
+    DAY_TUE                                 = "Martedi",
+    DAY_WED                                 = "Mercoledi",
+    DAY_THU                                 = "Giovedi",
+    DAY_FRI                                 = "Venerdi",
+    DAY_SAT                                 = "Sabato",
+
+    ---------------------------------------------------------------------------
     -- Shared: Confirm/Remove labels
     ---------------------------------------------------------------------------
 

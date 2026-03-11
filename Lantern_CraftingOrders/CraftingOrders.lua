@@ -750,6 +750,9 @@ function CraftingOrders:OnEnable()
         if (self._profFrameHooked) then return; end
         self._profFrameHooked = true;
         ProfessionsFrame:HookScript("OnShow", function()
+            -- Refresh personal order count baseline so opening the window
+            -- doesn't trigger a false "new order" notification.
+            self._personalCount = getPersonalOrderCount();
             self:EnsureWhisperButton();
             self:EnsureAnalyticsButton();
             self:EnsureAnalyticsBrowseButton();

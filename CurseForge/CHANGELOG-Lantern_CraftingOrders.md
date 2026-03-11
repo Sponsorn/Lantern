@@ -1,10 +1,16 @@
 # Changelog
 
-## 0.6.3
+## 0.6.4
+- Add: Dashboard now shows daily/weekly/monthly timeframes with both order count and tips earned per period
+- Add: Reset timer shown on daily and weekly timeframe cards (e.g., "Resets in 4h 23m")
+- Add: Reset timer settings — toggle visibility, choose auto (region-based) or custom reset day/hour
+- Add: Timeframe filter on dashboard top 5 customers and items sections (All Time, Today, This Week, Last 30 Days)
+
+## 0.6.3 - 2026-03-08
 - Fix: Module was disabled by default on fresh installs with no toggle to enable it
 - Fix: Order fulfillments not recorded when using CraftSim's craft queue (or other addons that call FulfillOrder directly)
 
-## 0.6.2
+## 0.6.2 - 2026-03-07
 - Fix: Complete+Whisper button and analytics button not appearing when Professions window loads after addon initialization
 
 ## 0.6.1 - 2026-03-06

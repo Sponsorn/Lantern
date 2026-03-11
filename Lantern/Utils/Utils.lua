@@ -138,15 +138,17 @@ local function GetDailyResetHourCET(region)
     return 5; -- 05:00 CET for EU and default
 end
 
-function addon:GetLastDailyResetEpoch(now)
+function addon:GetLastDailyResetEpoch(now, region)
     local nowSec = now or GetServerTime();
-    local resetSeconds = GetQuestResetTime and GetQuestResetTime();
-    if (resetSeconds and resetSeconds > 0 and resetSeconds <= (24 * 60 * 60 + 30)) then
-        local nextReset = nowSec + resetSeconds;
-        return nextReset - 24 * 60 * 60;
+    if (not region) then
+        local resetSeconds = GetQuestResetTime and GetQuestResetTime();
+        if (resetSeconds and resetSeconds > 0 and resetSeconds <= (24 * 60 * 60 + 30)) then
+            local nextReset = nowSec + resetSeconds;
+            return nextReset - 24 * 60 * 60;
+        end
     end
 
-    local resetHourCET = GetDailyResetHourCET();
+    local resetHourCET = GetDailyResetHourCET(region);
     local nowCET = nowSec + CET_OFFSET_SECONDS;
     local days = math.floor(nowCET / 86400);
     local todaysResetCET = days * 86400 + resetHourCET * 3600;
@@ -158,6 +160,29 @@ function addon:GetLastDailyResetEpoch(now)
 end
 
 addon.GetDailyResetHourCET = GetDailyResetHourCET;
+
+function addon:GetNextWeeklyResetEpoch(now, region)
+    local nowSec = now or GetServerTime();
+    region = region or self:GetRegion();
+    local lastDaily = self:GetLastDailyResetEpoch(nowSec, region);
+    if (not lastDaily) then return nil; end
+    local nextDaily = lastDaily + 86400;
+
+    -- Weekly reset: Tuesday for US, Wednesday for EU
+    -- date("!%w") returns 0=Sun, 1=Mon, 2=Tue, 3=Wed, ...
+    local resetWday = (region == "US") and 2 or 3;
+
+    -- Find the next occurrence of resetWday's daily reset
+    local candidate = nextDaily;
+    for _ = 1, 7 do
+        local wday = tonumber(date("!%w", candidate));
+        if (wday == resetWday) then
+            return candidate;
+        end
+        candidate = candidate + 86400;
+    end
+    return nil;
+end
 
 -- Converter registry
 function addon:RegisterConverter(name, fn)

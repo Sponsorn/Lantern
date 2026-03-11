@@ -240,7 +240,8 @@ end
 -- Page 1: Dashboard
 -------------------------------------------------------------------------------
 
-local dashScroll, dashFilter;
+local dashScroll, dashFilter, dashTimeframeFilter;
+local dashTimeframe = "all"; -- "all", "day", "week", "month"
 local dashElements = {};
 local dashElementCount = 0;
 
@@ -344,6 +345,120 @@ local function CreateStatCard(parent, yOffset, labelText, valueText, tooltipText
     if (card._rankLabel) then card._rankLabel:Hide(); end
     if (card._nameLabel) then card._nameLabel:Hide(); end
     if (card._countLabel) then card._countLabel:Hide(); end
+    if (card._valueLabel) then card._valueLabel:Hide(); end
+    if (card._sectionLabel) then card._sectionLabel:Hide(); end
+
+    return card;
+end
+
+local function FormatResetTime(seconds)
+    if (not seconds or seconds <= 0) then return nil; end
+    local days = math.floor(seconds / 86400);
+    local hours = math.floor((seconds % 86400) / 3600);
+    local mins = math.floor((seconds % 3600) / 60);
+    if (days > 0) then
+        return string.format(L["CO_DASH_RESETS_IN"], string.format("%dd %dh", days, hours));
+    elseif (hours > 0) then
+        return string.format(L["CO_DASH_RESETS_IN"], string.format("%dh %dm", hours, mins));
+    else
+        return string.format(L["CO_DASH_RESETS_IN"], string.format("%dm", mins));
+    end
+end
+
+local function CreateTimeframeCard(parent, yOffset, labelText, orderCount, tipsCopper, resetEpoch)
+    local CARD_W = 220;
+    local CARD_H = 70;
+
+    local card = AcquireDashFrame(parent, CARD_H);
+    card:SetWidth(CARD_W);
+    card:EnableMouse(tipsCopper > 0);
+
+    -- Card background
+    if (not card._bg) then
+        card._bg = card:CreateTexture(card:GetName() .. "_Bg", "BACKGROUND");
+        card._bg:SetAllPoints();
+    end
+    card._bg:SetColorTexture(unpack(T.cardBg));
+    card._bg:Show();
+
+    -- Card border
+    if (not card._border) then
+        card._border = CreateFrame("Frame", card:GetName() .. "_Border", card, "BackdropTemplate");
+        card._border:SetAllPoints();
+        card._border:SetBackdrop({
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        });
+    end
+    card._border:SetBackdropBorderColor(unpack(T.cardBorder));
+    card._border:Show();
+
+    -- Orders count (large, left-aligned)
+    if (not card._value) then
+        card._value = card:CreateFontString(card:GetName() .. "_Val", "OVERLAY");
+    end
+    card._value:SetFontObject(T.fontHeading);
+    card._value:ClearAllPoints();
+    card._value:SetPoint("TOPLEFT", card, "TOPLEFT", 12, -10);
+    card._value:SetText(tostring(orderCount) .. " " .. (orderCount == 1 and L["CO_DASH_TF_ORDER"] or L["CO_DASH_TF_ORDERS"]));
+    card._value:SetTextColor(unpack(T.textBright));
+    card._value:Show();
+
+    -- Tips amount (secondary line)
+    if (not card._countLabel) then
+        card._countLabel = card:CreateFontString(card:GetName() .. "_Tips", "OVERLAY");
+    end
+    card._countLabel:SetFontObject(T.fontBody);
+    card._countLabel:ClearAllPoints();
+    card._countLabel:SetPoint("TOPLEFT", card._value, "BOTTOMLEFT", 0, -2);
+    card._countLabel:SetText(FormatMoneyCompact(tipsCopper) .. " earned");
+    card._countLabel:SetTextColor(unpack(T.accent));
+    card._countLabel:Show();
+
+    -- Label text (small, bottom-left)
+    if (not card._label) then
+        card._label = card:CreateFontString(card:GetName() .. "_Lbl", "OVERLAY");
+    end
+    card._label:SetFontObject(T.fontSmall);
+    card._label:ClearAllPoints();
+    card._label:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 12, 6);
+    card._label:SetText(labelText);
+    card._label:SetTextColor(unpack(T.textDim));
+    card._label:Show();
+
+    -- Reset timer (small, bottom-right)
+    if (not card._resetLabel) then
+        card._resetLabel = card:CreateFontString(card:GetName() .. "_Reset", "OVERLAY");
+    end
+    local now = GetServerTime();
+    local resetText = resetEpoch and FormatResetTime(resetEpoch - now) or nil;
+    if (resetText) then
+        card._resetLabel:SetFontObject(T.fontSmall);
+        card._resetLabel:ClearAllPoints();
+        card._resetLabel:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -12, 6);
+        card._resetLabel:SetText(resetText);
+        card._resetLabel:SetTextColor(unpack(T.textDim));
+        card._resetLabel:Show();
+    else
+        card._resetLabel:Hide();
+    end
+
+    -- Tooltip with exact amount
+    if (tipsCopper > 0) then
+        card:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM");
+            GameTooltip:AddLine(FormatMoney(tipsCopper), 1, 1, 1);
+            GameTooltip:Show();
+        end);
+        card:SetScript("OnLeave", function() GameTooltip:Hide(); end);
+    else
+        card:SetScript("OnEnter", nil);
+        card:SetScript("OnLeave", nil);
+    end
+
+    -- Hide sub-elements from other reuse types
+    if (card._rankLabel) then card._rankLabel:Hide(); end
+    if (card._nameLabel) then card._nameLabel:Hide(); end
     if (card._valueLabel) then card._valueLabel:Hide(); end
     if (card._sectionLabel) then card._sectionLabel:Hide(); end
 
@@ -505,6 +620,140 @@ local function CreateDashRankedRow(parent, yOffset, rank, name, countText, value
     return row;
 end
 
+local function GetDashTimeframeSince()
+    if (dashTimeframe == "all") then return nil; end
+    local now = time();
+    if (dashTimeframe == "day") then return now - (24 * 3600); end
+    if (dashTimeframe == "week") then return now - (7 * 24 * 3600); end
+    if (dashTimeframe == "month") then return now - (30 * 24 * 3600); end
+    return nil;
+end
+
+local TIMEFRAME_OPTIONS = {
+    { value = "all",   key = "CO_DASH_TIMEFRAME_ALL" },
+    { value = "day",   key = "CO_DASH_TIMEFRAME_DAY" },
+    { value = "week",  key = "CO_DASH_TIMEFRAME_WEEK" },
+    { value = "month", key = "CO_DASH_TIMEFRAME_MONTH" },
+};
+
+local function CreateTimeframeDropdown(parent, onChangeCallback)
+    local DROPDOWN_W = 150;
+    local DROPDOWN_H = 24;
+
+    local baseName = NextName("LanternCO_TFFilter_");
+
+    local dropFrame = CreateFrame("Frame", baseName, parent, "BackdropTemplate");
+    dropFrame:SetSize(DROPDOWN_W, DROPDOWN_H);
+    dropFrame:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    dropFrame:SetBackdropColor(unpack(T.inputBg));
+    dropFrame:SetBackdropBorderColor(unpack(T.inputBorder));
+
+    local btn = CreateFrame("Button", baseName .. "_Btn", dropFrame);
+    btn:SetAllPoints();
+
+    local label = btn:CreateFontString(baseName .. "_Label", "OVERLAY");
+    label:SetFontObject(T.fontSmall);
+    label:SetPoint("LEFT", 8, 0);
+    label:SetPoint("RIGHT", -16, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    label:SetText(L["CO_DASH_TIMEFRAME_ALL"]);
+    dropFrame._label = label;
+
+    local arrow = btn:CreateFontString(baseName .. "_Arrow", "OVERLAY");
+    arrow:SetFontObject(T.fontSmall);
+    arrow:SetPoint("RIGHT", -4, 0);
+    arrow:SetText("v");
+    arrow:SetTextColor(unpack(T.textDim));
+
+    btn:SetScript("OnEnter", function()
+        dropFrame:SetBackdropBorderColor(unpack(T.accent));
+    end);
+    btn:SetScript("OnLeave", function()
+        dropFrame:SetBackdropBorderColor(unpack(T.inputBorder));
+    end);
+
+    local menuName = baseName .. "_Menu";
+    local menu = CreateFrame("Frame", menuName, UIParent, "BackdropTemplate");
+    menu:SetWidth(DROPDOWN_W);
+    menu:SetFrameStrata("TOOLTIP");
+    menu:SetClampedToScreen(true);
+    menu:EnableMouse(true);
+    menu:SetPoint("TOPLEFT", dropFrame, "BOTTOMLEFT", 0, -2);
+    menu:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    menu:SetBackdropColor(unpack(T.dropdownBg));
+    menu:SetBackdropBorderColor(unpack(T.inputBorder));
+    menu:Hide();
+
+    local overlay = CreateFrame("Button", baseName .. "_Overlay", UIParent);
+    overlay:SetAllPoints(UIParent);
+    overlay:SetFrameStrata("TOOLTIP");
+    overlay:Hide();
+    overlay:SetScript("OnClick", function()
+        CloseDropdownMenu();
+    end);
+
+    menu:SetScript("OnShow", function()
+        overlay:SetFrameLevel(menu:GetFrameLevel() - 1);
+        overlay:Show();
+    end);
+    menu:SetScript("OnHide", function()
+        overlay:Hide();
+    end);
+
+    local ITEM_H = 24;
+    local yOff = 1;
+    for _, opt in ipairs(TIMEFRAME_OPTIONS) do
+        local itemName = NextName(menuName .. "_Item_");
+        local item = CreateFrame("Button", itemName, menu);
+        item:SetHeight(ITEM_H);
+        item:SetPoint("TOPLEFT", menu, "TOPLEFT", 1, -yOff);
+        item:SetPoint("TOPRIGHT", menu, "TOPRIGHT", -1, -yOff);
+
+        local itemBg = item:CreateTexture(itemName .. "_HL", "HIGHLIGHT");
+        itemBg:SetAllPoints();
+        itemBg:SetColorTexture(unpack(T.dropdownItem));
+
+        local itemLabel = item:CreateFontString(itemName .. "_Text", "OVERLAY");
+        itemLabel:SetFontObject(T.fontSmall);
+        itemLabel:SetPoint("LEFT", 8, 0);
+        itemLabel:SetTextColor(unpack(T.text));
+        itemLabel:SetText(L[opt.key]);
+
+        item:SetScript("OnClick", function()
+            dashTimeframe = opt.value;
+            label:SetText(L[opt.key]);
+            menu:Hide();
+            activeDropdownMenu = nil;
+            if (onChangeCallback) then onChangeCallback(); end
+        end);
+
+        yOff = yOff + ITEM_H;
+    end
+    menu:SetHeight(2 + ITEM_H * #TIMEFRAME_OPTIONS);
+
+    btn:SetScript("OnClick", function()
+        if (menu:IsShown()) then
+            menu:Hide();
+            activeDropdownMenu = nil;
+        else
+            CloseDropdownMenu();
+            menu:Show();
+            activeDropdownMenu = menu;
+        end
+    end);
+
+    return dropFrame;
+end
+
 local function PopulateDashboard()
     if (not dashScroll) then return; end
     HideAllDashElements();
@@ -532,28 +781,53 @@ local function PopulateDashboard()
 
     local y = -12;
 
-    -- Stats cards (row of 5)
+    -- Row 1: All-time stats (3 cards)
     local CARD_W = 140;
     local CARD_GAP = 8;
-    local cardsData = {
+    local allTimeCards = {
         { label = L["CO_DASH_TOTAL_ORDERS"], value = tostring(stats.totalOrders) },
         { label = L["CO_DASH_TOTAL_TIPS"],   value = FormatMoneyCompact(stats.totalTips), tooltip = FormatMoney(stats.totalTips) },
         { label = L["CO_DASH_AVG_TIP"],      value = FormatMoneyCompact(stats.avgTip),    tooltip = FormatMoney(stats.avgTip) },
-        { label = L["CO_DASH_THIS_WEEK"],    value = tostring(stats.weekOrders) },
-        { label = L["CO_DASH_THIS_MONTH"],   value = tostring(stats.monthOrders) },
     };
 
     local startX = 16;
 
-    for i, cd in ipairs(cardsData) do
+    for i, cd in ipairs(allTimeCards) do
         local card = CreateStatCard(f, y, cd.label, cd.value, cd.tooltip);
         card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (CARD_W + CARD_GAP), y);
     end
 
     y = y - 70;
 
+    -- Row 2: Timeframe cards (daily, weekly, monthly) with orders + tips
+    local TF_CARD_W = 220;
+    local TF_CARD_GAP = 8;
+    local nextDailyReset, nextWeeklyReset = CraftingOrders:GetResetEpochs();
+    local timeframeCards = {
+        { label = L["CO_DASH_TODAY"],      orders = stats.dayOrders,   tips = stats.dayTips,   reset = nextDailyReset },
+        { label = L["CO_DASH_THIS_WEEK"],  orders = stats.weekOrders,  tips = stats.weekTips,  reset = nextWeeklyReset },
+        { label = L["CO_DASH_THIS_MONTH"], orders = stats.monthOrders, tips = stats.monthTips },
+    };
+
+    for i, tf in ipairs(timeframeCards) do
+        local card = CreateTimeframeCard(f, y, tf.label, tf.orders, tf.tips, tf.reset);
+        card:SetPoint("TOPLEFT", f, "TOPLEFT", startX + (i - 1) * (TF_CARD_W + TF_CARD_GAP), y);
+    end
+
+    y = y - 84;
+
+    -- Timeframe filter for top 5 sections
+    local since = GetDashTimeframeSince();
+
+    if (dashTimeframeFilter) then
+        dashTimeframeFilter:SetParent(f);
+        dashTimeframeFilter:ClearAllPoints();
+        dashTimeframeFilter:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, y + 2);
+        dashTimeframeFilter:Show();
+    end
+
     -- Top 5 Customers
-    local customerData = CraftingOrders:GetCustomerList(filter);
+    local customerData = CraftingOrders:GetCustomerList(filter, since);
     table.sort(customerData, function(a, b) return (a.totalTip or 0) > (b.totalTip or 0); end);
 
     CreateDashSectionHeader(f, y, L["CO_DASH_TOP_CUSTOMERS"]);
@@ -586,7 +860,7 @@ local function PopulateDashboard()
     y = y - 16;
 
     -- Top 5 Items
-    local itemData = CraftingOrders:GetItemList(filter);
+    local itemData = CraftingOrders:GetItemList(filter, since);
     table.sort(itemData, function(a, b) return (a.totalTip or 0) > (b.totalTip or 0); end);
 
     CreateDashSectionHeader(f, y, L["CO_DASH_TOP_ITEMS"]);
@@ -628,12 +902,15 @@ local function CreateDashboardContent(parent)
 
     -- Filter dropdown at top
     dashFilter = CreateCharFilterDropdown(scroll.scrollFrame, function()
-        -- Also update the other filters
         PopulateDashboard();
-        -- Sync other page filters when they exist
         SyncAllFilters();
     end);
     dashFilter:SetPoint("TOPRIGHT", scroll.scrollFrame, "TOPRIGHT", -12, -8);
+
+    -- Timeframe filter for top 5 sections (created once, repositioned in PopulateDashboard)
+    dashTimeframeFilter = CreateTimeframeDropdown(f, function()
+        PopulateDashboard();
+    end);
 
     -- Title
     local title = scroll.scrollFrame:CreateFontString("LanternCO_DashTitle", "OVERLAY");
@@ -939,6 +1216,9 @@ end
 
 local settingsEmptyText;
 local settingsGuildCheck, settingsPersonalCheck;
+local settingsResetToggle, settingsResetModeSelect;
+local settingsResetDailyHour, settingsResetWeeklyDay, settingsResetWeeklyHour;
+local settingsCustomResetWidgets = {};
 
 local function RefreshAllPages()
     PopulateDashboard();
@@ -957,9 +1237,27 @@ RefreshSettings = function()
     -- Update toggle states
     if (settingsGuildCheck) then toggleRefresher(settingsGuildCheck); end
     if (settingsPersonalCheck) then toggleRefresher(settingsPersonalCheck); end
+    if (settingsResetToggle) then toggleRefresher(settingsResetToggle); end
+
+    -- Show/hide custom reset widgets based on mode
+    local isCustom = CraftingOrders:GetResetTimerSettings().mode == "custom" and CraftingOrders:GetShowResetTimers();
+    for _, w in ipairs(settingsCustomResetWidgets) do
+        if (w and w.frame) then
+            if (isCustom) then w.frame:Show(); else w.frame:Hide(); end
+        end
+    end
+    if (settingsResetModeSelect) then
+        local selectRefresher = LanternUX._W.refreshers.select;
+        if (selectRefresher) then selectRefresher(settingsResetModeSelect); end
+        if (CraftingOrders:GetShowResetTimers()) then
+            settingsResetModeSelect.frame:Show();
+        else
+            settingsResetModeSelect.frame:Hide();
+        end
+    end
 
     local excluded = CraftingOrders:GetExcludedCustomers();
-    local scrollChild = settingsScroll.scrollChild;
+    local sc = settingsScroll.scrollChild;
 
     -- Build sorted list of excluded names
     local names = {};
@@ -968,27 +1266,31 @@ RefreshSettings = function()
     end
     table.sort(names);
 
+    -- Excluded customer rows start below the input row
+    local ROWS_START_Y = 388;
+    local ROW_H = 28;
+
     if (not settingsEmptyText) then
-        settingsEmptyText = scrollChild:CreateFontString(NextName("LanternCO_SettingsEmpty_"), "OVERLAY");
+        settingsEmptyText = sc:CreateFontString(NextName("LanternCO_SettingsEmpty_"), "OVERLAY");
         settingsEmptyText:SetFontObject(T.fontBody);
-        settingsEmptyText:SetPoint("TOP", scrollChild, "TOP", 0, -20);
         settingsEmptyText:SetTextColor(unpack(T.textDim));
     end
+    settingsEmptyText:ClearAllPoints();
+    settingsEmptyText:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -ROWS_START_Y);
 
     if (#names == 0) then
         settingsEmptyText:SetText(L["CO_SETTINGS_EXCLUDED_EMPTY"]);
         settingsEmptyText:Show();
-        settingsScroll:SetContentHeight(60);
+        settingsScroll:SetContentHeight(ROWS_START_Y + 40);
         return;
     end
 
     settingsEmptyText:Hide();
 
-    local ROW_H = 28;
     for i, name in ipairs(names) do
-        local row = AcquireSettingsRow(scrollChild, i);
-        row:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -((i - 1) * ROW_H));
-        row:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -((i - 1) * ROW_H));
+        local row = AcquireSettingsRow(sc, i);
+        row:SetPoint("TOPLEFT", sc, "TOPLEFT", 0, -(ROWS_START_Y + (i - 1) * ROW_H));
+        row:SetPoint("TOPRIGHT", sc, "TOPRIGHT", 0, -(ROWS_START_Y + (i - 1) * ROW_H));
 
         row._name:SetText(name);
         row._name:SetTextColor(unpack(T.text));
@@ -1000,30 +1302,40 @@ RefreshSettings = function()
         end);
     end
 
-    settingsScroll:SetContentHeight(#names * ROW_H + 8);
+    settingsScroll:SetContentHeight(ROWS_START_Y + (#names * ROW_H) + 16);
 end
 
 local function CreateSettingsContent(parent)
     local container = CreateFrame("Frame", "LanternCO_SettingsPage", parent);
     container:SetAllPoints();
 
+    -- Full-page scroll container
+    settingsScroll = LanternUX.CreateScrollContainer(container);
+    local sc = settingsScroll.scrollChild;
+
+    container:SetScript("OnSizeChanged", function(_, w)
+        if (w and w > 0) then
+            sc:SetWidth(w);
+        end
+    end);
+
     -- Order Types section
-    local otTitle = container:CreateFontString("LanternCO_SettingsOTTitle", "OVERLAY");
+    local otTitle = sc:CreateFontString("LanternCO_SettingsOTTitle", "OVERLAY");
     otTitle:SetFontObject(T.fontHeading);
-    otTitle:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -12);
+    otTitle:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -12);
     otTitle:SetText(L["CO_SETTINGS_ORDER_TYPES"]);
     otTitle:SetTextColor(unpack(T.textBright));
 
-    local otDesc = container:CreateFontString("LanternCO_SettingsOTDesc", "OVERLAY");
+    local otDesc = sc:CreateFontString("LanternCO_SettingsOTDesc", "OVERLAY");
     otDesc:SetFontObject(T.fontBody);
     otDesc:SetPoint("TOPLEFT", otTitle, "BOTTOMLEFT", 0, -4);
-    otDesc:SetPoint("RIGHT", container, "RIGHT", -16, 0);
+    otDesc:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
     otDesc:SetJustifyH("LEFT");
     otDesc:SetText(L["CO_SETTINGS_ORDER_TYPES_DESC"]);
     otDesc:SetTextColor(unpack(T.textDim));
 
-    settingsGuildCheck = toggleFactory.create(container);
-    toggleFactory.setup(settingsGuildCheck, container, {
+    settingsGuildCheck = toggleFactory.create(sc);
+    toggleFactory.setup(settingsGuildCheck, sc, {
         label = L["CO_SETTINGS_TRACK_GUILD"],
         get = function() return CraftingOrders:IsOrderTypeTracked("guild"); end,
         set = function(val)
@@ -1032,10 +1344,10 @@ local function CreateSettingsContent(parent)
         end,
     }, 200);
     settingsGuildCheck.frame:ClearAllPoints();
-    settingsGuildCheck.frame:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -52);
+    settingsGuildCheck.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -52);
 
-    settingsPersonalCheck = toggleFactory.create(container);
-    toggleFactory.setup(settingsPersonalCheck, container, {
+    settingsPersonalCheck = toggleFactory.create(sc);
+    toggleFactory.setup(settingsPersonalCheck, sc, {
         label = L["CO_SETTINGS_TRACK_PERSONAL"],
         get = function() return CraftingOrders:IsOrderTypeTracked("personal"); end,
         set = function(val)
@@ -1044,35 +1356,179 @@ local function CreateSettingsContent(parent)
         end,
     }, 200);
     settingsPersonalCheck.frame:ClearAllPoints();
-    settingsPersonalCheck.frame:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -78);
+    settingsPersonalCheck.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -78);
 
-    -- Divider
-    local divider = container:CreateTexture("LanternCO_SettingsDivider", "ARTWORK");
-    divider:SetHeight(1);
-    divider:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -108);
-    divider:SetPoint("RIGHT", container, "RIGHT", -16, 0);
-    divider:SetColorTexture(unpack(T.inputBorder));
+    -- Divider 1 (after Order Types)
+    local divider1 = sc:CreateTexture("LanternCO_SettingsDivider1", "ARTWORK");
+    divider1:SetHeight(1);
+    divider1:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -108);
+    divider1:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
+    divider1:SetColorTexture(unpack(T.inputBorder));
+
+    -- Reset Timers section
+    local rtTitle = sc:CreateFontString("LanternCO_SettingsRTTitle", "OVERLAY");
+    rtTitle:SetFontObject(T.fontHeading);
+    rtTitle:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -120);
+    rtTitle:SetText(L["CO_SETTINGS_RESET_TIMERS"]);
+    rtTitle:SetTextColor(unpack(T.textBright));
+
+    local rtDesc = sc:CreateFontString("LanternCO_SettingsRTDesc", "OVERLAY");
+    rtDesc:SetFontObject(T.fontBody);
+    rtDesc:SetPoint("TOPLEFT", rtTitle, "BOTTOMLEFT", 0, -4);
+    rtDesc:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
+    rtDesc:SetJustifyH("LEFT");
+    rtDesc:SetText(L["CO_SETTINGS_RESET_TIMERS_DESC"]);
+    rtDesc:SetTextColor(unpack(T.textDim));
+
+    settingsResetToggle = toggleFactory.create(sc);
+    toggleFactory.setup(settingsResetToggle, sc, {
+        label = L["CO_SETTINGS_SHOW_RESET_TIMERS"],
+        get = function() return CraftingOrders:GetShowResetTimers(); end,
+        set = function(val)
+            CraftingOrders:SetShowResetTimers(val);
+            RefreshSettings();
+            RefreshAllPages();
+        end,
+    }, 200);
+    settingsResetToggle.frame:ClearAllPoints();
+    settingsResetToggle.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -152);
+
+    local selectFactory = LanternUX._W.factories.select;
+
+    settingsResetModeSelect = selectFactory.create(sc);
+    selectFactory.setup(settingsResetModeSelect, sc, {
+        label = L["CO_SETTINGS_RESET_MODE"],
+        values = {
+            auto = L["CO_SETTINGS_RESET_AUTO"],
+            custom = L["CO_SETTINGS_RESET_CUSTOM"],
+        },
+        sorting = { "auto", "custom" },
+        get = function() return CraftingOrders:GetResetTimerSettings().mode or "auto"; end,
+        set = function(val)
+            CraftingOrders:SetResetTimerSetting("mode", val);
+            RefreshSettings();
+            RefreshAllPages();
+        end,
+    }, 300);
+    settingsResetModeSelect.frame:ClearAllPoints();
+    settingsResetModeSelect.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -178);
+
+    -- Custom reset settings (visible only when mode=custom)
+    wipe(settingsCustomResetWidgets);
+
+    -- Build hour values for dropdowns (realm time, respect 12h/24h preference)
+    local use24h = GetCVarBool("timeMgrUseMilitaryTime");
+    local hourValues = {};
+    local hourSorting = {};
+    for h = 0, 23 do
+        local key = tostring(h);
+        if (use24h) then
+            hourValues[key] = string.format("%02d:00", h);
+        else
+            local period = h < 12 and "AM" or "PM";
+            local h12 = h % 12;
+            if (h12 == 0) then h12 = 12; end
+            hourValues[key] = string.format("%d:00 %s", h12, period);
+        end
+        table.insert(hourSorting, key);
+    end
+
+    -- Daily reset hour
+    settingsResetDailyHour = selectFactory.create(sc);
+    selectFactory.setup(settingsResetDailyHour, sc, {
+        label = L["CO_SETTINGS_DAILY_RESET_HOUR"],
+        values = hourValues,
+        sorting = hourSorting,
+        get = function()
+            local s = CraftingOrders:GetResetTimerSettings();
+            return tostring(s.dailyHour or 7);
+        end,
+        set = function(val)
+            CraftingOrders:SetResetTimerSetting("dailyHour", tonumber(val));
+            RefreshAllPages();
+        end,
+    }, 300);
+    settingsResetDailyHour.frame:ClearAllPoints();
+    settingsResetDailyHour.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -208);
+    table.insert(settingsCustomResetWidgets, settingsResetDailyHour);
+
+    -- Weekly reset day
+    local LL = Lantern.L;
+    local dayValues = {
+        ["0"] = LL["DAY_SUN"],
+        ["1"] = LL["DAY_MON"],
+        ["2"] = LL["DAY_TUE"],
+        ["3"] = LL["DAY_WED"],
+        ["4"] = LL["DAY_THU"],
+        ["5"] = LL["DAY_FRI"],
+        ["6"] = LL["DAY_SAT"],
+    };
+    local daySorting = { "0", "1", "2", "3", "4", "5", "6" };
+
+    settingsResetWeeklyDay = selectFactory.create(sc);
+    selectFactory.setup(settingsResetWeeklyDay, sc, {
+        label = L["CO_SETTINGS_WEEKLY_RESET_DAY"],
+        values = dayValues,
+        sorting = daySorting,
+        get = function()
+            local s = CraftingOrders:GetResetTimerSettings();
+            return tostring(s.weeklyDay or 2);
+        end,
+        set = function(val)
+            CraftingOrders:SetResetTimerSetting("weeklyDay", tonumber(val));
+            RefreshAllPages();
+        end,
+    }, 300);
+    settingsResetWeeklyDay.frame:ClearAllPoints();
+    settingsResetWeeklyDay.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -238);
+    table.insert(settingsCustomResetWidgets, settingsResetWeeklyDay);
+
+    -- Weekly reset hour
+    settingsResetWeeklyHour = selectFactory.create(sc);
+    selectFactory.setup(settingsResetWeeklyHour, sc, {
+        label = L["CO_SETTINGS_WEEKLY_RESET_HOUR"],
+        values = hourValues,
+        sorting = hourSorting,
+        get = function()
+            local s = CraftingOrders:GetResetTimerSettings();
+            return tostring(s.weeklyHour or 7);
+        end,
+        set = function(val)
+            CraftingOrders:SetResetTimerSetting("weeklyHour", tonumber(val));
+            RefreshAllPages();
+        end,
+    }, 300);
+    settingsResetWeeklyHour.frame:ClearAllPoints();
+    settingsResetWeeklyHour.frame:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -268);
+    table.insert(settingsCustomResetWidgets, settingsResetWeeklyHour);
+
+    -- Divider 2 (after Reset Timers)
+    local divider2 = sc:CreateTexture("LanternCO_SettingsDivider2", "ARTWORK");
+    divider2:SetHeight(1);
+    divider2:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -300);
+    divider2:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
+    divider2:SetColorTexture(unpack(T.inputBorder));
 
     -- Excluded Customers section
-    local exTitle = container:CreateFontString("LanternCO_SettingsExTitle", "OVERLAY");
+    local exTitle = sc:CreateFontString("LanternCO_SettingsExTitle", "OVERLAY");
     exTitle:SetFontObject(T.fontHeading);
-    exTitle:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -120);
+    exTitle:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -312);
     exTitle:SetText(L["CO_SETTINGS_EXCLUDED_CUSTOMERS"]);
     exTitle:SetTextColor(unpack(T.textBright));
 
-    local exDesc = container:CreateFontString("LanternCO_SettingsExDesc", "OVERLAY");
+    local exDesc = sc:CreateFontString("LanternCO_SettingsExDesc", "OVERLAY");
     exDesc:SetFontObject(T.fontBody);
     exDesc:SetPoint("TOPLEFT", exTitle, "BOTTOMLEFT", 0, -4);
-    exDesc:SetPoint("RIGHT", container, "RIGHT", -16, 0);
+    exDesc:SetPoint("RIGHT", sc, "RIGHT", -16, 0);
     exDesc:SetJustifyH("LEFT");
     exDesc:SetText(L["CO_SETTINGS_EXCLUDED_DESC"]);
     exDesc:SetTextColor(unpack(T.textDim));
 
     -- Input row
-    local inputRow = CreateFrame("Frame", "LanternCO_SettingsInput", container);
+    local inputRow = CreateFrame("Frame", "LanternCO_SettingsInput", sc);
     inputRow:SetHeight(28);
-    inputRow:SetPoint("TOPLEFT", container, "TOPLEFT", 16, -160);
-    inputRow:SetPoint("TOPRIGHT", container, "TOPRIGHT", -16, -160);
+    inputRow:SetPoint("TOPLEFT", sc, "TOPLEFT", 16, -352);
+    inputRow:SetPoint("TOPRIGHT", sc, "TOPRIGHT", -16, -352);
 
     local editBox = CreateFrame("EditBox", "LanternCO_SettingsEditBox", inputRow, "BackdropTemplate");
     editBox:SetHeight(28);
@@ -1147,19 +1603,6 @@ local function CreateSettingsContent(parent)
     end);
     editBox:SetScript("OnEditFocusLost", function()
         editBox:SetBackdropBorderColor(unpack(T.inputBorder));
-    end);
-
-    -- Scroll area below input row
-    local scrollArea = CreateFrame("Frame", "LanternCO_SettingsScrollArea", container);
-    scrollArea:SetPoint("TOPLEFT", inputRow, "BOTTOMLEFT", -16, -8);
-    scrollArea:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
-
-    settingsScroll = LanternUX.CreateScrollContainer(scrollArea);
-
-    scrollArea:SetScript("OnSizeChanged", function(_, w)
-        if (w and w > 0) then
-            settingsScroll.scrollChild:SetWidth(w);
-        end
     end);
 
     return container;

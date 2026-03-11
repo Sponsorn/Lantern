@@ -609,6 +609,18 @@ Lantern:RegisterLocale("deDE", {
     ANIMATION_HEARTBEAT                     = "Herzschlag",
 
     ---------------------------------------------------------------------------
+    -- Shared: Day names
+    ---------------------------------------------------------------------------
+
+    DAY_SUN                                 = "Sonntag",
+    DAY_MON                                 = "Montag",
+    DAY_TUE                                 = "Dienstag",
+    DAY_WED                                 = "Mittwoch",
+    DAY_THU                                 = "Donnerstag",
+    DAY_FRI                                 = "Freitag",
+    DAY_SAT                                 = "Samstag",
+
+    ---------------------------------------------------------------------------
     -- Shared: Confirm/Remove labels
     ---------------------------------------------------------------------------
 

@@ -21,6 +21,8 @@ local function ensureHistoryDB()
     if (db.maxOrders == nil) then db.maxOrders = MAX_ORDERS_DEFAULT; end
     if (db.excludedCustomers == nil) then db.excludedCustomers = {}; end
     if (db.trackOrderTypes == nil) then db.trackOrderTypes = { guild = true, personal = true }; end
+    if (db.showResetTimers == nil) then db.showResetTimers = true; end
+    if (db.resetTimers == nil) then db.resetTimers = { mode = "auto" }; end
     return db;
 end
 
@@ -109,17 +111,17 @@ local function isOrderTypeVisible(db, orderType)
     return true;
 end
 
-local function iterateOrders(charFilter, callback)
+local function iterateOrders(charFilter, callback, since)
     local db = ensureHistoryDB();
     local excluded = db.excludedCustomers;
     if (charFilter == "all") then
         for _, charData in pairs(db.characters) do
             if (charData.orders) then
                 for _, order in ipairs(charData.orders) do
-                    if (not order.customer or not excluded[order.customer:lower()]) then
-                        if (isOrderTypeVisible(db, order.orderType)) then
-                            callback(order);
-                        end
+                    if ((not since or (order.timestamp and order.timestamp >= since))
+                        and (not order.customer or not excluded[order.customer:lower()])
+                        and isOrderTypeVisible(db, order.orderType)) then
+                        callback(order);
                     end
                 end
             end
@@ -128,17 +130,17 @@ local function iterateOrders(charFilter, callback)
         local charData = ensureCharacterData(db);
         if (charData and charData.orders) then
             for _, order in ipairs(charData.orders) do
-                if (not order.customer or not excluded[order.customer:lower()]) then
-                    if (isOrderTypeVisible(db, order.orderType)) then
-                        callback(order);
-                    end
+                if ((not since or (order.timestamp and order.timestamp >= since))
+                    and (not order.customer or not excluded[order.customer:lower()])
+                    and isOrderTypeVisible(db, order.orderType)) then
+                    callback(order);
                 end
             end
         end
     end
 end
 
-function CraftingOrders:GetCustomerList(charFilter)
+function CraftingOrders:GetCustomerList(charFilter, since)
     local map = {};
 
     iterateOrders(charFilter, function(order)
@@ -163,7 +165,7 @@ function CraftingOrders:GetCustomerList(charFilter)
             c.lastOrder = order.timestamp;
         end
         if (order.itemID) then c.items[order.itemID] = true; end
-    end);
+    end, since);
 
     local list = {};
     for _, data in pairs(map) do
@@ -177,7 +179,7 @@ function CraftingOrders:GetCustomerList(charFilter)
     return list;
 end
 
-function CraftingOrders:GetItemList(charFilter)
+function CraftingOrders:GetItemList(charFilter, since)
     local map = {};
 
     iterateOrders(charFilter, function(order)
@@ -200,7 +202,7 @@ function CraftingOrders:GetItemList(charFilter)
             it.itemLink = order.item;
         end
         if (order.customer) then it.customers[order.customer] = true; end
-    end);
+    end, since);
 
     local list = {};
     for _, data in pairs(map) do
@@ -218,22 +220,36 @@ function CraftingOrders:GetDashboardStats(charFilter)
     local stats = {
         totalOrders = 0,
         totalTips = 0,
+        dayOrders = 0,
+        dayTips = 0,
         weekOrders = 0,
+        weekTips = 0,
         monthOrders = 0,
+        monthTips = 0,
     };
 
     local now = time();
+    local dayAgo = now - (24 * 3600);
     local weekAgo = now - (7 * 24 * 3600);
     local monthAgo = now - (30 * 24 * 3600);
 
     iterateOrders(charFilter, function(order)
+        local tip = order.tip or 0;
         stats.totalOrders = stats.totalOrders + 1;
-        stats.totalTips = stats.totalTips + (order.tip or 0);
-        if (order.timestamp and order.timestamp >= weekAgo) then
-            stats.weekOrders = stats.weekOrders + 1;
-        end
-        if (order.timestamp and order.timestamp >= monthAgo) then
-            stats.monthOrders = stats.monthOrders + 1;
+        stats.totalTips = stats.totalTips + tip;
+        if (order.timestamp) then
+            if (order.timestamp >= dayAgo) then
+                stats.dayOrders = stats.dayOrders + 1;
+                stats.dayTips = stats.dayTips + tip;
+            end
+            if (order.timestamp >= weekAgo) then
+                stats.weekOrders = stats.weekOrders + 1;
+                stats.weekTips = stats.weekTips + tip;
+            end
+            if (order.timestamp >= monthAgo) then
+                stats.monthOrders = stats.monthOrders + 1;
+                stats.monthTips = stats.monthTips + tip;
+            end
         end
     end);
 
@@ -351,6 +367,98 @@ end
 function CraftingOrders:IsOrderTypeTracked(orderType)
     local db = ensureHistoryDB();
     return isOrderTypeVisible(db, orderType);
+end
+
+-------------------------------------------------------------------------------
+-- Reset timer settings
+-------------------------------------------------------------------------------
+
+function CraftingOrders:GetShowResetTimers()
+    local db = ensureHistoryDB();
+    return db.showResetTimers ~= false;
+end
+
+function CraftingOrders:SetShowResetTimers(enabled)
+    local db = ensureHistoryDB();
+    db.showResetTimers = enabled;
+end
+
+function CraftingOrders:GetResetTimerSettings()
+    local db = ensureHistoryDB();
+    return db.resetTimers;
+end
+
+function CraftingOrders:SetResetTimerSetting(key, value)
+    local db = ensureHistoryDB();
+    db.resetTimers[key] = value;
+end
+
+-- Get the offset (in seconds) between server time and UTC
+-- Positive means server is ahead of UTC
+function CraftingOrders:GetServerTimeOffset()
+    local serverHour, serverMin = GetGameTime();
+    local now = GetServerTime();
+    local utcHour = tonumber(date("!%H", now));
+    local utcMin = tonumber(date("!%M", now));
+    local serverSec = serverHour * 3600 + serverMin * 60;
+    local utcSec = utcHour * 3600 + utcMin * 60;
+    local offset = serverSec - utcSec;
+    -- Normalize to [-12h, +12h]
+    if (offset > 43200) then offset = offset - 86400; end
+    if (offset < -43200) then offset = offset + 86400; end
+    return offset;
+end
+
+-- Returns next daily and weekly reset epochs based on settings
+function CraftingOrders:GetResetEpochs()
+    if (not self:GetShowResetTimers()) then return nil, nil; end
+
+    local settings = self:GetResetTimerSettings();
+    local now = GetServerTime();
+
+    local nextDailyReset, nextWeeklyReset;
+
+    if (settings.mode == "custom") then
+        -- Custom: user-defined hours in realm time, convert to UTC for calculation
+        local offset = self:GetServerTimeOffset();
+        local dailyHourRealm = settings.dailyHour or 7;
+        local weeklyDay = settings.weeklyDay or 2; -- 0=Sun..6=Sat
+        local weeklyHourRealm = settings.weeklyHour or 7;
+
+        -- Convert realm hours to UTC epoch targets
+        local dailyHourUTC_sec = dailyHourRealm * 3600 - offset;
+        local weeklyHourUTC_sec = weeklyHourRealm * 3600 - offset;
+
+        -- Calculate next daily reset
+        local daysSinceEpoch = math.floor(now / 86400);
+        local todayResetUTC = daysSinceEpoch * 86400 + dailyHourUTC_sec;
+        if (now >= todayResetUTC) then
+            nextDailyReset = todayResetUTC + 86400;
+        else
+            nextDailyReset = todayResetUTC;
+        end
+
+        -- Calculate next weekly reset
+        local candidate = daysSinceEpoch * 86400 + weeklyHourUTC_sec;
+        if (now >= candidate) then
+            candidate = candidate + 86400;
+        end
+        for _ = 1, 7 do
+            local wday = tonumber(date("!%w", candidate));
+            if (wday == weeklyDay) then
+                nextWeeklyReset = candidate;
+                break;
+            end
+            candidate = candidate + 86400;
+        end
+    else
+        -- Auto: use region-detected resets
+        local lastDaily = Lantern:GetLastDailyResetEpoch(now);
+        nextDailyReset = lastDaily and (lastDaily + 86400) or nil;
+        nextWeeklyReset = Lantern:GetNextWeeklyResetEpoch(now);
+    end
+
+    return nextDailyReset, nextWeeklyReset;
 end
 
 -------------------------------------------------------------------------------
