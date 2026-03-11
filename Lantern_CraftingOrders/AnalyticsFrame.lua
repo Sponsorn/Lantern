@@ -897,7 +897,7 @@ local function PopulateDashboard()
         end
     end
 
-    dashScroll:SetContentHeight(math.abs(y) + 20);
+    dashScroll:UpdateContentHeight(math.abs(y) + 20);
 end
 
 local function CreateDashboardContent(parent)
