@@ -13,6 +13,10 @@ local HEADER_HEIGHT      = 26;
 local CELL_PAD           = 8;
 local SORT_ARROW_UP      = " ^";
 local SORT_ARROW_DOWN    = " v";
+local CHEVRON_COLLAPSED  = "> ";
+local CHEVRON_EXPANDED   = "v ";
+local CHILD_INDENT       = 16;
+local CHILD_BORDER_W     = 2;
 
 local nameCounter = 0;
 local function NextName(prefix)
@@ -26,18 +30,29 @@ end
 
 function LanternUX.CreateDataTable(parent, config)
     local dt = {};
-    dt._columns     = config.columns or {};
-    dt._rowHeight   = config.rowHeight or DEFAULT_ROW_HEIGHT;
-    dt._onRowClick  = config.onRowClick;
-    dt._rowTooltip  = config.rowTooltip;
-    dt._data        = {};
-    dt._sortKey     = config.defaultSort and config.defaultSort.key or nil;
-    dt._sortAsc     = config.defaultSort and config.defaultSort.ascending or false;
-    dt._rowPool     = {};
-    dt._activeRows  = 0;
-    dt._page        = 1;
-    dt._pageSize    = config.pageSize or nil;
-    dt._totalPages  = 1;
+    dt._columns        = config.columns or {};
+    dt._rowHeight      = config.rowHeight or DEFAULT_ROW_HEIGHT;
+    dt._onRowClick     = config.onRowClick;
+    dt._rowTooltip     = config.rowTooltip;
+    dt._data           = {};
+    dt._sortKey        = config.defaultSort and config.defaultSort.key or nil;
+    dt._sortAsc        = config.defaultSort and config.defaultSort.ascending or false;
+    dt._rowPool        = {};
+    dt._activeRows     = 0;
+    dt._page           = 1;
+    dt._pageSize       = config.pageSize or nil;
+    dt._totalPages     = 1;
+
+    -- Expandable row config
+    dt._expandKey      = config.expandKey or nil;
+    dt._childColumns   = config.childColumns or nil;
+    dt._getChildren    = config.getChildren or nil;
+    dt._childRowTooltip = config.childRowTooltip or nil;
+    dt._expandedKey    = nil;
+
+    -- Child row pool (separate from parent pool since child rows have different column sets)
+    dt._childRowPool   = {};
+    dt._activeChildRows = 0;
 
     -- Outer container frame
     local frameName = NextName("LUX_DT_");
@@ -249,6 +264,15 @@ function LanternUX.CreateDataTable(parent, config)
     end
     dt._ReleaseAllRows = ReleaseAllRows;
 
+    local function ReleaseAllChildRows()
+        for i = 1, dt._activeChildRows do
+            local row = dt._childRowPool[i];
+            if (row) then row:Hide(); end
+        end
+        dt._activeChildRows = 0;
+    end
+    dt._ReleaseAllChildRows = ReleaseAllChildRows;
+
     local function AcquireRow(index)
         local row = dt._rowPool[index];
         if (not row) then
@@ -286,6 +310,54 @@ function LanternUX.CreateDataTable(parent, config)
         return row;
     end
 
+    local function AcquireChildRow(index)
+        local row = dt._childRowPool[index];
+        if (not row) then
+            local rowName = NextName("LUX_DT_ChildRow_");
+            row = CreateFrame("Frame", rowName, scroll.scrollChild);
+            row:SetHeight(dt._rowHeight);
+            row:EnableMouse(true);
+
+            -- Background (inverted stripe: even=transparent, odd=hover color)
+            local bg = row:CreateTexture(rowName .. "_Bg", "BACKGROUND");
+            bg:SetAllPoints();
+            row._bg = bg;
+
+            -- Highlight on mouseover
+            local highlight = row:CreateTexture(rowName .. "_HL", "HIGHLIGHT");
+            highlight:SetAllPoints();
+            highlight:SetColorTexture(unpack(T.hover));
+
+            -- Left accent border
+            local borderName = NextName("LUX_DT_ChildBorder_");
+            local border = CreateFrame("Frame", borderName, row);
+            border:SetWidth(CHILD_BORDER_W);
+            border:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0);
+            border:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0);
+            local borderTex = border:CreateTexture(borderName .. "_Tex", "ARTWORK");
+            borderTex:SetAllPoints();
+            borderTex:SetColorTexture(unpack(T.accent));
+            row._border = border;
+
+            row._cells = {};
+            dt._childRowPool[index] = row;
+        end
+
+        row:SetParent(scroll.scrollChild);
+        row:ClearAllPoints();
+
+        -- Inverted stripe: odd child rows get hover bg, even are transparent
+        if (index % 2 == 1) then
+            row._bg:SetColorTexture(unpack(T.hover));
+        else
+            row._bg:SetColorTexture(0, 0, 0, 0);
+        end
+
+        row:Show();
+        dt._activeChildRows = index;
+        return row;
+    end
+
     local function EnsureRowCells(row, columns)
         local cx = CELL_PAD;
         for i, col in ipairs(columns) do
@@ -305,6 +377,44 @@ function LanternUX.CreateDataTable(parent, config)
             cell:SetText("");
             cell:Show();
             cx = cx + col.width;
+        end
+
+        -- Hide excess cells
+        for i = #columns + 1, #row._cells do
+            row._cells[i]:Hide();
+        end
+    end
+
+    local function EnsureChildRowCells(row, columns)
+        -- First column is indented by CHILD_INDENT extra pixels
+        local cx = CELL_PAD + CHILD_INDENT;
+        for i, col in ipairs(columns) do
+            local cell = row._cells[i];
+            if (not cell) then
+                local cellName = row:GetName() .. "_C" .. i;
+                cell = row:CreateFontString(cellName, "OVERLAY");
+                cell:SetFontObject(T.fontBody);
+                cell:SetWordWrap(false);
+                row._cells[i] = cell;
+            end
+            cell:ClearAllPoints();
+            cell:SetPoint("LEFT", row, "LEFT", cx + 4, 0);
+            -- First column loses width equal to the extra indent
+            if (i == 1) then
+                cell:SetWidth(col.width - CELL_PAD - 4 - CHILD_INDENT);
+            else
+                cell:SetWidth(col.width - CELL_PAD - 4);
+            end
+            cell:SetJustifyH(col.align or "LEFT");
+            cell:SetTextColor(unpack(T.text));
+            cell:SetText("");
+            cell:Show();
+            -- Only first column is indented; subsequent columns start at their normal x
+            if (i == 1) then
+                cx = CELL_PAD + col.width;
+            else
+                cx = cx + col.width;
+            end
         end
 
         -- Hide excess cells
@@ -402,6 +512,7 @@ function LanternUX.CreateDataTable(parent, config)
 
     function dt:Refresh()
         ReleaseAllRows();
+        ReleaseAllChildRows();
         self._noDataText:Hide();
 
         -- Sort a copy so we don't mutate the caller's table
@@ -429,6 +540,20 @@ function LanternUX.CreateDataTable(parent, config)
             return;
         end
 
+        -- Validate that the currently expanded key still exists in sorted data
+        if (self._expandedKey and self._expandKey) then
+            local found = false;
+            for _, entry in ipairs(sorted) do
+                if (entry[self._expandKey] == self._expandedKey) then
+                    found = true;
+                    break;
+                end
+            end
+            if (not found) then
+                self._expandedKey = nil;
+            end
+        end
+
         local startIdx = 1;
         local endIdx = #sorted;
         if (self._pageSize and self._pageSize > 0) then
@@ -443,13 +568,22 @@ function LanternUX.CreateDataTable(parent, config)
 
         local rowH = self._rowHeight;
         local rowIndex = 0;
+        local childIndex = 0;
+        -- Cumulative Y offset in pixels (grows downward, stored as positive)
+        local yOffset = 0;
+
+        local isExpandable = self._getChildren and self._expandKey and self._childColumns;
+
         for i = startIdx, endIdx do
             local entry = sorted[i];
             rowIndex = rowIndex + 1;
             local row = AcquireRow(rowIndex);
-            row:SetPoint("TOPLEFT", scroll.scrollChild, "TOPLEFT", 0, -((rowIndex - 1) * rowH));
-            row:SetPoint("TOPRIGHT", scroll.scrollChild, "TOPRIGHT", 0, -((rowIndex - 1) * rowH));
+            row:SetPoint("TOPLEFT", scroll.scrollChild, "TOPLEFT", 0, -yOffset);
+            row:SetPoint("TOPRIGHT", scroll.scrollChild, "TOPRIGHT", 0, -yOffset);
             EnsureRowCells(row, self._columns);
+
+            local entryKey = isExpandable and entry[self._expandKey] or nil;
+            local isExpanded = entryKey and (entryKey == self._expandedKey);
 
             for j, col in ipairs(self._columns) do
                 local value = entry[col.key];
@@ -461,6 +595,12 @@ function LanternUX.CreateDataTable(parent, config)
                     displayText = tostring(value or "");
                 end
 
+                -- Prepend chevron to first cell when row is expandable
+                if (isExpandable and j == 1) then
+                    local chevron = isExpanded and CHEVRON_EXPANDED or CHEVRON_COLLAPSED;
+                    displayText = chevron .. displayText;
+                end
+
                 row._cells[j]:SetText(displayText);
 
                 if (col.isLink and value and type(value) == "string" and value:find("|c")) then
@@ -468,7 +608,26 @@ function LanternUX.CreateDataTable(parent, config)
                 end
             end
 
-            if (self._onRowClick) then
+            -- Row click handler
+            if (isExpandable) then
+                local rowData = entry;
+                local rowEntryKey = entryKey;
+                row:SetScript("OnMouseUp", function(_, button)
+                    if (button == "LeftButton") then
+                        -- Toggle expand/collapse
+                        if (self._expandedKey == rowEntryKey) then
+                            self._expandedKey = nil;
+                        else
+                            self._expandedKey = rowEntryKey;
+                        end
+                        self:Refresh();
+                        -- Also fire onRowClick if configured
+                        if (self._onRowClick) then
+                            self._onRowClick(rowData);
+                        end
+                    end
+                end);
+            elseif (self._onRowClick) then
                 local rowData = entry;
                 row:SetScript("OnMouseUp", function(_, button)
                     if (button == "LeftButton") then
@@ -493,9 +652,62 @@ function LanternUX.CreateDataTable(parent, config)
                 row:SetScript("OnEnter", nil);
                 row:SetScript("OnLeave", nil);
             end
+
+            yOffset = yOffset + rowH;
+
+            -- Render child rows if this parent is expanded
+            if (isExpandable and isExpanded) then
+                local children = self._getChildren(entry);
+                if (children and #children > 0) then
+                    for ci, childEntry in ipairs(children) do
+                        childIndex = childIndex + 1;
+                        local childRow = AcquireChildRow(childIndex);
+                        childRow:SetPoint("TOPLEFT", scroll.scrollChild, "TOPLEFT", 0, -yOffset);
+                        childRow:SetPoint("TOPRIGHT", scroll.scrollChild, "TOPRIGHT", 0, -yOffset);
+                        EnsureChildRowCells(childRow, self._childColumns);
+
+                        for j, col in ipairs(self._childColumns) do
+                            local value = childEntry[col.key];
+                            local displayText;
+
+                            if (col.format) then
+                                displayText = col.format(value, childEntry);
+                            else
+                                displayText = tostring(value or "");
+                            end
+
+                            childRow._cells[j]:SetText(displayText);
+
+                            if (col.isLink and value and type(value) == "string" and value:find("|c")) then
+                                childRow._cells[j]:SetTextColor(1, 1, 1, 1);
+                            end
+                        end
+
+                        -- Child rows do not expand; no OnMouseUp unless childRowTooltip needs it
+                        childRow:SetScript("OnMouseUp", nil);
+
+                        if (self._childRowTooltip) then
+                            local childData = childEntry;
+                            childRow:SetScript("OnEnter", function(self_row)
+                                GameTooltip:SetOwner(self_row, "ANCHOR_RIGHT");
+                                dt._childRowTooltip(childData, GameTooltip);
+                                GameTooltip:Show();
+                            end);
+                            childRow:SetScript("OnLeave", function()
+                                GameTooltip:Hide();
+                            end);
+                        else
+                            childRow:SetScript("OnEnter", nil);
+                            childRow:SetScript("OnLeave", nil);
+                        end
+
+                        yOffset = yOffset + rowH;
+                    end
+                end
+            end
         end
 
-        local totalHeight = rowIndex * rowH + 8;
+        local totalHeight = yOffset + 8;
         self._scroll:SetContentHeight(totalHeight);
 
         if (footerLabel) then

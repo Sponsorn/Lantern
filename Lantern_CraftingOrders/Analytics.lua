@@ -179,6 +179,26 @@ function CraftingOrders:GetCustomerList(charFilter, since)
     return list;
 end
 
+function CraftingOrders:GetCustomerOrders(customerName, charFilter)
+    local list = {};
+
+    iterateOrders(charFilter, function(order)
+        if ((order.customer or "Unknown") == customerName) then
+            table.insert(list, {
+                item = order.item,
+                itemID = order.itemID,
+                tip = order.tip or 0,
+                orderType = order.orderType,
+                timestamp = order.timestamp or 0,
+            });
+        end
+    end);
+
+    -- Sort newest first
+    table.sort(list, function(a, b) return a.timestamp > b.timestamp; end);
+    return list;
+end
+
 function CraftingOrders:GetItemList(charFilter, since)
     local map = {};
 

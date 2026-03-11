@@ -83,6 +83,24 @@ local activePage = nil; -- tracks which page is currently shown
 
 local SyncAllFilters; -- forward declaration (defined after page creators)
 
+-------------------------------------------------------------------------------
+-- Static popup for destructive actions
+-------------------------------------------------------------------------------
+
+StaticPopupDialogs["LANTERN_CO_CLEAR_HISTORY"] = {
+    text = L["CO_CLEAR_HISTORY_CONFIRM"],
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function()
+        CraftingOrders:ClearCharacterHistory();
+        if (panel) then panel:RefreshCurrentPage(); end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+};
+
 local function GetCharFilterForAPI()
     if (charFilter == "all") then return "all"; end
     return nil;
@@ -996,6 +1014,23 @@ local function CreateCustomersContent(parent)
         },
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
+        expandKey = "name",
+        childColumns = {
+            { key = "item",      label = L["CO_COL_ITEM"],  width = 250, isLink = true },
+            { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end },
+            { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 },
+            { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end },
+        },
+        getChildren = function(entry)
+            local filter = GetCharFilterForAPI();
+            return CraftingOrders:GetCustomerOrders(entry.name, filter);
+        end,
+        childRowTooltip = function(entry, tip)
+            tip:AddLine(entry.item or "", 1, 1, 1);
+            if (entry.tip and entry.tip > 0) then
+                tip:AddLine(L["CO_COL_TIP"] .. ": " .. FormatMoney(entry.tip), unpack(T.text));
+            end
+        end,
         rowTooltip = function(entry, tip)
             tip:AddLine(entry.name or "", 1, 1, 1);
             tip:AddLine(L["CO_COL_TOTAL_TIPS"] .. ": " .. FormatMoney(entry.totalTip or 0), unpack(T.text));
@@ -1151,7 +1186,7 @@ local heatmapScroll, heatmapFilter, heatmapTimeframeFilter;
 local heatmapTimeframe = "all";
 local heatmapOrdersGrid, heatmapGoldGrid, heatmapTradeGrid;
 
-local function HeatMapOrderTooltip(day, hour, value)
+local function FormatDayHour(day, hour)
     local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
     local dayName = date("%A", 345600 + day * 86400);
     local hourStr;
@@ -1163,53 +1198,38 @@ local function HeatMapOrderTooltip(day, hour, value)
     else
         hourStr = string.format("%02d:00", hour);
     end
+    return dayName .. " " .. hourStr;
+end
+
+local function HeatMapOrderTooltip(day, hour, value)
+    local prefix = FormatDayHour(day, hour);
     if (value == 0) then
-        return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
+        return prefix .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
     elseif (value == 1) then
-        return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_ORDERS_SINGLE"];
+        return prefix .. " -- " .. L["CO_HEATMAP_TIP_ORDERS_SINGLE"];
     end
-    return dayName .. " " .. hourStr .. " -- " .. string.format(L["CO_HEATMAP_TIP_ORDERS"], value);
+    return prefix .. " -- " .. string.format(L["CO_HEATMAP_TIP_ORDERS"], value);
 end
 
 local function HeatMapGoldTooltip(day, hour, value)
-    local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
-    local dayName = date("%A", 345600 + day * 86400);
-    local hourStr;
-    if (use12h) then
-        if (hour == 0) then hourStr = "12:00 AM";
-        elseif (hour < 12) then hourStr = hour .. ":00 AM";
-        elseif (hour == 12) then hourStr = "12:00 PM";
-        else hourStr = (hour - 12) .. ":00 PM"; end
-    else
-        hourStr = string.format("%02d:00", hour);
-    end
+    local prefix = FormatDayHour(day, hour);
     if (value == 0) then
-        return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
+        return prefix .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
     end
-    return dayName .. " " .. hourStr .. " -- " .. string.format(L["CO_HEATMAP_TIP_GOLD"], FormatMoney(value));
+    return prefix .. " -- " .. string.format(L["CO_HEATMAP_TIP_GOLD"], FormatMoney(value));
 end
 
 local function HeatMapTradeTooltip(profData)
     return function(day, hour, value)
-        local use12h = not GetCVarBool("timeMgrUseMilitaryTime");
-        local dayName = date("%A", 345600 + day * 86400);
-        local hourStr;
-        if (use12h) then
-            if (hour == 0) then hourStr = "12:00 AM";
-            elseif (hour < 12) then hourStr = hour .. ":00 AM";
-            elseif (hour == 12) then hourStr = "12:00 PM";
-            else hourStr = (hour - 12) .. ":00 PM"; end
-        else
-            hourStr = string.format("%02d:00", hour);
-        end
+        local prefix = FormatDayHour(day, hour);
         if (value == 0) then
-            return dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
+            return prefix .. " -- " .. L["CO_HEATMAP_TIP_NO_ACTIVITY"];
         end
         local base;
         if (value == 1) then
-            base = dayName .. " " .. hourStr .. " -- " .. L["CO_HEATMAP_TIP_TRADE_SINGLE"];
+            base = prefix .. " -- " .. L["CO_HEATMAP_TIP_TRADE_SINGLE"];
         else
-            base = dayName .. " " .. hourStr .. " -- " .. string.format(L["CO_HEATMAP_TIP_TRADE"], value);
+            base = prefix .. " -- " .. string.format(L["CO_HEATMAP_TIP_TRADE"], value);
         end
         local profs = profData and profData[day] and profData[day][hour];
         if (profs) then
@@ -1730,8 +1750,7 @@ local function GetSettingsWidgets()
                 text = string.format(L["CO_HISTORY_COUNT"], CraftingOrders:GetCharacterOrderCount()),
                 buttonLabel = L["CO_CLEAR_HISTORY"],
                 func = function()
-                    CraftingOrders:ClearCharacterHistory();
-                    refreshPage();
+                    StaticPopup_Show("LANTERN_CO_CLEAR_HISTORY");
                 end,
             },
         },
@@ -1816,6 +1835,8 @@ local function EnsurePanel()
         onShow = function()
             activePage = "heatmaps";
             CloseDropdownMenu();
+            if (heatmapFilter) then heatmapFilter:UpdateLabel(); end
+            if (heatmapTimeframeFilter) then heatmapTimeframeFilter:UpdateLabel(); end
             PopulateHeatMaps();
         end,
     });
