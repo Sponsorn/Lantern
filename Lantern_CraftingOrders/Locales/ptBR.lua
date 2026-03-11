@@ -214,4 +214,41 @@ ns:RegisterLocale("ptBR", {
     -- Repeat customer indicator
     -- CO_REPEAT_CUSTOMER                           = "Repeat",
     -- CO_NEW_CUSTOMER                              = "New",
+
+    -- Heat Maps tab
+    -- CO_TAB_HEATMAPS                              = "Heat Maps",
+
+    -- Heat map section headers
+    -- CO_HEATMAP_ORDERS                            = "Orders",
+    -- CO_HEATMAP_GOLD                              = "Gold Earned",
+    -- CO_HEATMAP_TRADE_CHAT                        = "Trade Chat Activity",
+
+    -- Heat map tooltips
+    -- CO_HEATMAP_TIP_ORDERS                        = "%d orders",
+    -- CO_HEATMAP_TIP_ORDERS_SINGLE                 = "1 order",
+    -- CO_HEATMAP_TIP_GOLD                          = "%s earned",
+    -- CO_HEATMAP_TIP_TRADE                         = "%d messages",
+    -- CO_HEATMAP_TIP_TRADE_SINGLE                  = "1 message",
+    -- CO_HEATMAP_TIP_NO_ACTIVITY                   = "No activity",
+
+    -- Trade chat disabled message on heat map tab
+    -- CO_HEATMAP_TRADE_DISABLED                    = "Trade chat tracking is disabled.",
+    -- CO_HEATMAP_TRADE_ENABLE_LINK                 = "Enable in Settings",
+
+    -- Trade chat settings
+    -- CO_SETTINGS_TRADE_CHAT                       = "Trade Chat Tracking",
+    -- CO_SETTINGS_TRADE_CHAT_DESC                  = "Monitor Trade chat for crafting requests to see when demand is highest.",
+    -- CO_SETTINGS_TRADE_CHAT_ENABLE                = "Enable trade chat tracking",
+    -- CO_SETTINGS_TRADE_CHAT_ENABLE_DESC           = "Listen for crafting requests in Trade chat and record hourly activity.",
+    -- CO_SETTINGS_TRADE_CHAT_RETENTION             = "Data retention",
+    -- CO_SETTINGS_TRADE_CHAT_RETENTION_DESC        = "How many days of trade chat data to keep.",
+    -- CO_SETTINGS_TRADE_CHAT_30                    = "30 days",
+    -- CO_SETTINGS_TRADE_CHAT_60                    = "60 days",
+    -- CO_SETTINGS_TRADE_CHAT_90                    = "90 days",
+    -- CO_SETTINGS_INCLUDE_KEYWORDS                 = "Include Keywords",
+    -- CO_SETTINGS_INCLUDE_KEYWORDS_DESC            = "Messages must contain at least one of these keywords to be counted.",
+    -- CO_SETTINGS_EXCLUDE_KEYWORDS                 = "Exclude Keywords",
+    -- CO_SETTINGS_EXCLUDE_KEYWORDS_DESC            = "Messages containing any of these keywords are ignored.",
+    -- CO_SETTINGS_KEYWORD_ADD                      = "Add",
+    -- CO_SETTINGS_KEYWORD_REMOVE                   = "Remove",
 });
