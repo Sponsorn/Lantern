@@ -57,8 +57,10 @@ local function hasMinimapLibs()
 end
 
 -------------------------------------------------------------------------------
--- Combat Lockdown Handling for Options
+-- Combat Lockdown Handling
 -------------------------------------------------------------------------------
+
+local pendingAction = nil;
 
 local combatFrame = CreateFrame("Frame", "Lantern_CombatFrame");
 combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
@@ -67,6 +69,13 @@ combatFrame:SetScript("OnEvent", function()
         Lantern._pendingSettingsPanel = false;
         C_Timer.After(0.1, function()
             Lantern:OpenOptions();
+        end);
+    end
+    if (pendingAction) then
+        local entry = pendingAction;
+        pendingAction = nil;
+        C_Timer.After(0.1, function()
+            Lantern:ExecuteMinimapAction(entry);
         end);
     end
 end);
@@ -148,7 +157,11 @@ function Lantern:ExecuteMinimapAction(entry)
     else
         local gamePanel = GAME_PANELS[action];
         if (gamePanel) then
-            if (InCombatLockdown()) then return; end
+            if (InCombatLockdown()) then
+                pendingAction = entry;
+                Lantern:Print(L["MSG_OPTIONS_AFTER_COMBAT"]);
+                return;
+            end
             if (gamePanel.addon and not C_AddOns.IsAddOnLoaded(gamePanel.addon)) then
                 C_AddOns.LoadAddOn(gamePanel.addon);
             end
