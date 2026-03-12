@@ -415,6 +415,13 @@ end
 -- Register the module
 Lantern:RegisterModule(Warband);
 
+function Lantern:OpenWarband()
+    self:OpenOptions();
+    if (self._uxPanel) then
+        self._uxPanel:SelectPage("warband_general");
+    end
+end
+
 -- Listen for our own ADDON_LOADED to initialize database after SavedVariables load
 local frame = CreateFrame("Frame", "LanternWarband_LoadFrame");
 frame:RegisterEvent("ADDON_LOADED");

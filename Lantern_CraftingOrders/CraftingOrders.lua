@@ -833,3 +833,9 @@ SlashCmdList["LANTERN"] = function(msg)
 end;
 
 Lantern:RegisterModule(CraftingOrders);
+
+function Lantern:OpenAnalytics()
+    if (CraftingOrders.OpenAnalytics) then
+        CraftingOrders:OpenAnalytics();
+    end
+end
