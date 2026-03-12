@@ -38,7 +38,7 @@ Lantern:RegisterLocale("deDE", {
     MINIMAP_CLICK_SHIFT_RIGHT               = "Shift + Rechtsklick",
     MINIMAP_CLICK_CTRL_RIGHT                = "Ctrl + Rechtsklick",
     MINIMAP_ACTION_SETTINGS                 = "Lantern Einstellungen",
-    MINIMAP_ACTION_CRAFTING                 = "Fertigungsauftraege",
+    MINIMAP_ACTION_CRAFTING                 = "CO-Analyse oeffnen",
     MINIMAP_ACTION_WARBAND                  = "Warband",
     MINIMAP_ACTION_SPELLBOOK                = "Zauberbuch",
     MINIMAP_ACTION_TALENTS                  = "Talente",

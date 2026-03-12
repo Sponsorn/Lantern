@@ -38,7 +38,7 @@ Lantern:RegisterLocale("zhCN", {
     MINIMAP_CLICK_SHIFT_RIGHT               = "Shift + Right Click",
     MINIMAP_CLICK_CTRL_RIGHT                = "Ctrl + Right Click",
     MINIMAP_ACTION_SETTINGS                 = "Lantern Settings",
-    MINIMAP_ACTION_CRAFTING                 = "Crafting Orders",
+    MINIMAP_ACTION_CRAFTING                 = "Open CO Analytics",
     MINIMAP_ACTION_WARBAND                  = "Warband",
     MINIMAP_ACTION_SPELLBOOK                = "Spellbook",
     MINIMAP_ACTION_TALENTS                  = "Talents",
