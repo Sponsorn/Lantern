@@ -20,8 +20,20 @@ local CLICK_DEFAULTS = {
 };
 
 local GAME_PANELS = {
-    spellbook    = { frame = "PlayerSpellsFrame",    addon = "Blizzard_PlayerSpells" },
-    talents      = { frame = "PlayerSpellsFrame",    addon = "Blizzard_PlayerSpells" },
+    spellbook    = { frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", toggle = function()
+        if (PlayerSpellsFrame and PlayerSpellsFrame:IsShown() and PlayerSpellsFrame:IsFrameTabActive(PlayerSpellsUtil.FrameTabs.SpellBook)) then
+            HideUIPanel(PlayerSpellsFrame);
+        else
+            PlayerSpellsUtil.OpenToSpellBookTab();
+        end
+    end },
+    talents      = { frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", toggle = function()
+        if (PlayerSpellsFrame and PlayerSpellsFrame:IsShown() and PlayerSpellsFrame:IsFrameTabActive(PlayerSpellsUtil.FrameTabs.ClassTalents)) then
+            HideUIPanel(PlayerSpellsFrame);
+        else
+            PlayerSpellsUtil.OpenToClassTalentsTab();
+        end
+    end },
     collections  = { frame = "CollectionsJournal",   addon = "Blizzard_Collections" },
     groupFinder  = { frame = "PVEFrame" },
     communities  = { frame = "CommunitiesFrame",     addon = "Blizzard_Communities" },
@@ -140,12 +152,16 @@ function Lantern:ExecuteMinimapAction(entry)
             if (gamePanel.addon and not C_AddOns.IsAddOnLoaded(gamePanel.addon)) then
                 C_AddOns.LoadAddOn(gamePanel.addon);
             end
-            local frame = _G[gamePanel.frame];
-            if (frame) then
-                if (frame:IsShown()) then
-                    HideUIPanel(frame);
-                else
-                    ShowUIPanel(frame);
+            if (gamePanel.toggle) then
+                gamePanel.toggle();
+            else
+                local frame = _G[gamePanel.frame];
+                if (frame) then
+                    if (frame:IsShown()) then
+                        HideUIPanel(frame);
+                    else
+                        ShowUIPanel(frame);
+                    end
                 end
             end
         end
