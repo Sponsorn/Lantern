@@ -115,7 +115,95 @@ CUSTOM_OPTIONS["general"] = function()
     };
     local modifierSorting = { "shift", "ctrl", "alt" };
 
-    return {
+    -- Build action dropdown values dynamically based on loaded addons
+    local function buildActionValues()
+        local values = {
+            settings     = L["MINIMAP_ACTION_SETTINGS"],
+            spellbook    = L["MINIMAP_ACTION_SPELLBOOK"],
+            talents      = L["MINIMAP_ACTION_TALENTS"],
+            collections  = L["MINIMAP_ACTION_COLLECTIONS"],
+            groupFinder  = L["MINIMAP_ACTION_GROUP_FINDER"],
+            communities  = L["MINIMAP_ACTION_COMMUNITIES"],
+            worldMap     = L["MINIMAP_ACTION_WORLD_MAP"],
+            achievements = L["MINIMAP_ACTION_ACHIEVEMENTS"],
+            calendar     = L["MINIMAP_ACTION_CALENDAR"],
+            editMode     = L["MINIMAP_ACTION_EDIT_MODE"],
+            reload       = L["MINIMAP_ACTION_RELOAD"],
+            slash        = L["MINIMAP_ACTION_SLASH"],
+            none         = L["MINIMAP_ACTION_NONE"],
+        };
+        local sorting = { "settings" };
+        if (C_AddOns.IsAddOnLoaded("Lantern_CraftingOrders")) then
+            values.craftingOrders = L["MINIMAP_ACTION_CRAFTING"];
+            table.insert(sorting, "craftingOrders");
+        end
+        if (C_AddOns.IsAddOnLoaded("Lantern_Warband")) then
+            values.warband = L["MINIMAP_ACTION_WARBAND"];
+            table.insert(sorting, "warband");
+        end
+        local gamePanels = { "spellbook", "talents", "collections", "groupFinder", "communities", "worldMap", "achievements", "calendar", "editMode" };
+        for _, key in ipairs(gamePanels) do
+            table.insert(sorting, key);
+        end
+        table.insert(sorting, "reload");
+        table.insert(sorting, "slash");
+        table.insert(sorting, "none");
+        return values, sorting;
+    end
+
+    local SLOT_KEYS = {
+        { key = "left",       label = L["MINIMAP_CLICK_LEFT"] },
+        { key = "shiftLeft",  label = L["MINIMAP_CLICK_SHIFT_LEFT"] },
+        { key = "ctrlLeft",   label = L["MINIMAP_CLICK_CTRL_LEFT"] },
+        { key = "right",      label = L["MINIMAP_CLICK_RIGHT"] },
+        { key = "shiftRight", label = L["MINIMAP_CLICK_SHIFT_RIGHT"] },
+        { key = "ctrlRight",  label = L["MINIMAP_CLICK_CTRL_RIGHT"] },
+    };
+
+    local function slotWidgets(slotKey, slotLabel)
+        local refreshPage = Lantern.refreshPage;
+        return
+            {
+                type = "select",
+                label = slotLabel,
+                values = function()
+                    local v, _ = buildActionValues();
+                    return v;
+                end,
+                sorting = function()
+                    local _, s = buildActionValues();
+                    return s;
+                end,
+                get = function()
+                    local clicks = Lantern.db.minimap and Lantern.db.minimap.clicks;
+                    return clicks and clicks[slotKey] and clicks[slotKey].action or "none";
+                end,
+                set = function(val)
+                    Lantern.db.minimap.clicks[slotKey].action = val;
+                    if (val ~= "slash") then
+                        Lantern.db.minimap.clicks[slotKey].command = nil;
+                    end
+                    if (refreshPage) then refreshPage(); end
+                end,
+            },
+            {
+                type = "input",
+                label = L["MINIMAP_SLASH_PLACEHOLDER"],
+                hidden = function()
+                    local clicks = Lantern.db.minimap and Lantern.db.minimap.clicks;
+                    return not (clicks and clicks[slotKey] and clicks[slotKey].action == "slash");
+                end,
+                get = function()
+                    local clicks = Lantern.db.minimap and Lantern.db.minimap.clicks;
+                    return clicks and clicks[slotKey] and clicks[slotKey].command or "";
+                end,
+                set = function(val)
+                    Lantern.db.minimap.clicks[slotKey].command = val;
+                end,
+            };
+    end
+
+    local widgets = {
         {
             type = "toggle",
             label = L["GENERAL_AUTO_ENABLE_NEW"],
@@ -159,7 +247,31 @@ CUSTOM_OPTIONS["general"] = function()
                 Lantern.db.options.pauseModifier = val;
             end,
         },
+        { type = "divider" },
+        { type = "header", label = L["MINIMAP_CLICKS_HEADER"] },
     };
+
+    for _, slot in ipairs(SLOT_KEYS) do
+        local selectW, inputW = slotWidgets(slot.key, slot.label);
+        table.insert(widgets, selectW);
+        table.insert(widgets, inputW);
+    end
+
+    table.insert(widgets, {
+        type = "callout",
+        text = L["MINIMAP_NO_SETTINGS_HINT"],
+        severity = "info",
+        hidden = function()
+            local clicks = Lantern.db.minimap and Lantern.db.minimap.clicks;
+            if (not clicks) then return true; end
+            for _, entry in pairs(clicks) do
+                if (entry.action == "settings") then return true; end
+            end
+            return false;
+        end,
+    });
+
+    return widgets;
 end
 
 CUSTOM_OPTIONS["deleteConfirm"] = function()
