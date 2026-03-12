@@ -248,7 +248,7 @@ CUSTOM_OPTIONS["general"] = function()
             end,
         },
         { type = "divider" },
-        { type = "header", label = L["MINIMAP_CLICKS_HEADER"] },
+        { type = "header", text = L["MINIMAP_CLICKS_HEADER"] },
     };
 
     for _, slot in ipairs(SLOT_KEYS) do
