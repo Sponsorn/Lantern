@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.8
+- Add: Configurable minimap button actions — assign any click+modifier combo to open Lantern settings, Crafting Orders, Warband, game panels (Spellbook, Talents, Collections, etc.), Reload UI, or a custom slash command
+
 ## 0.6.7 - 2026-03-08
 - Fix: Range Check now respects Priest's Phantom Reach talent (+15% range)
 - Fix: Module toggle now refreshes the settings page immediately after enabling/disabling
