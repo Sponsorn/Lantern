@@ -29,6 +29,32 @@ Lantern:RegisterLocale("ptBR", {
     -- GENERAL_PAUSE_MODIFIER                  = "Pause modifier key",
     -- GENERAL_PAUSE_MODIFIER_DESC             = "Hold this key to temporarily pause auto-features (Auto Quest, Auto Queue, Auto Repair, etc.).",
 
+    -- Minimap button actions
+    MINIMAP_CLICKS_HEADER                   = "Minimap Button Actions",
+    MINIMAP_CLICK_LEFT                      = "Left Click",
+    MINIMAP_CLICK_SHIFT_LEFT                = "Shift + Left Click",
+    MINIMAP_CLICK_CTRL_LEFT                 = "Ctrl + Left Click",
+    MINIMAP_CLICK_RIGHT                     = "Right Click",
+    MINIMAP_CLICK_SHIFT_RIGHT               = "Shift + Right Click",
+    MINIMAP_CLICK_CTRL_RIGHT                = "Ctrl + Right Click",
+    MINIMAP_ACTION_SETTINGS                 = "Lantern Settings",
+    MINIMAP_ACTION_CRAFTING                 = "Crafting Orders",
+    MINIMAP_ACTION_WARBAND                  = "Warband",
+    MINIMAP_ACTION_SPELLBOOK                = "Spellbook",
+    MINIMAP_ACTION_TALENTS                  = "Talents",
+    MINIMAP_ACTION_COLLECTIONS              = "Collections",
+    MINIMAP_ACTION_GROUP_FINDER             = "Group Finder",
+    MINIMAP_ACTION_COMMUNITIES              = "Guild / Communities",
+    MINIMAP_ACTION_WORLD_MAP                = "World Map",
+    MINIMAP_ACTION_ACHIEVEMENTS             = "Achievements",
+    MINIMAP_ACTION_CALENDAR                 = "Calendar",
+    MINIMAP_ACTION_EDIT_MODE                = "Edit Mode",
+    MINIMAP_ACTION_RELOAD                   = "Reload UI",
+    MINIMAP_ACTION_SLASH                    = "Slash Command",
+    MINIMAP_ACTION_NONE                     = "Nothing",
+    MINIMAP_SLASH_PLACEHOLDER               = "e.g. /reload",
+    MINIMAP_NO_SETTINGS_HINT                = "You can always open Lantern settings by typing /lantern",
+
     -- Modifier values (used in dropdowns)
     -- MODIFIER_SHIFT                          = "Shift",
     -- MODIFIER_CTRL                           = "Ctrl",
@@ -132,8 +158,6 @@ Lantern:RegisterLocale("ptBR", {
 
     -- ui.lua: Minimap tooltip
     -- UI_MINIMAP_TITLE                        = "Lantern",
-    -- UI_MINIMAP_LEFT_CLICK                   = "Left-click: Open options",
-    -- UI_MINIMAP_SHIFT_CLICK                  = "Shift+Left-click: Reload UI",
 
     -- ui.lua: StaticPopup link dialog
     -- UI_COPY_LINK_PROMPT                     = "CTRL-C to copy link",
