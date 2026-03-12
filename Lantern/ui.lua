@@ -10,6 +10,36 @@ local CURSEFORGE_CRAFTING_ORDERS = "https://www.curseforge.com/wow/addons/lanter
 local CURSEFORGE_WARBAND = "https://www.curseforge.com/wow/addons/lantern-warband";
 local LINK_POPUP_NAME = "LanternCopyLinkDialog";
 
+local CLICK_DEFAULTS = {
+    left        = { action = "settings" },
+    shiftLeft   = { action = "reload" },
+    ctrlLeft    = { action = "none" },
+    right       = { action = "none" },
+    shiftRight  = { action = "none" },
+    ctrlRight   = { action = "none" },
+};
+
+local GAME_PANELS = {
+    spellbook    = { frame = "PlayerSpellsFrame",    addon = "Blizzard_PlayerSpells" },
+    talents      = { frame = "PlayerSpellsFrame",    addon = "Blizzard_PlayerSpells" },
+    collections  = { frame = "CollectionsJournal",   addon = "Blizzard_Collections" },
+    groupFinder  = { frame = "PVEFrame" },
+    communities  = { frame = "CommunitiesFrame",     addon = "Blizzard_Communities" },
+    worldMap     = { frame = "WorldMapFrame",        addon = "Blizzard_WorldMap" },
+    achievements = { frame = "AchievementFrame",     addon = "Blizzard_AchievementUI" },
+    calendar     = { frame = "CalendarFrame",        addon = "Blizzard_Calendar" },
+    editMode     = { frame = "EditModeManagerFrame", addon = "Blizzard_EditMode" },
+};
+
+local SLOT_ORDER = {
+    { key = "left",       label = "MINIMAP_CLICK_LEFT" },
+    { key = "shiftLeft",  label = "MINIMAP_CLICK_SHIFT_LEFT" },
+    { key = "ctrlLeft",   label = "MINIMAP_CLICK_CTRL_LEFT" },
+    { key = "right",      label = "MINIMAP_CLICK_RIGHT" },
+    { key = "shiftRight", label = "MINIMAP_CLICK_SHIFT_RIGHT" },
+    { key = "ctrlRight",  label = "MINIMAP_CLICK_CTRL_RIGHT" },
+};
+
 local function hasMinimapLibs()
     return LDB and LDBIcon;
 end
@@ -67,6 +97,79 @@ end
 function Lantern:EnsureUIState()
     self.db.minimap = self.db.minimap or {};
     self.db.options = self.db.options or {};
+    if (not self.db.minimap.clicks) then
+        self.db.minimap.clicks = {};
+        for slot, entry in pairs(CLICK_DEFAULTS) do
+            self.db.minimap.clicks[slot] = { action = entry.action };
+        end
+    end
+end
+
+function Lantern:ExecuteMinimapAction(entry)
+    if (not entry or entry.action == "none") then return; end
+
+    local action = entry.action;
+
+    if (action == "settings") then
+        if (SettingsPanel and SettingsPanel:IsShown()) then
+            HideUIPanel(SettingsPanel);
+        else
+            self:OpenOptions();
+        end
+    elseif (action == "craftingOrders") then
+        if (C_AddOns.IsAddOnLoaded("Lantern_CraftingOrders") and self.OpenAnalytics) then
+            self:OpenAnalytics();
+        end
+    elseif (action == "warband") then
+        if (C_AddOns.IsAddOnLoaded("Lantern_Warband") and self.OpenWarband) then
+            self:OpenWarband();
+        end
+    elseif (action == "reload") then
+        ReloadUI();
+    elseif (action == "slash") then
+        local cmd = entry.command;
+        if (cmd and cmd ~= "") then
+            if (cmd:sub(1, 1) ~= "/") then cmd = "/" .. cmd; end
+            ChatFrame1EditBox:SetText(cmd);
+            ChatEdit_SendText(ChatFrame1EditBox);
+        end
+    else
+        local gamePanel = GAME_PANELS[action];
+        if (gamePanel) then
+            if (InCombatLockdown()) then return; end
+            if (gamePanel.addon and not C_AddOns.IsAddOnLoaded(gamePanel.addon)) then
+                C_AddOns.LoadAddOn(gamePanel.addon);
+            end
+            local frame = _G[gamePanel.frame];
+            if (frame) then
+                if (frame:IsShown()) then
+                    HideUIPanel(frame);
+                else
+                    ShowUIPanel(frame);
+                end
+            end
+        end
+    end
+end
+
+function Lantern:GetMinimapActionLabels()
+    return {
+        settings     = L["MINIMAP_ACTION_SETTINGS"],
+        craftingOrders = L["MINIMAP_ACTION_CRAFTING"],
+        warband      = L["MINIMAP_ACTION_WARBAND"],
+        spellbook    = L["MINIMAP_ACTION_SPELLBOOK"],
+        talents      = L["MINIMAP_ACTION_TALENTS"],
+        collections  = L["MINIMAP_ACTION_COLLECTIONS"],
+        groupFinder  = L["MINIMAP_ACTION_GROUP_FINDER"],
+        communities  = L["MINIMAP_ACTION_COMMUNITIES"],
+        worldMap     = L["MINIMAP_ACTION_WORLD_MAP"],
+        achievements = L["MINIMAP_ACTION_ACHIEVEMENTS"],
+        calendar     = L["MINIMAP_ACTION_CALENDAR"],
+        editMode     = L["MINIMAP_ACTION_EDIT_MODE"],
+        reload       = L["MINIMAP_ACTION_RELOAD"],
+        slash        = L["MINIMAP_ACTION_SLASH"],
+        none         = L["MINIMAP_ACTION_NONE"],
+    };
 end
 
 function Lantern:ToggleMinimapIcon(show)
@@ -135,22 +238,42 @@ function Lantern:InitMinimap()
         icon = DEFAULT_ICON,
         label = ADDON_NAME,
         OnClick = function(_, button)
+            local clicks = Lantern.db.minimap.clicks;
+            if (not clicks) then return; end
+            local slot;
             if (button == "LeftButton") then
-                if (IsShiftKeyDown()) then
-                    ReloadUI();
-                else
-                    if (SettingsPanel and SettingsPanel:IsShown()) then
-                        HideUIPanel(SettingsPanel);
-                    else
-                        Lantern:OpenOptions();
-                    end
+                if (IsShiftKeyDown()) then slot = "shiftLeft";
+                elseif (IsControlKeyDown()) then slot = "ctrlLeft";
+                else slot = "left";
                 end
+            elseif (button == "RightButton") then
+                if (IsShiftKeyDown()) then slot = "shiftRight";
+                elseif (IsControlKeyDown()) then slot = "ctrlRight";
+                else slot = "right";
+                end
+            end
+            if (slot) then
+                Lantern:ExecuteMinimapAction(clicks[slot]);
             end
         end,
         OnTooltipShow = function(tooltip)
             tooltip:AddLine(L["UI_MINIMAP_TITLE"]);
-            tooltip:AddLine(L["UI_MINIMAP_LEFT_CLICK"], 1, 1, 1);
-            tooltip:AddLine(L["UI_MINIMAP_SHIFT_CLICK"], 1, 1, 1);
+            local labels = Lantern:GetMinimapActionLabels();
+            local clicks = Lantern.db.minimap.clicks;
+            if (clicks) then
+                for _, slot in ipairs(SLOT_ORDER) do
+                    local entry = clicks[slot.key];
+                    if (entry and entry.action ~= "none") then
+                        local actionLabel = labels[entry.action];
+                        if (entry.action == "slash" and entry.command) then
+                            actionLabel = entry.command;
+                        end
+                        if (actionLabel) then
+                            tooltip:AddLine(L[slot.label] .. ": " .. actionLabel, 1, 1, 1);
+                        end
+                    end
+                end
+            end
         end,
     });
 
