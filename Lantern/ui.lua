@@ -35,7 +35,13 @@ local GAME_PANELS = {
         end
     end },
     collections  = { frame = "CollectionsJournal",   addon = "Blizzard_Collections" },
-    groupFinder  = { frame = "PVEFrame" },
+    groupFinder  = { frame = "PVEFrame", toggle = function()
+        if (PVEFrame and PVEFrame:IsShown()) then
+            HideUIPanel(PVEFrame);
+        else
+            PVEFrame_ToggleFrame("GroupFinderFrame", LFDParentFrame);
+        end
+    end },
     communities  = { frame = "CommunitiesFrame",     addon = "Blizzard_Communities" },
     worldMap     = { frame = "WorldMapFrame",        addon = "Blizzard_WorldMap" },
     achievements = { frame = "AchievementFrame",     addon = "Blizzard_AchievementUI" },
