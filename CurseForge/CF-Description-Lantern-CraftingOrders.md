@@ -8,14 +8,15 @@ Everything is possible to turn off.
 *   **Personal orders:** on-screen notification when you receive a new personal crafting order, with customizable font, size, outline, color, and duration. Optional sound alert.
 *   **Complete + Whisper:** optional button to finish a personal order and auto-whisper the customer with a custom message.
 *   **Order History & Analytics:** automatically tracks fulfilled orders and provides a full analytics panel (`/lantern orders`) with:
-    *   Dashboard with overall stats, top customers, and top items
-    *   Per-customer breakdown: order count, total tips, average tip, last order
+    *   Dashboard with overall stats, top customers, top items, and earnings chart
+    *   Daily, weekly, and monthly timeframe cards with reset timers
+    *   Heat maps showing order count, gold earned, and trade chat activity by day and hour
+    *   Per-customer breakdown with expandable rows showing individual order details
     *   Per-item breakdown: craft count, average tip, total revenue, unique customers
     *   Orders page to browse and manage individual recorded orders
-    *   Filters page to exclude specific customers from all analytics views
+    *   Settings page with customer exclusion filters and order type filtering
     *   Character filter to view current character or all characters
-
-Designed to be small, robust, and compatible with the default UI.
+*   **Trade Chat Tracker:** monitors Trade channel for crafting requests with customizable keywords for heat map to see when it is active on your realm.
 
 #### Requirements
 
