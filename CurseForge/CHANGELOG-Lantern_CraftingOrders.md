@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.5
+- Add: Open analytics directly from the Lantern minimap button (configurable in General settings)
+
 ## 0.6.4 - 2026-03-12
 - Add: Dashboard now shows daily/weekly/monthly timeframes with both order count and tips earned per period
 - Add: Reset timer shown on daily and weekly timeframe cards (e.g., "Resets in 4h 23m")
