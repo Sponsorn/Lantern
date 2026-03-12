@@ -22,5 +22,8 @@ TODO.md
 # CI/CD
 .pkgmeta
 
+# Docs
+docs/
+
 # Claude
 CLAUDE.md

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.4
+## 0.6.4 - 2026-03-12
 - Add: Dashboard now shows daily/weekly/monthly timeframes with both order count and tips earned per period
 - Add: Reset timer shown on daily and weekly timeframe cards (e.g., "Resets in 4h 23m")
 - Add: Reset timer settings — toggle visibility, choose auto (region-based) or custom reset day/hour
