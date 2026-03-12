@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.7
+## 0.6.7 - 2026-03-08
 - Fix: Range Check now respects Priest's Phantom Reach talent (+15% range)
 - Fix: Module toggle now refreshes the settings page immediately after enabling/disabling
 

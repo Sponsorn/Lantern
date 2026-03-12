@@ -1,9 +1,9 @@
 # Changelog
 
-## 0.4.5
+## 0.4.5 - 2026-03-12
 - Fix: Treatise "Take All" button only grabbing the first treatise — stale item lock events from the first move could exhaust retries and skip remaining items
 
-## 0.4.4
+## 0.4.4 - 2026-03-08
 - Fix: Module was disabled by default on fresh installs with no toggle to enable it
 
 ## 0.4.3
