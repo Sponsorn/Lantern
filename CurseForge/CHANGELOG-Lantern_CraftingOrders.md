@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.5
+## 0.6.5 - 2026-03-13
 - Fix: Analytics panel failing to open when Lantern core hasn't been updated yet (missing weekly reset function)
 - Add: Open analytics directly from the Lantern minimap button (configurable in General settings)
 

@@ -289,6 +289,9 @@ local function ShouldHideWarning()
         if (UnitHasVehicleUI("player")) then
             return true, "in_vehicle";
         end
+        if (HasOverrideActionBar() or IsFlying()) then
+            return true, "override_bar";
+        end
     end
 
     -- In rest zone
@@ -416,7 +419,7 @@ local function OnMountChanged()
     end
 
     -- Check if we just dismounted
-    if (not IsMounted() and not UnitOnTaxi("player") and not UnitHasVehicleUI("player")) then
+    if (not IsMounted() and not UnitOnTaxi("player") and not UnitHasVehicleUI("player") and not HasOverrideActionBar() and not IsFlying()) then
         SchedulePostDismountCheck();
     else
         -- Mounted - cancel any pending timer and hide immediately
@@ -564,6 +567,8 @@ function module:OnEnable()
     self.addon:ModuleRegisterEvent(self, "PLAYER_MOUNT_DISPLAY_CHANGED", self.OnMountChanged);
     self.addon:ModuleRegisterEvent(self, "UNIT_ENTERED_VEHICLE", self.OnVehicleChanged);
     self.addon:ModuleRegisterEvent(self, "UNIT_EXITED_VEHICLE", self.OnVehicleChanged);
+    self.addon:ModuleRegisterEvent(self, "UPDATE_OVERRIDE_ACTIONBAR", self.OnMountChanged);
+    self.addon:ModuleRegisterEvent(self, "UPDATE_VEHICLE_ACTIONBAR", self.OnMountChanged);
 
     -- Rest zone events
     self.addon:ModuleRegisterEvent(self, "PLAYER_UPDATE_RESTING", self.OnRestingChanged);
@@ -638,7 +643,12 @@ function module:OnUnitPet(event, unit)
         if (not self._petSystemReady) then
             self._petSystemReady = true;
         end
-        UpdatePetStatus();
+        -- Defer slightly so flight/vehicle state APIs update before we check
+        C_Timer.After(0.15, function()
+            if (module.enabled) then
+                UpdatePetStatus();
+            end
+        end);
     end
 end
 

@@ -178,19 +178,19 @@ local function playPersonalSound(self)
     if (not sound) then return; end
 
     -- Temporarily enable background sound so the notification is audible
-    -- even when the game is not in focus.  Delay playback briefly so the
-    -- sound engine has time to activate after the CVar change.
+    -- even when the game is not in focus.  Play immediately after toggling
+    -- the CVar — C_Timer is unreliable when WoW is backgrounded.
     local bgSoundWasOff = self.db.personalSoundBackground and GetCVar(BG_SOUND_CVAR) == "0";
     if (bgSoundWasOff) then
         SetCVar(BG_SOUND_CVAR, "1");
-        C_Timer.After(0.2, function()
-            doPlaySound(sound);
-            C_Timer.After(2, function()
-                SetCVar(BG_SOUND_CVAR, "0");
-            end);
+    end
+
+    doPlaySound(sound);
+
+    if (bgSoundWasOff) then
+        C_Timer.After(3, function()
+            SetCVar(BG_SOUND_CVAR, "0");
         end);
-    else
-        doPlaySound(sound);
     end
 end
 
