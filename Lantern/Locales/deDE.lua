@@ -69,7 +69,11 @@ Lantern:RegisterLocale("deDE", {
     -- Auto Queue
     AUTOQUEUE_AUTO_ACCEPT                   = "Rollenpruefungen automatisch annehmen",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "LFG-Rollenpruefungen automatisch annehmen.",
-    AUTOQUEUE_ANNOUNCE_DESC                 = "Chat-Nachricht ausgeben, wenn eine Rollenpruefung automatisch angenommen wurde.",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE            = "Gruppeneinladungen automatisch annehmen",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE_DESC       = "Gruppensuche-Einladungen automatisch annehmen, wenn deine Bewerbung akzeptiert wurde.",
+    AUTOQUEUE_ONE_CLICK_SIGNUP              = "Ein-Klick-Anmeldung",
+    AUTOQUEUE_ONE_CLICK_SIGNUP_DESC         = "Den Rollen-/Notiz-Dialog beim Bewerben in der Gruppensuche ueberspringen.",
+    AUTOQUEUE_ANNOUNCE_DESC                 = "Chat-Nachricht ausgeben, wenn eine automatische Aktion durchgefuehrt wurde.",
     AUTOQUEUE_CALLOUT                       = "Halte %s gedrueckt, um voruebergehend zu pausieren. Rollen werden im LFG-Tool festgelegt.",
 
     -- Faster Loot
@@ -126,6 +130,8 @@ Lantern:RegisterLocale("deDE", {
     SPLASH_CURSEFORGE                       = "CurseForge",
     SPLASH_COPY_LINK                        = "Link kopieren",
     SPLASH_COPY_HINT                        = "Ctrl+C zum Kopieren, Esc zum Schliessen",
+    SPLASH_CREDITS_HEADER                   = "Danksagungen",
+    SPLASH_CREDITS                          = "Besonderer Dank an @imhavingfun fuer Tests und Fehlerberichte.",
     COPY                                    = "Kopieren",
     SELECT                                  = "Auswaehlen",
 
@@ -253,6 +259,8 @@ Lantern:RegisterLocale("deDE", {
 
     -- Auto Queue messages
     AUTOQUEUE_MSG_ACCEPTED                  = "Rollenpruefung automatisch angenommen.",
+    AUTOQUEUE_MSG_INVITE_ACCEPTED           = "Gruppeneinladung automatisch angenommen.",
+    AUTOQUEUE_MSG_SIGNUP_SKIPPED            = "Automatisch fuer Gruppe beworben.",
 
     -- Auto Repair messages
     AUTOREPAIR_MSG_GUILD_UNAVAILABLE        = "Reparatur nicht moeglich: Gildenbank nicht verfuegbar.",

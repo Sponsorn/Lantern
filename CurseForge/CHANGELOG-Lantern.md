@@ -2,6 +2,10 @@
 
 ## 0.6.8
 - Add: Configurable minimap button actions — assign any click+modifier combo to open Lantern settings, Crafting Orders, Warband, game panels (Spellbook, Talents, Collections, etc.), Reload UI, or a custom slash command
+- Add: Auto Queue — auto-accept Group Finder invites when your application is accepted (off by default)
+- Add: Auto Queue — one-click sign-up skips the role/note dialog when applying to groups (off by default)
+- Add: Weekly reset epoch utility for companion addons (used by Crafting Orders reset timers)
+- Add: Credits section on the settings home page
 
 ## 0.6.7 - 2026-03-08
 - Fix: Range Check now respects Priest's Phantom Reach talent (+15% range)

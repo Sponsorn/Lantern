@@ -69,7 +69,11 @@ Lantern:RegisterLocale("itIT", {
     -- Auto Queue
     AUTOQUEUE_AUTO_ACCEPT                   = "Accetta automaticamente i controlli ruolo",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accetta automaticamente i controlli ruolo LFG.",
-    AUTOQUEUE_ANNOUNCE_DESC                 = "Invia un messaggio in chat quando un controllo ruolo viene accettato automaticamente.",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE            = "Accetta automaticamente gli inviti di gruppo",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE_DESC       = "Accetta automaticamente gli inviti del Cerca Gruppo quando la tua candidatura viene accettata.",
+    AUTOQUEUE_ONE_CLICK_SIGNUP              = "Iscrizione con un clic",
+    AUTOQUEUE_ONE_CLICK_SIGNUP_DESC         = "Salta la finestra ruolo/nota quando ci si candida per i gruppi.",
+    AUTOQUEUE_ANNOUNCE_DESC                 = "Invia un messaggio in chat quando viene eseguita un'azione automatica.",
     AUTOQUEUE_CALLOUT                       = "Tieni premuto %s per mettere in pausa temporaneamente. I ruoli sono impostati nello strumento LFG.",
 
     -- Faster Loot
@@ -126,6 +130,8 @@ Lantern:RegisterLocale("itIT", {
     SPLASH_CURSEFORGE                       = "CurseForge",
     SPLASH_COPY_LINK                        = "Copia link",
     SPLASH_COPY_HINT                        = "Ctrl+C per copiare, Esc per chiudere",
+    SPLASH_CREDITS_HEADER                   = "Ringraziamenti",
+    SPLASH_CREDITS                          = "Un ringraziamento speciale a @imhavingfun per i test e le segnalazioni di bug.",
     COPY                                    = "Copia",
     SELECT                                  = "Seleziona",
 
@@ -253,6 +259,8 @@ Lantern:RegisterLocale("itIT", {
 
     -- Auto Queue messages
     AUTOQUEUE_MSG_ACCEPTED                  = "Controllo ruolo accettato automaticamente.",
+    AUTOQUEUE_MSG_INVITE_ACCEPTED           = "Invito al gruppo accettato automaticamente.",
+    AUTOQUEUE_MSG_SIGNUP_SKIPPED            = "Candidatura al gruppo inviata automaticamente.",
 
     -- Auto Repair messages
     AUTOREPAIR_MSG_GUILD_UNAVAILABLE        = "Impossibile riparare: fondi gilda non disponibili.",

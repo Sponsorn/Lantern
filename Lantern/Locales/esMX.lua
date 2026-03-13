@@ -126,6 +126,8 @@ Lantern:RegisterLocale("esMX", {
     -- SPLASH_CURSEFORGE                       = "CurseForge",
     -- SPLASH_COPY_LINK                        = "Copy link",
     -- SPLASH_COPY_HINT                        = "Ctrl+C to copy, Escape to close",
+    -- SPLASH_CREDITS_HEADER                   = "Credits",
+    -- SPLASH_CREDITS                          = "Special thanks to @imhavingfun for testing and bug reports.",
     -- COPY                                    = "Copy",
     -- SELECT                                  = "Select",
 

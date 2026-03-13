@@ -2,6 +2,7 @@
 
 ## 0.4.6
 - Add: Open Warband settings directly from the Lantern minimap button (configurable in General settings)
+- Change: "Add current character" button moved above the character list in group settings for easier access
 
 ## 0.4.5 - 2026-03-12
 - Fix: Treatise "Take All" button only grabbing the first treatise — stale item lock events from the first move could exhaust retries and skip remaining items

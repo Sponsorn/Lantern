@@ -14,7 +14,7 @@ Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused 
 #### Dungeons & M+
 *   **Auto Keystone**: Automatically slots your Mythic+ keystone when the Challenge Mode UI opens.
 *   **Auto Playstyle**: Auto-selects your preferred playstyle when listing M+ groups in the Group Finder.
-*   **Auto Queue**: Auto-accepts LFG role checks using your roles set in the LFG tool (pause modifier to pause). Disabled by default.
+*   **Auto Queue**: Auto-accepts LFG role checks, auto-accepts Group Finder invites, and one-click sign-up that skips the role/note dialog when applying to groups (pause modifier to pause). Disabled by default.
 *   **Combat Alert**: Fade-in/out text alerts when entering or leaving combat with configurable colors and sound. Disabled by default.
 *   **Combat Timer**: On-screen combat duration timer with sticky mode that keeps showing after combat ends. Disabled by default.
 *   **Missing Pet**: Displays an animated on-screen warning when your pet is missing or set to passive. Works for Hunters, Warlocks, Unholy Death Knights, and Frost Mages with Water Elemental. Customizable text, colors, fonts, animations, and optional sound alerts. Auto-hides while mounted.
@@ -74,7 +74,7 @@ All settings and messages are translatable. Current status:
 <td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#2DC26B;">100%</span></b></td>
 <td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#2DC26B;">100%</span></b></td>
 <td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#2DC26B;">100%</span></b></td>
-<td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#808080;">0%</span></b></td>
+<td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#2DC26B;">100%</span></b></td>
 <td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#808080;">0%</span></b></td>
 <td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#808080;">0%</span></b></td>
 <td style="padding:8px 18px; border:1px solid #333; text-align:center;"><b><span style="color:#808080;">0%</span></b></td>

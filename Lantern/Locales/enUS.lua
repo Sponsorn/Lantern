@@ -85,7 +85,11 @@ Lantern:RegisterLocale("enUS", {
     -- Auto Queue
     AUTOQUEUE_AUTO_ACCEPT                   = "Auto-accept role checks",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Accept LFG role checks automatically.",
-    AUTOQUEUE_ANNOUNCE_DESC                 = "Print a message in chat when a role check is auto-accepted.",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE            = "Auto-accept group invites",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE_DESC       = "Automatically accept Group Finder invites when your application is accepted.",
+    AUTOQUEUE_ONE_CLICK_SIGNUP              = "One-click sign-up",
+    AUTOQUEUE_ONE_CLICK_SIGNUP_DESC         = "Skip the role/note dialog when applying to Group Finder groups.",
+    AUTOQUEUE_ANNOUNCE_DESC                 = "Print a message in chat when an action is auto-performed.",
     AUTOQUEUE_CALLOUT                       = "Hold %s to temporarily pause. Roles are set in the LFG tool.",
 
     -- Faster Loot
@@ -142,6 +146,8 @@ Lantern:RegisterLocale("enUS", {
     SPLASH_CURSEFORGE                       = "CurseForge",
     SPLASH_COPY_LINK                        = "Copy link",
     SPLASH_COPY_HINT                        = "Ctrl+C to copy, Escape to close",
+    SPLASH_CREDITS_HEADER                   = "Credits",
+    SPLASH_CREDITS                          = "Special thanks to @imhavingfun for testing and bug reports.",
     COPY                                    = "Copy",
     SELECT                                  = "Select",
 
@@ -285,6 +291,8 @@ Lantern:RegisterLocale("enUS", {
 
     -- Auto Queue messages
     AUTOQUEUE_MSG_ACCEPTED                  = "Auto-accepted role check.",
+    AUTOQUEUE_MSG_INVITE_ACCEPTED           = "Auto-accepted group invite.",
+    AUTOQUEUE_MSG_SIGNUP_SKIPPED            = "Auto-applied to group.",
 
     -- Auto Repair messages
     AUTOREPAIR_MSG_GUILD_UNAVAILABLE        = "Cannot repair: guild funds unavailable.",

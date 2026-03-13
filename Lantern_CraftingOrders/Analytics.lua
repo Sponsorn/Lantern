@@ -475,7 +475,7 @@ function CraftingOrders:GetResetEpochs()
         -- Auto: use region-detected resets
         local lastDaily = Lantern:GetLastDailyResetEpoch(now);
         nextDailyReset = lastDaily and (lastDaily + 86400) or nil;
-        nextWeeklyReset = Lantern:GetNextWeeklyResetEpoch(now);
+        nextWeeklyReset = Lantern.GetNextWeeklyResetEpoch and Lantern:GetNextWeeklyResetEpoch(now) or nil;
     end
 
     return nextDailyReset, nextWeeklyReset;

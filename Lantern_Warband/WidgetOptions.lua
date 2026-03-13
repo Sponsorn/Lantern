@@ -361,6 +361,30 @@ local function groupsWidgets()
             end,
         });
 
+        -- Add current character button
+        table.insert(children, {
+            type = "execute",
+            label = L["WARBAND_ADD_CURRENT_CHAR"],
+            desc = L["WARBAND_ADD_CURRENT_CHAR_DESC"],
+            func = function()
+                local currentChar = Warband:GetCurrentCharacter();
+                if (not currentChar) then
+                    Lantern:Print(L["WARBAND_MSG_CANNOT_GET_CHAR"]);
+                    return;
+                end
+
+                local currentGroup = Warband:GetCharacterGroup(currentChar);
+                if (currentGroup and currentGroup.name == group.name) then
+                    Lantern:Print(string.format(L["WARBAND_MSG_ALREADY_IN_GROUP"], currentChar, group.name));
+                    return;
+                end
+
+                Warband:AssignCharacterToGroup(currentChar, group.name);
+                Lantern:Print(string.format(L["WARBAND_MSG_ADDED_TO_GROUP"], currentChar, group.name));
+                refreshPage();
+            end,
+        });
+
         -- Members
         table.insert(children, { type = "header", text = L["WARBAND_MEMBERS_HEADER"] });
 
@@ -392,30 +416,6 @@ local function groupsWidgets()
                 color = T.textDim,
             });
         end
-
-        -- Add current character button
-        table.insert(children, {
-            type = "execute",
-            label = L["WARBAND_ADD_CURRENT_CHAR"],
-            desc = L["WARBAND_ADD_CURRENT_CHAR_DESC"],
-            func = function()
-                local currentChar = Warband:GetCurrentCharacter();
-                if (not currentChar) then
-                    Lantern:Print(L["WARBAND_MSG_CANNOT_GET_CHAR"]);
-                    return;
-                end
-
-                local currentGroup = Warband:GetCharacterGroup(currentChar);
-                if (currentGroup and currentGroup.name == group.name) then
-                    Lantern:Print(string.format(L["WARBAND_MSG_ALREADY_IN_GROUP"], currentChar, group.name));
-                    return;
-                end
-
-                Warband:AssignCharacterToGroup(currentChar, group.name);
-                Lantern:Print(string.format(L["WARBAND_MSG_ADDED_TO_GROUP"], currentChar, group.name));
-                refreshPage();
-            end,
-        });
 
         -- Delete group
         table.insert(children, { type = "divider" });

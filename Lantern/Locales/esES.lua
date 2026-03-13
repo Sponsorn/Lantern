@@ -69,7 +69,11 @@ Lantern:RegisterLocale("esES", {
     -- Auto Queue
     AUTOQUEUE_AUTO_ACCEPT                   = "Aceptar verificaciones de rol automaticamente",
     AUTOQUEUE_AUTO_ACCEPT_DESC              = "Aceptar verificaciones de rol de LFG automaticamente.",
-    AUTOQUEUE_ANNOUNCE_DESC                 = "Mostrar un mensaje en el chat cuando se acepta una verificacion de rol automaticamente.",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE            = "Aceptar invitaciones de grupo automaticamente",
+    AUTOQUEUE_AUTO_ACCEPT_INVITE_DESC       = "Aceptar automaticamente las invitaciones del Buscador de Grupos cuando tu solicitud es aceptada.",
+    AUTOQUEUE_ONE_CLICK_SIGNUP              = "Inscripcion con un clic",
+    AUTOQUEUE_ONE_CLICK_SIGNUP_DESC         = "Omitir el dialogo de rol/nota al solicitar grupos en el Buscador de Grupos.",
+    AUTOQUEUE_ANNOUNCE_DESC                 = "Mostrar un mensaje en el chat cuando se realiza una accion automatica.",
     AUTOQUEUE_CALLOUT                       = "Manten %s para pausar temporalmente. Los roles se configuran en la herramienta de LFG.",
 
     -- Faster Loot
@@ -126,6 +130,8 @@ Lantern:RegisterLocale("esES", {
     SPLASH_CURSEFORGE                       = "CurseForge",
     SPLASH_COPY_LINK                        = "Copiar enlace",
     SPLASH_COPY_HINT                        = "Ctrl+C para copiar, Esc para cerrar",
+    SPLASH_CREDITS_HEADER                   = "Creditos",
+    SPLASH_CREDITS                          = "Agradecimiento especial a @imhavingfun por las pruebas y los reportes de errores.",
     COPY                                    = "Copiar",
     SELECT                                  = "Seleccionar",
 
@@ -253,6 +259,8 @@ Lantern:RegisterLocale("esES", {
 
     -- Auto Queue messages
     AUTOQUEUE_MSG_ACCEPTED                  = "Verificacion de rol aceptada automaticamente.",
+    AUTOQUEUE_MSG_INVITE_ACCEPTED           = "Invitacion de grupo aceptada automaticamente.",
+    AUTOQUEUE_MSG_SIGNUP_SKIPPED            = "Solicitud de grupo enviada automaticamente.",
 
     -- Auto Repair messages
     AUTOREPAIR_MSG_GUILD_UNAVAILABLE        = "No se puede reparar: fondos de hermandad no disponibles.",

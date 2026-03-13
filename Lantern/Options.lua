@@ -414,7 +414,7 @@ end
 CUSTOM_OPTIONS["autoQueue"] = function()
     local function db()
         Lantern.db.autoQueue = Lantern.db.autoQueue or {};
-        local defaults = { active = true, announce = true };
+        local defaults = { active = true, announce = true, autoAcceptInvite = false, oneClickSignUp = false };
         for k, v in pairs(defaults) do
             if (Lantern.db.autoQueue[k] == nil) then
                 Lantern.db.autoQueue[k] = v;
@@ -436,6 +436,22 @@ CUSTOM_OPTIONS["autoQueue"] = function()
             disabled = isDisabled,
             get = function() return db().active; end,
             set = function(val) db().active = val and true or false; end,
+        },
+        {
+            type = "toggle",
+            label = L["AUTOQUEUE_AUTO_ACCEPT_INVITE"],
+            desc = L["AUTOQUEUE_AUTO_ACCEPT_INVITE_DESC"],
+            disabled = isDisabled,
+            get = function() return db().autoAcceptInvite; end,
+            set = function(val) db().autoAcceptInvite = val and true or false; end,
+        },
+        {
+            type = "toggle",
+            label = L["AUTOQUEUE_ONE_CLICK_SIGNUP"],
+            desc = L["AUTOQUEUE_ONE_CLICK_SIGNUP_DESC"],
+            disabled = isDisabled,
+            get = function() return db().oneClickSignUp; end,
+            set = function(val) db().oneClickSignUp = val and true or false; end,
         },
         {
             type = "toggle",
@@ -1037,6 +1053,25 @@ local function PopulateSplashModules()
         end
     end
 
+    -- Credits section
+    if (splashFrame._creditsHeader) then
+        y = y - 12;
+        splashFrame._creditsHeader:ClearAllPoints();
+        splashFrame._creditsHeader:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 28, y);
+        splashFrame._creditsHeader:Show();
+
+        splashFrame._creditsDivider:ClearAllPoints();
+        splashFrame._creditsDivider:SetPoint("TOPLEFT", splashFrame._creditsHeader, "BOTTOMLEFT", 0, -6);
+        splashFrame._creditsDivider:SetPoint("RIGHT", splashFrame, "RIGHT", -28, 0);
+        splashFrame._creditsDivider:Show();
+
+        y = y - 26;
+        splashFrame._credits:ClearAllPoints();
+        splashFrame._credits:SetPoint("TOPLEFT", splashFrame, "TOPLEFT", 28, y);
+        splashFrame._credits:Show();
+        y = y - (splashFrame._credits:GetStringHeight() or 14) - 8;
+    end
+
     -- Update scroll content height so overflow is scrollable
     if (splashFrame._scroll) then
         splashFrame._scroll:UpdateContentHeight(math.abs(y) + 20);
@@ -1178,6 +1213,25 @@ local function CreateSplashContent(parent)
 
         f._companionRows[i] = { frame = row, height = totalHeight, btn = btn, btnText = btnText, url = info.url };
     end
+
+    -- Credits section
+    local creditsHeader = f:CreateFontString(nil, "ARTWORK", T.fontBody);
+    creditsHeader:SetText(L["SPLASH_CREDITS_HEADER"]);
+    creditsHeader:SetTextColor(unpack(T.textBright));
+    f._creditsHeader = creditsHeader;
+
+    local creditsDivider = f:CreateTexture(nil, "ARTWORK");
+    creditsDivider:SetHeight(1);
+    creditsDivider:SetColorTexture(unpack(T.divider));
+    f._creditsDivider = creditsDivider;
+
+    local credits = f:CreateFontString(nil, "ARTWORK", T.fontSmall);
+    credits:SetWidth(540);
+    credits:SetJustifyH("LEFT");
+    credits:SetWordWrap(true);
+    credits:SetText(L["SPLASH_CREDITS"]);
+    credits:SetTextColor(unpack(T.textDim));
+    f._credits = credits;
 
     f._scroll = scroll;
     splashFrame = f;
