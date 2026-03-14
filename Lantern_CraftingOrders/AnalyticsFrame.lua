@@ -1084,6 +1084,8 @@ local function RefreshCustomers()
     if (not customersTable) then return; end
     local filter = GetCharFilterForAPI();
     local data = CraftingOrders:GetCustomerList(filter);
+    local db = _G.LanternCraftingOrdersDB or {};
+    customersTable:SetPageSize(db.customersPerPage or 50);
     customersTable:SetData(data);
     customersTable:SetNoDataText(L["CO_DASH_NO_DATA"]);
     customersTable:Refresh();
@@ -1112,6 +1114,8 @@ local function CreateCustomersContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
+    local db = _G.LanternCraftingOrdersDB or {};
+
     customersTable = LanternUX.CreateDataTable(tableFrame, {
         columns = {
             { key = "name",       label = L["CO_COL_CUSTOMER"],   width = 160, align = "LEFT" },
@@ -1123,6 +1127,9 @@ local function CreateCustomersContent(parent)
         },
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
+        pageSize = db.customersPerPage or 50,
+        searchColumns = { "name" },
+        searchPlaceholder = "Search customers...",
         expandKey = "name",
         childColumns = {
             { key = "item",      label = L["CO_COL_ITEM"],  width = 250, isLink = true },
