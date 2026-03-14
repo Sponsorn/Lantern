@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.2.7
+- Add: DataTable optional search/filter — configure `searchColumns` to enable an inline search input with debounced filtering
 - Fix: DataTable expandable rows no longer reset scroll position when clicking to expand/collapse
 
 ## 0.2.6 - 2026-03-12

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.6
+- Add: Search filter on the Customers analytics tab — type to filter by name
+- Add: Pagination on the Customers analytics tab with configurable page size
+- Add: "Customers per page" setting in Crafting Orders options
+
 ## 0.6.5 - 2026-03-13
 - Fix: Analytics panel failing to open when Lantern core hasn't been updated yet (missing weekly reset function)
 - Add: Open analytics directly from the Lantern minimap button (configurable in General settings)
