@@ -17,6 +17,10 @@ local CHEVRON_COLLAPSED  = "> ";
 local CHEVRON_EXPANDED   = "v ";
 local CHILD_INDENT       = 16;
 local CHILD_BORDER_W     = 2;
+local SEARCH_INPUT_H     = 24;
+local SEARCH_PAD         = 6;
+local SEARCH_TOTAL_H     = SEARCH_PAD + SEARCH_INPUT_H + SEARCH_PAD;
+local SEARCH_DEBOUNCE    = 0.15;
 
 local nameCounter = 0;
 local function NextName(prefix)
@@ -53,6 +57,12 @@ function LanternUX.CreateDataTable(parent, config)
     -- Child row pool (separate from parent pool since child rows have different column sets)
     dt._childRowPool   = {};
     dt._activeChildRows = 0;
+
+    -- Search config
+    dt._searchColumns     = config.searchColumns or nil;
+    dt._searchPlaceholder = config.searchPlaceholder or "Search...";
+    dt._searchQuery       = "";
+    dt._searchDebounce    = nil;
 
     -- Outer container frame
     local frameName = NextName("LUX_DT_");
@@ -139,11 +149,111 @@ function LanternUX.CreateDataTable(parent, config)
     end
 
     ---------------------------------------------------------------------------
+    -- Search input (optional — only built when searchColumns is configured)
+    ---------------------------------------------------------------------------
+
+    local searchFrame;
+
+    if (dt._searchColumns) then
+        searchFrame = CreateFrame("Frame", frameName .. "_Search", frame);
+        searchFrame:SetHeight(SEARCH_TOTAL_H);
+        searchFrame:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", 0, 0);
+        searchFrame:SetPoint("TOPRIGHT", headerFrame, "BOTTOMRIGHT", 0, 0);
+
+        -- Background to match header
+        local searchBg = searchFrame:CreateTexture(frameName .. "_SearchBg", "BACKGROUND");
+        searchBg:SetAllPoints();
+        searchBg:SetColorTexture(unpack(T.cardBg));
+
+        local boxName = frameName .. "_SearchBox";
+        local searchBox = CreateFrame("EditBox", boxName, searchFrame, "BackdropTemplate");
+        searchBox:SetHeight(SEARCH_INPUT_H);
+        searchBox:SetPoint("TOPLEFT", searchFrame, "TOPLEFT", CELL_PAD, -SEARCH_PAD);
+        searchBox:SetPoint("TOPRIGHT", searchFrame, "TOPRIGHT", -CELL_PAD, -SEARCH_PAD);
+        searchBox:SetAutoFocus(false);
+        searchBox:SetFontObject(T.fontSmall);
+        searchBox:SetTextInsets(20, 6, 0, 0);
+        searchBox:SetMaxLetters(64);
+
+        searchBox:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        });
+        searchBox:SetBackdropColor(T.inputBg[1], T.inputBg[2], T.inputBg[3], T.inputBg[4]);
+        searchBox:SetBackdropBorderColor(T.inputBorder[1], T.inputBorder[2], T.inputBorder[3], T.inputBorder[4]);
+        searchBox:SetTextColor(unpack(T.text));
+
+        -- Magnifying glass icon
+        local searchIcon = searchBox:CreateTexture(boxName .. "_Icon", "ARTWORK");
+        searchIcon:SetSize(12, 12);
+        searchIcon:SetPoint("LEFT", 5, 0);
+        searchIcon:SetAtlas("common-search-magnifyingglass");
+        searchIcon:SetDesaturated(true);
+        searchIcon:SetVertexColor(unpack(T.textDim));
+
+        -- Placeholder text
+        local placeholder = searchBox:CreateFontString(boxName .. "_PH", "ARTWORK");
+        placeholder:SetFontObject(T.fontSmall);
+        placeholder:SetPoint("LEFT", 20, 0);
+        placeholder:SetText(dt._searchPlaceholder);
+        placeholder:SetTextColor(T.textDim[1], T.textDim[2], T.textDim[3], 0.6);
+
+        -- Focus handlers
+        searchBox:SetScript("OnEditFocusGained", function(self_)
+            self_:SetBackdropBorderColor(T.inputFocus[1], T.inputFocus[2], T.inputFocus[3], T.inputFocus[4]);
+            if (self_:GetText() == "") then placeholder:Hide(); end
+        end);
+        searchBox:SetScript("OnEditFocusLost", function(self_)
+            self_:SetBackdropBorderColor(T.inputBorder[1], T.inputBorder[2], T.inputBorder[3], T.inputBorder[4]);
+            if (self_:GetText() == "") then placeholder:Show(); end
+        end);
+
+        -- Debounced text change
+        searchBox:SetScript("OnTextChanged", function(self_, userInput)
+            if (not userInput) then return; end
+            local text = self_:GetText();
+            if (text == "") then placeholder:Show(); else placeholder:Hide(); end
+
+            if (dt._searchDebounce) then
+                dt._searchDebounce:Cancel();
+            end
+            dt._searchDebounce = C_Timer.NewTimer(SEARCH_DEBOUNCE, function()
+                dt._searchDebounce = nil;
+                dt._searchQuery = text;
+                dt._page = 1;
+                dt:Refresh();
+            end);
+        end);
+
+        -- ESC clears search
+        searchBox:SetScript("OnEscapePressed", function(self_)
+            self_:SetText("");
+            self_:ClearFocus();
+            placeholder:Show();
+            if (dt._searchDebounce) then dt._searchDebounce:Cancel(); dt._searchDebounce = nil; end
+            dt._searchQuery = "";
+            dt._page = 1;
+            dt:Refresh();
+        end);
+
+        -- Enter clears focus but keeps filter
+        searchBox:SetScript("OnEnterPressed", function(self_)
+            self_:ClearFocus();
+        end);
+
+        dt._searchBox = searchBox;
+    end
+
+    -- Anchor reference: scroll area starts below search (if present) or header
+    local scrollAnchor = searchFrame or headerFrame;
+
+    ---------------------------------------------------------------------------
     -- Scroll container for rows
     ---------------------------------------------------------------------------
 
     local scrollArea = CreateFrame("Frame", frameName .. "_ScrollArea", frame);
-    scrollArea:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", 0, 0);
+    scrollArea:SetPoint("TOPLEFT", scrollAnchor, "BOTTOMLEFT", 0, 0);
     scrollArea:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0);
 
     local scroll = LanternUX.CreateScrollContainer(scrollArea);
@@ -169,6 +279,14 @@ function LanternUX.CreateDataTable(parent, config)
     noDataText:Hide();
     dt._noDataText = noDataText;
 
+    local noMatchText = scroll.scrollChild:CreateFontString(frameName .. "_NoMatch", "OVERLAY");
+    noMatchText:SetFontObject(T.fontBody);
+    noMatchText:SetPoint("TOP", scroll.scrollChild, "TOP", 0, -20);
+    noMatchText:SetTextColor(unpack(T.textDim));
+    noMatchText:SetText("No matches");
+    noMatchText:Hide();
+    dt._noMatchText = noMatchText;
+
     ---------------------------------------------------------------------------
     -- Pagination footer
     ---------------------------------------------------------------------------
@@ -179,7 +297,7 @@ function LanternUX.CreateDataTable(parent, config)
         local FOOTER_H = 28;
 
         scrollArea:ClearAllPoints();
-        scrollArea:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", 0, 0);
+        scrollArea:SetPoint("TOPLEFT", scrollAnchor, "BOTTOMLEFT", 0, 0);
         scrollArea:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, FOOTER_H);
 
         local footerName = NextName("LUX_DT_");
@@ -475,6 +593,27 @@ function LanternUX.CreateDataTable(parent, config)
     end
 
     ---------------------------------------------------------------------------
+    -- Search filter
+    ---------------------------------------------------------------------------
+
+    local function FilterData(data, query, columns)
+        if (not query or query == "" or not columns) then return data; end
+        local q = query:lower();
+        local filtered = {};
+        for _, entry in ipairs(data) do
+            for _, key in ipairs(columns) do
+                local val = entry[key];
+                -- Note: only matches string values. Numeric/formatted columns are not searchable.
+                if (val and type(val) == "string" and val:lower():find(q, 1, true)) then
+                    filtered[#filtered + 1] = entry;
+                    break;
+                end
+            end
+        end
+        return filtered;
+    end
+
+    ---------------------------------------------------------------------------
     -- Public methods
     ---------------------------------------------------------------------------
 
@@ -510,15 +649,34 @@ function LanternUX.CreateDataTable(parent, config)
         self:Refresh();
     end
 
+    function dt:SetSearchQuery(text)
+        self._searchQuery = text or "";
+        self._page = 1;
+        if (self._searchBox) then
+            self._searchBox:SetText(text or "");
+        end
+        self:Refresh();
+    end
+
+    function dt:GetSearchQuery()
+        return self._searchQuery;
+    end
+
     function dt:Refresh(preserveScroll)
         ReleaseAllRows();
         ReleaseAllChildRows();
         self._noDataText:Hide();
+        self._noMatchText:Hide();
 
         -- Sort a copy so we don't mutate the caller's table
         local sorted = {};
         for i, v in ipairs(self._data) do
             sorted[i] = v;
+        end
+
+        -- Apply search filter
+        if (self._searchQuery ~= "" and self._searchColumns) then
+            sorted = FilterData(sorted, self._searchQuery, self._searchColumns);
         end
 
         if (self._sortKey) then
@@ -528,7 +686,11 @@ function LanternUX.CreateDataTable(parent, config)
         UpdateSortArrows();
 
         if (#sorted == 0) then
-            self._noDataText:Show();
+            if (self._searchQuery ~= "" and self._searchColumns and #self._data > 0) then
+                self._noMatchText:Show();
+            else
+                self._noDataText:Show();
+            end
             self._scroll:SetContentHeight(60);
             if (footerLabel) then
                 footerLabel:SetText("");
