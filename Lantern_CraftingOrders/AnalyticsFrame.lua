@@ -255,6 +255,141 @@ local function CreateCharFilterDropdown(parent, onChangeCallback)
 end
 
 -------------------------------------------------------------------------------
+-- Page size dropdown (shared themed component)
+-------------------------------------------------------------------------------
+
+local PAGE_SIZE_OPTIONS = { 25, 50, 100, 200 };
+
+local function CreatePageSizeDropdown(parent, getVal, setVal, onChangeCallback)
+    local DROPDOWN_W = 80;
+    local DROPDOWN_H = 28;
+
+    local baseName = NextName("LanternCO_PageSize_");
+
+    local dropFrame = CreateFrame("Frame", baseName, parent, "BackdropTemplate");
+    dropFrame:SetSize(DROPDOWN_W, DROPDOWN_H);
+    dropFrame:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    dropFrame:SetBackdropColor(unpack(T.inputBg));
+    dropFrame:SetBackdropBorderColor(unpack(T.inputBorder));
+
+    local btn = CreateFrame("Button", baseName .. "_Btn", dropFrame);
+    btn:SetAllPoints();
+
+    local label = btn:CreateFontString(baseName .. "_Label", "OVERLAY");
+    label:SetFontObject(T.fontBody);
+    label:SetPoint("LEFT", 10, 0);
+    label:SetPoint("RIGHT", -20, 0);
+    label:SetJustifyH("LEFT");
+    label:SetTextColor(unpack(T.text));
+    dropFrame._label = label;
+
+    -- Arrow
+    local arrow = btn:CreateFontString(baseName .. "_Arrow", "OVERLAY");
+    arrow:SetFontObject(T.fontSmall);
+    arrow:SetPoint("RIGHT", -6, 0);
+    arrow:SetText("v");
+    arrow:SetTextColor(unpack(T.textDim));
+
+    -- Hover
+    btn:SetScript("OnEnter", function()
+        dropFrame:SetBackdropBorderColor(unpack(T.accent));
+    end);
+    btn:SetScript("OnLeave", function()
+        dropFrame:SetBackdropBorderColor(unpack(T.inputBorder));
+    end);
+
+    -- Menu popup
+    local menuName = baseName .. "_Menu";
+    local menu = CreateFrame("Frame", menuName, UIParent, "BackdropTemplate");
+    menu:SetWidth(DROPDOWN_W);
+    menu:SetFrameStrata("TOOLTIP");
+    menu:SetClampedToScreen(true);
+    menu:EnableMouse(true);
+    menu:SetPoint("TOPLEFT", dropFrame, "BOTTOMLEFT", 0, -2);
+    menu:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    });
+    menu:SetBackdropColor(unpack(T.dropdownBg));
+    menu:SetBackdropBorderColor(unpack(T.inputBorder));
+    menu:Hide();
+
+    -- Invisible overlay to catch outside clicks
+    local overlay = CreateFrame("Button", baseName .. "_Overlay", UIParent);
+    overlay:SetAllPoints(UIParent);
+    overlay:SetFrameStrata("TOOLTIP");
+    overlay:Hide();
+    overlay:SetScript("OnClick", function()
+        CloseDropdownMenu();
+    end);
+
+    menu:SetScript("OnShow", function()
+        overlay:SetFrameLevel(menu:GetFrameLevel() - 1);
+        overlay:Show();
+    end);
+    menu:SetScript("OnHide", function()
+        overlay:Hide();
+    end);
+
+    local ITEM_H = 26;
+    local yOff = 1;
+
+    for _, size in ipairs(PAGE_SIZE_OPTIONS) do
+        local itemName = NextName(menuName .. "_Item_");
+        local item = CreateFrame("Button", itemName, menu);
+        item:SetHeight(ITEM_H);
+        item:SetPoint("TOPLEFT", menu, "TOPLEFT", 1, -yOff);
+        item:SetPoint("TOPRIGHT", menu, "TOPRIGHT", -1, -yOff);
+
+        local itemBg = item:CreateTexture(itemName .. "_HL", "HIGHLIGHT");
+        itemBg:SetAllPoints();
+        itemBg:SetColorTexture(unpack(T.dropdownItem));
+
+        local itemLabel = item:CreateFontString(itemName .. "_Text", "OVERLAY");
+        itemLabel:SetFontObject(T.fontBody);
+        itemLabel:SetPoint("LEFT", 10, 0);
+        itemLabel:SetTextColor(unpack(T.text));
+        itemLabel:SetText(tostring(size));
+
+        item:SetScript("OnClick", function()
+            setVal(size);
+            label:SetText(tostring(size));
+            menu:Hide();
+            activeDropdownMenu = nil;
+            if (onChangeCallback) then onChangeCallback(); end
+        end);
+
+        yOff = yOff + ITEM_H;
+    end
+
+    menu:SetHeight(2 + ITEM_H * #PAGE_SIZE_OPTIONS);
+
+    btn:SetScript("OnClick", function()
+        if (menu:IsShown()) then
+            menu:Hide();
+            activeDropdownMenu = nil;
+        else
+            CloseDropdownMenu();
+            menu:Show();
+            activeDropdownMenu = menu;
+        end
+    end);
+
+    function dropFrame:UpdateLabel()
+        label:SetText(tostring(getVal()));
+    end
+
+    dropFrame:UpdateLabel();
+
+    return dropFrame;
+end
+
+-------------------------------------------------------------------------------
 -- Page 1: Dashboard
 -------------------------------------------------------------------------------
 
@@ -1078,14 +1213,12 @@ end
 -- Page 2: Customers
 -------------------------------------------------------------------------------
 
-local customersTable, customersFilter;
+local customersTable, customersFilter, customersPageSize;
 
 local function RefreshCustomers()
     if (not customersTable) then return; end
     local filter = GetCharFilterForAPI();
     local data = CraftingOrders:GetCustomerList(filter);
-    local db = _G.LanternCraftingOrdersDB or {};
-    customersTable:SetPageSize(db.customersPerPage or 50);
     customersTable:SetData(data);
     customersTable:SetNoDataText(L["CO_DASH_NO_DATA"]);
     customersTable:Refresh();
@@ -1095,12 +1228,24 @@ local function CreateCustomersContent(parent)
     local container = CreateFrame("Frame", "LanternCO_CustomersPage", parent);
     container:SetAllPoints();
 
+    local db = _G.LanternCraftingOrdersDB or {};
+
     -- Filter dropdown
     customersFilter = CreateCharFilterDropdown(container, function()
         RefreshCustomers();
         SyncAllFilters();
     end);
     customersFilter:SetPoint("TOPRIGHT", container, "TOPRIGHT", -12, -8);
+
+    -- Page size dropdown
+    customersPageSize = CreatePageSizeDropdown(container,
+        function() return db.customersPerPage or 50; end,
+        function(val) db.customersPerPage = val; end,
+        function()
+            customersTable:SetPageSize(db.customersPerPage or 50);
+        end
+    );
+    customersPageSize:SetPoint("TOPRIGHT", customersFilter, "TOPLEFT", -8, 0);
 
     -- Title
     local title = container:CreateFontString("LanternCO_CustTitle", "OVERLAY");
@@ -1113,8 +1258,6 @@ local function CreateCustomersContent(parent)
     local tableFrame = CreateFrame("Frame", "LanternCO_CustTableWrap", container);
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
-
-    local db = _G.LanternCraftingOrdersDB or {};
 
     customersTable = LanternUX.CreateDataTable(tableFrame, {
         columns = {
@@ -1227,7 +1370,7 @@ end
 -- Page 4: Orders (individual order list with remove)
 -------------------------------------------------------------------------------
 
-local ordersFilter, ordersTable;
+local ordersFilter, ordersTable, ordersPageSize;
 
 local RefreshOrders; -- forward declaration
 
@@ -1235,8 +1378,6 @@ RefreshOrders = function()
     if (not ordersTable) then return; end
     local filter = GetCharFilterForAPI();
     local data = CraftingOrders:GetOrderList(filter);
-    local db = _G.LanternCraftingOrdersDB or {};
-    ordersTable:SetPageSize(db.ordersPerPage or 50);
     ordersTable:SetData(data);
     ordersTable:Refresh();
 end
@@ -1245,12 +1386,24 @@ local function CreateOrdersContent(parent)
     local container = CreateFrame("Frame", "LanternCO_OrdersPage", parent);
     container:SetAllPoints();
 
+    local db = _G.LanternCraftingOrdersDB or {};
+
     -- Filter dropdown
     ordersFilter = CreateCharFilterDropdown(container, function()
         RefreshOrders();
         SyncAllFilters();
     end);
     ordersFilter:SetPoint("TOPRIGHT", container, "TOPRIGHT", -12, -8);
+
+    -- Page size dropdown
+    ordersPageSize = CreatePageSizeDropdown(container,
+        function() return db.ordersPerPage or 50; end,
+        function(val) db.ordersPerPage = val; end,
+        function()
+            ordersTable:SetPageSize(db.ordersPerPage or 50);
+        end
+    );
+    ordersPageSize:SetPoint("TOPRIGHT", ordersFilter, "TOPLEFT", -8, 0);
 
     -- Title
     local title = container:CreateFontString("LanternCO_OrdersTitle", "OVERLAY");
@@ -1260,7 +1413,6 @@ local function CreateOrdersContent(parent)
     title:SetTextColor(unpack(T.textBright));
 
     -- DataTable
-    local db = _G.LanternCraftingOrdersDB or {};
     local tableFrame = CreateFrame("Frame", "LanternCO_OrdersTableFrame", container);
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
