@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.7
+- Fix: DataTable expandable rows no longer reset scroll position when clicking to expand/collapse
+
 ## 0.2.6 - 2026-03-12
 - Add: New `heatmap` widget type — 7x24 day/hour grid with color scaling, tooltips, and responsive sizing
 - Add: `LanternUX.CreateStandaloneWidget()` API for creating widgets outside the page renderer

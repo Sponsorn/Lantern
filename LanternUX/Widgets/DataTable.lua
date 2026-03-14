@@ -510,7 +510,7 @@ function LanternUX.CreateDataTable(parent, config)
         self:Refresh();
     end
 
-    function dt:Refresh()
+    function dt:Refresh(preserveScroll)
         ReleaseAllRows();
         ReleaseAllChildRows();
         self._noDataText:Hide();
@@ -620,7 +620,7 @@ function LanternUX.CreateDataTable(parent, config)
                         else
                             self._expandedKey = rowEntryKey;
                         end
-                        self:Refresh();
+                        self:Refresh(true);
                         -- Also fire onRowClick if configured
                         if (self._onRowClick) then
                             self._onRowClick(rowData);
@@ -708,7 +708,11 @@ function LanternUX.CreateDataTable(parent, config)
         end
 
         local totalHeight = yOffset + 8;
-        self._scroll:SetContentHeight(totalHeight);
+        if (preserveScroll) then
+            self._scroll:UpdateContentHeight(totalHeight);
+        else
+            self._scroll:SetContentHeight(totalHeight);
+        end
 
         if (footerLabel) then
             footerLabel:SetText("Page " .. self._page .. " / " .. self._totalPages);
