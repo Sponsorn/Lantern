@@ -346,6 +346,16 @@ local function historyWidgets()
             end,
         },
         {
+            type = "range",
+            label = L["CO_CUSTOMERS_PER_PAGE"],
+            desc = L["CO_CUSTOMERS_PER_PAGE_DESC"],
+            min = 25, max = 200, step = 25, default = 50,
+            get = function() return db.customersPerPage or 50; end,
+            set = function(val)
+                db.customersPerPage = val;
+            end,
+        },
+        {
             type = "execute",
             label = L["CO_OPEN_ANALYTICS"],
             desc = L["CO_OPEN_ANALYTICS_DESC"],

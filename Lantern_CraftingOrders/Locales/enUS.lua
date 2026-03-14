@@ -210,6 +210,8 @@ ns:RegisterLocale("enUS", {
     CO_MAX_ORDERS_DESC                           = "Maximum number of orders to store per character. Oldest orders are removed first.",
     CO_ORDERS_PER_PAGE                           = "Orders per page",
     CO_ORDERS_PER_PAGE_DESC                      = "Number of orders shown per page in the analytics Orders tab.",
+    CO_CUSTOMERS_PER_PAGE                        = "Customers per page",
+    CO_CUSTOMERS_PER_PAGE_DESC                   = "Number of customers shown per page in the analytics Customers tab.",
 
     -- Repeat customer indicator
     CO_REPEAT_CUSTOMER                           = "Repeat",

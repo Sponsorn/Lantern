@@ -210,6 +210,8 @@ ns:RegisterLocale("itIT", {
     -- CO_MAX_ORDERS_DESC                           = "Maximum number of orders to store per character. Oldest orders are removed first.",
     -- CO_ORDERS_PER_PAGE                           = "",
     -- CO_ORDERS_PER_PAGE_DESC                      = "",
+    -- CO_CUSTOMERS_PER_PAGE                        = "",
+    -- CO_CUSTOMERS_PER_PAGE_DESC                   = "",
 
     -- Repeat customer indicator
     -- CO_REPEAT_CUSTOMER                           = "Repeat",
