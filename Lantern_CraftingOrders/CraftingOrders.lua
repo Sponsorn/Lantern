@@ -492,6 +492,12 @@ function CraftingOrders:TryRecordFulfillment(...)
             cut = cut,
             orderType = orderType,
         });
+
+        -- Update customer cache incrementally
+        local db = _G.LanternCraftingOrdersDB or {};
+        if (db.tipperEnabled and ns.CustomerCache and ns.CustomerCache.IsBuilt()) then
+            ns.CustomerCache.UpdateCustomer(customer, netTip, orderType);
+        end
     end
 end
 
@@ -781,6 +787,14 @@ function CraftingOrders:OnEnable()
     -- Resume trade chat listener if it was enabled before module was disabled
     -- (guard: TradeChatTracker.lua may not have loaded yet on first OnEnable)
     if (self.ResumeTradeChat) then self:ResumeTradeChat(); end
+
+    -- Build customer cache (deferred to next frame to avoid login stutter)
+    C_Timer.After(0, function()
+        local db = _G.LanternCraftingOrdersDB or {};
+        if (db.tipperEnabled and ns.CustomerCache) then
+            ns.CustomerCache.BuildCache();
+        end
+    end);
 end
 
 function CraftingOrders:OnDisable()

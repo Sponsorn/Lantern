@@ -24,6 +24,8 @@ Locales\zhTW.lua
 
 CraftingOrders.lua
 Analytics.lua
+TipperRating.lua
+CustomerCache.lua
 TradeChatTracker.lua
 AnalyticsFrame.lua
 WidgetOptions.lua
