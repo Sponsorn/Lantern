@@ -208,8 +208,6 @@ ns:RegisterLocale("esMX", {
     -- CO_CLEAR_HISTORY_CONFIRM                     = "Are you sure you want to delete all order history for this character? This cannot be undone.",
     -- CO_MAX_ORDERS                                = "Max orders to keep",
     -- CO_MAX_ORDERS_DESC                           = "Maximum number of orders to store per character. Oldest orders are removed first.",
-    -- CO_ORDERS_PER_PAGE                           = "",
-    -- CO_ORDERS_PER_PAGE_DESC                      = "",
 
     -- Repeat customer indicator
     -- CO_REPEAT_CUSTOMER                           = "Repeat",
