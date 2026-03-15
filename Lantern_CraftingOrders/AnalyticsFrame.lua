@@ -1855,6 +1855,87 @@ local function GetSettingsWidgets()
         children = resetChildren,
     });
 
+    -- Tipper Rating group
+    local db = _G.LanternCraftingOrdersDB or {};
+    local tipperChildren = {
+        {
+            type = "toggle",
+            label = L["CO_TIPPER_ENABLED"],
+            desc = L["CO_TIPPER_ENABLED_DESC"],
+            get = function() return db.tipperEnabled or false; end,
+            set = function(val)
+                db.tipperEnabled = val;
+                if (val and ns.CustomerCache and not ns.CustomerCache.IsBuilt()) then
+                    ns.CustomerCache.BuildCache();
+                end
+                refreshPage();
+                LanternUX.ShowReloadPrompt("Reload required to apply tipper rating changes.");
+            end,
+        },
+    };
+
+    if (db.tipperEnabled) then
+        table.insert(tipperChildren, {
+            type = "range",
+            label = L["CO_TIPPER_BAD_THRESHOLD"],
+            desc = L["CO_TIPPER_BAD_THRESHOLD_DESC"],
+            min = 0, max = 50000, step = 500, default = 500,
+            get = function()
+                local t = db.tipperThresholds or { bad = 5000000 };
+                return math.floor((t.bad or 5000000) / 10000);
+            end,
+            set = function(val)
+                db.tipperThresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
+                local copper = val * 10000;
+                if (copper >= db.tipperThresholds.good) then copper = db.tipperThresholds.good - 10000; end
+                db.tipperThresholds.bad = math.max(0, copper);
+                if (ns.CustomerCache) then ns.CustomerCache.RecomputeRatings(); end
+            end,
+        });
+        table.insert(tipperChildren, {
+            type = "range",
+            label = L["CO_TIPPER_GOOD_THRESHOLD"],
+            desc = L["CO_TIPPER_GOOD_THRESHOLD_DESC"],
+            min = 0, max = 50000, step = 500, default = 10000,
+            get = function()
+                local t = db.tipperThresholds or { good = 100000000 };
+                return math.floor((t.good or 100000000) / 10000);
+            end,
+            set = function(val)
+                db.tipperThresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
+                local copper = val * 10000;
+                if (copper <= db.tipperThresholds.bad) then copper = db.tipperThresholds.bad + 10000; end
+                db.tipperThresholds.good = copper;
+                if (ns.CustomerCache) then ns.CustomerCache.RecomputeRatings(); end
+            end,
+        });
+        table.insert(tipperChildren, {
+            type = "toggle",
+            label = L["CO_TIPPER_SHOW_NEUTRAL"],
+            desc = L["CO_TIPPER_SHOW_NEUTRAL_DESC"],
+            get = function() return db.showNeutralTipper or false; end,
+            set = function(val) db.showNeutralTipper = val; end,
+        });
+        table.insert(tipperChildren, {
+            type = "select",
+            label = L["CO_TIPPER_ICON_SET"],
+            desc = L["CO_TIPPER_ICON_SET_DESC"],
+            get = function() return db.tipperIconSet or "coins"; end,
+            set = function(val) db.tipperIconSet = val; end,
+            values = ns.TipperRating and ns.TipperRating.ICON_SET_NAMES or { coins = "Coins" },
+            sorting = ns.TipperRating and ns.TipperRating.ICON_SET_SORTING or { "coins" },
+        });
+    end
+
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_TIPPER_GROUP"],
+        desc = L["CO_TIPPER_GROUP_DESC"],
+        expanded = true,
+        stateKey = "tipperRating",
+        children = tipperChildren,
+    });
+
     -- Trade Chat Tracking group
     local tradeChildren = {
         {

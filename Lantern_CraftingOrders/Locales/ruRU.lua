@@ -213,6 +213,7 @@ ns:RegisterLocale("ruRU", {
     -- CO_REPEAT_CUSTOMER                           = "Repeat",
     -- CO_NEW_CUSTOMER                              = "New",
 
+-- CO_TIPPER_ENABLED                            = "",    -- CO_TIPPER_ENABLED_DESC                       = "",    -- CO_TIPPER_GROUP                              = "",    -- CO_TIPPER_GROUP_DESC                         = "",    -- CO_TIPPER_BAD_THRESHOLD                      = "",    -- CO_TIPPER_BAD_THRESHOLD_DESC                 = "",    -- CO_TIPPER_GOOD_THRESHOLD                     = "",    -- CO_TIPPER_GOOD_THRESHOLD_DESC                = "",    -- CO_TIPPER_SHOW_NEUTRAL                       = "",    -- CO_TIPPER_SHOW_NEUTRAL_DESC                  = "",    -- CO_TIPPER_ICON_SET                           = "",    -- CO_TIPPER_ICON_SET_DESC                      = "",
     -- Heat Maps tab
     -- CO_TAB_HEATMAPS                              = "Heat Maps",
 

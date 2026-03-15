@@ -23,6 +23,11 @@ local function ensureHistoryDB()
     if (db.trackOrderTypes == nil) then db.trackOrderTypes = { guild = true, personal = true }; end
     if (db.showResetTimers == nil) then db.showResetTimers = true; end
     if (db.resetTimers == nil) then db.resetTimers = { mode = "auto" }; end
+    if (db.tipperEnabled == nil) then db.tipperEnabled = false; end
+    if (db.tipperThresholds == nil) then db.tipperThresholds = { bad = 5000000, good = 100000000 }; end
+    if (db.tipperIconSet == nil) then db.tipperIconSet = "coins"; end
+    if (db.showNeutralTipper == nil) then db.showNeutralTipper = false; end
+    if (db.customerMeta == nil) then db.customerMeta = {}; end
     return db;
 end
 

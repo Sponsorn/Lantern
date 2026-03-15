@@ -213,6 +213,20 @@ ns:RegisterLocale("enUS", {
     CO_REPEAT_CUSTOMER                           = "Repeat",
     CO_NEW_CUSTOMER                              = "New",
 
+    -- Tipper Rating
+    CO_TIPPER_ENABLED                            = "Enable tipper ratings",
+    CO_TIPPER_ENABLED_DESC                       = "Rate customers as good or bad tippers based on their personal order tips. Requires reopening analytics after toggling.",
+    CO_TIPPER_GROUP                              = "Tipper Rating",
+    CO_TIPPER_GROUP_DESC                         = "Rate customers as good, neutral, or bad tippers based on their average tip from personal orders.",
+    CO_TIPPER_BAD_THRESHOLD                      = "Bad tipper threshold",
+    CO_TIPPER_BAD_THRESHOLD_DESC                 = "Customers with an average personal order tip below this amount are rated as bad tippers. Value in gold.",
+    CO_TIPPER_GOOD_THRESHOLD                     = "Good tipper threshold",
+    CO_TIPPER_GOOD_THRESHOLD_DESC                = "Customers with an average personal order tip above this amount are rated as good tippers. Value in gold.",
+    CO_TIPPER_SHOW_NEUTRAL                       = "Show neutral rating",
+    CO_TIPPER_SHOW_NEUTRAL_DESC                  = "Show the neutral tipper icon for customers between the bad and good thresholds.",
+    CO_TIPPER_ICON_SET                           = "Icon style",
+    CO_TIPPER_ICON_SET_DESC                      = "Choose which icon set to use for tipper ratings.",
+
     -- Heat Maps tab
     CO_TAB_HEATMAPS                              = "Heat Maps",
 
