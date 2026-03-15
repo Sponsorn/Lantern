@@ -1272,7 +1272,12 @@ local function CreateCustomersContent(parent)
                     if (not db_.showNeutralTipper) then return ""; end
                 end
                 if (ns.TipperRating) then
-                    local _, fontSize = T.fontBody:GetFont();
+                    local fontSize = 13;
+                    local fontObj = _G[T.fontBody];
+                    if (fontObj and fontObj.GetFont) then
+                        local _, size = fontObj:GetFont();
+                        if (size) then fontSize = size; end
+                    end
                     return ns.TipperRating.GetTipperMarkup(v or "neutral", db_, fontSize);
                 end
                 return "";
