@@ -1259,9 +1259,12 @@ local function CreateCustomersContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
-    -- Build columns dynamically — include tipper icon column when enabled
+    -- Build columns dynamically — include tipper icon column after name when enabled
     local tipperEnabled = db.tipperEnabled;
     local custColumns = {};
+
+    local nameWidth = tipperEnabled and 132 or 160;
+    table.insert(custColumns, { key = "name",       label = L["CO_COL_CUSTOMER"],   width = nameWidth, align = "LEFT" });
 
     if (tipperEnabled) then
         table.insert(custColumns, {
@@ -1285,8 +1288,6 @@ local function CreateCustomersContent(parent)
         });
     end
 
-    local nameWidth = tipperEnabled and 132 or 160;
-    table.insert(custColumns, { key = "name",       label = L["CO_COL_CUSTOMER"],   width = nameWidth, align = "LEFT" });
     table.insert(custColumns, { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" });
     table.insert(custColumns, { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
     table.insert(custColumns, { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
