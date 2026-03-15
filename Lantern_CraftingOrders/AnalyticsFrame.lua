@@ -1259,15 +1259,37 @@ local function CreateCustomersContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
+    -- Build columns dynamically — include tipper icon column when enabled
+    local tipperEnabled = db.tipperEnabled;
+    local custColumns = {};
+
+    if (tipperEnabled) then
+        table.insert(custColumns, {
+            key = "rating", label = "", width = 28, align = "CENTER",
+            format = function(v, entry)
+                local db_ = _G.LanternCraftingOrdersDB or {};
+                if (not v or v == "neutral") then
+                    if (not db_.showNeutralTipper) then return ""; end
+                end
+                if (ns.TipperRating) then
+                    local _, fontSize = T.fontBody:GetFont();
+                    return ns.TipperRating.GetTipperMarkup(v or "neutral", db_, fontSize);
+                end
+                return "";
+            end,
+        });
+    end
+
+    local nameWidth = tipperEnabled and 132 or 160;
+    table.insert(custColumns, { key = "name",       label = L["CO_COL_CUSTOMER"],   width = nameWidth, align = "LEFT" });
+    table.insert(custColumns, { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" });
+    table.insert(custColumns, { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
+    table.insert(custColumns, { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
+    table.insert(custColumns, { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" });
+    table.insert(custColumns, { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end });
+
     customersTable = LanternUX.CreateDataTable(tableFrame, {
-        columns = {
-            { key = "name",       label = L["CO_COL_CUSTOMER"],   width = 160, align = "LEFT" },
-            { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" },
-            { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
-            { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
-            { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" },
-            { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end },
-        },
+        columns = custColumns,
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
         pageSize = db.customersPerPage or 50,
