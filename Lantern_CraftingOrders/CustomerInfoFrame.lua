@@ -40,7 +40,7 @@ local function EnsureFrame()
 
     frame = CreateFrame("Frame", "LanternCO_CustomerInfo", UIParent, "BackdropTemplate");
     frame:SetSize(FRAME_W, FRAME_H);
-    frame:SetFrameStrata("DIALOG");
+    frame:SetFrameStrata("FULLSCREEN_DIALOG");
     frame:SetClampedToScreen(true);
     frame:SetMovable(true);
     frame:EnableMouse(true);
@@ -212,7 +212,7 @@ local function EnsureFrame()
     -- Click-outside-to-close overlay
     local overlay = CreateFrame("Button", "LanternCO_CIOverlay", UIParent);
     overlay:SetAllPoints(UIParent);
-    overlay:SetFrameStrata("DIALOG");
+    overlay:SetFrameStrata("FULLSCREEN_DIALOG");
     overlay:Hide();
     overlay:SetScript("OnClick", function() frame:Hide(); end);
     frame:SetScript("OnShow", function()
