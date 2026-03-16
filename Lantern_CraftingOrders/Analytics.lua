@@ -23,6 +23,11 @@ local function ensureHistoryDB()
     if (db.trackOrderTypes == nil) then db.trackOrderTypes = { guild = true, personal = true }; end
     if (db.showResetTimers == nil) then db.showResetTimers = true; end
     if (db.resetTimers == nil) then db.resetTimers = { mode = "auto" }; end
+    if (db.tipperEnabled == nil) then db.tipperEnabled = false; end
+    if (db.tipperThresholds == nil) then db.tipperThresholds = { bad = 5000000, good = 100000000 }; end
+    if (db.tipperIconSet == nil) then db.tipperIconSet = "coins"; end
+    if (db.showNeutralTipper == nil) then db.showNeutralTipper = false; end
+    if (db.customerMeta == nil) then db.customerMeta = {}; end
     return db;
 end
 
@@ -150,6 +155,8 @@ function CraftingOrders:GetCustomerList(charFilter, since)
                 name = name,
                 count = 0,
                 totalTip = 0,
+                personalCount = 0,
+                personalTotalTip = 0,
                 firstOrder = order.timestamp,
                 lastOrder = order.timestamp,
                 items = {},
@@ -158,6 +165,10 @@ function CraftingOrders:GetCustomerList(charFilter, since)
         local c = map[name];
         c.count = c.count + 1;
         c.totalTip = c.totalTip + (order.tip or 0);
+        if (order.orderType == "personal") then
+            c.personalCount = c.personalCount + 1;
+            c.personalTotalTip = c.personalTotalTip + (order.tip or 0);
+        end
         if (order.timestamp and order.timestamp < c.firstOrder) then
             c.firstOrder = order.timestamp;
         end
@@ -173,6 +184,17 @@ function CraftingOrders:GetCustomerList(charFilter, since)
         local n = 0;
         for _ in pairs(data.items) do n = n + 1; end
         data.uniqueItems = n;
+        data.personalAvgTip = data.personalCount > 0 and math.floor(data.personalTotalTip / data.personalCount) or 0;
+
+        -- Tipper rating (only computed when feature is enabled)
+        local db = _G.LanternCraftingOrdersDB or {};
+        if (db.tipperEnabled and ns.TipperRating) then
+            local thresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
+            local meta = db.customerMeta and db.customerMeta[data.name] or nil;
+            local override = meta and meta.ratingOverride or nil;
+            data.rating = ns.TipperRating.GetTipperRating(data.personalAvgTip, data.personalCount, thresholds, override);
+        end
+
         table.insert(list, data);
     end
 

@@ -278,3 +278,22 @@ local function RefreshActiveWidgets()
     end
 end
 _W.RefreshActiveWidgets = RefreshActiveWidgets;
+
+-------------------------------------------------------------------------------
+-- Reload prompt utility
+-------------------------------------------------------------------------------
+
+StaticPopupDialogs["LANTERNUX_RELOAD_PROMPT"] = {
+    button1 = "Reload Now",
+    button2 = "Later",
+    OnAccept = function() ReloadUI(); end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+};
+
+function LanternUX.ShowReloadPrompt(message)
+    StaticPopupDialogs["LANTERNUX_RELOAD_PROMPT"].text = message or "Reload required to apply changes.";
+    StaticPopup_Show("LANTERNUX_RELOAD_PROMPT");
+end

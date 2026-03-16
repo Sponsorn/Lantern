@@ -1,6 +1,10 @@
 # Changelog
 
 ## 0.6.6
+- Add: Tipper rating system — customers are rated as good, neutral, or bad based on personal order tip averages (off by default, enable in analytics Settings)
+- Add: Tipper icon column in the Customers analytics tab (coins, checkmarks, or crafting quality icons)
+- Add: Tipper rating settings — configurable thresholds, icon style, neutral icon toggle
+- Add: Customer cache for fast lookups (built on login, updated on new orders)
 - Add: Search filter on the Customers analytics tab — type to filter by name
 - Add: Pagination on the Customers analytics tab with configurable page size
 - Change: Page size controls for Orders and Customers tabs moved from settings into the analytics panel (dropdown next to character filter)

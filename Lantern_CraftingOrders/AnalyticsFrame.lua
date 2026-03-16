@@ -1259,15 +1259,42 @@ local function CreateCustomersContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
+    -- Build columns dynamically — include tipper icon column after name when enabled
+    local tipperEnabled = db.tipperEnabled;
+    local custColumns = {};
+
+    local nameWidth = tipperEnabled and 132 or 160;
+    table.insert(custColumns, { key = "name",       label = L["CO_COL_CUSTOMER"],   width = nameWidth, align = "LEFT" });
+
+    if (tipperEnabled) then
+        table.insert(custColumns, {
+            key = "rating", label = "", width = 28, align = "CENTER",
+            format = function(v, entry)
+                if (not v or v == "none") then return ""; end
+                local db_ = _G.LanternCraftingOrdersDB or {};
+                if (v == "neutral" and not db_.showNeutralTipper) then return ""; end
+                if (ns.TipperRating) then
+                    local fontSize = 13;
+                    local fontObj = _G[T.fontBody];
+                    if (fontObj and fontObj.GetFont) then
+                        local _, size = fontObj:GetFont();
+                        if (size) then fontSize = size; end
+                    end
+                    return ns.TipperRating.GetTipperMarkup(v or "neutral", db_, fontSize);
+                end
+                return "";
+            end,
+        });
+    end
+
+    table.insert(custColumns, { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" });
+    table.insert(custColumns, { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
+    table.insert(custColumns, { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
+    table.insert(custColumns, { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" });
+    table.insert(custColumns, { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end });
+
     customersTable = LanternUX.CreateDataTable(tableFrame, {
-        columns = {
-            { key = "name",       label = L["CO_COL_CUSTOMER"],   width = 160, align = "LEFT" },
-            { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" },
-            { key = "totalTip",   label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
-            { key = "avgTip",     label = L["CO_COL_AVG_TIP"],    width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end },
-            { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" },
-            { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end },
-        },
+        columns = custColumns,
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
         pageSize = db.customersPerPage or 50,
@@ -1831,6 +1858,87 @@ local function GetSettingsWidgets()
         desc = L["CO_SETTINGS_RESET_TIMERS_DESC"],
         stateKey = "resetTimers",
         children = resetChildren,
+    });
+
+    -- Tipper Rating group
+    local db = _G.LanternCraftingOrdersDB or {};
+    local tipperChildren = {
+        {
+            type = "toggle",
+            label = L["CO_TIPPER_ENABLED"],
+            desc = L["CO_TIPPER_ENABLED_DESC"],
+            get = function() return db.tipperEnabled or false; end,
+            set = function(val)
+                db.tipperEnabled = val;
+                if (val and ns.CustomerCache and not ns.CustomerCache.IsBuilt()) then
+                    ns.CustomerCache.BuildCache();
+                end
+                refreshPage();
+                LanternUX.ShowReloadPrompt("Reload required to apply tipper rating changes.");
+            end,
+        },
+    };
+
+    if (db.tipperEnabled) then
+        table.insert(tipperChildren, {
+            type = "range",
+            label = L["CO_TIPPER_BAD_THRESHOLD"],
+            desc = L["CO_TIPPER_BAD_THRESHOLD_DESC"],
+            min = 0, max = 50000, step = 500, default = 500,
+            get = function()
+                local t = db.tipperThresholds or { bad = 5000000 };
+                return math.floor((t.bad or 5000000) / 10000);
+            end,
+            set = function(val)
+                db.tipperThresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
+                local copper = val * 10000;
+                if (copper >= db.tipperThresholds.good) then copper = db.tipperThresholds.good - 10000; end
+                db.tipperThresholds.bad = math.max(0, copper);
+                if (ns.CustomerCache) then ns.CustomerCache.RecomputeRatings(); end
+            end,
+        });
+        table.insert(tipperChildren, {
+            type = "range",
+            label = L["CO_TIPPER_GOOD_THRESHOLD"],
+            desc = L["CO_TIPPER_GOOD_THRESHOLD_DESC"],
+            min = 0, max = 50000, step = 500, default = 10000,
+            get = function()
+                local t = db.tipperThresholds or { good = 100000000 };
+                return math.floor((t.good or 100000000) / 10000);
+            end,
+            set = function(val)
+                db.tipperThresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
+                local copper = val * 10000;
+                if (copper <= db.tipperThresholds.bad) then copper = db.tipperThresholds.bad + 10000; end
+                db.tipperThresholds.good = copper;
+                if (ns.CustomerCache) then ns.CustomerCache.RecomputeRatings(); end
+            end,
+        });
+        table.insert(tipperChildren, {
+            type = "toggle",
+            label = L["CO_TIPPER_SHOW_NEUTRAL"],
+            desc = L["CO_TIPPER_SHOW_NEUTRAL_DESC"],
+            get = function() return db.showNeutralTipper or false; end,
+            set = function(val) db.showNeutralTipper = val; end,
+        });
+        table.insert(tipperChildren, {
+            type = "select",
+            label = L["CO_TIPPER_ICON_SET"],
+            desc = L["CO_TIPPER_ICON_SET_DESC"],
+            get = function() return db.tipperIconSet or "coins"; end,
+            set = function(val) db.tipperIconSet = val; end,
+            values = ns.TipperRating and ns.TipperRating.ICON_SET_NAMES or { coins = "Coins" },
+            sorting = ns.TipperRating and ns.TipperRating.ICON_SET_SORTING or { "coins" },
+        });
+    end
+
+    table.insert(widgets, {
+        type = "group",
+        text = L["CO_TIPPER_GROUP"],
+        desc = L["CO_TIPPER_GROUP_DESC"],
+        expanded = true,
+        stateKey = "tipperRating",
+        children = tipperChildren,
     });
 
     -- Trade Chat Tracking group
