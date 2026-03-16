@@ -795,11 +795,6 @@ function CraftingOrders:OnEnable()
             ns.CustomerCache.BuildCache();
         end
     end);
-
-    -- Initialize chat integration (sender name filter + right-click menu)
-    if (ns.ChatIntegration and ns.ChatIntegration.Init) then
-        ns.ChatIntegration.Init();
-    end
 end
 
 function CraftingOrders:OnDisable()

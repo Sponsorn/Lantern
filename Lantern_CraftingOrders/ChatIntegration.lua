@@ -68,26 +68,13 @@ for _, tag in ipairs(MENU_TAGS) do
 end
 
 -------------------------------------------------------------------------------
--- Init (called from CraftingOrders:OnEnable — registers sender name filter)
+-- Sender name filter — registered at load time (callback checks settings)
 -------------------------------------------------------------------------------
 
-local senderFilterRegistered = false;
-
-local function Init()
-    local db = _G.LanternCraftingOrdersDB or {};
-    if (not db.tipperEnabled) then return; end
-
-    -- Sender name filter — register once, callback checks db.chatDecoration dynamically
-    if (not senderFilterRegistered and ChatFrameUtil and ChatFrameUtil.AddSenderNameFilter) then
-        ChatFrameUtil.AddSenderNameFilter(SenderNameFilter);
-        senderFilterRegistered = true;
-    end
-end
+ChatFrameUtil.AddSenderNameFilter(SenderNameFilter);
 
 -------------------------------------------------------------------------------
 -- Export
 -------------------------------------------------------------------------------
 
-ns.ChatIntegration = {
-    Init = Init,
-};
+ns.ChatIntegration = {};
