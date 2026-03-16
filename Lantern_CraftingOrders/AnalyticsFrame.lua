@@ -1329,14 +1329,23 @@ local function CreateCustomersContent(parent)
         pageSize = db.customersPerPage or 50,
         searchColumns = tipperEnabled and { "name", "nickname" } or { "name" },
         searchPlaceholder = "Search customers...",
+        onRowRightClick = function(entry)
+            if (ns.CustomerInfoFrame) then
+                ns.CustomerInfoFrame.ShowForCustomer(entry.name);
+            end
+        end,
         expandKey = "name",
         childColumns = custChildColumns,
         getChildren = function(entry)
             local db_ = _G.LanternCraftingOrdersDB or {};
-            -- Grouped mode: show individual alts as child rows
-            if (db_.customerGrouping == "grouped" and entry.alts and #entry.alts > 1) then
-                table.sort(entry.alts, function(a, b) return (a.name or "") < (b.name or ""); end);
-                return entry.alts;
+            -- Grouped mode: show individual alts as child rows (only when 2+ alts)
+            if (db_.customerGrouping == "grouped") then
+                if (entry.alts and #entry.alts > 1) then
+                    table.sort(entry.alts, function(a, b) return (a.name or "") < (b.name or ""); end);
+                    return entry.alts;
+                end
+                -- Single-alt entries don't expand in grouped mode (parent row shows all stats)
+                return nil;
             end
             -- Individual mode: show orders for this customer
             local filter = GetCharFilterForAPI();
@@ -1362,6 +1371,7 @@ local function CreateCustomersContent(parent)
             end
             tip:AddLine(L["CO_COL_TOTAL_TIPS"] .. ": " .. FormatMoney(entry.totalTip or 0), unpack(T.text));
             tip:AddLine(L["CO_COL_AVG_TIP"] .. ": " .. FormatMoney(entry.avgTip or 0), unpack(T.text));
+            tip:AddLine("Right-click for Customer Info", 0.5, 0.5, 0.5);
         end,
     });
 

@@ -3,6 +3,7 @@
 ## 0.2.7
 - Add: DataTable optional search/filter — configure `searchColumns` to enable an inline search input with debounced filtering
 - Add: `LanternUX.ShowReloadPrompt(message)` utility for settings that require a UI reload
+- Add: DataTable `onRowRightClick` callback for right-click actions on rows
 - Fix: DataTable expandable rows no longer reset scroll position when clicking to expand/collapse
 
 ## 0.2.6 - 2026-03-12
