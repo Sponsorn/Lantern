@@ -187,10 +187,13 @@ function CraftingOrders:GetCustomerList(charFilter, since)
         data.personalAvgTip = data.personalCount > 0 and math.floor(data.personalTotalTip / data.personalCount) or 0;
 
         -- Tipper rating (only computed when feature is enabled)
+        -- Attach nickname and tipper rating from customerMeta
         local db = _G.LanternCraftingOrdersDB or {};
+        local meta = db.customerMeta and db.customerMeta[data.name] or nil;
+        data.nickname = meta and meta.nickname or nil;
+
         if (db.tipperEnabled and ns.TipperRating) then
             local thresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
-            local meta = db.customerMeta and db.customerMeta[data.name] or nil;
             local override = meta and meta.ratingOverride or nil;
             data.rating = ns.TipperRating.GetTipperRating(data.personalAvgTip, data.personalCount, thresholds, override);
         end
