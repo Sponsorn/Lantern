@@ -122,6 +122,50 @@ local function RecomputeRatings()
 end
 
 -------------------------------------------------------------------------------
+-- Update customer metadata (nickname, ratingOverride)
+-------------------------------------------------------------------------------
+
+local function UpdateMeta(customerName, field, value)
+    local db = GetDB();
+    db.customerMeta = db.customerMeta or {};
+    if (not db.customerMeta[customerName]) then
+        db.customerMeta[customerName] = {};
+    end
+    db.customerMeta[customerName][field] = value;
+
+    -- Update cache entry if it exists
+    if (cache[customerName]) then
+        if (field == "nickname") then
+            cache[customerName].nickname = value;
+        elseif (field == "ratingOverride") then
+            local thresholds = GetThresholds(db);
+            local TipperRating = ns.TipperRating;
+            local c = cache[customerName];
+            c.rating = TipperRating.GetTipperRating(c.personalAvgTip, c.personalCount, thresholds, value);
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Find all customers sharing a nickname
+-------------------------------------------------------------------------------
+
+local function GetAltsForNickname(nickname)
+    if (not nickname or nickname == "") then return {}; end
+    local db = GetDB();
+    local alts = {};
+    if (db.customerMeta) then
+        for name, meta in pairs(db.customerMeta) do
+            if (meta.nickname == nickname) then
+                alts[#alts + 1] = name;
+            end
+        end
+    end
+    table.sort(alts);
+    return alts;
+end
+
+-------------------------------------------------------------------------------
 -- Lookup
 -------------------------------------------------------------------------------
 
@@ -138,9 +182,11 @@ end
 -------------------------------------------------------------------------------
 
 ns.CustomerCache = {
-    BuildCache        = BuildCache,
-    UpdateCustomer    = UpdateCustomer,
-    RecomputeRatings  = RecomputeRatings,
-    GetCustomerInfo   = GetCustomerInfo,
-    IsBuilt           = IsBuilt,
+    BuildCache           = BuildCache,
+    UpdateCustomer       = UpdateCustomer,
+    RecomputeRatings     = RecomputeRatings,
+    UpdateMeta           = UpdateMeta,
+    GetAltsForNickname   = GetAltsForNickname,
+    GetCustomerInfo      = GetCustomerInfo,
+    IsBuilt              = IsBuilt,
 };
