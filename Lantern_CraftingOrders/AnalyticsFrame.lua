@@ -1971,6 +1971,35 @@ local function GetSettingsWidgets()
             values = ns.TipperRating and ns.TipperRating.ICON_SET_NAMES or { coins = "Coins" },
             sorting = ns.TipperRating and ns.TipperRating.ICON_SET_SORTING or { "coins" },
         });
+        table.insert(tipperChildren, {
+            type = "select",
+            label = L["CO_CUSTOMER_GROUPING"],
+            desc = L["CO_CUSTOMER_GROUPING_DESC"],
+            get = function() return db.customerGrouping or "individual"; end,
+            set = function(val)
+                db.customerGrouping = val;
+                LanternUX.ShowReloadPrompt("Reload required to apply customer grouping changes.");
+            end,
+            values = {
+                individual = L["CO_CUSTOMER_GROUPING_INDIVIDUAL"],
+                grouped = L["CO_CUSTOMER_GROUPING_GROUPED"],
+            },
+            sorting = { "individual", "grouped" },
+        });
+        table.insert(tipperChildren, {
+            type = "toggle",
+            label = L["CO_CHAT_DECORATION"],
+            desc = L["CO_CHAT_DECORATION_DESC"],
+            get = function() return db.chatDecoration ~= false; end,
+            set = function(val) db.chatDecoration = val; end,
+        });
+        table.insert(tipperChildren, {
+            type = "toggle",
+            label = L["CO_CHAT_MENU_REST_ONLY"],
+            desc = L["CO_CHAT_MENU_REST_ONLY_DESC"],
+            get = function() return db.chatMenuRestOnly ~= false; end,
+            set = function(val) db.chatMenuRestOnly = val; end,
+        });
     end
 
     table.insert(widgets, {

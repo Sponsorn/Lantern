@@ -226,6 +226,15 @@ ns:RegisterLocale("enUS", {
     CO_TIPPER_SHOW_NEUTRAL_DESC                  = "Show the neutral tipper icon for customers between the bad and good thresholds.",
     CO_TIPPER_ICON_SET                           = "Icon style",
     CO_TIPPER_ICON_SET_DESC                      = "Choose which icon set to use for tipper ratings.",
+    CO_CUSTOMER_GROUPING                         = "Customer grouping",
+    CO_CUSTOMER_GROUPING_DESC                    = "How to display customers in the analytics tab. Individual shows each character separately. Grouped merges characters with the same nickname.",
+    CO_CUSTOMER_GROUPING_INDIVIDUAL              = "Individual",
+    CO_CUSTOMER_GROUPING_GROUPED                 = "Grouped by nickname",
+    CO_CHAT_DECORATION                           = "Show tipper icons in chat",
+    CO_CHAT_DECORATION_DESC                      = "Prepend tipper rating icons to known customer names in whispers and trade chat.",
+    CO_CHAT_MENU_REST_ONLY                       = "Right-click menu in rest areas only",
+    CO_CHAT_MENU_REST_ONLY_DESC                  = "Only show the Customer Info option in the right-click menu while in a rest area (city or inn).",
+    CO_CUSTOMER_INFO                             = "Customer Info",
 
     -- Heat Maps tab
     CO_TAB_HEATMAPS                              = "Heat Maps",

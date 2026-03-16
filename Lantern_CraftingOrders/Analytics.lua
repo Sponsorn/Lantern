@@ -28,6 +28,9 @@ local function ensureHistoryDB()
     if (db.tipperIconSet == nil) then db.tipperIconSet = "coins"; end
     if (db.showNeutralTipper == nil) then db.showNeutralTipper = false; end
     if (db.customerMeta == nil) then db.customerMeta = {}; end
+    if (db.customerGrouping == nil) then db.customerGrouping = "individual"; end
+    if (db.chatDecoration == nil) then db.chatDecoration = true; end
+    if (db.chatMenuRestOnly == nil) then db.chatMenuRestOnly = true; end
     return db;
 end
 
