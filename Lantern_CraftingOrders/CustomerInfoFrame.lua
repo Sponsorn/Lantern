@@ -223,6 +223,15 @@ local function EnsureFrame()
         overlay:Hide();
         currentName = nil;
     end);
+    frame:SetScript("OnKeyDown", function(self, key)
+        if (key == "ESCAPE") then
+            self:SetPropagateKeyboardInput(false);
+            self:Hide();
+        else
+            self:SetPropagateKeyboardInput(true);
+        end
+    end);
+    frame:EnableKeyboard(true);
 
     return frame;
 end
