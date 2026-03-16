@@ -1302,25 +1302,13 @@ local function CreateCustomersContent(parent)
     table.insert(custColumns, { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" });
     table.insert(custColumns, { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end });
 
-    -- Child columns differ between grouped (alt stats with ratings) and individual (orders)
-    local custChildColumns;
-    if (isGrouped) then
-        custChildColumns = {};
-        table.insert(custChildColumns, { key = "name", label = L["CO_COL_CUSTOMER"], width = nameWidth, align = "LEFT" });
-        if (tipperEnabled) then
-            table.insert(custChildColumns, { key = "rating", label = "", width = 28, align = "CENTER", format = ratingFormatFn });
-        end
-        table.insert(custChildColumns, { key = "count", label = L["CO_COL_ORDERS"], width = 70, align = "RIGHT" });
-        table.insert(custChildColumns, { key = "totalTip", label = L["CO_COL_TOTAL_TIPS"], width = 110, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
-        table.insert(custChildColumns, { key = "avgTip", label = L["CO_COL_AVG_TIP"], width = 100, align = "RIGHT", format = function(v) return FormatMoneyCompact(v or 0); end });
-    else
-        custChildColumns = {
-            { key = "item",      label = L["CO_COL_ITEM"],  width = 250, isLink = true },
-            { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end },
-            { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 },
-            { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end },
-        };
-    end
+    -- Child columns are always order-style (works for both grouped and individual)
+    local custChildColumns = {
+        { key = "item",      label = L["CO_COL_ITEM"],  width = 250, isLink = true },
+        { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end },
+        { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 },
+        { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end },
+    };
 
     customersTable = LanternUX.CreateDataTable(tableFrame, {
         columns = custColumns,
@@ -1337,31 +1325,32 @@ local function CreateCustomersContent(parent)
         expandKey = "name",
         childColumns = custChildColumns,
         getChildren = function(entry)
+            local filter = GetCharFilterForAPI();
             local db_ = _G.LanternCraftingOrdersDB or {};
-            -- Grouped mode: show individual alts as child rows (only when 2+ alts)
-            if (db_.customerGrouping == "grouped") then
-                if (entry.alts and #entry.alts > 1) then
-                    table.sort(entry.alts, function(a, b) return (a.name or "") < (b.name or ""); end);
-                    return entry.alts;
+            -- Grouped mode: combine orders from all alts
+            if (db_.customerGrouping == "grouped" and entry.alts and #entry.alts > 0) then
+                local allOrders = {};
+                for _, alt in ipairs(entry.alts) do
+                    local orders = CraftingOrders:GetCustomerOrders(alt.name, filter);
+                    if (orders) then
+                        for _, order in ipairs(orders) do
+                            allOrders[#allOrders + 1] = order;
+                        end
+                    end
                 end
-                -- Single-alt entries don't expand in grouped mode (parent row shows all stats)
-                return nil;
+                -- Sort newest first
+                table.sort(allOrders, function(a, b)
+                    return (a.timestamp or 0) > (b.timestamp or 0);
+                end);
+                return allOrders;
             end
             -- Individual mode: show orders for this customer
-            local filter = GetCharFilterForAPI();
             return CraftingOrders:GetCustomerOrders(entry.name, filter);
         end,
         childRowTooltip = function(entry, tip)
-            -- Works for both alt rows (have name + stats) and order rows (have item + tip)
-            if (entry.item) then
-                tip:AddLine(entry.item or "", 1, 1, 1);
-                if (entry.tip and entry.tip > 0) then
-                    tip:AddLine(L["CO_COL_TIP"] .. ": " .. FormatMoney(entry.tip), unpack(T.text));
-                end
-            elseif (entry.name) then
-                tip:AddLine(entry.name or "", 1, 1, 1);
-                tip:AddLine(L["CO_COL_TOTAL_TIPS"] .. ": " .. FormatMoney(entry.totalTip or 0), unpack(T.text));
-                tip:AddLine(L["CO_COL_AVG_TIP"] .. ": " .. FormatMoney(entry.avgTip or 0), unpack(T.text));
+            tip:AddLine(entry.item or "", 1, 1, 1);
+            if (entry.tip and entry.tip > 0) then
+                tip:AddLine(L["CO_COL_TIP"] .. ": " .. FormatMoney(entry.tip), unpack(T.text));
             end
         end,
         rowTooltip = function(entry, tip)
