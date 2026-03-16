@@ -201,6 +201,84 @@ function CraftingOrders:GetCustomerList(charFilter, since)
     return list;
 end
 
+function CraftingOrders:GroupCustomersByNickname(customers)
+    local db = _G.LanternCraftingOrdersDB or {};
+    local meta = db.customerMeta or {};
+
+    -- Group by nickname (or by name if no nickname)
+    local groups = {};
+    local groupOrder = {};
+
+    for _, c in ipairs(customers) do
+        local m = meta[c.name];
+        local nick = m and m.nickname and m.nickname ~= "" and m.nickname or nil;
+        local groupKey = nick or c.name;
+
+        if (not groups[groupKey]) then
+            groups[groupKey] = {
+                name = nick or c.name,
+                isGroup = nick ~= nil,
+                nickname = nick,
+                count = 0,
+                totalTip = 0,
+                personalCount = 0,
+                personalTotalTip = 0,
+                firstOrder = c.firstOrder,
+                lastOrder = c.lastOrder,
+                items = {},
+                alts = {},
+            };
+            groupOrder[#groupOrder + 1] = groupKey;
+        end
+
+        local g = groups[groupKey];
+        g.count = g.count + c.count;
+        g.totalTip = g.totalTip + c.totalTip;
+        g.personalCount = g.personalCount + c.personalCount;
+        g.personalTotalTip = g.personalTotalTip + c.personalTotalTip;
+        if (c.firstOrder and (not g.firstOrder or c.firstOrder < g.firstOrder)) then
+            g.firstOrder = c.firstOrder;
+        end
+        if (c.lastOrder and (not g.lastOrder or c.lastOrder > g.lastOrder)) then
+            g.lastOrder = c.lastOrder;
+        end
+        for itemID in pairs(c.items or {}) do
+            g.items[itemID] = true;
+        end
+        g.alts[#g.alts + 1] = c;
+    end
+
+    -- Finalize
+    local result = {};
+    for _, key in ipairs(groupOrder) do
+        local g = groups[key];
+        g.avgTip = g.count > 0 and math.floor(g.totalTip / g.count) or 0;
+        g.personalAvgTip = g.personalCount > 0 and math.floor(g.personalTotalTip / g.personalCount) or 0;
+        local n = 0;
+        for _ in pairs(g.items) do n = n + 1; end
+        g.uniqueItems = n;
+
+        -- Compute group rating from combined stats
+        if (db.tipperEnabled and ns.TipperRating) then
+            local thresholds = db.tipperThresholds or { bad = 5000000, good = 100000000 };
+            -- Use first alt's override if any
+            local override = nil;
+            for _, alt in ipairs(g.alts) do
+                local am = meta[alt.name];
+                if (am and am.ratingOverride) then
+                    override = am.ratingOverride;
+                    break;
+                end
+            end
+            g.rating = ns.TipperRating.GetTipperRating(g.personalAvgTip, g.personalCount, thresholds, override);
+        end
+
+        result[#result + 1] = g;
+    end
+
+    return result;
+end
+
 function CraftingOrders:GetCustomerOrders(customerName, charFilter)
     local list = {};
 
