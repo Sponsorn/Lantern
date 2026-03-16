@@ -2,6 +2,7 @@
 
 ## 0.6.9
 - Fix: Missing Pet warning no longer appears while flying or during override action bar states (e.g. delve orb mechanics)
+- Fix: Cursor Ring shape dropdown showing wrong value due to misspelled locale key
 
 ## 0.6.8 - 2026-03-13
 - Add: Configurable minimap button actions — assign any click+modifier combo to open Lantern settings, Crafting Orders, Warband, game panels (Spellbook, Talents, Collections, etc.), Reload UI, or a custom slash command

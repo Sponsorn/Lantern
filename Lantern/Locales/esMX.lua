@@ -372,7 +372,7 @@ Lantern:RegisterLocale("esMX", {
     -- CURSORRING_ENABLE_RING1_DESC            = "Show the outer ring.",
     -- CURSORRING_SHAPE                        = "Shape",
     -- CURSORRING_RING_SHAPE_DESC              = "Ring shape.",
-    -- CURSORRING_SHwPE_CIRCLE                 = "Circle",
+    -- CURSORRING_SHAPE_CIRCLE                 = "Circle",
     -- CURSORRING_SHAPE_THIN                   = "Thin Circle",
     -- CURSORRING_COLOR                        = "Color",
     -- CURSORRING_RING1_COLOR_DESC             = "Ring 1 color.",

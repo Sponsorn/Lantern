@@ -378,7 +378,7 @@ Lantern:RegisterLocale("esES", {
     CURSORRING_ENABLE_RING1_DESC            = "Mostrar el anillo exterior.",
     CURSORRING_SHAPE                        = "Forma",
     CURSORRING_RING_SHAPE_DESC              = "Forma del anillo.",
-    CURSORRING_SHwPE_CIRCLE                 = "Circulo",
+    CURSORRING_SHAPE_CIRCLE                 = "Circulo",
     CURSORRING_SHAPE_THIN                   = "Circulo fino",
     CURSORRING_COLOR                        = "Color",
     CURSORRING_RING1_COLOR_DESC             = "Color del Anillo 1.",

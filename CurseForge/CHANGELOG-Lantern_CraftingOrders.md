@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.6.6
+- Fix: Chat decoration and right-click menu now register correctly on login
 - Add: Customer nicknames — assign nicknames to customers via the right-click "Customer Info" popup
 - Add: Alt grouping — customers with the same nickname can be merged into a single row (toggle in analytics Settings)
 - Add: Customer Info popup — right-click any player name in chat to view/edit their tipper profile

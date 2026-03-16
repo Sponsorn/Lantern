@@ -378,7 +378,7 @@ Lantern:RegisterLocale("frFR", {
     CURSORRING_ENABLE_RING1_DESC            = "Afficher l'anneau exterieur.",
     CURSORRING_SHAPE                        = "Forme",
     CURSORRING_RING_SHAPE_DESC              = "Forme de l'anneau.",
-    CURSORRING_SHwPE_CIRCLE                 = "Cercle",
+    CURSORRING_SHAPE_CIRCLE                 = "Cercle",
     CURSORRING_SHAPE_THIN                   = "Cercle fin",
     CURSORRING_COLOR                        = "Couleur",
     CURSORRING_RING1_COLOR_DESC             = "Couleur de l'anneau 1.",

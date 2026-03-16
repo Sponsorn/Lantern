@@ -378,7 +378,7 @@ Lantern:RegisterLocale("deDE", {
     CURSORRING_ENABLE_RING1_DESC            = "Den aeusseren Ring anzeigen.",
     CURSORRING_SHAPE                        = "Form",
     CURSORRING_RING_SHAPE_DESC              = "Ringform.",
-    CURSORRING_SHwPE_CIRCLE                 = "Kreis",
+    CURSORRING_SHAPE_CIRCLE                 = "Kreis",
     CURSORRING_SHAPE_THIN                   = "Duenner Kreis",
     CURSORRING_COLOR                        = "Farbe",
     CURSORRING_RING1_COLOR_DESC             = "Ring 1 Farbe.",
