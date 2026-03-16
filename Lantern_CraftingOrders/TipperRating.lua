@@ -10,11 +10,6 @@ local ICON_SETS = {
         neutral = "coin-silver",
         bad     = "coin-copper",
     },
-    checkmarks = {
-        good    = "groupfinder-icon-greencheckmark",
-        neutral = "common-radiobutton-dot",
-        bad     = "groupfinder-icon-redx",
-    },
     -- Quality crafting pip icons (hardcoded atlas names)
     -- TODO: verify atlas names in-game with:
     -- /dump C_TradeSkillUI.GetRecipeItemQualityInfo(recipeID, 1).iconSmall
@@ -28,12 +23,11 @@ local ICON_SETS = {
 };
 
 local ICON_SET_NAMES = {
-    coins      = "Coins (Gold/Silver/Copper)",
-    checkmarks = "Checkmarks",
-    quality    = "Crafting Quality",
+    coins   = "Coins (Gold/Silver/Copper)",
+    quality = "Crafting Quality",
 };
 
-local ICON_SET_SORTING = { "coins", "checkmarks", "quality" };
+local ICON_SET_SORTING = { "coins", "quality" };
 
 -------------------------------------------------------------------------------
 -- Rating function
