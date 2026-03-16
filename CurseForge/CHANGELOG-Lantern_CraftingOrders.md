@@ -1,11 +1,17 @@
 # Changelog
 
 ## 0.6.6
+- Add: Customer nicknames — assign nicknames to customers via the right-click "Customer Info" popup
+- Add: Alt grouping — customers with the same nickname can be merged into a single row (toggle in analytics Settings)
+- Add: Customer Info popup — right-click any player name in chat to view/edit their tipper profile
+- Add: Chat decoration — tipper rating icons appear next to known customer names in whispers and trade chat
+- Add: Rating override — manually set a customer as good or bad tipper from the Customer Info popup
+- Add: Right-click menu can be restricted to rest areas only (on by default)
 - Add: Tipper rating system — customers are rated as good, neutral, or bad based on personal order tip averages (off by default, enable in analytics Settings)
-- Add: Tipper icon column in the Customers analytics tab (coins, checkmarks, or crafting quality icons)
+- Add: Tipper icon column in the Customers analytics tab (coins or crafting quality icons)
 - Add: Tipper rating settings — configurable thresholds, icon style, neutral icon toggle
 - Add: Customer cache for fast lookups (built on login, updated on new orders)
-- Add: Search filter on the Customers analytics tab — type to filter by name
+- Add: Search filter on the Customers analytics tab — type to filter by name or nickname
 - Add: Pagination on the Customers analytics tab with configurable page size
 - Change: Page size controls for Orders and Customers tabs moved from settings into the analytics panel (dropdown next to character filter)
 
