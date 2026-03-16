@@ -44,8 +44,8 @@ local function GetTipperRating(personalAvgTip, personalCount, thresholds, rating
     if (ratingOverride == "good" or ratingOverride == "bad") then
         return ratingOverride;
     end
-    -- No personal orders = unknown (neutral)
-    if (personalCount == 0) then return "neutral"; end
+    -- No personal orders = no rating (guild-only customers get no icon)
+    if (personalCount == 0) then return "none"; end
     -- Threshold-based
     if (personalAvgTip <= thresholds.bad) then return "bad"; end
     if (personalAvgTip >= thresholds.good) then return "good"; end

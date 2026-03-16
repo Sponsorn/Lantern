@@ -1270,10 +1270,9 @@ local function CreateCustomersContent(parent)
         table.insert(custColumns, {
             key = "rating", label = "", width = 28, align = "CENTER",
             format = function(v, entry)
+                if (not v or v == "none") then return ""; end
                 local db_ = _G.LanternCraftingOrdersDB or {};
-                if (not v or v == "neutral") then
-                    if (not db_.showNeutralTipper) then return ""; end
-                end
+                if (v == "neutral" and not db_.showNeutralTipper) then return ""; end
                 if (ns.TipperRating) then
                     local fontSize = 13;
                     local fontObj = _G[T.fontBody];
