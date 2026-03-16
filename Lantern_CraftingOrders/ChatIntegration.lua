@@ -52,18 +52,20 @@ local MENU_TAGS = { "MENU_UNIT_FRIEND", "MENU_UNIT_PLAYER" };
 
 local senderFilterRegistered = false;
 
+local menuHooked = false;
+
 local function Init()
     local db = _G.LanternCraftingOrdersDB or {};
     if (not db.tipperEnabled) then return; end
 
     -- Sender name filter — register once, callback checks db.chatDecoration dynamically
-    if (not senderFilterRegistered) then
+    if (not senderFilterRegistered and ChatFrameUtil and ChatFrameUtil.AddSenderNameFilter) then
         ChatFrameUtil.AddSenderNameFilter(SenderNameFilter);
         senderFilterRegistered = true;
     end
 
     -- Right-click menu — permanent once registered, check rest zone in callback
-    if (not ns.ChatIntegration._menuHooked) then
+    if (not menuHooked) then
         for _, tag in ipairs(MENU_TAGS) do
             Menu.ModifyMenu(tag, function(owner, rootDescription, contextData)
                 local db_ = _G.LanternCraftingOrdersDB or {};
@@ -84,7 +86,7 @@ local function Init()
                 end);
             end);
         end
-        ns.ChatIntegration._menuHooked = true;
+        menuHooked = true;
     end
 end
 
@@ -94,5 +96,4 @@ end
 
 ns.ChatIntegration = {
     Init = Init,
-    _menuHooked = false,
 };
