@@ -1315,7 +1315,7 @@ local function CreateCustomersContent(parent)
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
         pageSize = db.customersPerPage or 50,
-        searchColumns = tipperEnabled and { "name", "nickname" } or { "name" },
+        searchColumns = tipperEnabled and { "name", "nickname", "altNames" } or { "name" },
         searchPlaceholder = "Search customers...",
         onRowRightClick = function(entry)
             if (ns.CustomerInfoFrame) then

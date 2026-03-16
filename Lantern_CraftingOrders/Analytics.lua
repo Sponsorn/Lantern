@@ -279,6 +279,13 @@ function CraftingOrders:GroupCustomersByNickname(customers)
             g.rating = ns.TipperRating.GetTipperRating(g.personalAvgTip, g.personalCount, thresholds, override);
         end
 
+        -- Concat alt names for search (so searching a character name finds the group)
+        local altNames = {};
+        for _, alt in ipairs(g.alts) do
+            altNames[#altNames + 1] = alt.name;
+        end
+        g.altNames = table.concat(altNames, " ");
+
         result[#result + 1] = g;
     end
 
