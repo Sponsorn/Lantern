@@ -1302,13 +1302,17 @@ local function CreateCustomersContent(parent)
     table.insert(custColumns, { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" });
     table.insert(custColumns, { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end });
 
-    -- Child columns are always order-style (works for both grouped and individual)
-    local custChildColumns = {
-        { key = "item",      label = L["CO_COL_ITEM"],  width = 250, isLink = true },
-        { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end },
-        { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 },
-        { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end },
-    };
+    -- Child columns are order-style; grouped mode adds a customer column
+    local custChildColumns = {};
+    if (isGrouped) then
+        table.insert(custChildColumns, { key = "customer", label = L["CO_COL_CUSTOMER"], width = 100 });
+        table.insert(custChildColumns, { key = "item",     label = L["CO_COL_ITEM"],     width = 190, isLink = true });
+    else
+        table.insert(custChildColumns, { key = "item",     label = L["CO_COL_ITEM"],     width = 250, isLink = true });
+    end
+    table.insert(custChildColumns, { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end });
+    table.insert(custChildColumns, { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 });
+    table.insert(custChildColumns, { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end });
 
     customersTable = LanternUX.CreateDataTable(tableFrame, {
         columns = custColumns,
@@ -1334,6 +1338,7 @@ local function CreateCustomersContent(parent)
                     local orders = CraftingOrders:GetCustomerOrders(alt.name, filter);
                     if (orders) then
                         for _, order in ipairs(orders) do
+                            order.customer = alt.name;
                             allOrders[#allOrders + 1] = order;
                         end
                     end
