@@ -37,6 +37,7 @@ function LanternUX.CreateDataTable(parent, config)
     dt._columns        = config.columns or {};
     dt._rowHeight      = config.rowHeight or DEFAULT_ROW_HEIGHT;
     dt._onRowClick     = config.onRowClick;
+    dt._onRowRightClick = config.onRowRightClick;
     dt._rowTooltip     = config.rowTooltip;
     dt._data           = {};
     dt._sortKey        = config.defaultSort and config.defaultSort.key or nil;
@@ -551,8 +552,8 @@ function LanternUX.CreateDataTable(parent, config)
             local va = a[key];
             local vb = b[key];
             if (va == nil and vb == nil) then return false; end
-            if (va == nil) then return ascending; end
-            if (vb == nil) then return not ascending; end
+            if (va == nil) then return false; end  -- nil always sorts to bottom
+            if (vb == nil) then return true; end   -- non-nil always before nil
 
             local ta = type(va);
             local tb = type(vb);
@@ -771,29 +772,25 @@ function LanternUX.CreateDataTable(parent, config)
             end
 
             -- Row click handler
-            if (isExpandable) then
-                local rowData = entry;
+            -- Row click handlers
+            local rowData = entry;
+            if (isExpandable or self._onRowClick or self._onRowRightClick) then
                 local rowEntryKey = entryKey;
                 row:SetScript("OnMouseUp", function(_, button)
                     if (button == "LeftButton") then
-                        -- Toggle expand/collapse
-                        if (self._expandedKey == rowEntryKey) then
-                            self._expandedKey = nil;
-                        else
-                            self._expandedKey = rowEntryKey;
+                        if (isExpandable) then
+                            if (self._expandedKey == rowEntryKey) then
+                                self._expandedKey = nil;
+                            else
+                                self._expandedKey = rowEntryKey;
+                            end
+                            self:Refresh(true);
                         end
-                        self:Refresh(true);
-                        -- Also fire onRowClick if configured
                         if (self._onRowClick) then
                             self._onRowClick(rowData);
                         end
-                    end
-                end);
-            elseif (self._onRowClick) then
-                local rowData = entry;
-                row:SetScript("OnMouseUp", function(_, button)
-                    if (button == "LeftButton") then
-                        self._onRowClick(rowData);
+                    elseif (button == "RightButton" and self._onRowRightClick) then
+                        self._onRowRightClick(rowData);
                     end
                 end);
             else

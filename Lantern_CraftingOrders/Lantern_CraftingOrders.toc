@@ -26,6 +26,8 @@ CraftingOrders.lua
 Analytics.lua
 TipperRating.lua
 CustomerCache.lua
+CustomerInfoFrame.lua
+ChatIntegration.lua
 TradeChatTracker.lua
 AnalyticsFrame.lua
 WidgetOptions.lua

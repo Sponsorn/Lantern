@@ -1219,6 +1219,12 @@ local function RefreshCustomers()
     if (not customersTable) then return; end
     local filter = GetCharFilterForAPI();
     local data = CraftingOrders:GetCustomerList(filter);
+
+    local db = _G.LanternCraftingOrdersDB or {};
+    if (db.customerGrouping == "grouped") then
+        data = CraftingOrders:GroupCustomersByNickname(data);
+    end
+
     customersTable:SetData(data);
     customersTable:SetNoDataText(L["CO_DASH_NO_DATA"]);
     customersTable:Refresh();
@@ -1259,32 +1265,35 @@ local function CreateCustomersContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
-    -- Build columns dynamically — include tipper icon column after name when enabled
+    -- Build columns dynamically — include tipper icon + nickname columns when enabled
     local tipperEnabled = db.tipperEnabled;
+    local isGrouped = db.customerGrouping == "grouped";
     local custColumns = {};
 
-    local nameWidth = tipperEnabled and 132 or 160;
+    -- Shared rating format function (reused in parent and child columns)
+    local ratingFormatFn = function(v, entry)
+        if (not v or v == "none") then return ""; end
+        local db_ = _G.LanternCraftingOrdersDB or {};
+        if (v == "neutral" and not db_.showNeutralTipper) then return ""; end
+        if (ns.TipperRating) then
+            local fontSize = 13;
+            local fontObj = _G[T.fontBody];
+            if (fontObj and fontObj.GetFont) then
+                local _, size = fontObj:GetFont();
+                if (size) then fontSize = size; end
+            end
+            return ns.TipperRating.GetTipperMarkup(v or "neutral", db_, fontSize);
+        end
+        return "";
+    end;
+
+    -- Name column (narrower when tipper adds extra columns)
+    local nameWidth = tipperEnabled and 100 or 160;
     table.insert(custColumns, { key = "name",       label = L["CO_COL_CUSTOMER"],   width = nameWidth, align = "LEFT" });
 
     if (tipperEnabled) then
-        table.insert(custColumns, {
-            key = "rating", label = "", width = 28, align = "CENTER",
-            format = function(v, entry)
-                if (not v or v == "none") then return ""; end
-                local db_ = _G.LanternCraftingOrdersDB or {};
-                if (v == "neutral" and not db_.showNeutralTipper) then return ""; end
-                if (ns.TipperRating) then
-                    local fontSize = 13;
-                    local fontObj = _G[T.fontBody];
-                    if (fontObj and fontObj.GetFont) then
-                        local _, size = fontObj:GetFont();
-                        if (size) then fontSize = size; end
-                    end
-                    return ns.TipperRating.GetTipperMarkup(v or "neutral", db_, fontSize);
-                end
-                return "";
-            end,
-        });
+        table.insert(custColumns, { key = "rating", label = "", width = 28, align = "CENTER", format = ratingFormatFn });
+        table.insert(custColumns, { key = "nickname", label = "Nick", width = 60, align = "LEFT" });
     end
 
     table.insert(custColumns, { key = "count",      label = L["CO_COL_ORDERS"],     width = 70,  align = "RIGHT" });
@@ -1293,22 +1302,54 @@ local function CreateCustomersContent(parent)
     table.insert(custColumns, { key = "uniqueItems",label = L["CO_COL_ITEM"],       width = 60,  align = "RIGHT" });
     table.insert(custColumns, { key = "lastOrder",  label = L["CO_COL_LAST_ORDER"], width = 90,  align = "RIGHT", format = function(v) return FormatTimeAgo(v); end });
 
+    -- Child columns are order-style; grouped mode adds a customer column
+    local custChildColumns = {};
+    if (isGrouped) then
+        table.insert(custChildColumns, { key = "customer", label = L["CO_COL_CUSTOMER"], width = 100 });
+        table.insert(custChildColumns, { key = "item",     label = L["CO_COL_ITEM"],     width = 190, isLink = true });
+    else
+        table.insert(custChildColumns, { key = "item",     label = L["CO_COL_ITEM"],     width = 250, isLink = true });
+    end
+    table.insert(custChildColumns, { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end });
+    table.insert(custChildColumns, { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 });
+    table.insert(custChildColumns, { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end });
+
     customersTable = LanternUX.CreateDataTable(tableFrame, {
         columns = custColumns,
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
         pageSize = db.customersPerPage or 50,
-        searchColumns = { "name" },
+        searchColumns = tipperEnabled and { "name", "nickname", "altNames" } or { "name" },
         searchPlaceholder = "Search customers...",
+        onRowRightClick = function(entry)
+            if (ns.CustomerInfoFrame) then
+                ns.CustomerInfoFrame.ShowForCustomer(entry.name);
+            end
+        end,
         expandKey = "name",
-        childColumns = {
-            { key = "item",      label = L["CO_COL_ITEM"],  width = 250, isLink = true },
-            { key = "tip",       label = L["CO_COL_TIP"],   width = 90,  align = "RIGHT", format = function(v) return FormatMoney(v); end },
-            { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 },
-            { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end },
-        },
+        childColumns = custChildColumns,
         getChildren = function(entry)
             local filter = GetCharFilterForAPI();
+            local db_ = _G.LanternCraftingOrdersDB or {};
+            -- Grouped mode: combine orders from all alts
+            if (db_.customerGrouping == "grouped" and entry.alts and #entry.alts > 0) then
+                local allOrders = {};
+                for _, alt in ipairs(entry.alts) do
+                    local orders = CraftingOrders:GetCustomerOrders(alt.name, filter);
+                    if (orders) then
+                        for _, order in ipairs(orders) do
+                            order.customer = alt.name;
+                            allOrders[#allOrders + 1] = order;
+                        end
+                    end
+                end
+                -- Sort newest first
+                table.sort(allOrders, function(a, b)
+                    return (a.timestamp or 0) > (b.timestamp or 0);
+                end);
+                return allOrders;
+            end
+            -- Individual mode: show orders for this customer
             return CraftingOrders:GetCustomerOrders(entry.name, filter);
         end,
         childRowTooltip = function(entry, tip)
@@ -1319,8 +1360,12 @@ local function CreateCustomersContent(parent)
         end,
         rowTooltip = function(entry, tip)
             tip:AddLine(entry.name or "", 1, 1, 1);
+            if (entry.nickname) then
+                tip:AddLine("Nickname: " .. entry.nickname, unpack(T.textDim));
+            end
             tip:AddLine(L["CO_COL_TOTAL_TIPS"] .. ": " .. FormatMoney(entry.totalTip or 0), unpack(T.text));
             tip:AddLine(L["CO_COL_AVG_TIP"] .. ": " .. FormatMoney(entry.avgTip or 0), unpack(T.text));
+            tip:AddLine("Right-click for Customer Info", 0.5, 0.5, 0.5);
         end,
     });
 
@@ -1929,6 +1974,35 @@ local function GetSettingsWidgets()
             set = function(val) db.tipperIconSet = val; end,
             values = ns.TipperRating and ns.TipperRating.ICON_SET_NAMES or { coins = "Coins" },
             sorting = ns.TipperRating and ns.TipperRating.ICON_SET_SORTING or { "coins" },
+        });
+        table.insert(tipperChildren, {
+            type = "select",
+            label = L["CO_CUSTOMER_GROUPING"],
+            desc = L["CO_CUSTOMER_GROUPING_DESC"],
+            get = function() return db.customerGrouping or "individual"; end,
+            set = function(val)
+                db.customerGrouping = val;
+                LanternUX.ShowReloadPrompt("Reload required to apply customer grouping changes.");
+            end,
+            values = {
+                individual = L["CO_CUSTOMER_GROUPING_INDIVIDUAL"],
+                grouped = L["CO_CUSTOMER_GROUPING_GROUPED"],
+            },
+            sorting = { "individual", "grouped" },
+        });
+        table.insert(tipperChildren, {
+            type = "toggle",
+            label = L["CO_CHAT_DECORATION"],
+            desc = L["CO_CHAT_DECORATION_DESC"],
+            get = function() return db.chatDecoration ~= false; end,
+            set = function(val) db.chatDecoration = val; end,
+        });
+        table.insert(tipperChildren, {
+            type = "toggle",
+            label = L["CO_CHAT_MENU_REST_ONLY"],
+            desc = L["CO_CHAT_MENU_REST_ONLY_DESC"],
+            get = function() return db.chatMenuRestOnly ~= false; end,
+            set = function(val) db.chatMenuRestOnly = val; end,
         });
     end
 

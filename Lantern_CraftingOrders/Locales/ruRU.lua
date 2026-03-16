@@ -214,6 +214,7 @@ ns:RegisterLocale("ruRU", {
     -- CO_NEW_CUSTOMER                              = "New",
 
 -- CO_TIPPER_ENABLED                            = "",    -- CO_TIPPER_ENABLED_DESC                       = "",    -- CO_TIPPER_GROUP                              = "",    -- CO_TIPPER_GROUP_DESC                         = "",    -- CO_TIPPER_BAD_THRESHOLD                      = "",    -- CO_TIPPER_BAD_THRESHOLD_DESC                 = "",    -- CO_TIPPER_GOOD_THRESHOLD                     = "",    -- CO_TIPPER_GOOD_THRESHOLD_DESC                = "",    -- CO_TIPPER_SHOW_NEUTRAL                       = "",    -- CO_TIPPER_SHOW_NEUTRAL_DESC                  = "",    -- CO_TIPPER_ICON_SET                           = "",    -- CO_TIPPER_ICON_SET_DESC                      = "",
+-- CO_CUSTOMER_GROUPING                         = "",    -- CO_CUSTOMER_GROUPING_DESC                    = "",    -- CO_CUSTOMER_GROUPING_INDIVIDUAL              = "",    -- CO_CUSTOMER_GROUPING_GROUPED                 = "",    -- CO_CHAT_DECORATION                           = "",    -- CO_CHAT_DECORATION_DESC                      = "",    -- CO_CHAT_MENU_REST_ONLY                       = "",    -- CO_CHAT_MENU_REST_ONLY_DESC                  = "",    -- CO_CUSTOMER_INFO                             = "",
     -- Heat Maps tab
     -- CO_TAB_HEATMAPS                              = "Heat Maps",
 
