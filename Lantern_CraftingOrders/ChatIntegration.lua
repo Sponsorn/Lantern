@@ -41,18 +41,37 @@ local function SenderNameFilter(event, decoratedPlayerName, ...)
 end
 
 -------------------------------------------------------------------------------
--- Right-click menu (adds "Customer Info" to player name context menus)
+-- Right-click menu — registered at load time (permanent, checks settings in callback)
 -------------------------------------------------------------------------------
 
 local MENU_TAGS = { "MENU_UNIT_FRIEND", "MENU_UNIT_PLAYER" };
 
+for _, tag in ipairs(MENU_TAGS) do
+    Menu.ModifyMenu(tag, function(owner, rootDescription, contextData)
+        local db = _G.LanternCraftingOrdersDB or {};
+        if (not db.tipperEnabled) then return; end
+        if (db.chatMenuRestOnly and not IsResting()) then return; end
+
+        local playerName = contextData.chatTarget or contextData.name;
+        if (not playerName or playerName == "") then return; end
+        -- Strip realm suffix for same-realm players (matches order storage format)
+        playerName = Ambiguate(playerName, "short");
+
+        rootDescription:CreateDivider();
+        rootDescription:CreateTitle("Lantern: Crafting Orders");
+        rootDescription:CreateButton(L["CO_CUSTOMER_INFO"] or "Customer Info", function()
+            if (ns.CustomerInfoFrame) then
+                ns.CustomerInfoFrame.ShowForCustomer(playerName);
+            end
+        end);
+    end);
+end
+
 -------------------------------------------------------------------------------
--- Init (called from CraftingOrders:OnEnable)
+-- Init (called from CraftingOrders:OnEnable — registers sender name filter)
 -------------------------------------------------------------------------------
 
 local senderFilterRegistered = false;
-
-local menuHooked = false;
 
 local function Init()
     local db = _G.LanternCraftingOrdersDB or {};
@@ -62,31 +81,6 @@ local function Init()
     if (not senderFilterRegistered and ChatFrameUtil and ChatFrameUtil.AddSenderNameFilter) then
         ChatFrameUtil.AddSenderNameFilter(SenderNameFilter);
         senderFilterRegistered = true;
-    end
-
-    -- Right-click menu — permanent once registered, check rest zone in callback
-    if (not menuHooked) then
-        for _, tag in ipairs(MENU_TAGS) do
-            Menu.ModifyMenu(tag, function(owner, rootDescription, contextData)
-                local db_ = _G.LanternCraftingOrdersDB or {};
-                if (not db_.tipperEnabled) then return; end
-                if (db_.chatMenuRestOnly and not IsResting()) then return; end
-
-                local playerName = contextData.chatTarget or contextData.name;
-                if (not playerName or playerName == "") then return; end
-                -- Strip realm suffix for same-realm players (matches order storage format)
-                playerName = Ambiguate(playerName, "short");
-
-                rootDescription:CreateDivider();
-                rootDescription:CreateTitle("Lantern: Crafting Orders");
-                rootDescription:CreateButton(L["CO_CUSTOMER_INFO"] or "Customer Info", function()
-                    if (ns.CustomerInfoFrame) then
-                        ns.CustomerInfoFrame.ShowForCustomer(playerName);
-                    end
-                end);
-            end);
-        end
-        menuHooked = true;
     end
 end
 
