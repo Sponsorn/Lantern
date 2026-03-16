@@ -124,15 +124,19 @@ local function EnsureFrame()
     nickInput:SetScript("OnEditFocusGained", function(self)
         self:SetBackdropBorderColor(T.inputFocus[1], T.inputFocus[2], T.inputFocus[3], T.inputFocus[4]);
     end);
-    nickInput:SetScript("OnEditFocusLost", function(self)
-        self:SetBackdropBorderColor(T.inputBorder[1], T.inputBorder[2], T.inputBorder[3], 1);
-    end);
-    nickInput:SetScript("OnEnterPressed", function(self)
+    local function SaveNickname(self)
         local val = self:GetText();
         if (val == "") then val = nil; end
         if (currentName and ns.CustomerCache and ns.CustomerCache.UpdateMeta) then
             ns.CustomerCache.UpdateMeta(currentName, "nickname", val);
         end
+    end
+    nickInput:SetScript("OnEditFocusLost", function(self)
+        self:SetBackdropBorderColor(T.inputBorder[1], T.inputBorder[2], T.inputBorder[3], 1);
+        SaveNickname(self);
+    end);
+    nickInput:SetScript("OnEnterPressed", function(self)
+        SaveNickname(self);
         self:ClearFocus();
     end);
     nickInput:SetScript("OnEscapePressed", function(self) self:ClearFocus(); end);
