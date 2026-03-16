@@ -552,8 +552,8 @@ function LanternUX.CreateDataTable(parent, config)
             local va = a[key];
             local vb = b[key];
             if (va == nil and vb == nil) then return false; end
-            if (va == nil) then return ascending; end
-            if (vb == nil) then return not ascending; end
+            if (va == nil) then return false; end  -- nil always sorts to bottom
+            if (vb == nil) then return true; end   -- non-nil always before nil
 
             local ta = type(va);
             local tb = type(vb);
