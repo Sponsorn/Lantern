@@ -26,9 +26,10 @@ local function SenderNameFilter(event, decoratedPlayerName, ...)
         end
     end
 
-    -- Use senderName (raw undecorated name) for cache lookup
+    -- Try full name first (cross-realm), then short name (same-realm stored without realm)
     if (not senderName or not ns.CustomerCache) then return decoratedPlayerName; end
-    local info = ns.CustomerCache.GetCustomerInfo(senderName);
+    local info = ns.CustomerCache.GetCustomerInfo(senderName)
+        or ns.CustomerCache.GetCustomerInfo(Ambiguate(senderName, "short"));
     if (not info or not info.rating) then return decoratedPlayerName; end
     if (info.rating == "none") then return decoratedPlayerName; end
     if (info.rating == "neutral" and not db.showNeutralTipper) then return decoratedPlayerName; end
