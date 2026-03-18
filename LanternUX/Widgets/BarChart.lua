@@ -11,6 +11,30 @@ local DEFAULT_DIM_ALPHA = 0.6;
 local LABEL_H = 16;
 local MIN_BAR_W = 8;
 local MAX_BARS = 60;
+local Y_AXIS_WIDTH = 40;
+local GRID_LINE_COUNT = 3; -- number of horizontal grid lines (excluding baseline)
+local GRID_LINE_ALPHA = 0.15;
+
+-------------------------------------------------------------------------------
+-- Nice number rounding for y-axis values
+-------------------------------------------------------------------------------
+
+local function NiceNum(val)
+    if (val <= 0) then return 0; end
+    local exp = math.floor(math.log10(val));
+    local frac = val / (10 ^ exp);
+    local nice;
+    if (frac <= 1.5) then nice = 1;
+    elseif (frac <= 3) then nice = 2;
+    elseif (frac <= 7) then nice = 5;
+    else nice = 10;
+    end
+    return nice * (10 ^ exp);
+end
+
+-------------------------------------------------------------------------------
+-- Widget
+-------------------------------------------------------------------------------
 
 local function CreateBarChart(parent)
     local w = AcquireWidget("barchart", parent);
@@ -26,6 +50,10 @@ local function CreateBarChart(parent)
     w._buttons = {};   -- [i] = button (tooltip hitbox)
     w._barData = {};   -- [i] = { label, value, ... } for tooltips
     w._barCount = 0;
+
+    -- Grid line pools
+    w._gridLines = {};  -- [i] = texture
+    w._gridLabels = {}; -- [i] = fontstring
 
     -- Empty text
     local emptyText = frame:CreateFontString(NextName("LUX_BC_Empty_"), "OVERLAY");
@@ -47,15 +75,70 @@ local function CreateBarChart(parent)
         local gap = w._barGap or DEFAULT_BAR_GAP;
         local chartH = w._chartHeight or DEFAULT_HEIGHT;
         local maxVal = w._maxVal or 1;
-        local barW = math.max(MIN_BAR_W, math.floor((totalW - (barCount - 1) * gap) / barCount));
         local dimAlpha = w._dimAlpha or DEFAULT_DIM_ALPHA;
         local highlightLast = w._highlightLast;
+        local yLabelFn = w._yLabelFn;
+        local leftMargin = yLabelFn and Y_AXIS_WIDTH or 0;
+        local barAreaW = totalW - leftMargin;
+        local barW = math.max(MIN_BAR_W, math.floor((barAreaW - (barCount - 1) * gap) / barCount));
 
+        -- Grid lines and y-axis labels
+        local lineCount = yLabelFn and GRID_LINE_COUNT or 0;
+        local niceStep = (lineCount > 0) and NiceNum(maxVal / lineCount) or 0;
+        -- Adjust maxVal to a nice ceiling so grid lines land on round numbers
+        local gridMax = (niceStep > 0) and (niceStep * lineCount) or maxVal;
+        if (gridMax < maxVal) then gridMax = gridMax + niceStep; end
+        local drawMax = math.max(maxVal, gridMax);
+
+        for i = 1, lineCount do
+            local lineVal = niceStep * i;
+            local yFrac = (drawMax > 0) and (lineVal / drawMax) or 0;
+            local yPos = LABEL_H + math.floor(yFrac * chartH);
+
+            -- Grid line texture
+            if (not w._gridLines[i]) then
+                local line = w.frame:CreateTexture(NextName("LUX_BC_Grid_"), "BACKGROUND");
+                w._gridLines[i] = line;
+            end
+            local line = w._gridLines[i];
+            line:ClearAllPoints();
+            line:SetPoint("LEFT", w.frame, "BOTTOMLEFT", leftMargin, yPos);
+            line:SetPoint("RIGHT", w.frame, "BOTTOMRIGHT", 0, yPos);
+            line:SetHeight(1);
+            local dc = T.divider or { 1, 1, 1 };
+            line:SetColorTexture(dc[1], dc[2], dc[3], GRID_LINE_ALPHA);
+            line:Show();
+
+            -- Y-axis label
+            if (not w._gridLabels[i]) then
+                local lbl = w.frame:CreateFontString(NextName("LUX_BC_YLbl_"), "OVERLAY");
+                lbl:SetFontObject(T.fontSmall);
+                lbl:SetJustifyH("RIGHT");
+                lbl:SetTextColor(unpack(T.textDim));
+                w._gridLabels[i] = lbl;
+            end
+            local lbl = w._gridLabels[i];
+            lbl:ClearAllPoints();
+            lbl:SetPoint("RIGHT", w.frame, "BOTTOMLEFT", leftMargin - 4, yPos);
+            lbl:SetWidth(leftMargin - 6);
+            lbl:SetText(yLabelFn(lineVal));
+            lbl:Show();
+        end
+
+        -- Hide excess grid elements
+        for i = lineCount + 1, #w._gridLines do
+            w._gridLines[i]:Hide();
+        end
+        for i = lineCount + 1, #w._gridLabels do
+            w._gridLabels[i]:Hide();
+        end
+
+        -- Layout bars
         for i = 1, barCount do
             local data = w._barData[i];
             local value = data and data.value or 0;
-            local barH = (maxVal > 0) and math.floor((value / maxVal) * chartH) or 0;
-            local xOff = (i - 1) * (barW + gap);
+            local barH = (drawMax > 0) and math.floor((value / drawMax) * chartH) or 0;
+            local xOff = leftMargin + (i - 1) * (barW + gap);
 
             -- Bar texture
             local bar = w._bars[i];
@@ -104,6 +187,7 @@ local function SetupBarChart(w, parent, data, contentWidth)
     w.height = totalH;
 
     w._tooltipFn = data.tooltipFn;
+    w._yLabelFn = data.yLabelFn;
     w._color = data.color or T.accent;
     w._barGap = data.barGap or DEFAULT_BAR_GAP;
     w._chartHeight = chartH;
@@ -202,6 +286,9 @@ local function SetupBarChart(w, parent, data, contentWidth)
             w._labels[i]:Hide();
             w._buttons[i]:Hide();
         end
+        -- Hide grid lines when empty
+        for i = 1, #w._gridLines do w._gridLines[i]:Hide(); end
+        for i = 1, #w._gridLabels do w._gridLabels[i]:Hide(); end
     else
         w._emptyText:Hide();
         w._layoutBars();

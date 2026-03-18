@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.9
+## 0.6.9 - 2026-03-16
 - Fix: Missing Pet warning no longer appears while flying or during override action bar states (e.g. delve orb mechanics)
 - Fix: Cursor Ring shape dropdown showing wrong value due to misspelled locale key
 

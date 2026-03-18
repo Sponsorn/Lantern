@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.2.7
+## 0.2.8
+- Add: BarChart y-axis grid lines with value labels — pass `yLabelFn` to enable horizontal reference lines with formatted values
+
+## 0.2.7 - 2026-03-16
 - Add: DataTable optional search/filter — configure `searchColumns` to enable an inline search input with debounced filtering
 - Add: `LanternUX.ShowReloadPrompt(message)` utility for settings that require a UI reload
 - Add: DataTable `onRowRightClick` callback for right-click actions on rows

@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.6.6
+## 0.6.7
+- Add: Average tip per order shown on daily, weekly, and monthly timeframe cards
+- Add: Y-axis grid lines with dynamic value labels on the earnings bar chart (e.g., "5k g", "10k g")
+- Fix: Tipper icons not appearing next to player names in whispers and trade chat (chat decoration setting check was inverted)
+- Fix: Dashboard "Today" and "This Week" counters now use configured reset day/time instead of rolling 24h/7d windows
+- Fix: Weekly reset timer and counter using wrong day when realm timezone crosses UTC midnight boundary
+- Fix: Tipper Rating settings group always starting expanded
+
+## 0.6.6 - 2026-03-16
 - Fix: Chat decoration and right-click menu now register correctly on login
 - Add: Customer nicknames — assign nicknames to customers via the right-click "Customer Info" popup
 - Add: Alt grouping — customers with the same nickname can be merged into a single row (toggle in analytics Settings)

@@ -570,7 +570,12 @@ local function CreateTimeframeCard(parent, yOffset, labelText, orderCount, tipsC
     card._countLabel:SetFontObject(T.fontBody);
     card._countLabel:ClearAllPoints();
     card._countLabel:SetPoint("TOPLEFT", card._value, "BOTTOMLEFT", 0, -2);
-    card._countLabel:SetText(FormatMoneyCompact(tipsCopper) .. " earned");
+    local avgTip = (orderCount > 0) and math.floor(tipsCopper / orderCount) or 0;
+    local tipsText = FormatMoneyCompact(tipsCopper) .. " earned";
+    if (avgTip > 0) then
+        tipsText = tipsText .. "  |  " .. FormatMoneyCompact(avgTip) .. " avg";
+    end
+    card._countLabel:SetText(tipsText);
     card._countLabel:SetTextColor(unpack(T.accent));
     card._countLabel:Show();
 
@@ -1043,6 +1048,12 @@ local function PopulateDashboard()
                 maxVal = chartData.maxValue,
                 height = 120,
                 emptyText = L["CO_DASH_EARNINGS_NO_DATA"],
+                yLabelFn = function(copper)
+                    local gold = math.floor((tonumber(copper) or 0) / 10000);
+                    if (gold >= 1000000) then return math.floor(gold / 1000000) .. "M g"; end
+                    if (gold >= 1000) then return math.floor(gold / 1000) .. "k g"; end
+                    return gold .. "g";
+                end,
                 tooltipFn = function(barEntry)
                     if (not barEntry) then return nil; end
                     local goldText = FormatMoney(barEntry.value or 0);
@@ -2010,7 +2021,7 @@ local function GetSettingsWidgets()
         type = "group",
         text = L["CO_TIPPER_GROUP"],
         desc = L["CO_TIPPER_GROUP_DESC"],
-        expanded = true,
+        expanded = false,
         stateKey = "tipperRating",
         children = tipperChildren,
     });

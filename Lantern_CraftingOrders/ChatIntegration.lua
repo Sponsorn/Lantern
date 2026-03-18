@@ -7,7 +7,7 @@ local L = ns.L;
 
 local function SenderNameFilter(event, decoratedPlayerName, ...)
     local db = _G.LanternCraftingOrdersDB or {};
-    if (not db.tipperEnabled or not db.chatDecoration) then return decoratedPlayerName; end
+    if (not db.tipperEnabled or db.chatDecoration == false) then return decoratedPlayerName; end
 
     -- Only decorate whispers and trade chat
     if (event ~= "CHAT_MSG_WHISPER" and event ~= "CHAT_MSG_WHISPER_INFORM"

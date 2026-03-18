@@ -349,6 +349,54 @@ function CraftingOrders:GetItemList(charFilter, since)
     return list;
 end
 
+-- Returns the last daily and weekly reset epochs based on reset timer settings.
+-- Falls back to region-detected resets when custom timers are not configured.
+function CraftingOrders:GetLastResetEpochs()
+    local now = GetServerTime();
+    local settings = self:GetResetTimerSettings();
+
+    if (settings and settings.mode == "custom") then
+        local offset = self:GetServerTimeOffset();
+        local dailyHourRealm = settings.dailyHour or 7;
+        local weeklyDay = settings.weeklyDay or 2; -- 0=Sun..6=Sat
+        local weeklyHourRealm = settings.weeklyHour or 7;
+
+        -- Work in realm time to avoid weekday mismatch at timezone boundaries
+        local realmNow = now + offset;
+        local realmDays = math.floor(realmNow / 86400);
+
+        -- Last daily reset
+        local todayResetRealm = realmDays * 86400 + dailyHourRealm * 3600;
+        if (realmNow < todayResetRealm) then
+            todayResetRealm = todayResetRealm - 86400;
+        end
+        local lastDaily = todayResetRealm - offset;
+
+        -- Last weekly reset: find the most recent occurrence of weeklyDay at weeklyHour
+        local candidate = realmDays * 86400 + weeklyHourRealm * 3600;
+        if (realmNow < candidate) then
+            candidate = candidate - 86400;
+        end
+        local lastWeekly;
+        for _ = 1, 7 do
+            local wday = tonumber(date("!%w", candidate));
+            if (wday == weeklyDay) then
+                lastWeekly = candidate - offset;
+                break;
+            end
+            candidate = candidate - 86400;
+        end
+
+        return lastDaily, lastWeekly;
+    end
+
+    -- Auto: use region-detected resets
+    local lastDaily = Lantern:GetLastDailyResetEpoch(now);
+    local nextWeekly = Lantern.GetNextWeeklyResetEpoch and Lantern:GetNextWeeklyResetEpoch(now) or nil;
+    local lastWeekly = nextWeekly and (nextWeekly - 7 * 86400) or nil;
+    return lastDaily, lastWeekly;
+end
+
 function CraftingOrders:GetDashboardStats(charFilter)
     local stats = {
         totalOrders = 0,
@@ -361,9 +409,10 @@ function CraftingOrders:GetDashboardStats(charFilter)
         monthTips = 0,
     };
 
-    local now = time();
-    local dayAgo = now - (24 * 3600);
-    local weekAgo = now - (7 * 24 * 3600);
+    local now = GetServerTime();
+    local lastDaily, lastWeekly = self:GetLastResetEpochs();
+    local dayAgo = lastDaily or (now - 86400);
+    local weekAgo = lastWeekly or (now - 7 * 86400);
     local monthAgo = now - (30 * 24 * 3600);
 
     iterateOrders(charFilter, function(order)
@@ -552,34 +601,32 @@ function CraftingOrders:GetResetEpochs()
     local nextDailyReset, nextWeeklyReset;
 
     if (settings.mode == "custom") then
-        -- Custom: user-defined hours in realm time, convert to UTC for calculation
+        -- Work in realm time to avoid weekday mismatch at timezone boundaries
         local offset = self:GetServerTimeOffset();
         local dailyHourRealm = settings.dailyHour or 7;
         local weeklyDay = settings.weeklyDay or 2; -- 0=Sun..6=Sat
         local weeklyHourRealm = settings.weeklyHour or 7;
 
-        -- Convert realm hours to UTC epoch targets
-        local dailyHourUTC_sec = dailyHourRealm * 3600 - offset;
-        local weeklyHourUTC_sec = weeklyHourRealm * 3600 - offset;
+        local realmNow = now + offset;
+        local realmDays = math.floor(realmNow / 86400);
 
-        -- Calculate next daily reset
-        local daysSinceEpoch = math.floor(now / 86400);
-        local todayResetUTC = daysSinceEpoch * 86400 + dailyHourUTC_sec;
-        if (now >= todayResetUTC) then
-            nextDailyReset = todayResetUTC + 86400;
+        -- Next daily reset
+        local todayResetRealm = realmDays * 86400 + dailyHourRealm * 3600;
+        if (realmNow >= todayResetRealm) then
+            nextDailyReset = (todayResetRealm + 86400) - offset;
         else
-            nextDailyReset = todayResetUTC;
+            nextDailyReset = todayResetRealm - offset;
         end
 
-        -- Calculate next weekly reset
-        local candidate = daysSinceEpoch * 86400 + weeklyHourUTC_sec;
-        if (now >= candidate) then
+        -- Next weekly reset
+        local candidate = realmDays * 86400 + weeklyHourRealm * 3600;
+        if (realmNow >= candidate) then
             candidate = candidate + 86400;
         end
         for _ = 1, 7 do
             local wday = tonumber(date("!%w", candidate));
             if (wday == weeklyDay) then
-                nextWeeklyReset = candidate;
+                nextWeeklyReset = candidate - offset;
                 break;
             end
             candidate = candidate + 86400;

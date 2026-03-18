@@ -795,6 +795,7 @@ function CraftingOrders:OnEnable()
             ns.CustomerCache.BuildCache();
         end
     end);
+
 end
 
 function CraftingOrders:OnDisable()
