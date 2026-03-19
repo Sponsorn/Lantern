@@ -1050,7 +1050,10 @@ local function PopulateDashboard()
                 emptyText = L["CO_DASH_EARNINGS_NO_DATA"],
                 yLabelFn = function(copper)
                     local gold = math.floor((tonumber(copper) or 0) / 10000);
-                    if (gold >= 1000000) then return math.floor(gold / 1000000) .. "M g"; end
+                    if (gold >= 1000000) then
+                        local m = gold / 1000000;
+                        return (m == math.floor(m)) and math.floor(m) .. "M g" or string.format("%.1fM g", m);
+                    end
                     if (gold >= 1000) then return math.floor(gold / 1000) .. "k g"; end
                     return gold .. "g";
                 end,
