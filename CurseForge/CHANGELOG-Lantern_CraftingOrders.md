@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.7
+## 0.6.7 - 2026-03-19
 - Add: Average tip per order shown on daily, weekly, and monthly timeframe cards
 - Add: Y-axis grid lines with dynamic value labels on the earnings bar chart (e.g., "5k g", "10k g")
 - Fix: Tipper icons not appearing next to player names in whispers and trade chat (setting check was inverted + name lookup didn't match cache format)

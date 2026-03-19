@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.8
+## 0.2.8 - 2026-03-19
 - Add: BarChart y-axis grid lines with value labels — pass `yLabelFn` to enable horizontal reference lines with formatted values
 
 ## 0.2.7 - 2026-03-16
