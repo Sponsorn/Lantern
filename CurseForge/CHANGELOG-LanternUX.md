@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.9 - 2026-03-19
+- Fix: BarChart y-axis grid lines now always show 3 lines with properly scaled round values that cover the full data range
+
 ## 0.2.8 - 2026-03-19
 - Add: BarChart y-axis grid lines with value labels — pass `yLabelFn` to enable horizontal reference lines with formatted values
 

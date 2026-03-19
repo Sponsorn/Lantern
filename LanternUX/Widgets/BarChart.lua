@@ -19,17 +19,21 @@ local GRID_LINE_ALPHA = 0.15;
 -- Nice number rounding for y-axis values
 -------------------------------------------------------------------------------
 
-local function NiceNum(val)
-    if (val <= 0) then return 0; end
-    local exp = math.floor(math.log10(val));
-    local frac = val / (10 ^ exp);
-    local nice;
-    if (frac <= 1.5) then nice = 1;
-    elseif (frac <= 3) then nice = 2;
-    elseif (frac <= 7) then nice = 5;
-    else nice = 10;
+-- Find the smallest nice step so that step * GRID_LINE_COUNT >= maxVal.
+-- Produces steps like 100, 200, 250, 500, 1000, ...
+local NICE_STEPS = { 1, 1.5, 2, 2.5, 3, 5, 10 };
+local function NiceStep(maxVal, lines)
+    if (maxVal <= 0) then return 1; end
+    local rough = maxVal / lines;
+    local exp = math.floor(math.log10(rough));
+    local base = 10 ^ exp;
+    for _, m in ipairs(NICE_STEPS) do
+        local step = m * base;
+        if (step * lines >= maxVal) then
+            return step;
+        end
     end
-    return nice * (10 ^ exp);
+    return 10 * base;
 end
 
 -------------------------------------------------------------------------------
@@ -83,12 +87,15 @@ local function CreateBarChart(parent)
         local barW = math.max(MIN_BAR_W, math.floor((barAreaW - (barCount - 1) * gap) / barCount));
 
         -- Grid lines and y-axis labels
-        local lineCount = yLabelFn and GRID_LINE_COUNT or 0;
-        local niceStep = (lineCount > 0) and NiceNum(maxVal / lineCount) or 0;
-        -- Adjust maxVal to a nice ceiling so grid lines land on round numbers
-        local gridMax = (niceStep > 0) and (niceStep * lineCount) or maxVal;
-        if (gridMax < maxVal) then gridMax = gridMax + niceStep; end
-        local drawMax = math.max(maxVal, gridMax);
+        -- Always 3 lines at nice round values that cover maxVal
+        local lineCount = 0;
+        local drawMax = maxVal;
+        local niceStep = 0;
+        if (yLabelFn and maxVal > 0) then
+            niceStep = NiceStep(maxVal, GRID_LINE_COUNT);
+            lineCount = GRID_LINE_COUNT;
+            drawMax = niceStep * lineCount;
+        end
 
         for i = 1, lineCount do
             local lineVal = niceStep * i;

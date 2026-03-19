@@ -15,7 +15,6 @@ Libs\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0.lua
 Libs\LibSink-2.0\LibSink-2.0\LibSink-2.0.lua
 Libs\LibSharedMedia-3.0\lib.xml
-Libs\LibDDI-1.0\lib.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
 
 Locales\Locale.lua

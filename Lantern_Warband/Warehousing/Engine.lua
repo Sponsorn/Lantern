@@ -15,7 +15,7 @@ local STATE_COMPLETE = "COMPLETE";
 
 -- Bag ranges
 local INVENTORY_START = 0;
-local INVENTORY_END = 4;
+local INVENTORY_END = 5; -- includes reagent bag (Enum.BagIndex.ReagentBag)
 local WARBANK_TAB_START = Enum.BagIndex.AccountBankTab_1;
 local WARBANK_TAB_END = Enum.BagIndex.AccountBankTab_5;
 
