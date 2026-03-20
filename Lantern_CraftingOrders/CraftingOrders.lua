@@ -10,7 +10,6 @@ local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMes
 -- Abort early if the core addon is not available.
 if (not Lantern) then return; end
 
-local LibSink = LibStub and LibStub("LibSink-2.0", true);
 local LibSharedMedia = LibStub and LibStub("LibSharedMedia-3.0", true);
 
 local CraftingOrders = Lantern:NewModule("CraftingOrders", {
@@ -43,14 +42,6 @@ local function ensureDB(self)
     for k, v in pairs(DEFAULTS) do
         if (self.db[k] == nil) then
             self.db[k] = v;
-        end
-    end
-    self.db.sink = self.db.sink or {};
-    if (LibSink) then
-        LibSink:Embed(self);
-        self:SetSinkStorage(self.db.sink);
-        if (self.db.sink.sink20OutputSink == nil) then
-            self.db.sink.sink20OutputSink = "RaidWarning";
         end
     end
 end
