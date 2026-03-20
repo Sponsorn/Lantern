@@ -15,25 +15,10 @@ local DEFAULTS = {
 };
 
 local function ensureDB(self)
-    if (not self.addon.db) then
-        return;
-    end
-    if (not self.addon.db.autoSell) then
-        self.addon.db.autoSell = {};
-    end
-    self.db = self.addon.db.autoSell;
-
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            self.db[k] = v;
-        end
-    end
-    if (type(self.db.globalList) ~= "table") then
-        self.db.globalList = {};
-    end
-    if (type(self.db.characterLists) ~= "table") then
-        self.db.characterLists = {};
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "autoSell", DEFAULTS);
+    if (not self.db) then return; end
+    if (type(self.db.globalList) ~= "table") then self.db.globalList = {}; end
+    if (type(self.db.characterLists) ~= "table") then self.db.characterLists = {}; end
 end
 
 local function shouldPause()

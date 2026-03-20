@@ -86,20 +86,8 @@ local function isQuestTrivial(questID)
 end
 
 local function ensureDB(self)
-    -- Ensure parent db exists
-    if (not self.addon.db) then
-        return;
-    end
-    -- Initialize autoQuest table if it doesn't exist
-    if (not self.addon.db.autoQuest) then
-        self.addon.db.autoQuest = {};
-    end
-    -- Always reference the addon's autoQuest table directly
-    self.db = self.addon.db.autoQuest;
-
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then self.db[k] = v; end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "autoQuest", DEFAULTS);
+    if (not self.db) then return; end
     if (type(self.db.blockedNPCs) ~= "table") then
         self.db.blockedNPCs = {};
     end
