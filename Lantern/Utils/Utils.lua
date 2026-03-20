@@ -74,6 +74,50 @@ function utils.IsSecret(val)
 end
 
 -------------------------------------------------------------------------------
+-- Class Color Helper
+-------------------------------------------------------------------------------
+
+local _classColorCache = {};
+
+function utils.GetClassColor(classToken)
+    if (not classToken) then
+        local _, token = UnitClass("player");
+        classToken = token;
+    end
+    if (not classToken) then return { r = 1, g = 1, b = 1 }; end
+    local cached = _classColorCache[classToken];
+    if (not cached) then
+        local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken];
+        if (color) then
+            cached = { r = color.r, g = color.g, b = color.b };
+        else
+            cached = { r = 1, g = 1, b = 1 };
+        end
+        _classColorCache[classToken] = cached;
+    end
+    return cached;
+end
+
+-------------------------------------------------------------------------------
+-- String Helpers
+-------------------------------------------------------------------------------
+
+function utils.StripRealm(name)
+    if (type(name) ~= "string") then return name; end
+    return name:gsub("%-[^%-]+$", "");
+end
+
+-------------------------------------------------------------------------------
+-- Math Helpers
+-------------------------------------------------------------------------------
+
+function utils.Clamp01(v)
+    if (v < 0) then return 0; end
+    if (v > 1) then return 1; end
+    return v;
+end
+
+-------------------------------------------------------------------------------
 -- Font Helpers
 -------------------------------------------------------------------------------
 
@@ -221,11 +265,28 @@ addon:RegisterConverter("money:format_gold_thousands", function(copper)
     return formatted;
 end);
 
-function utils.GetClassColor(classToken)
-    if (not classToken) then return 1, 1, 1; end
-    local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken];
-    if (color) then
-        return color.r, color.g, color.b;
+-------------------------------------------------------------------------------
+-- Database Initialization Helper
+-------------------------------------------------------------------------------
+
+function utils.InitModuleDB(addon, key, defaults)
+    if (not addon.db) then return nil; end
+    if (not addon.db[key]) then
+        addon.db[key] = {};
     end
-    return 1, 1, 1;
+    local db = addon.db[key];
+    if (defaults) then
+        for k, v in pairs(defaults) do
+            if (db[k] == nil) then
+                if (type(v) == "table") then
+                    local copy = {};
+                    for ck, cv in pairs(v) do copy[ck] = cv; end
+                    db[k] = copy;
+                else
+                    db[k] = v;
+                end
+            end
+        end
+    end
+    return db;
 end
