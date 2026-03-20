@@ -9,6 +9,7 @@ local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMes
 
 -- Abort early if the core addon is not available.
 if (not Lantern) then return; end
+local StripRealm = Lantern.utils.StripRealm;
 
 local LibSharedMedia = LibStub and LibStub("LibSharedMedia-3.0", true);
 
@@ -37,22 +38,12 @@ local DEFAULTS = {
 };
 
 local function ensureDB(self)
-    self.db = self.addon.db.craftingOrders or {};
-    self.addon.db.craftingOrders = self.db;
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            self.db[k] = v;
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "craftingOrders", DEFAULTS);
+    if (not self.db) then return; end
 end
 
 function CraftingOrders:IsEnabled()
     return self.enabled;
-end
-
-local function stripRealm(name)
-    if (type(name) ~= "string") then return name; end
-    return name:gsub("%-[^%-]+$", "");
 end
 
 local function formatGuildMessage(template, itemLink, who, tipCopper)
@@ -310,7 +301,7 @@ end
 local function formatWhisperMessage(template, order)
     local msg = tostring(template or "");
     local itemLink = order and (order.outputItemHyperlink or order.outputItemLink) or "";
-    local name = stripRealm(order and (order.customerName or order.recipient) or "") or "";
+    local name = StripRealm(order and (order.customerName or order.recipient) or "") or "";
     msg = msg:gsub("{item}", itemLink ~= "" and itemLink or "your item");
     msg = msg:gsub("{name}", name ~= "" and name or "there");
     return msg;
@@ -427,7 +418,7 @@ function CraftingOrders:HandleFulfillResponse(...)
     end
 
     local itemLink = info and (info.outputItemHyperlink or info.outputItemLink) or nil;
-    local who = stripRealm(info and (info.customerName or info.recipient) or nil);
+    local who = StripRealm(info and (info.customerName or info.recipient) or nil);
     local grossCopper = info and (info.tipAmount or info.tip) or 0;
     local cutCopper = info and (info.consortiumCut or info.consortiumFee or 0) or 0;
     local netCopper = math.max(grossCopper - cutCopper, 0);
@@ -547,7 +538,7 @@ function CraftingOrders:HandleCompleteAndWhisper()
         button:Click();
     end
     if (not self.db or not self.db.enableWhisperButton) then return; end
-    local recipient = stripRealm(order.customerName or order.recipient);
+    local recipient = StripRealm(order.customerName or order.recipient);
     if (recipient and recipient ~= "" and SendChatMessage) then
         local msg = formatWhisperMessage(self.db.whisperMessage, order);
         if (msg ~= "") then
