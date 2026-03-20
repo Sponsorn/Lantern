@@ -126,16 +126,7 @@ local function refreshMaxRange()
 end
 
 local function ensureDB(self)
-    if (not self.addon.db) then return; end
-    if (not self.addon.db.rangeCheck) then
-        self.addon.db.rangeCheck = {};
-    end
-    self.db = self.addon.db.rangeCheck;
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            self.db[k] = v;
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "rangeCheck", DEFAULTS);
 end
 
 local function clearStatus()

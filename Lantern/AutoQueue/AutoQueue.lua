@@ -17,22 +17,7 @@ local DEFAULTS = {
 };
 
 local function ensureDB(self)
-    -- Ensure parent db exists
-    if (not self.addon.db) then
-        return;
-    end
-    -- Initialize autoQueue table if it doesn't exist
-    if (not self.addon.db.autoQueue) then
-        self.addon.db.autoQueue = {};
-    end
-    -- Always reference the addon's autoQueue table directly
-    self.db = self.addon.db.autoQueue;
-
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            self.db[k] = v;
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "autoQueue", DEFAULTS);
 end
 
 local function shouldPause()

@@ -15,19 +15,7 @@ local DEFAULTS = {
 };
 
 local function ensureDB(self)
-    if (not self.addon.db) then
-        return;
-    end
-    if (not self.addon.db.autoRepair) then
-        self.addon.db.autoRepair = {};
-    end
-    self.db = self.addon.db.autoRepair;
-
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            self.db[k] = v;
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "autoRepair", DEFAULTS);
 end
 
 local function shouldPause()

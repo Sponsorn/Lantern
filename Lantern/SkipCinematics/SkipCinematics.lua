@@ -14,16 +14,7 @@ local DEFAULTS = {
 };
 
 local function ensureDB(self)
-    if (not self.addon.db) then return; end
-    if (not self.addon.db.skipCinematics) then
-        self.addon.db.skipCinematics = {};
-    end
-    self.db = self.addon.db.skipCinematics;
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            self.db[k] = v;
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "skipCinematics", DEFAULTS);
 end
 
 local function shouldPause()
