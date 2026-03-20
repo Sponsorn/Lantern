@@ -73,11 +73,6 @@ function utils.IsSecret(val)
     return _issecretvalue(val);
 end
 
-function utils.SafeValue(val)
-    if (_issecretvalue(val)) then return nil; end
-    return val;
-end
-
 -------------------------------------------------------------------------------
 -- Font Helpers
 -------------------------------------------------------------------------------
@@ -114,22 +109,6 @@ function utils.SafeSetFont(fontString, fontPath, size, outline)
     fontString:SetFontObject(fontObj);
 end
 
-utils._optionsRebuilders = utils._optionsRebuilders or {};
-
-function utils.RegisterOptionsRebuilder(key, fn)
-    if (type(key) ~= "string" or key == "" or type(fn) ~= "function") then
-        return;
-    end
-    utils._optionsRebuilders[key] = fn;
-end
-
-function utils.RunOptionsRebuilder(key)
-    local fn = utils._optionsRebuilders and utils._optionsRebuilders[key];
-    if (type(fn) == "function") then
-        fn();
-    end
-end
-
 local function GetDailyResetHourCET(region)
     region = region or addon:GetRegion();
     if (region == "US") then
@@ -158,8 +137,6 @@ function addon:GetLastDailyResetEpoch(now, region)
     end
     return lastResetCET - CET_OFFSET_SECONDS;
 end
-
-addon.GetDailyResetHourCET = GetDailyResetHourCET;
 
 function addon:GetNextWeeklyResetEpoch(now, region)
     local nowSec = now or GetServerTime();
@@ -200,32 +177,6 @@ function addon:Convert(name, ...)
 end
 
 -- Built-in converters
-addon:RegisterConverter("region:normalize", normalizeRegionCode);
-
-addon:RegisterConverter("time:to_iso8601", function(epoch)
-    if (not epoch) then return; end
-    return date("!%Y-%m-%dT%H:%M:%SZ", epoch);
-end);
-
-addon:RegisterConverter("time:seconds_to_clock", function(seconds)
-    seconds = tonumber(seconds);
-    if (not seconds or seconds < 0) then
-        return "0:00";
-    end
-    local hours = math.floor(seconds / 3600);
-    local minutes = math.floor((seconds % 3600) / 60);
-    local secs = math.floor(seconds % 60);
-    if (hours > 0) then
-        return string.format("%d:%02d:%02d", hours, minutes, secs);
-    end
-    return string.format("%d:%02d", minutes, secs);
-end);
-
-addon:RegisterConverter("time:next_reset_epoch", function(now)
-    local last = addon:GetLastDailyResetEpoch(now);
-    return last and (last + 24 * 60 * 60) or nil;
-end);
-
 addon:RegisterConverter("money:format_copper", function(amount)
     local copper = tonumber(amount) or 0;
     if (copper <= 0) then return ""; end
@@ -270,9 +221,6 @@ addon:RegisterConverter("money:format_gold_thousands", function(copper)
     return formatted;
 end);
 
-utils.normalizeRegionCode = normalizeRegionCode;
-utils.GetDailyResetHourCET = GetDailyResetHourCET;
-
 function utils.GetClassColor(classToken)
     if (not classToken) then return 1, 1, 1; end
     local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken];
@@ -280,28 +228,4 @@ function utils.GetClassColor(classToken)
         return color.r, color.g, color.b;
     end
     return 1, 1, 1;
-end
-
--- Input validation helpers
-function utils.ValidateString(str, maxLength)
-    if (type(str) ~= "string") then return false; end
-    if (str == "") then return false; end
-    if (maxLength and #str > maxLength) then return false; end
-    return true;
-end
-
-function utils.SanitizeString(str, maxLength)
-    if (type(str) ~= "string") then return ""; end
-    local sanitized = str:gsub("[%z\1-\31]", ""); -- Remove control characters
-    if (maxLength and #sanitized > maxLength) then
-        sanitized = sanitized:sub(1, maxLength);
-    end
-    return sanitized;
-end
-
-function utils.ValidateQuestID(questID)
-    local num = tonumber(questID);
-    if (not num) then return false; end
-    if (num < 1 or num > 999999) then return false; end -- Reasonable quest ID range
-    return true;
 end
