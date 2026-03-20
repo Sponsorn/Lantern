@@ -9,6 +9,9 @@ local module = Lantern:NewModule("CursorRing", {
     skipOptions = true,
 });
 
+local GetClassColor = Lantern.utils.GetClassColor;
+local Clamp01 = Lantern.utils.Clamp01;
+
 -------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
@@ -102,18 +105,8 @@ local lastRingX, lastRingY = 0, 0;
 -------------------------------------------------------------------------------
 
 local function getDB()
-    if (not Lantern.db) then Lantern.db = {}; end
-    if (not Lantern.db.cursorRing) then Lantern.db.cursorRing = {}; end
-    local d = Lantern.db.cursorRing;
-    for k, v in pairs(DEFAULTS) do
-        if (d[k] == nil) then
-            if (type(v) == "table") then
-                d[k] = { r = v.r, g = v.g, b = v.b };
-            else
-                d[k] = v;
-            end
-        end
-    end
+    local d = Lantern.utils.InitModuleDB(Lantern, "cursorRing", DEFAULTS);
+    if (not d) then return db; end  -- fallback to previous db if addon.db not ready
     -- Migrate trailSparkle from boolean to string
     if (type(d.trailSparkle) == "boolean") then
         d.trailSparkle = d.trailSparkle and "twinkle" or "off";
@@ -125,26 +118,6 @@ end
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
-
-local function clamp01(v)
-    if (v < 0) then return 0; end
-    if (v > 1) then return 1; end
-    return v;
-end
-
-local cachedClassColor = nil;
-local function GetPlayerClassColor()
-    if (not cachedClassColor) then
-        local _, classToken = UnitClass("player");
-        if (classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]) then
-            local c = RAID_CLASS_COLORS[classToken];
-            cachedClassColor = { r = c.r, g = c.g, b = c.b };
-        else
-            cachedClassColor = { r = 1, g = 1, b = 1 };
-        end
-    end
-    return cachedClassColor;
-end
 
 local function RefreshCombatCache()
     inCombat = InCombatLockdown() or UnitAffectingCombat("player");
@@ -170,7 +143,7 @@ function module._db() return db; end
 function module._frames() return frames; end
 function module._shouldShow() return ShouldShow(); end
 function module._getOpacity() return GetCurrentOpacity(); end
-function module._classColor() return GetPlayerClassColor(); end
+function module._classColor() return GetClassColor(); end
 
 local function GetContainerSize()
     local s = max(db.ring1Enabled and db.ring1Size or 0, db.ring2Enabled and db.ring2Size or 0);
@@ -270,7 +243,7 @@ local function StartCastTicker()
             return;
         end
 
-        progress = clamp01(progress);
+        progress = Clamp01(progress);
         local visible = ShouldShow();
         local c = db.castColor;
 
@@ -538,7 +511,7 @@ function module:TestCast(duration)
         -- Segments or fill: use a ticker
         castTicker = C_Timer.NewTicker(CAST_TICKER_INTERVAL, function()
             local now = GetTime();
-            local progress = clamp01((now - startTime) / duration);
+            local progress = Clamp01((now - startTime) / duration);
 
             if (progress >= 1) then
                 StopCastTicker();
