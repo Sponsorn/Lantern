@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.11
+- Chore: Remove unused utility functions and converters for faster load times
+- Chore: Consolidate module database initialization into shared helper
+- Chore: Centralize class color, string, and math utilities
+
 ## 0.6.10 - 2026-03-19
 - Fix: Removed leftover LibDDI-1.0 library (AceGUI dependency) that caused errors for users without AceGUI-3.0
 

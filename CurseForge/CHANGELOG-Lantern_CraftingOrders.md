@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.8
+- Chore: Remove unused LibSink integration
+- Chore: Use shared utility functions from core addon
+
 ## 0.6.7 - 2026-03-19
 - Add: Average tip per order shown on daily, weekly, and monthly timeframe cards
 - Add: Y-axis grid lines with dynamic value labels on the earnings bar chart (e.g., "5k g", "10k g")
