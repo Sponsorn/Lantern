@@ -8,16 +8,12 @@ local module = Lantern:NewModule("AutoPlaystyle", {
     defaultEnabled = true,
 });
 
-local function ensureDB(self)
-    if (not self.addon.db) then return; end
-    if (not self.addon.db.autoPlaystyle) then
-        self.addon.db.autoPlaystyle = {};
-    end
-    self.db = self.addon.db.autoPlaystyle;
+local DEFAULTS = {
+    playstyle = 3, -- Enum.LFGEntryGeneralPlaystyle.FunSerious
+};
 
-    if (self.db.playstyle == nil) then
-        self.db.playstyle = 3; -- Enum.LFGEntryGeneralPlaystyle.FunSerious
-    end
+local function ensureDB(self)
+    self.db = Lantern.utils.InitModuleDB(self.addon, "autoPlaystyle", DEFAULTS);
 end
 
 function module:OnInit()

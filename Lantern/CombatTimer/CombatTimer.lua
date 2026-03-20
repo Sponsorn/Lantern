@@ -29,20 +29,7 @@ local previewMode = false;
 local previewTimer = nil;
 
 local function ensureDB(self)
-    if (not self.addon.db) then return; end
-    if (not self.addon.db.combatTimer) then
-        self.addon.db.combatTimer = {};
-    end
-    self.db = self.addon.db.combatTimer;
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            if (type(v) == "table") then
-                self.db[k] = { r = v.r, g = v.g, b = v.b };
-            else
-                self.db[k] = v;
-            end
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "combatTimer", DEFAULTS);
 end
 
 local function formatClock(seconds)

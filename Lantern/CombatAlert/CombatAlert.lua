@@ -38,20 +38,7 @@ local previewTimer = nil;
 local previewPhase = "enter";
 
 local function ensureDB(self)
-    if (not self.addon.db) then return; end
-    if (not self.addon.db.combatAlert) then
-        self.addon.db.combatAlert = {};
-    end
-    self.db = self.addon.db.combatAlert;
-    for k, v in pairs(DEFAULTS) do
-        if (self.db[k] == nil) then
-            if (type(v) == "table") then
-                self.db[k] = { r = v.r, g = v.g, b = v.b };
-            else
-                self.db[k] = v;
-            end
-        end
-    end
+    self.db = Lantern.utils.InitModuleDB(self.addon, "combatAlert", DEFAULTS);
 end
 
 local function createFrame(self)

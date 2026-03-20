@@ -526,17 +526,7 @@ end
 -------------------------------------------------------------------------------
 
 local function ensureDB()
-    if (not Lantern.db) then return; end
-    if (not Lantern.db.missingPet) then
-        Lantern.db.missingPet = {};
-    end
-    local db = Lantern.db.missingPet;
-
-    for k, v in pairs(DEFAULTS) do
-        if (db[k] == nil) then
-            db[k] = v;
-        end
-    end
+    Lantern.utils.InitModuleDB(Lantern, "missingPet", DEFAULTS);
 end
 
 function module:OnInit()
