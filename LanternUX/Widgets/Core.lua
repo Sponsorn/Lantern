@@ -80,11 +80,20 @@ LanternUX.Theme = T;
 -------------------------------------------------------------------------------
 
 local FONT_DIR = "Interface\\AddOns\\LanternUX\\Fonts\\";
-T.fontPathThin      = FONT_DIR .. "Roboto-Thin.ttf";
-T.fontPathLight     = FONT_DIR .. "Roboto-Light.ttf";
-T.fontPathRegular   = FONT_DIR .. "Roboto-Regular.ttf";
-T.fontPathBold      = FONT_DIR .. "Roboto-Bold.ttf";
-T.fontPathExtraBold = FONT_DIR .. "Roboto-ExtraBold.ttf";
+
+-- CJK locales need system fonts since Roboto has no CJK glyphs
+local CJK_FONTS = {
+    koKR = "Fonts\\2002.TTF",
+    zhCN = "Fonts\\ARKai_T.TTF",
+    zhTW = "Fonts\\blei00d.TTF",
+};
+local cjkFont = CJK_FONTS[GetLocale()];
+
+T.fontPathThin      = cjkFont or (FONT_DIR .. "Roboto-Thin.ttf");
+T.fontPathLight     = cjkFont or (FONT_DIR .. "Roboto-Light.ttf");
+T.fontPathRegular   = cjkFont or (FONT_DIR .. "Roboto-Regular.ttf");
+T.fontPathBold      = cjkFont or (FONT_DIR .. "Roboto-Bold.ttf");
+T.fontPathExtraBold = cjkFont or (FONT_DIR .. "Roboto-ExtraBold.ttf");
 
 local heading = CreateFont("LanternUX_Heading");
 heading:SetFont(T.fontPathRegular, 16, "");

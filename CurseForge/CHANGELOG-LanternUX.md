@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.10
+- Fix: Korean, Simplified Chinese, and Traditional Chinese text now renders correctly (falls back to system CJK fonts instead of Roboto)
+
 ## 0.2.9 - 2026-03-19
 - Fix: BarChart y-axis grid lines now always show 3 lines with properly scaled round values that cover the full data range
 
