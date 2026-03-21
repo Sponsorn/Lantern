@@ -26,44 +26,12 @@ local BLOCKED_NPC_IDS = {
 };
 
 local function shouldPause()
-    return Lantern:IsModifierDown();
+    return Lantern:IsModifierDown() or InCombatLockdown();
 end
 
 local function isExcludedMap()
     local instanceID = select(8, GetInstanceInfo());
     return instanceID and EXCLUDED_INSTANCE_MAPS[instanceID] or false;
-end
-
--------------------------------------------------------------------------------
--- Combat Lockdown Handling
--------------------------------------------------------------------------------
-
-local pendingActions = {}
-
-local combatFrame = CreateFrame("Frame")
-combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-combatFrame:SetScript("OnEvent", function(self, event)
-    if event == "PLAYER_REGEN_ENABLED" then
-        -- Process any pending actions now that combat has ended
-        for i, action in ipairs(pendingActions) do
-            local success, err = pcall(action.func, unpack(action.args or {}))
-            if not success and err then
-                -- Silently ignore - the quest dialog may have closed
-            end
-        end
-        wipe(pendingActions)
-    end
-end)
-
--- Safely call a function, deferring if in combat lockdown
-local function SafeCall(func, ...)
-    if InCombatLockdown() then
-        table.insert(pendingActions, { func = func, args = {...} })
-        return false
-    else
-        local success, err = pcall(func, ...)
-        return success
-    end
 end
 
 local function isQuestReadyForTurnIn(questID)
@@ -238,7 +206,7 @@ local function handleAvailableQuests(self)
                 if (self.db.skipTrivialQuests and (q.isTrivial or isQuestTrivial(q.questID))) then
                     -- Skip this quest
                 else
-                    SafeCall(C_GossipInfo.SelectAvailableQuest, q.questID);
+                    C_GossipInfo.SelectAvailableQuest(q.questID);
                     return; -- Process one quest per event; next GOSSIP_SHOW handles remaining
                 end
             end
@@ -252,7 +220,7 @@ local function handleActiveQuests(self)
         local quests = C_GossipInfo.GetActiveQuests();
         for _, q in ipairs(quests or {}) do
             if (q and q.questID and (q.isComplete or isQuestReadyForTurnIn(q.questID)) and not self:IsQuestBlocked(q.questID)) then
-                SafeCall(C_GossipInfo.SelectActiveQuest, q.questID);
+                C_GossipInfo.SelectActiveQuest(q.questID);
                 return; -- Process one quest per event; next GOSSIP_SHOW handles remaining
             end
         end
@@ -271,7 +239,7 @@ function module:OnGossipShow()
     if (numAvail > 0 or numActive > 0) then return; end
     local options = C_GossipInfo.GetOptions and C_GossipInfo.GetOptions();
     if (options and #options == 1 and options[1].gossipOptionID) then
-        SafeCall(C_GossipInfo.SelectOption, options[1].gossipOptionID);
+        C_GossipInfo.SelectOption(options[1].gossipOptionID);
     end
 end
 
@@ -284,7 +252,7 @@ function module:OnQuestGreeting()
             local title, _, _, isComplete = GetActiveTitle(i);
             local ready = isComplete or isQuestReadyForTurnIn(questID);
             if (ready and not self:IsQuestNameBlocked(title)) then
-                SafeCall(SelectActiveQuest, i);
+                SelectActiveQuest(i);
                 return; -- Process one quest per event; next QUEST_GREETING handles remaining
             end
         end
@@ -294,7 +262,7 @@ function module:OnQuestGreeting()
         for i = 1, count do
             local title = GetAvailableTitle(i);
             if (not self:IsQuestNameBlocked(title)) then
-                SafeCall(SelectAvailableQuest, i);
+                SelectAvailableQuest(i);
                 return; -- Process one quest per event; next QUEST_GREETING handles remaining
             end
         end
@@ -310,9 +278,9 @@ function module:OnQuestDetail()
     -- Capture NPC key before accepting quest (in case dialog closes)
     local npcKey = self:GetCurrentNPCKey();
     if (QuestGetAutoAccept() or QuestIsFromAreaTrigger()) then
-        SafeCall(AcknowledgeAutoAcceptQuest);
+        AcknowledgeAutoAcceptQuest();
     else
-        SafeCall(AcceptQuest);
+        AcceptQuest();
     end
     -- Store NPC key temporarily for logging
     self._lastNPCKey = npcKey;
@@ -327,7 +295,7 @@ function module:OnQuestProgress()
         local title = GetTitleText and GetTitleText();
         -- Capture NPC key before completing quest (in case dialog closes)
         local npcKey = self:GetCurrentNPCKey();
-        SafeCall(CompleteQuest);
+        CompleteQuest();
         -- Store NPC key temporarily for logging
         self._lastNPCKey = npcKey;
         self:LogAutomatedQuest(title, questID);
@@ -343,12 +311,12 @@ function module:OnQuestComplete()
     -- Capture NPC key before getting quest reward (in case dialog closes)
     local npcKey = self:GetCurrentNPCKey();
     if (numChoices == 0) then
-        SafeCall(GetQuestReward, 1);
+        GetQuestReward(1);
         -- Store NPC key temporarily for logging
         self._lastNPCKey = npcKey;
         self:LogAutomatedQuest(title, questID);
     elseif (numChoices == 1 and self.db.autoSelectSingleReward) then
-        SafeCall(GetQuestReward, 1);
+        GetQuestReward(1);
         -- Store NPC key temporarily for logging
         self._lastNPCKey = npcKey;
         self:LogAutomatedQuest(title, questID);

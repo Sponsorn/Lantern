@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.6.11
+- Fix: Auto Quest no longer attempts to interact with quests during combat (prevents errors in instances)
 - Chore: Remove unused utility functions and converters for faster load times
 - Chore: Consolidate module database initialization into shared helper
 - Chore: Centralize class color, string, and math utilities
