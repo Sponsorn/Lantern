@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.9
+- Fix: Remove confusing master toggle from Guild Orders, Personal Orders, and Order History pages — toggling one would disable all three since they share the same module
+- Fix: Module now defaults to enabled on fresh installs (if you installed it, you want it on)
+
 ## 0.6.8
 - Chore: Remove unused LibSink integration
 - Chore: Use shared utility functions from core addon

@@ -16,6 +16,7 @@ local LibSharedMedia = LibStub and LibStub("LibSharedMedia-3.0", true);
 local CraftingOrders = Lantern:NewModule("CraftingOrders", {
     title = L["CO_TITLE"],
     desc = L["CO_DESC"],
+    defaultEnabled = true,
 });
 
 local DEFAULTS = {

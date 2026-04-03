@@ -6,6 +6,7 @@ if (not Lantern) then return; end
 local Warband = Lantern:NewModule("Warband", {
     title = L["WARBAND_TITLE"],
     desc = L["WARBAND_DESC"],
+    defaultEnabled = true,
 });
 
 -- Default settings

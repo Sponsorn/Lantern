@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.8
+- Fix: Module now defaults to enabled on fresh installs via defaultEnabled flag
+
 ## 0.4.7 - 2026-03-19
 - Fix: Warehousing not scanning or moving items from the reagent bag
 
