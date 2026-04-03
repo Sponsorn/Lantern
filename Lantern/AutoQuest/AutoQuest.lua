@@ -232,8 +232,11 @@ function module:OnGossipShow()
     handleActiveQuests(self);
 
     -- Auto-select single gossip option to progress through dialog chains
+    -- Gossip selection works during combat (not protected), so allow it inside instances
+    -- (e.g., Pit of Saron captives require gossip interaction mid-combat)
     if (not self.db.autoSelectSingleGossip) then return; end
-    if (shouldPause() or self:IsCurrentNPCBlocked()) then return; end
+    if (Lantern:IsModifierDown() or self:IsCurrentNPCBlocked()) then return; end
+    if (not IsInInstance() and InCombatLockdown()) then return; end
     local numAvail = C_GossipInfo.GetNumAvailableQuests and C_GossipInfo.GetNumAvailableQuests() or 0;
     local numActive = C_GossipInfo.GetNumActiveQuests and C_GossipInfo.GetNumActiveQuests() or 0;
     if (numAvail > 0 or numActive > 0) then return; end

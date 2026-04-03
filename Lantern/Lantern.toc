@@ -63,6 +63,10 @@ CombatTimer\CombatTimer.lua
 CombatTimer\WidgetOptions.lua
 CombatAlert\CombatAlert.lua
 CombatAlert\WidgetOptions.lua
+GatewayReady\GatewayReady.lua
+GatewayReady\WidgetOptions.lua
+SummonHelper\SummonHelper.lua
+SummonHelper\WidgetOptions.lua
 RangeCheck\RangeCheck.lua
 RangeCheck\WidgetOptions.lua
 SkipCinematics\SkipCinematics.lua

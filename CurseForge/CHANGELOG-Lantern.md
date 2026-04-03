@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.12
+- Add: Gateway Ready module — alerts when a Warlock Demonic Gateway is nearby and usable during combat
+- Add: Summon Helper module — raid summoning assistant with:
+  - Notification banners when a summoning portal is placed, a player is being summoned, and when they accept/decline
+  - "Needs summon" roster frame showing raid members not in your zone with summon status (Summoning.../Accepted/Declined/Offline)
+  - Portal status indicator on the roster frame (expires after 2 minutes)
+  - Click-to-target players in the roster
+  - Right-click to dismiss the roster (re-shows on roster change or portal cast)
+  - Mythic raid support (only tracks groups 1-4)
+  - Optional "Only with Warlock" filter
+  - Configurable sound, position (lock/unlock), and Lantern theme styling
+
 ## 0.6.11
 - Fix: Auto Quest no longer attempts to interact with quests during combat (prevents errors in instances)
 - Chore: Remove unused utility functions and converters for faster load times
