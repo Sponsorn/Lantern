@@ -360,7 +360,7 @@ Lantern:RegisterLocale("enUS", {
     FOCUSCASTBAR_SHOW_TICK_DESC             = "Show a tick marker where your interrupt comes off cooldown on the cast timeline.",
     FOCUSCASTBAR_TICK_COLOR                 = "Tick Color",
     FOCUSCASTBAR_TICK_COLOR_DESC            = "Color of the interrupt cooldown tick marker.",
-    FOCUSCASTBAR_GROUP_INSTANCES            = "Only Show In",
+    FOCUSCASTBAR_GROUP_INSTANCES            = "Active In",
     FOCUSCASTBAR_INSTANCE_PARTY             = "Dungeons & M+",
     FOCUSCASTBAR_INSTANCE_RAID              = "Raids",
     FOCUSCASTBAR_INSTANCE_ARENA             = "Arenas",

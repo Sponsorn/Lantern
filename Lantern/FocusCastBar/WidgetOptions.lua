@@ -406,7 +406,8 @@ module.widgetOptions = function()
                     disabled = isDisabled,
                     get = function()
                         local t = db().showInInstances;
-                        return t and t.party ~= false or true;
+                        if (not t) then return true; end
+                        return t.party ~= false;
                     end,
                     set = function(val)
                         local d = db();
@@ -420,7 +421,8 @@ module.widgetOptions = function()
                     disabled = isDisabled,
                     get = function()
                         local t = db().showInInstances;
-                        return t and t.raid ~= false or true;
+                        if (not t) then return true; end
+                        return t.raid ~= false;
                     end,
                     set = function(val)
                         local d = db();
@@ -434,7 +436,8 @@ module.widgetOptions = function()
                     disabled = isDisabled,
                     get = function()
                         local t = db().showInInstances;
-                        return t and t.arena ~= false or true;
+                        if (not t) then return true; end
+                        return t.arena ~= false;
                     end,
                     set = function(val)
                         local d = db();
@@ -448,7 +451,7 @@ module.widgetOptions = function()
                     disabled = isDisabled,
                     get = function()
                         local t = db().showInInstances;
-                        return (t and t.pvp) or false;
+                        return t and t.pvp or false;
                     end,
                     set = function(val)
                         local d = db();
@@ -462,7 +465,7 @@ module.widgetOptions = function()
                     disabled = isDisabled,
                     get = function()
                         local t = db().showInInstances;
-                        return (t and t.scenario) or false;
+                        return t and t.scenario or false;
                     end,
                     set = function(val)
                         local d = db();
@@ -476,7 +479,7 @@ module.widgetOptions = function()
                     disabled = isDisabled,
                     get = function()
                         local t = db().showInInstances;
-                        return (t and t.none) or false;
+                        return t and t.none or false;
                     end,
                     set = function(val)
                         local d = db();
