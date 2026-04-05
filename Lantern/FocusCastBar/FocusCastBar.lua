@@ -60,7 +60,7 @@ local cachedSpecId = nil;
 local UPDATE_INTERVAL = 1 / 30; -- ~30 fps
 local lastUpdate = 0;
 
-local DEFAULT_FONT = "Fonts\\FRIZQT__.TTF";
+local DEFAULT_FONT = "Roboto Light";
 
 -- Preview state
 local previewMode = false;
@@ -81,10 +81,7 @@ local function getColor(db, key)
 end
 
 local function getFontPath(db)
-    if (db.font) then
-        return GetFontPath(db.font);
-    end
-    return DEFAULT_FONT;
+    return GetFontPath(db.font or DEFAULT_FONT);
 end
 
 local function ensureDB(self)
@@ -268,12 +265,12 @@ local function createFrame(self)
     spellNameText:SetPoint("RIGHT", textFrame, "RIGHT", -50, 0);
     spellNameText:SetJustifyH("LEFT");
     spellNameText:SetWordWrap(false);
-    SafeSetFont(spellNameText, DEFAULT_FONT, DEFAULTS.fontSize, "OUTLINE");
+    SafeSetFont(spellNameText, GetFontPath(DEFAULT_FONT), DEFAULTS.fontSize, "OUTLINE");
 
     timeText = textFrame:CreateFontString("Lantern_FocusCastBar_TimeText", "OVERLAY");
     timeText:SetPoint("RIGHT", textFrame, "RIGHT", -4, 0);
     timeText:SetJustifyH("RIGHT");
-    SafeSetFont(timeText, DEFAULT_FONT, DEFAULTS.fontSize, "OUTLINE");
+    SafeSetFont(timeText, GetFontPath(DEFAULT_FONT), DEFAULTS.fontSize, "OUTLINE");
 
     -- MakeDraggable
     if (LanternUX and LanternUX.MakeDraggable) then
