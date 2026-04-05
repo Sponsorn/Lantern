@@ -358,6 +358,18 @@ Lantern:RegisterLocale("enUS", {
     FOCUSCASTBAR_INSTANCE_SCENARIO          = "Scenarios / Delves",
     FOCUSCASTBAR_INSTANCE_NONE              = "Open World",
     FOCUSCASTBAR_GROUP_SOUND                = "Sound",
+    FOCUSCASTBAR_PLAY_SOUND_DESC            = "Play a sound when your focus target begins casting.",
+    FOCUSCASTBAR_SOUND_SELECT_DESC          = "Choose the sound to play.",
+    FOCUSCASTBAR_LOCK_POSITION_DESC         = "Lock the cast bar in place.",
+    FOCUSCASTBAR_RESET_POSITION_DESC        = "Move the cast bar back to its default position.",
+    FOCUSCASTBAR_FONT_DESC                  = "Font used for spell name and time text.",
+    FOCUSCASTBAR_FONT_SIZE_DESC             = "Size of the spell name and time text.",
+    FOCUSCASTBAR_USE_CLASS_COLOR            = "Use Class Color",
+    FOCUSCASTBAR_USE_CLASS_COLOR_DESC       = "Override the color with your character's class color.",
+    FOCUSCASTBAR_ICON_POSITION_LEFT         = "Left",
+    FOCUSCASTBAR_ICON_POSITION_RIGHT        = "Right",
+    FOCUSCASTBAR_ICON_POSITION_TOP          = "Top",
+    FOCUSCASTBAR_ICON_POSITION_BOTTOM       = "Bottom",
 
     -- Skip Cinematics
     SKIPCINEMATICS_TITLE                    = "Skip Cinematics",
