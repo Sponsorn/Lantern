@@ -33,6 +33,7 @@ Locales\zhTW.lua
 Utils\Utils.lua
 Utils\LibRangeCheckPatch.lua
 Utils\TextAnimations.lua
+Libs\InterruptSpells.lua
 core.lua
 Utils\WidgetHelpers.lua
 ui.lua
@@ -63,6 +64,8 @@ CombatTimer\CombatTimer.lua
 CombatTimer\WidgetOptions.lua
 CombatAlert\CombatAlert.lua
 CombatAlert\WidgetOptions.lua
+FocusCastBar\FocusCastBar.lua
+FocusCastBar\WidgetOptions.lua
 GatewayReady\GatewayReady.lua
 GatewayReady\WidgetOptions.lua
 SummonHelper\SummonHelper.lua
