@@ -177,6 +177,23 @@ module.widgetOptions = function()
                         onUpdate();
                     end,
                 },
+                {
+                    type = "select",
+                    label = L["FOCUSCASTBAR_BAR_TEXTURE"],
+                    desc = L["FOCUSCASTBAR_BAR_TEXTURE_DESC"],
+                    values = function()
+                        local textures = {};
+                        if (LSM) then
+                            for _, name in ipairs(LSM:List("statusbar") or {}) do
+                                textures[name] = name;
+                            end
+                        end
+                        return textures;
+                    end,
+                    disabled = isDisabled,
+                    get = function() return db().barTexture or "Blizzard"; end,
+                    set = function(val) db().barTexture = val; onUpdate(); end,
+                },
             },
         },
         {

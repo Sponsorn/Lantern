@@ -26,6 +26,7 @@ local DEFAULTS = {
     bgAlpha = 0.8,
     textColor = { r = 1, g = 1, b = 1 },
     tickColor = { r = 1, g = 1, b = 1 },
+    barTexture = nil,
     showIcon = true, iconSize = 24, iconPosition = "LEFT",
     showSpellName = true, showTimeRemaining = true, font = nil, fontSize = 12,
     showEmpowerStages = true, hideFriendlyCasts = false, showShieldIcon = true,
@@ -130,6 +131,14 @@ local function UpdateLayout(db)
 
     -- Background
     castBarFrame.bg:SetVertexColor(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgAlpha or DEFAULTS.bgAlpha);
+
+    -- Bar texture
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
+    local texturePath = "Interface\\TargetingFrame\\UI-StatusBar";
+    if (db.barTexture and LSM) then
+        texturePath = LSM:Fetch("statusbar", db.barTexture) or texturePath;
+    end
+    progressBar:SetStatusBarTexture(texturePath);
 
     -- Progress bar
     progressBar:ClearAllPoints();

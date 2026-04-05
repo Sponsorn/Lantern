@@ -325,6 +325,8 @@ Lantern:RegisterLocale("enUS", {
     FOCUSCASTBAR_BG_COLOR_DESC              = "Cast bar background color.",
     FOCUSCASTBAR_BG_OPACITY                 = "Background Opacity",
     FOCUSCASTBAR_BG_OPACITY_DESC            = "Opacity of the cast bar background.",
+    FOCUSCASTBAR_BAR_TEXTURE                = "Bar Texture",
+    FOCUSCASTBAR_BAR_TEXTURE_DESC           = "Texture used for the cast bar fill.",
     FOCUSCASTBAR_GROUP_ICON                 = "Icon",
     FOCUSCASTBAR_SHOW_ICON                  = "Show Icon",
     FOCUSCASTBAR_SHOW_ICON_DESC             = "Show the spell icon on the cast bar.",
