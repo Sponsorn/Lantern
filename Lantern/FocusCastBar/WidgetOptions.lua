@@ -84,6 +84,24 @@ module.widgetOptions = function()
             expanded = true,
             children = {
                 {
+                    type = "range",
+                    label = L["FOCUSCASTBAR_BAR_WIDTH"],
+                    desc = L["FOCUSCASTBAR_BAR_WIDTH_DESC"],
+                    min = 100, max = 500, step = 5, default = 250,
+                    disabled = isDisabled,
+                    get = function() return db().width or 250; end,
+                    set = function(val) db().width = val; onUpdate(); end,
+                },
+                {
+                    type = "range",
+                    label = L["FOCUSCASTBAR_BAR_HEIGHT"],
+                    desc = L["FOCUSCASTBAR_BAR_HEIGHT_DESC"],
+                    min = 12, max = 48, step = 1, default = 24,
+                    disabled = isDisabled,
+                    get = function() return db().height or 24; end,
+                    set = function(val) db().height = val; onUpdate(); end,
+                },
+                {
                     type = "color",
                     label = L["FOCUSCASTBAR_BAR_READY_COLOR"],
                     desc = L["FOCUSCASTBAR_BAR_READY_COLOR_DESC"],
