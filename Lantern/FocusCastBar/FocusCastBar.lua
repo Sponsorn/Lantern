@@ -173,10 +173,6 @@ local function UpdateLayout(db)
     shieldIcon:ClearAllPoints();
     shieldIcon:SetPoint("TOP", castBarFrame, "BOTTOM", 0, -2);
 
-    -- Border
-    borderFrame:ClearAllPoints();
-    borderFrame:SetAllPoints(progressBar);
-
     -- Text
     local fontPath = getFontPath(db);
     local fontSize = db.fontSize or DEFAULTS.fontSize;
@@ -246,14 +242,15 @@ local function createFrame(self)
     shieldIcon:SetPoint("TOP", castBarFrame, "BOTTOM", 0, -2);
     shieldIcon:Hide();
 
-    -- Border frame
+    -- Border frame (1px black outline)
     borderFrame = CreateFrame("Frame", "Lantern_FocusCastBar_Border", castBarFrame, "BackdropTemplate");
+    borderFrame:SetPoint("TOPLEFT", -1, 1);
+    borderFrame:SetPoint("BOTTOMRIGHT", 1, -1);
     borderFrame:SetBackdrop({
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 },
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
     });
-    borderFrame:SetBackdropBorderColor(0, 0, 0, 0.6);
+    borderFrame:SetBackdropBorderColor(0, 0, 0, 1);
 
     -- Text frame (overlay on progress bar)
     textFrame = CreateFrame("Frame", "Lantern_FocusCastBar_Text", progressBar);
