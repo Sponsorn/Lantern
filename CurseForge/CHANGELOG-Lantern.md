@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.13
+- Add: Focus Cast Bar — shows focus target casts with interrupt tracking, color-coded kick availability, and interrupt cooldown tick marker
+- Add: Instance filter for Focus Cast Bar — only show in selected content types (dungeons, raids, arenas, etc.)
+
 ## 0.6.12
 - Add: Gateway Ready module — alerts when a Warlock Demonic Gateway is nearby and usable during combat
 - Add: Summon Helper module — raid summoning assistant with:
