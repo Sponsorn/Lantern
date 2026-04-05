@@ -111,6 +111,9 @@ local function GetInterruptSpellId()
     return cachedInterruptSpellId or nil;
 end
 
+-- Forward declaration (defined in Preview Mode section below)
+local StartPreviewCast;
+
 -------------------------------------------------------------------------------
 -- Frame Creation
 -------------------------------------------------------------------------------
@@ -616,7 +619,7 @@ end
 -- Preview Mode
 -------------------------------------------------------------------------------
 
-local function StartPreviewCast()
+StartPreviewCast = function()
     if (not castBarFrame) then return; end
     local db = module.db or DEFAULTS;
 
