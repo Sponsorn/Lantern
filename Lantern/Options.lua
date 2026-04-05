@@ -41,6 +41,7 @@ local CORE_KEY = {
     ReleaseProtection    = "releaseProtection",
     CombatTimer          = "combatTimer",
     CombatAlert          = "combatAlert",
+    FocusCastBar         = "focusCastBar",
     GatewayReady         = "gatewayReady",
     SummonHelper         = "summonHelper",
     MapLine              = "map_general",
