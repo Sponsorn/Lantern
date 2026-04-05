@@ -60,6 +60,15 @@ local lastUpdate = 0;
 
 local DEFAULT_FONT = "Fonts\\FRIZQT__.TTF";
 
+-- Preview state
+local previewMode = false;
+local previewTimer = nil;
+local previewPhase = "ready";     -- "ready", "cd", "nonint"
+local previewCastStart = 0;
+local PREVIEW_CAST_DURATION = 3;  -- seconds per fake cast
+local PREVIEW_PHASES = { "ready", "cd", "nonint" };
+local PREVIEW_SPELL_NAMES = { "Shadow Bolt", "Fireball", "Dark Pact" };
+
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
@@ -276,6 +285,29 @@ local function createFrame(self)
         lastUpdate = lastUpdate + elapsed;
         if (lastUpdate < UPDATE_INTERVAL) then return; end
         lastUpdate = 0;
+
+        -- Preview mode: animate fake cast and cycle phases
+        if (previewMode) then
+            local now = GetTime();
+            local previewElapsed = now - previewCastStart;
+            local progress = previewElapsed / PREVIEW_CAST_DURATION;
+
+            if (progress >= 1) then
+                -- Cycle to next phase
+                local nextIndex = 1;
+                for i, p in ipairs(PREVIEW_PHASES) do
+                    if (p == previewPhase) then nextIndex = (i % #PREVIEW_PHASES) + 1; break; end
+                end
+                previewPhase = PREVIEW_PHASES[nextIndex];
+                tickTexture:Hide();
+                StartPreviewCast();
+            else
+                progressBar:SetValue(progress);
+                local remaining = PREVIEW_CAST_DURATION - previewElapsed;
+                timeText:SetText(string.format("%.1f", remaining));
+            end
+            return;
+        end
 
         if (not isCasting and not isChanneling) then return; end
 
@@ -576,6 +608,97 @@ end
 local function UnregisterUnitEvents()
     if (not unitEventFrame) then return; end
     unitEventFrame:UnregisterAllEvents();
+end
+
+-------------------------------------------------------------------------------
+-- Preview Mode
+-------------------------------------------------------------------------------
+
+local function StartPreviewCast()
+    if (not castBarFrame) then return; end
+    local db = module.db or DEFAULTS;
+
+    local phaseIndex = 1;
+    for i, p in ipairs(PREVIEW_PHASES) do
+        if (p == previewPhase) then phaseIndex = i; break; end
+    end
+
+    local spellName = PREVIEW_SPELL_NAMES[phaseIndex] or "Preview Cast";
+    spellNameText:SetText(spellName);
+    timeText:SetText(string.format("%.1f", PREVIEW_CAST_DURATION));
+
+    -- Generic spell icon
+    if (db.showIcon ~= false) then
+        iconFrame.tex:SetTexture(136243);
+        iconFrame:Show();
+    end
+
+    -- Color based on phase
+    if (previewPhase == "ready") then
+        local r, g, b = getColor(db, "barReadyColor", "barReadyUseClassColor");
+        progressBar:SetStatusBarColor(r, g, b);
+        shieldIcon:SetAlpha(0);
+    elseif (previewPhase == "cd") then
+        local r, g, b = getColor(db, "barCdColor", "barCdUseClassColor");
+        progressBar:SetStatusBarColor(r, g, b);
+        shieldIcon:SetAlpha(0);
+        -- Show tick at ~60% through the cast
+        if (db.showInterruptTick ~= false) then
+            interruptBar:SetValue(0.6);
+            tickTexture:Show();
+        end
+    elseif (previewPhase == "nonint") then
+        local r, g, b = getColor(db, "nonIntColor", "nonIntUseClassColor");
+        progressBar:SetStatusBarColor(r, g, b);
+        if (db.showShieldIcon) then
+            shieldIcon:SetAlpha(1);
+        end
+    end
+
+    previewCastStart = GetTime();
+    progressBar:SetValue(0);
+    castBarFrame:SetAlpha(1);
+    castBarFrame:Show();
+end
+
+function module:SetPreviewMode(enabled)
+    previewMode = enabled;
+    if (previewTimer) then previewTimer:Cancel(); previewTimer = nil; end
+
+    if (enabled) then
+        if (not castBarFrame) then createFrame(self); end
+        ensureDB(self);
+        UpdateLayout(self.db);
+        castBarFrame:RestorePosition();
+
+        -- Stop real casting state
+        StopCast();
+
+        previewPhase = "ready";
+        StartPreviewCast();
+
+        -- Auto-disable when settings panel closes
+        previewTimer = C_Timer.NewTicker(0.5, function()
+            if (not previewMode) then return; end
+            local panel = Lantern._uxPanel;
+            if (panel and panel._frame and not panel._frame:IsShown()) then
+                module:SetPreviewMode(false);
+            end
+        end);
+    else
+        previewCastStart = 0;
+        tickTexture:Hide();
+        shieldIcon:SetAlpha(0);
+        if (castBarFrame) then
+            if (not isCasting and not isChanneling) then
+                castBarFrame:Hide();
+            end
+        end
+    end
+end
+
+function module:IsPreviewActive()
+    return previewMode;
 end
 
 -------------------------------------------------------------------------------

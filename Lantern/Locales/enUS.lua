@@ -357,6 +357,7 @@ Lantern:RegisterLocale("enUS", {
     FOCUSCASTBAR_INSTANCE_PVP               = "Battlegrounds",
     FOCUSCASTBAR_INSTANCE_SCENARIO          = "Scenarios / Delves",
     FOCUSCASTBAR_INSTANCE_NONE              = "Open World",
+    FOCUSCASTBAR_PREVIEW_DESC               = "Show the cast bar with a cycling demo cast to preview your settings.",
     FOCUSCASTBAR_GROUP_SOUND                = "Sound",
     FOCUSCASTBAR_PLAY_SOUND_DESC            = "Play a sound when your focus target begins casting.",
     FOCUSCASTBAR_SOUND_SELECT_DESC          = "Choose the sound to play.",

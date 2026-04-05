@@ -69,6 +69,16 @@ module.widgetOptions = function()
     return {
         moduleToggle("FocusCastBar", L["ENABLE"], L["FOCUSCASTBAR_ENABLE_DESC"]),
         {
+            type = "toggle",
+            label = L["SHARED_PREVIEW"],
+            desc = L["FOCUSCASTBAR_PREVIEW_DESC"],
+            disabled = isDisabled,
+            get = function() return module.IsPreviewActive and module:IsPreviewActive() or false; end,
+            set = function(val)
+                if (module.SetPreviewMode) then module:SetPreviewMode(val); end
+            end,
+        },
+        {
             type = "group",
             text = L["FOCUSCASTBAR_GROUP_APPEARANCE"],
             expanded = true,
