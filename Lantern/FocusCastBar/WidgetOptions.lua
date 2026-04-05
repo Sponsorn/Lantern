@@ -134,6 +134,36 @@ module.widgetOptions = function()
                     end,
                 },
                 {
+                    type = "toggle",
+                    label = L["FOCUSCASTBAR_HIGHLIGHT_IMPORTANT"],
+                    desc = L["FOCUSCASTBAR_HIGHLIGHT_IMPORTANT_DESC"],
+                    disabled = isDisabled,
+                    get = function() return db().highlightImportant ~= false; end,
+                    set = function(val) db().highlightImportant = val; onUpdate(); end,
+                },
+                {
+                    type = "color",
+                    label = L["FOCUSCASTBAR_IMPORTANT_COLOR"],
+                    desc = L["FOCUSCASTBAR_IMPORTANT_COLOR_DESC"],
+                    disabled = isDisabled,
+                    get = function()
+                        local c = db().importantColor or { r = 0.0, g = 0.8, b = 0.8 };
+                        return c.r, c.g, c.b;
+                    end,
+                    set = function(r, g, b)
+                        db().importantColor = { r = r, g = g, b = b };
+                        onUpdate();
+                    end,
+                },
+                {
+                    type = "toggle",
+                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
+                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
+                    disabled = isDisabled,
+                    get = function() return db().importantUseClassColor or false; end,
+                    set = function(val) db().importantUseClassColor = val; onUpdate(); end,
+                },
+                {
                     type = "color",
                     label = L["FOCUSCASTBAR_NONINT_COLOR"],
                     desc = L["FOCUSCASTBAR_NONINT_COLOR_DESC"],

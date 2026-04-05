@@ -19,6 +19,9 @@ local DEFAULTS = {
     locked = true, width = 250, height = 24, pos = nil,
     barReadyColor = { r = 0.18, g = 0.54, b = 0.18 },
     barCdColor = { r = 0.70, g = 0.36, b = 0.13 },
+    importantColor = { r = 0.0, g = 0.8, b = 0.8 },
+    highlightImportant = true,
+    importantUseClassColor = false,
     nonIntColor = { r = 0.45, g = 0.45, b = 0.45 },
     bgColor = { r = 0.08, g = 0.08, b = 0.08 },
     bgAlpha = 0.8,
@@ -47,6 +50,7 @@ local borderFrame;
 
 local isCasting = false;
 local isChanneling = false;
+local isImportantCast = false;
 local castEndTime = 0;
 local castStartTime = 0;
 local castDuration = 0;
@@ -338,24 +342,29 @@ local function createFrame(self)
             progressBar:SetValue(math.max(progress, 0));
         end
 
-        -- Update bar color based on interrupt cooldown
-        local spellId = GetInterruptSpellId();
-        if (spellId) then
-            local cdDuration = C_Spell.GetSpellCooldownDuration(spellId);
-            if (cdDuration) then
-                local isReady = cdDuration:IsZero();
-                local rR, rG, rB = getColor(db, "barReadyColor", "barReadyUseClassColor");
-                local cR, cG, cB = getColor(db, "barCdColor", "barCdUseClassColor");
-                if (isReady) then
-                    progressBar:SetStatusBarColor(rR, rG, rB);
-                else
-                    progressBar:SetStatusBarColor(cR, cG, cB);
-                end
+        -- Update bar color based on important cast / interrupt cooldown
+        if (isImportantCast and db.highlightImportant) then
+            local iR, iG, iB = getColor(db, "importantColor", "importantUseClassColor");
+            progressBar:SetStatusBarColor(iR, iG, iB);
+        else
+            local spellId = GetInterruptSpellId();
+            if (spellId) then
+                local cdDuration = C_Spell.GetSpellCooldownDuration(spellId);
+                if (cdDuration) then
+                    local isReady = cdDuration:IsZero();
+                    local rR, rG, rB = getColor(db, "barReadyColor", "barReadyUseClassColor");
+                    local cR, cG, cB = getColor(db, "barCdColor", "barCdUseClassColor");
+                    if (isReady) then
+                        progressBar:SetStatusBarColor(rR, rG, rB);
+                    else
+                        progressBar:SetStatusBarColor(cR, cG, cB);
+                    end
 
-                -- Hide on CD option
-                if (db.hideOnCooldown and not isReady) then
-                    castBarFrame:Hide();
-                    return;
+                    -- Hide on CD option
+                    if (db.hideOnCooldown and not isReady) then
+                        castBarFrame:Hide();
+                        return;
+                    end
                 end
             end
         end
@@ -402,6 +411,7 @@ local function StartCast(self)
 
     isCasting = true;
     isChanneling = false;
+    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;
@@ -457,6 +467,7 @@ local function StartChannel(self)
 
     isCasting = false;
     isChanneling = true;
+    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;
@@ -497,6 +508,7 @@ end
 local function StopCast()
     isCasting = false;
     isChanneling = false;
+    isImportantCast = false;
     castEndTime = 0;
     castStartTime = 0;
     castDuration = 0;
