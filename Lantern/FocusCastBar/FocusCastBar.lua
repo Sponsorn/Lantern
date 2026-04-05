@@ -21,14 +21,11 @@ local DEFAULTS = {
     barCdColor = { r = 0.70, g = 0.36, b = 0.13 },
     importantColor = { r = 0.0, g = 0.8, b = 0.8 },
     highlightImportant = true,
-    importantUseClassColor = false,
     nonIntColor = { r = 0.45, g = 0.45, b = 0.45 },
     bgColor = { r = 0.08, g = 0.08, b = 0.08 },
     bgAlpha = 0.8,
     textColor = { r = 1, g = 1, b = 1 },
     tickColor = { r = 1, g = 1, b = 1 },
-    barReadyUseClassColor = false, barCdUseClassColor = false,
-    nonIntUseClassColor = false, textUseClassColor = false, tickUseClassColor = false,
     showIcon = true, iconSize = 24, iconPosition = "LEFT",
     showSpellName = true, showTimeRemaining = true, font = nil, fontSize = 12,
     showEmpowerStages = true, hideFriendlyCasts = false, showShieldIcon = true,
@@ -77,14 +74,7 @@ local PREVIEW_SPELL_NAMES = { "Shadow Bolt", "Fireball", "Dark Pact" };
 -- Helpers
 -------------------------------------------------------------------------------
 
-local function getColor(db, key, classKey)
-    if (db[classKey]) then
-        local _, class = UnitClass("player");
-        local color = C_ClassColor.GetClassColor(class);
-        if (color) then
-            return color.r, color.g, color.b;
-        end
-    end
+local function getColor(db, key)
     local c = db[key];
     return c.r, c.g, c.b;
 end
@@ -184,7 +174,7 @@ local function UpdateLayout(db)
     SafeSetFont(spellNameText, fontPath, fontSize, "OUTLINE");
     SafeSetFont(timeText, fontPath, fontSize, "OUTLINE");
 
-    local tr, tg, tb = getColor(db, "textColor", "textUseClassColor");
+    local tr, tg, tb = getColor(db, "textColor");
     spellNameText:SetTextColor(tr, tg, tb);
     timeText:SetTextColor(tr, tg, tb);
 
@@ -192,7 +182,7 @@ local function UpdateLayout(db)
     timeText:SetShown(db.showTimeRemaining ~= false);
 
     -- Tick texture
-    local tickR, tickG, tickB = getColor(db, "tickColor", "tickUseClassColor");
+    local tickR, tickG, tickB = getColor(db, "tickColor");
     tickTexture:SetColorTexture(tickR, tickG, tickB, 1);
     tickTexture:SetSize(2, h);
 end
@@ -344,7 +334,7 @@ local function createFrame(self)
 
         -- Update bar color based on important cast / interrupt cooldown
         if (isImportantCast and db.highlightImportant) then
-            local iR, iG, iB = getColor(db, "importantColor", "importantUseClassColor");
+            local iR, iG, iB = getColor(db, "importantColor");
             progressBar:SetStatusBarColor(iR, iG, iB);
         else
             local spellId = GetInterruptSpellId();
@@ -352,8 +342,8 @@ local function createFrame(self)
                 local cdDuration = C_Spell.GetSpellCooldownDuration(spellId);
                 if (cdDuration) then
                     local isReady = cdDuration:IsZero();
-                    local rR, rG, rB = getColor(db, "barReadyColor", "barReadyUseClassColor");
-                    local cR, cG, cB = getColor(db, "barCdColor", "barCdUseClassColor");
+                    local rR, rG, rB = getColor(db, "barReadyColor");
+                    local cR, cG, cB = getColor(db, "barCdColor");
                     if (isReady) then
                         progressBar:SetStatusBarColor(rR, rG, rB);
                     else
@@ -443,7 +433,7 @@ local function StartCast(self)
     end
 
     if (db.colorNonInterrupt) then
-        local nR, nG, nB = getColor(db, "nonIntColor", "nonIntUseClassColor");
+        local nR, nG, nB = getColor(db, "nonIntColor");
         progressBar:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible, nR, nG, nB, 1);
     end
 
@@ -498,7 +488,7 @@ local function StartChannel(self)
     end
 
     if (db.colorNonInterrupt) then
-        local nR, nG, nB = getColor(db, "nonIntColor", "nonIntUseClassColor");
+        local nR, nG, nB = getColor(db, "nonIntColor");
         progressBar:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible, nR, nG, nB, 1);
     end
 
@@ -647,11 +637,11 @@ local function StartPreviewCast()
 
     -- Color based on phase
     if (previewPhase == "ready") then
-        local r, g, b = getColor(db, "barReadyColor", "barReadyUseClassColor");
+        local r, g, b = getColor(db, "barReadyColor");
         progressBar:SetStatusBarColor(r, g, b);
         shieldIcon:SetAlpha(0);
     elseif (previewPhase == "cd") then
-        local r, g, b = getColor(db, "barCdColor", "barCdUseClassColor");
+        local r, g, b = getColor(db, "barCdColor");
         progressBar:SetStatusBarColor(r, g, b);
         shieldIcon:SetAlpha(0);
         -- Show tick at ~60% through the cast
@@ -660,7 +650,7 @@ local function StartPreviewCast()
             tickTexture:Show();
         end
     elseif (previewPhase == "nonint") then
-        local r, g, b = getColor(db, "nonIntColor", "nonIntUseClassColor");
+        local r, g, b = getColor(db, "nonIntColor");
         progressBar:SetStatusBarColor(r, g, b);
         if (db.showShieldIcon) then
             shieldIcon:SetAlpha(1);

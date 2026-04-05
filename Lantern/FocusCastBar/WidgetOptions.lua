@@ -98,17 +98,6 @@ module.widgetOptions = function()
                     end,
                 },
                 {
-                    type = "toggle",
-                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
-                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
-                    disabled = isDisabled,
-                    get = function() return db().barReadyUseClassColor or false; end,
-                    set = function(val)
-                        db().barReadyUseClassColor = val;
-                        onUpdate();
-                    end,
-                },
-                {
                     type = "color",
                     label = L["FOCUSCASTBAR_BAR_CD_COLOR"],
                     desc = L["FOCUSCASTBAR_BAR_CD_COLOR_DESC"],
@@ -119,17 +108,6 @@ module.widgetOptions = function()
                     end,
                     set = function(r, g, b)
                         db().barCdColor = { r = r, g = g, b = b };
-                        onUpdate();
-                    end,
-                },
-                {
-                    type = "toggle",
-                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
-                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
-                    disabled = isDisabled,
-                    get = function() return db().barCdUseClassColor or false; end,
-                    set = function(val)
-                        db().barCdUseClassColor = val;
                         onUpdate();
                     end,
                 },
@@ -156,14 +134,6 @@ module.widgetOptions = function()
                     end,
                 },
                 {
-                    type = "toggle",
-                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
-                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
-                    disabled = isDisabled,
-                    get = function() return db().importantUseClassColor or false; end,
-                    set = function(val) db().importantUseClassColor = val; onUpdate(); end,
-                },
-                {
                     type = "color",
                     label = L["FOCUSCASTBAR_NONINT_COLOR"],
                     desc = L["FOCUSCASTBAR_NONINT_COLOR_DESC"],
@@ -174,17 +144,6 @@ module.widgetOptions = function()
                     end,
                     set = function(r, g, b)
                         db().nonIntColor = { r = r, g = g, b = b };
-                        onUpdate();
-                    end,
-                },
-                {
-                    type = "toggle",
-                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
-                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
-                    disabled = isDisabled,
-                    get = function() return db().nonIntUseClassColor or false; end,
-                    set = function(val)
-                        db().nonIntUseClassColor = val;
                         onUpdate();
                     end,
                 },
@@ -326,17 +285,6 @@ module.widgetOptions = function()
                         onUpdate();
                     end,
                 },
-                {
-                    type = "toggle",
-                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
-                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
-                    disabled = isDisabled,
-                    get = function() return db().textUseClassColor or false; end,
-                    set = function(val)
-                        db().textUseClassColor = val;
-                        onUpdate();
-                    end,
-                },
             },
         },
         {
@@ -408,17 +356,6 @@ module.widgetOptions = function()
                     end,
                     set = function(r, g, b)
                         db().tickColor = { r = r, g = g, b = b };
-                        onUpdate();
-                    end,
-                },
-                {
-                    type = "toggle",
-                    label = L["FOCUSCASTBAR_USE_CLASS_COLOR"],
-                    desc = L["FOCUSCASTBAR_USE_CLASS_COLOR_DESC"],
-                    disabled = isDisabled,
-                    get = function() return db().tickUseClassColor or false; end,
-                    set = function(val)
-                        db().tickUseClassColor = val;
                         onUpdate();
                     end,
                 },
