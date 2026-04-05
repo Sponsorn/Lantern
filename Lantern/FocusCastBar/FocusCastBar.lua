@@ -188,7 +188,7 @@ local function createFrame(self)
     if (castBarFrame) then return; end
 
     -- Main container
-    castBarFrame = CreateFrame("Frame", "Lantern_FocusCastBar", UIParent);
+    castBarFrame = CreateFrame("Frame", "Lantern_FocusCastBar", UIParent, "BackdropTemplate");
     castBarFrame:SetSize(DEFAULTS.width + DEFAULTS.iconSize, DEFAULTS.height);
     castBarFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
     castBarFrame:SetFrameStrata("MEDIUM");
