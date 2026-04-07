@@ -1,5 +1,8 @@
 package-as: Lantern
 
+required-dependencies:
+  - lanternux
+
 move-folders:
   Lantern/Lantern: Lantern
 

@@ -402,12 +402,13 @@ local function StartCast(self)
     if (db.hideFriendlyCasts and UnitIsFriend("player", "focus")) then return; end
 
     local durationMs = UnitCastingDuration("focus");
-    if (not durationMs or durationMs <= 0) then return; end
+    if (not durationMs or issecretvalue(durationMs) or durationMs <= 0) then return; end
+    if (issecretvalue(startTimeMs) or issecretvalue(endTimeMs)) then return; end
     local duration = durationMs / 1000;
 
     isCasting = true;
     isChanneling = false;
-    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
+    isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;
@@ -458,12 +459,13 @@ local function StartChannel(self)
     if (db.hideFriendlyCasts and UnitIsFriend("player", "focus")) then return; end
 
     local durationMs = UnitChannelDuration("focus");
-    if (not durationMs or durationMs <= 0) then return; end
+    if (not durationMs or issecretvalue(durationMs) or durationMs <= 0) then return; end
+    if (issecretvalue(startTimeMs) or issecretvalue(endTimeMs)) then return; end
     local duration = durationMs / 1000;
 
     isCasting = false;
     isChanneling = true;
-    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
+    isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;

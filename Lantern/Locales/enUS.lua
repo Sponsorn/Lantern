@@ -291,6 +291,8 @@ Lantern:RegisterLocale("enUS", {
     SUMMONHELPER_NOTIF_DURATION_DESC         = "How long the notification stays visible (seconds).",
     SUMMONHELPER_GROUP_ROSTER               = "Outside Roster",
     SUMMONHELPER_GROUP_ROSTER_POSITION       = "Roster Position",
+    SUMMONHELPER_INSTANCE_ONLY              = "Only inside instance",
+    SUMMONHELPER_INSTANCE_ONLY_DESC         = "Only show the roster when inside a raid instance.",
     SUMMONHELPER_REQUIRE_WARLOCK            = "Only with Warlock",
     SUMMONHELPER_REQUIRE_WARLOCK_DESC       = "Only show the roster when a Warlock is in the group.",
 

@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.2.10
+## 0.2.11
+- Add: Roboto SemiBold font added to theme font paths
+
+## 0.2.10 - 2026-03-21
 - Fix: Korean, Simplified Chinese, and Traditional Chinese text now renders correctly (falls back to system CJK fonts instead of Roboto)
 
 ## 0.2.9 - 2026-03-19

@@ -18,6 +18,7 @@ local DEFAULTS = {
     showPortalPlaced = true,
     showSummonStarted = true,
     showRoster = true,
+    rosterInstanceOnly = false,
     rosterRequireWarlock = false,
     soundEnabled = false,
     soundName = "RaidWarning",
@@ -30,8 +31,8 @@ local DEFAULTS = {
     notifDuration = 4,
     notifLocked = true,
     notifPos = nil,
-    portalPlacedText = "%s placed a summoning portal, please click!",
-    summoningText = "Summoning %s, please click!",
+    portalPlacedText = "%s placed a summoning portal!",
+    summoningText = "%s received a summon!",
     acceptedText = "%s accepted the summon.",
     declinedText = "%s declined the summon.",
     -- Roster
@@ -246,7 +247,7 @@ local function updateRosterDisplay(outside)
 
     for i, info in ipairs(outside) do
         if (i > MAX_ROWS) then break; end
-        local color = C_ClassColor.GetClassColor(info.class);
+        local color = info.class and C_ClassColor.GetClassColor(info.class);
         local nameText = color and color:WrapTextInColorCode(info.name) or info.name;
 
         -- Append status indicator
@@ -277,7 +278,9 @@ local function updateRosterDisplay(outside)
         height = height + 18;
     end
 
-    rosterFrame:SetHeight(height);
+    if (not locked) then
+        rosterFrame:SetHeight(height);
+    end
     if (not dismissedByUser and not locked) then
         rosterFrame:Show();
     end
@@ -291,6 +294,15 @@ local function scanRoster(self)
     if (not self.db.showRoster) then
         hideRoster();
         return;
+    end
+
+    -- Only show inside raid instances if option is enabled
+    if (self.db.rosterInstanceOnly) then
+        local _, instanceType = GetInstanceInfo();
+        if (instanceType ~= "raid") then
+            hideRoster();
+            return;
+        end
     end
 
     -- Check if warlock is required and present

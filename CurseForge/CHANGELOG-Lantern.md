@@ -1,10 +1,8 @@
 # Changelog
 
-## 0.6.13
+## 0.6.12
 - Add: Focus Cast Bar — shows focus target casts with interrupt tracking, color-coded kick availability, and interrupt cooldown tick marker
 - Add: Instance filter for Focus Cast Bar — only show in selected content types (dungeons, raids, arenas, etc.)
-
-## 0.6.12
 - Add: Gateway Ready module — alerts when a Warlock Demonic Gateway is nearby and usable during combat
 - Add: Summon Helper module — raid summoning assistant with:
   - Notification banners when a summoning portal is placed, a player is being summoned, and when they accept/decline
@@ -13,10 +11,14 @@
   - Click-to-target players in the roster
   - Right-click to dismiss the roster (re-shows on roster change or portal cast)
   - Mythic raid support (only tracks groups 1-4)
-  - Optional "Only with Warlock" filter
+  - Optional "Only with Warlock" and "Only inside instance" filters
   - Configurable sound, position (lock/unlock), and Lantern theme styling
+- Change: SummonHelper notification text improved
+- Fix: Focus Cast Bar handles secret values on cast duration, timing, and spell ID
+- Fix: SummonHelper class color lookup guarded against nil/secret values
+- Fix: SummonHelper roster height no longer changes during combat lockdown
 
-## 0.6.11
+## 0.6.11 - 2026-03-21
 - Fix: Auto Quest no longer attempts to interact with quests during combat (prevents errors in instances)
 - Chore: Remove unused utility functions and converters for faster load times
 - Chore: Consolidate module database initialization into shared helper

@@ -2,7 +2,7 @@
 
 ----
 
-**This is a developer library.** LanternUX does nothing on its own -- it's a dependency used by addons like [Lantern](https://www.curseforge.com/wow/addons/lantern-qol) to build settings panels. If you're a player, you don't need to install this manually.
+**This is a developer library.** LanternUX does nothing on its own -- it's a dependency used by addons like [Lantern](https://www.curseforge.com/wow/addons/lantern) to build settings panels. If you're a player, you don't need to install this manually.
 
 ----
 

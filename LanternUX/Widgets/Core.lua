@@ -92,6 +92,7 @@ local cjkFont = CJK_FONTS[GetLocale()];
 T.fontPathThin      = cjkFont or (FONT_DIR .. "Roboto-Thin.ttf");
 T.fontPathLight     = cjkFont or (FONT_DIR .. "Roboto-Light.ttf");
 T.fontPathRegular   = cjkFont or (FONT_DIR .. "Roboto-Regular.ttf");
+T.fontPathSemiBold  = cjkFont or (FONT_DIR .. "Roboto-SemiBold.ttf");
 T.fontPathBold      = cjkFont or (FONT_DIR .. "Roboto-Bold.ttf");
 T.fontPathExtraBold = cjkFont or (FONT_DIR .. "Roboto-ExtraBold.ttf");
 
