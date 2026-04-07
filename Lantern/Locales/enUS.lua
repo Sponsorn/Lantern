@@ -821,4 +821,75 @@ Lantern:RegisterLocale("enUS", {
     TOOLTIP_HINT_COPY                       = "Ctrl+C to copy",
     TOOLTIP_HINT_COPY_BOTH                  = "Ctrl+C ItemID  |  Ctrl+Shift+C SpellID",
     TOOLTIP_COPY_HINT                       = "Ctrl+C to copy, Esc to close",
+
+    ---------------------------------------------------------------------------
+    -- UI Anchors
+    ---------------------------------------------------------------------------
+
+    UIANCHORS_TITLE                         = "UI Anchors",
+    UIANCHORS_DESC                          = "Provides named anchor frames for WeakAuras and other addons.",
+    UIANCHORS_ENABLE_DESC                   = "Enable or disable the UI Anchors module.",
+
+    -- Anchor names (displayed in labels and options)
+    UIANCHORS_ANCHOR_BARS_LEFT              = "Bars Left",
+    UIANCHORS_ANCHOR_BARS_RIGHT             = "Bars Right",
+    UIANCHORS_ANCHOR_BARS_CENTER            = "Bars Center",
+    UIANCHORS_ANCHOR_BARS_TOP               = "Bars Top",
+    UIANCHORS_ANCHOR_ICONS_LEFT             = "Icons Left",
+    UIANCHORS_ANCHOR_ICONS_RIGHT            = "Icons Right",
+    UIANCHORS_ANCHOR_ICONS_CENTER           = "Icons Center",
+    UIANCHORS_ANCHOR_TEXT_TOP               = "Text Top",
+    UIANCHORS_ANCHOR_TEXT_BOTTOM            = "Text Bottom",
+    UIANCHORS_ANCHOR_LIST_LEFT              = "List Left",
+    UIANCHORS_ANCHOR_LIST_RIGHT             = "List Right",
+    UIANCHORS_ANCHOR_NOTIFICATIONS          = "Notifications",
+
+    -- Per-anchor options
+    UIANCHORS_ANCHOR_ENABLE                 = "Enable",
+    UIANCHORS_ANCHOR_ENABLE_DESC            = "Enable this anchor. When enabled, the frame is available for WeakAuras and other addons to attach to.",
+    UIANCHORS_FRAME_NAME                    = "Frame name: %s",
+    UIANCHORS_POS_X                         = "X offset",
+    UIANCHORS_POS_X_DESC                    = "Horizontal position in pixels from screen center. Negative = left, positive = right.",
+    UIANCHORS_POS_Y                         = "Y offset",
+    UIANCHORS_POS_Y_DESC                    = "Vertical position in pixels from screen center. Negative = down, positive = up.",
+    UIANCHORS_RESET_POSITION                = "Reset Position",
+    UIANCHORS_RESET_POSITION_DESC           = "Return this anchor to its default position for the current resolution.",
+    UIANCHORS_RESET_ALL                     = "Reset All Positions",
+    UIANCHORS_RESET_ALL_DESC                = "Return all anchors to their default positions.",
+    UIANCHORS_RESET_ALL_CONFIRM             = "Reset all anchor positions to defaults?",
+
+    -- General options
+    UIANCHORS_SHOW_ANCHORS                  = "Show Anchors",
+    UIANCHORS_SHOW_ANCHORS_DESC             = "Show or hide anchor frames for repositioning.",
+
+    -- Anchor drawer
+    UIANCHORS_DRAWER_TITLE                  = "Lantern Anchors",
+    UIANCHORS_DRAWER_GROUP_BARS             = "Bars",
+    UIANCHORS_DRAWER_GROUP_ICONS            = "Icons",
+    UIANCHORS_DRAWER_GROUP_TEXT             = "Text",
+    UIANCHORS_SHOW_GRID                     = "Show Grid",
+
+    -- Module integration
+    UIANCHORS_ANCHOR_NONE                   = "None (free position)",
+    UIANCHORS_USE_ANCHOR                    = "Use anchor",
+    UIANCHORS_USE_ANCHOR_DESC               = "Attach this module's frame to a UI Anchor instead of using free positioning.",
+    UIANCHORS_SELECT_ANCHOR                 = "Anchor",
+    UIANCHORS_SELECT_ANCHOR_DESC            = "Select which anchor to attach to.",
+    UIANCHORS_OFFSET_X                      = "X offset",
+    UIANCHORS_OFFSET_X_DESC                 = "Horizontal offset from the anchor point in pixels.",
+    UIANCHORS_OFFSET_Y                      = "Y offset",
+    UIANCHORS_OFFSET_Y_DESC                 = "Vertical offset from the anchor point in pixels.",
+    UIANCHORS_RESET_OFFSET                  = "Reset Offset",
+    UIANCHORS_RESET_OFFSET_DESC             = "Reset the X and Y offset to zero.",
+    UIANCHORS_MODULE_DISABLED_INFO          = "Enable the UI Anchors module to use anchor positioning.",
+
+    -- WeakAuras integration
+    UIANCHORS_OPEN_WEAKAURAS                = "Open WeakAuras",
+    UIANCHORS_OPEN_WEAKAURAS_DESC           = "Open the WeakAuras options panel.",
+
+    -- Callout
+    UIANCHORS_CALLOUT_INFO                  = "Enable individual anchors below or via the Lantern Anchors drawer when Show Anchors is active. Disabled anchors are not visible and cannot be used as attachment points.",
+
+    -- Slash command
+    UIANCHORS_SLASH_TOGGLED                 = "Anchor visibility toggled.",
 });

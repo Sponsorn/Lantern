@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.6.12
+- Add: UI Anchors module — opt-in named anchor frames for WeakAuras and other addons with draggable positioning, nudge buttons, grid overlay, and collapsible drawer panel
+- Add: Anchor positioning support for CombatTimer, CombatAlert, FocusCastBar, GatewayReady, and MissingPet — attach module frames to UI Anchors with optional X/Y offset
+- Add: MissingPet preview mode — show warning text at current position without needing an active pet
 - Add: Focus Cast Bar — shows focus target casts with interrupt tracking, color-coded kick availability, and interrupt cooldown tick marker
 - Add: Instance filter for Focus Cast Bar — only show in selected content types (dungeons, raids, arenas, etc.)
 - Add: Gateway Ready module — alerts when a Warlock Demonic Gateway is nearby and usable during combat

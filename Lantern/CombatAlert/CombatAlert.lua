@@ -174,6 +174,10 @@ function module:IsPreviewActive()
     return previewMode;
 end
 
+function module:GetFrame()
+    return banner;
+end
+
 function module:UpdateLock()
     if (not banner) then return; end
     banner:UpdateLock();
@@ -197,6 +201,16 @@ function module:OnEnable()
     createFrame(self);
     banner:RestorePosition();
     banner:UpdateLock();
+
+    if (self.db and self.db.anchorTo and self.db.anchorTo ~= "none") then
+        Lantern:ApplyAnchorBinding({
+            frame = banner,
+            getAnchorId = function() return self.db.anchorTo or "none"; end,
+            setAnchorId = function(id) self.db.anchorTo = id; end,
+            getOffsetX = function() return self.db.anchorOffsetX or 0; end,
+            getOffsetY = function() return self.db.anchorOffsetY or 0; end,
+        });
+    end
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         if (not self.enabled) then return; end

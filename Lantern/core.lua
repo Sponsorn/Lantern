@@ -272,6 +272,17 @@ SLASH_LANTERN1 = "/lantern";
 SlashCmdList["LANTERN"] = function(msg)
     local cmd = (msg or ""):lower():match("^(%S+)") or "";
 
+    if (cmd == "anchors") then
+        local anchorModule = Lantern.modules["UIAnchors"];
+        if (anchorModule and anchorModule.enabled and anchorModule.ToggleAnchors) then
+            anchorModule:ToggleAnchors();
+            Lantern:Print(L["UIANCHORS_SLASH_TOGGLED"]);
+        else
+            print("|cffe08f2eLantern:|r UI Anchors module is not enabled.");
+        end
+        return;
+    end
+
     if (cmd == "petdebug") then
         local petModule = Lantern.modules["MissingPet"];
         if (petModule and petModule.PetDebug) then

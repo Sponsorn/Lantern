@@ -127,9 +127,29 @@ module.widgetOptions = function()
         return sounds;
     end
 
+    local function isPreviewActive()
+        local m = mpModule();
+        return m and m.IsPreviewActive and m:IsPreviewActive() or false;
+    end
+
     return {
         -- Enable
         moduleToggle("MissingPet", L["ENABLE"], L["MISSINGPET_ENABLE_DESC"]),
+
+        -- Preview
+        {
+            type = "execute",
+            label = isPreviewActive() and L["SHARED_PREVIEW"] .. " (Stop)" or L["SHARED_PREVIEW"],
+            disabled = isDisabled,
+            func = function()
+                local m = mpModule();
+                if (m and m.SetPreviewMode) then
+                    m:SetPreviewMode(not isPreviewActive());
+                    local panel = Lantern._uxPanel;
+                    if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
+                end
+            end,
+        },
 
         -----------------------------------------------------------------------
         -- Warning Settings
@@ -256,30 +276,62 @@ module.widgetOptions = function()
         {
             type = "group",
             text = L["SHARED_GROUP_POSITION"],
-            children = {
-                {
+            children = (function()
+                local children = {};
+
+                -- Anchor widgets
+                local anchorConfig = {
+                    frame = mpModule() and mpModule():GetFrame(),
+                    previewType = nil, -- show all anchor types
+                    getAnchorId = function() return mpDB().anchorTo or "none"; end,
+                    setAnchorId = function(id) mpDB().anchorTo = id; end,
+                    getOffsetX = function() return mpDB().anchorOffsetX or 0; end,
+                    setOffsetX = function(val) mpDB().anchorOffsetX = val; end,
+                    getOffsetY = function() return mpDB().anchorOffsetY or 0; end,
+                    setOffsetY = function(val) mpDB().anchorOffsetY = val; end,
+                    isDisabled = isDisabled,
+                };
+                local anchorWidgets = Lantern:GetAnchorWidgets(anchorConfig);
+                for _, w in ipairs(anchorWidgets) do
+                    table.insert(children, w);
+                end
+
+                -- Lock position (hidden when using anchor)
+                table.insert(children, {
                     type = "toggle",
                     label = L["SHARED_LOCK_POSITION"],
                     desc = L["MISSINGPET_LOCK_POSITION_DESC"],
                     disabled = isDisabled,
+                    hidden = function()
+                        local id = mpDB().anchorTo;
+                        return id and id ~= "none";
+                    end,
                     get = function() return mpDB().locked; end,
                     set = function(val)
                         mpDB().locked = val;
                         local m = mpModule();
                         if (m and m.UpdateLock) then m:UpdateLock(); end
                     end,
-                },
-                {
+                });
+
+                -- Reset position (hidden when using anchor)
+                table.insert(children, {
                     type = "execute",
                     label = L["SHARED_RESET_POSITION"],
                     desc = L["MISSINGPET_RESET_POSITION_DESC"],
                     disabled = isDisabled,
+                    hidden = function()
+                        local id = mpDB().anchorTo;
+                        return id and id ~= "none";
+                    end,
                     func = function()
                         local m = mpModule();
                         if (m and m.ResetPosition) then m:ResetPosition(); end
                     end,
-                },
-            },
+                });
+
+                return children;
+            end)(),
         },
 
         -----------------------------------------------------------------------

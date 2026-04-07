@@ -727,6 +727,16 @@ function module:OnEnable()
     castBarFrame:RestorePosition();
     castBarFrame:UpdateLock();
 
+    if (self.db and self.db.anchorTo and self.db.anchorTo ~= "none") then
+        Lantern:ApplyAnchorBinding({
+            frame = castBarFrame,
+            getAnchorId = function() return self.db.anchorTo or "none"; end,
+            setAnchorId = function(id) self.db.anchorTo = id; end,
+            getOffsetX = function() return self.db.anchorOffsetX or 0; end,
+            getOffsetY = function() return self.db.anchorOffsetY or 0; end,
+        });
+    end
+
     -- Create and register unit events on a dedicated frame
     CreateUnitEventFrame(self);
     RegisterUnitEvents();
@@ -767,6 +777,10 @@ function module:UpdateDisplay()
     if (not castBarFrame) then return; end
     ensureDB(self);
     UpdateLayout(self.db);
+end
+
+function module:GetFrame()
+    return castBarFrame;
 end
 
 function module:UpdateLock()

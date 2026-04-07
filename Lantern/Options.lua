@@ -50,6 +50,7 @@ local CORE_KEY = {
     RangeCheck           = "rangeCheck",
     SkipCinematics       = "skipCinematics",
     Tooltip              = "tooltip",
+    UIAnchors            = "uiAnchors",
 };
 
 -- Ordered categories: each entry is { key, label, moduleNames }
@@ -60,7 +61,7 @@ local MODULE_CATEGORIES = {
         label = L["CATEGORY_GENERAL"],
         modules = {
             "AutoRepair", "AutoSell", "ChatFilter", "CursorRing",
-            "DeleteConfirm", "DisableAutoAddSpells", "Tooltip",
+            "DeleteConfirm", "DisableAutoAddSpells", "Tooltip", "UIAnchors",
         },
     },
     {

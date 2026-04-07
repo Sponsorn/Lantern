@@ -37,6 +37,8 @@ local function ensureDB(self)
     self.db = Lantern.utils.InitModuleDB(self.addon, "gatewayReady", DEFAULTS);
 end
 
+local previewMode = false;
+
 local function createFrame(self)
     if (banner) then return; end
 
@@ -65,6 +67,7 @@ local function createFrame(self)
     end
 
     banner:SetScript("OnUpdate", function()
+        if (previewMode) then return; end
         if (not flashAt) then return; end
 
         local elapsed = GetTime() - flashAt;
@@ -163,6 +166,46 @@ function module:RefreshFont()
     SafeSetFont(label, GetFontPath(db.font or DEFAULTS.font), db.fontSize or DEFAULTS.fontSize, db.fontOutline or DEFAULTS.fontOutline);
 end
 
+function module:GetFrame()
+    return banner;
+end
+
+function module:SetPreviewMode(enabled)
+    previewMode = enabled;
+    if (not banner) then createFrame(self); end
+    if (enabled) then
+        local db = self.db or DEFAULTS;
+        SafeSetFont(label, GetFontPath(db.font or DEFAULTS.font), db.fontSize or DEFAULTS.fontSize, db.fontOutline or DEFAULTS.fontOutline);
+        label:SetText(L["GATEWAYREADY_TEXT"]);
+        local color = db.color or DEFAULTS.color;
+        label:SetTextColor(color.r, color.g, color.b, 1);
+        flashAt = nil; -- stop any active flash
+        banner:SetAlpha(1);
+        banner:Show();
+        -- Auto-disable preview when settings panel closes
+        if (not self._previewTicker) then
+            self._previewTicker = C_Timer.NewTicker(0.5, function()
+                if (not previewMode) then
+                    if (self._previewTicker) then self._previewTicker:Cancel(); self._previewTicker = nil; end
+                    return;
+                end
+                local panel = Lantern._uxPanel;
+                local shown = panel and panel._frame and panel._frame:IsShown();
+                if (not shown) then
+                    self:SetPreviewMode(false);
+                end
+            end);
+        end
+    else
+        if (self._previewTicker) then self._previewTicker:Cancel(); self._previewTicker = nil; end
+        banner:Hide();
+    end
+end
+
+function module:IsPreviewActive()
+    return previewMode;
+end
+
 function module:UpdateLock()
     if (not banner) then return; end
     banner:UpdateLock();
@@ -185,6 +228,16 @@ function module:OnEnable()
     createFrame(self);
     banner:RestorePosition();
     banner:UpdateLock();
+
+    if (self.db and self.db.anchorTo and self.db.anchorTo ~= "none") then
+        Lantern:ApplyAnchorBinding({
+            frame = banner,
+            getAnchorId = function() return self.db.anchorTo or "none"; end,
+            setAnchorId = function(id) self.db.anchorTo = id; end,
+            getOffsetX = function() return self.db.anchorOffsetX or 0; end,
+            getOffsetY = function() return self.db.anchorOffsetY or 0; end,
+        });
+    end
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         if (not self.enabled) then return; end

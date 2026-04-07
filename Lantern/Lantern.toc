@@ -75,4 +75,10 @@ RangeCheck\WidgetOptions.lua
 SkipCinematics\SkipCinematics.lua
 Tooltip\Tooltip.lua
 Tooltip\WidgetOptions.lua
+UIAnchors\Anchors.lua
+UIAnchors\UIAnchors.lua
+UIAnchors\EditMode.lua
+UIAnchors\Drawer.lua
+UIAnchors\Grid.lua
+UIAnchors\WidgetOptions.lua
 Options.lua

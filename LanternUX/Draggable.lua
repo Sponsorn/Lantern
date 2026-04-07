@@ -117,9 +117,15 @@ function LanternUX.MakeDraggable(frame, config)
         else
             self:SetSize(baseW, baseH);
             self:SetBackdrop(nil);
-            if (config.text and savedText) then
-                config.text:SetText(savedText);
-                config.text:SetTextColor(savedR, savedG, savedB, savedA);
+            if (config.text and config.placeholder) then
+                -- Always restore: use saved text if we have it, otherwise clear the placeholder
+                config.text:SetText(savedText or "");
+                if (savedR) then
+                    config.text:SetTextColor(savedR, savedG, savedB, savedA);
+                else
+                    -- No saved color means text was empty/nil — reset to default white
+                    config.text:SetTextColor(1, 1, 1, 1);
+                end
             end
             unlockLabel:Hide();
         end

@@ -81,8 +81,24 @@ module.widgetOptions = function()
         return sounds;
     end
 
+    local function isPreviewActive()
+        return module and module.IsPreviewActive and module:IsPreviewActive() or false;
+    end
+
     return {
         moduleToggle("GatewayReady", L["ENABLE"], L["GATEWAYREADY_ENABLE_DESC"]),
+        {
+            type = "execute",
+            label = isPreviewActive() and L["SHARED_PREVIEW"] .. " (Stop)" or L["SHARED_PREVIEW"],
+            disabled = isDisabled,
+            func = function()
+                if (module and module.SetPreviewMode) then
+                    module:SetPreviewMode(not isPreviewActive());
+                    local panel = Lantern._uxPanel;
+                    if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
+                end
+            end,
+        },
         {
             type = "toggle",
             label = L["GATEWAYREADY_COMBAT_ONLY"],
@@ -186,28 +202,43 @@ module.widgetOptions = function()
         {
             type = "group",
             text = L["SHARED_GROUP_POSITION"],
-            children = {
-                {
+            children = (function()
+                local children = {};
+                local anchorWidgets = Lantern:GetAnchorWidgets({
+                    frame = module.GetFrame and module:GetFrame(),
+                    getAnchorId = function() return db().anchorTo or "none"; end,
+                    setAnchorId = function(id) db().anchorTo = id; end,
+                    getOffsetX = function() return db().anchorOffsetX or 0; end,
+                    setOffsetX = function(val) db().anchorOffsetX = val; end,
+                    getOffsetY = function() return db().anchorOffsetY or 0; end,
+                    setOffsetY = function(val) db().anchorOffsetY = val; end,
+                    isDisabled = isDisabled,
+                });
+                for _, w in ipairs(anchorWidgets) do table.insert(children, w); end
+                table.insert(children, {
                     type = "toggle",
                     label = L["SHARED_LOCK_POSITION"],
                     desc = L["COMBATALERT_LOCK_POSITION_DESC"],
                     disabled = isDisabled,
+                    hidden = function() local id = db().anchorTo; return id and id ~= "none"; end,
                     get = function() return db().locked; end,
                     set = function(val)
                         db().locked = val;
                         if (module.UpdateLock) then module:UpdateLock(); end
                     end,
-                },
-                {
+                });
+                table.insert(children, {
                     type = "execute",
                     label = L["SHARED_RESET_POSITION"],
                     desc = L["COMBATALERT_RESET_POSITION_DESC"],
                     disabled = isDisabled,
+                    hidden = function() local id = db().anchorTo; return id and id ~= "none"; end,
                     func = function()
                         if (module.ResetPosition) then module:ResetPosition(); end
                     end,
-                },
-            },
+                });
+                return children;
+            end)(),
         },
     };
 end

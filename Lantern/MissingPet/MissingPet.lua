@@ -135,6 +135,7 @@ local warningText = nil;
 local dismountTimer = nil;
 local waitingAfterDismount = false;
 local soundTimer = nil;
+local previewMode = false;
 
 
 -- Always get fresh database reference
@@ -327,6 +328,7 @@ end
 local currentState = nil;
 
 local function UpdatePetStatus()
+    if (previewMode) then return; end
     if (not module.enabled) then
         if (warningFrame) then
             warningFrame:Hide();
@@ -436,6 +438,10 @@ end
 -- Public API for Options
 -------------------------------------------------------------------------------
 
+function module:GetFrame()
+    return warningFrame;
+end
+
 function module:ResetPosition()
     if (not warningFrame) then return; end
     warningFrame:ResetPosition();
@@ -458,6 +464,44 @@ end
 
 function module:RefreshFont()
     UpdateWarningFont();
+end
+
+function module:SetPreviewMode(enabled)
+    previewMode = enabled;
+    CreateWarningFrame();
+    if (enabled) then
+        local db = getDB();
+        warningText:SetText(db and db.warningText or DEFAULTS.warningText);
+        local c = db and db.missingColor or DEFAULTS.missingColor;
+        warningText:SetTextColor(c.r, c.g, c.b, 1);
+        local animStyle = db and db.animationStyle or DEFAULTS.animationStyle;
+        Lantern:ApplyTextAnimation(warningText, animStyle);
+        warningFrame:Show();
+        -- Auto-disable preview when settings panel closes
+        if (not self._previewTicker) then
+            self._previewTicker = C_Timer.NewTicker(0.5, function()
+                if (not previewMode) then
+                    if (self._previewTicker) then self._previewTicker:Cancel(); self._previewTicker = nil; end
+                    return;
+                end
+                local panel = Lantern._uxPanel;
+                local shown = panel and panel._frame and panel._frame:IsShown();
+                if (not shown) then
+                    self:SetPreviewMode(false);
+                end
+            end);
+        end
+    else
+        if (self._previewTicker) then self._previewTicker:Cancel(); self._previewTicker = nil; end
+        Lantern:StopTextAnimation(warningText);
+        warningFrame:Hide();
+        currentState = nil;
+        UpdatePetStatus();
+    end
+end
+
+function module:IsPreviewActive()
+    return previewMode;
 end
 
 function module:UpdateLock()
@@ -543,6 +587,18 @@ function module:OnInit()
     CreateWarningFrame();
     warningFrame:RestorePosition();
     warningFrame:UpdateLock();
+
+    -- Apply anchor binding if configured
+    local db = getDB();
+    if (db and db.anchorTo and db.anchorTo ~= "none") then
+        Lantern:ApplyAnchorBinding({
+            frame = warningFrame,
+            getAnchorId = function() return db.anchorTo or "none"; end,
+            setAnchorId = function(id) db.anchorTo = id; end,
+            getOffsetX = function() return db.anchorOffsetX or 0; end,
+            getOffsetY = function() return db.anchorOffsetY or 0; end,
+        });
+    end
 end
 
 function module:OnEnable()

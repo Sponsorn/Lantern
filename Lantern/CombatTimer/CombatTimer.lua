@@ -120,6 +120,10 @@ function module:IsPreviewActive()
     return previewMode;
 end
 
+function module:GetFrame()
+    return clock;
+end
+
 function module:UpdateLock()
     if (not clock) then return; end
     clock:UpdateLock();
@@ -144,6 +148,17 @@ function module:OnEnable()
     clock:RestorePosition();
     clock:UpdateLock();
     self:RefreshFont();
+
+    -- Apply anchor binding if configured
+    if (self.db and self.db.anchorTo and self.db.anchorTo ~= "none") then
+        Lantern:ApplyAnchorBinding({
+            frame = clock,
+            getAnchorId = function() return self.db.anchorTo or "none"; end,
+            setAnchorId = function(id) self.db.anchorTo = id; end,
+            getOffsetX = function() return self.db.anchorOffsetX or 0; end,
+            getOffsetY = function() return self.db.anchorOffsetY or 0; end,
+        });
+    end
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         if (not self.enabled) then return; end
