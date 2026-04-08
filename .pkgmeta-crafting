@@ -1,5 +1,8 @@
 package-as: Lantern_CraftingOrders
 
+required-dependencies:
+  - lantern
+
 move-folders:
   Lantern_CraftingOrders/Lantern_CraftingOrders: Lantern_CraftingOrders
 

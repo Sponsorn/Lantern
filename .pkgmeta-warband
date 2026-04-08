@@ -1,5 +1,8 @@
 package-as: Lantern_Warband
 
+required-dependencies:
+  - lantern
+
 move-folders:
   Lantern_Warband/Lantern_Warband: Lantern_Warband
 
