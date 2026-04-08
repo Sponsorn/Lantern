@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.6.12
+- Chore: LanternUX settings framework is now built into Lantern core — LanternUX standalone addon is no longer needed
 - Add: UI Anchors module — opt-in named anchor frames for WeakAuras and other addons with draggable positioning, nudge buttons, grid overlay, and collapsible drawer panel
 - Add: Anchor positioning support for CombatTimer, CombatAlert, FocusCastBar, GatewayReady, and MissingPet — attach module frames to UI Anchors with optional X/Y offset
 - Add: MissingPet preview mode — show warning text at current position without needing an active pet

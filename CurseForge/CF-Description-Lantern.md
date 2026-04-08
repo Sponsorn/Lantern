@@ -30,6 +30,8 @@ Lantern is a modular QoL addon for World of Warcraft. It bundles small, focused 
 *   **Flight Path Line**: Draws a dotted directional line on the world map while flying, with customizable style, color, and length. Disabled by default.
 *   **Reset Minimap Zoom**: Automatically zooms the minimap back out after a configurable delay. Disabled by default.
 
+The settings framework (formerly LanternUX) is now built into Lantern -- no separate dependency needed.
+
 The framework is module-based, so additional features can be plugged in later without impacting the core.
 
 #### Companion addons:

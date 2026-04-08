@@ -1,5 +1,8 @@
 # Changelog
 
+## [FINAL] - 2026-04-08
+- Remove: All functionality moved into Lantern core. This addon is now a stub — please uninstall it and update Lantern.
+
 ## 0.2.11
 - Add: Roboto SemiBold font added to theme font paths
 
