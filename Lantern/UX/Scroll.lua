@@ -1,4 +1,5 @@
-local ADDON_NAME = ...;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
 
 -------------------------------------------------------------------------------
 -- Scroll container (fully standalone, no _W dependency)
@@ -13,7 +14,7 @@ local SCROLLBAR_FADE_DELAY = 1.0;
 local SCROLLBAR_FADE_BLEND = 0.12;
 local SCROLLBAR_FADE_SNAP  = 0.02;
 
-local T = LanternUX.Theme;
+local T = UX.Theme;
 
 local scrollCounter = 0;
 local function NextScrollName(prefix)
@@ -320,4 +321,4 @@ end
 -- Export
 -------------------------------------------------------------------------------
 
-LanternUX.CreateScrollContainer = CreateScrollContainer;
+UX.CreateScrollContainer = CreateScrollContainer;

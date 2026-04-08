@@ -1,7 +1,6 @@
-local ADDON_NAME = ...;
-
-local LanternUX = _G.LanternUX;
-local T = LanternUX and LanternUX.Theme;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
+local T = UX and UX.Theme;
 if (not T) then return; end
 
 -------------------------------------------------------------------------------
@@ -32,7 +31,7 @@ end
 -- CreateDataTable
 -------------------------------------------------------------------------------
 
-function LanternUX.CreateDataTable(parent, config)
+function UX.CreateDataTable(parent, config)
     local dt = {};
     dt._columns        = config.columns or {};
     dt._rowHeight      = config.rowHeight or DEFAULT_ROW_HEIGHT;
@@ -257,7 +256,7 @@ function LanternUX.CreateDataTable(parent, config)
     scrollArea:SetPoint("TOPLEFT", scrollAnchor, "BOTTOMLEFT", 0, 0);
     scrollArea:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0);
 
-    local scroll = LanternUX.CreateScrollContainer(scrollArea);
+    local scroll = UX.CreateScrollContainer(scrollArea);
     dt._scroll = scroll;
     dt._scrollArea = scrollArea;
 

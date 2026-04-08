@@ -1,10 +1,9 @@
-local ADDON_NAME = ...;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
+if (not UX or not UX._PanelMixin) then return; end
 
-local LanternUX = _G.LanternUX;
-if (not LanternUX or not LanternUX._PanelMixin) then return; end
-
-local T = LanternUX.Theme;
-local PanelMixin = LanternUX._PanelMixin;
+local T = UX.Theme;
+local PanelMixin = UX._PanelMixin;
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -244,12 +243,12 @@ function PanelMixin:_RenderSearchResults(results)
     -- Show description panel + scroll container
     if (self._descPanel) then
         self._descPanel:Show();
-        LanternUX.descPanel = self._descPanel;
+        UX.descPanel = self._descPanel;
     end
     self._customScroll.scrollFrame:Show();
     self._customScroll:Reset();
 
-    LanternUX.RenderContent(self._customScroll, options, nil, "_search");
+    UX.RenderContent(self._customScroll, options, nil, "_search");
 end
 
 -------------------------------------------------------------------------------
@@ -341,7 +340,7 @@ function PanelMixin:_NavigateToWidget(entry)
     self:_SetSidebarDimmed(false);
 
     if (entry.groupTexts and #entry.groupTexts > 0) then
-        LanternUX.ExpandGroups(entry.pageKey, entry.groupTexts);
+        UX.ExpandGroups(entry.pageKey, entry.groupTexts);
     end
 
     self._scrollToWidget = entry.widgetKey;
@@ -360,7 +359,7 @@ function PanelMixin:_ConsumeScrollToWidget()
     -- Defer 2 frames for layout to settle
     C_Timer.After(0, function()
         C_Timer.After(0, function()
-            local posMap = LanternUX.widgetPositionMap;
+            local posMap = UX.widgetPositionMap;
             if (posMap and posMap[targetKey] and scroll) then
                 scroll:ScrollToY(posMap[targetKey]);
             end

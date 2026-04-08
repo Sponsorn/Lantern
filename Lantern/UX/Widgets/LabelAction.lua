@@ -1,6 +1,6 @@
-local ADDON_NAME = ...;
+local ADDON_NAME, Lantern = ...;
 
-local _W = LanternUX._W;
+local _W = Lantern.UX._W;
 local T = _W.T;
 local AcquireWidget = _W.AcquireWidget;
 local RegisterWidget = _W.RegisterWidget;

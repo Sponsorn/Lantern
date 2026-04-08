@@ -1,14 +1,15 @@
-local ADDON_NAME = ...;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
 
 -------------------------------------------------------------------------------
--- LanternUX.MakeDraggable
+-- Lantern.UX.MakeDraggable
 --
 -- Turns a frame into a draggable, lockable display with position persistence.
 -- The frame MUST inherit BackdropTemplate (pass it in CreateFrame).
 --
 -- Usage:
 --   local frame = CreateFrame("Frame", "MyFrame", UIParent, "BackdropTemplate")
---   LanternUX.MakeDraggable(frame, {
+--   Lantern.UX.MakeDraggable(frame, {
 --       getPos       = function() return db.pos end,
 --       setPos       = function(pos) db.pos = pos end,
 --       getLocked    = function() return db.locked end,
@@ -23,12 +24,12 @@ local ADDON_NAME = ...;
 --   frame:ResetPosition()   -- reset to defaultPoint and clear saved pos
 -------------------------------------------------------------------------------
 
-local T = LanternUX.Theme;
+local T = UX.Theme;
 
 -- Registry of all draggable frames for auto-lock on panel close
 local draggableFrames = {};
 
-function LanternUX.LockAllDraggables()
+function UX.LockAllDraggables()
     for _, entry in ipairs(draggableFrames) do
         local frame = entry.frame;
         local setLocked = entry.setLocked;
@@ -49,7 +50,7 @@ local UNLOCK_BACKDROP = {
 
 local PAD = 6;
 
-function LanternUX.MakeDraggable(frame, config)
+function UX.MakeDraggable(frame, config)
     assert(frame and config, "MakeDraggable: frame and config required");
     assert(config.getPos and config.setPos and config.getLocked and config.setLocked, "MakeDraggable: getPos, setPos, getLocked, setLocked required");
     assert(config.defaultPoint, "MakeDraggable: defaultPoint required");
