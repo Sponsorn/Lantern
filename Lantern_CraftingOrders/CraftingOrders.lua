@@ -190,7 +190,7 @@ local function GetFontPath(fontName)
         local path = LibSharedMedia:Fetch("font", fontName);
         if (path) then return path; end
     end
-    return "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Light.ttf";
+    return "Interface\\AddOns\\Lantern\\UX\\Fonts\\Roboto-Light.ttf";
 end
 
 local function GetFontValues()
