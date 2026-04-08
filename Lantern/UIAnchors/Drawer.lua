@@ -5,7 +5,7 @@ local module = Lantern.modules["UIAnchors"];
 if (not module) then return; end
 
 local L = Lantern.L;
-local T = _G.LanternUX and _G.LanternUX.Theme;
+local T = Lantern.UX and Lantern.UX.Theme;
 
 local ANCHOR_DEFS = Lantern.UI_ANCHORS;
 
@@ -15,7 +15,7 @@ local BORDER_COLOR = T and T.border    or { 0.18, 0.18, 0.20, 1.0 };
 local ACCENT_COLOR = T and T.accent    or { 0.88, 0.56, 0.18, 1.0 };
 local TEXT_COLOR   = T and T.text      or { 0.72, 0.72, 0.72, 1.0 };
 local DIM_COLOR    = T and T.textDim   or { 0.52, 0.52, 0.54, 1.0 };
-local FONT_PATH    = T and T.fontPathRegular or "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Regular.ttf";
+local FONT_PATH    = T and T.fontPathRegular or "Interface\\AddOns\\Lantern\\UX\\Fonts\\Roboto-Regular.ttf";
 
 local DRAWER_WIDTH = 200;
 local ROW_HEIGHT = 20;

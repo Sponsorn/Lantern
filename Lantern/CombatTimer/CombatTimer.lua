@@ -2,7 +2,7 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 local L = Lantern.L;
 
-local LanternUX = _G.LanternUX;
+local UX = Lantern.UX;
 local GetFontPath = Lantern.utils.GetFontPath;
 local SafeSetFont = Lantern.utils.SafeSetFont;
 
@@ -53,8 +53,8 @@ local function createFrame(self)
     clockLabel:SetTextColor(c.r, c.g, c.b, 1);
     clockLabel:SetText("0:00");
 
-    if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(clock, {
+    if (UX and UX.MakeDraggable) then
+        UX.MakeDraggable(clock, {
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,

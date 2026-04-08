@@ -41,8 +41,8 @@ local GetMountInfoByID = C_MountJournal and C_MountJournal.GetMountInfoByID;
 local GetAuraDataByIndex = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex;
 local GetItemSpell = (C_Item and C_Item.GetItemSpell) or GetItemSpell;
 
-local LanternUX = _G.LanternUX;
-local T = LanternUX and LanternUX.Theme;
+local UX = Lantern.UX;
+local T = UX and UX.Theme;
 
 -------------------------------------------------------------------------------
 -- Helpers

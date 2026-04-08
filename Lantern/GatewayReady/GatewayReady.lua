@@ -2,7 +2,7 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 local L = Lantern.L;
 
-local LanternUX = _G.LanternUX;
+local UX = Lantern.UX;
 local GetFontPath = Lantern.utils.GetFontPath;
 local SafeSetFont = Lantern.utils.SafeSetFont;
 
@@ -54,8 +54,8 @@ local function createFrame(self)
     label:SetShadowOffset(2, -2);
     label:SetShadowColor(0, 0, 0, 0.8);
 
-    if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(banner, {
+    if (UX and UX.MakeDraggable) then
+        UX.MakeDraggable(banner, {
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,

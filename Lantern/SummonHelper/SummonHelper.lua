@@ -2,7 +2,7 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 local L = Lantern.L;
 
-local LanternUX = _G.LanternUX;
+local UX = Lantern.UX;
 
 local module = Lantern:NewModule("SummonHelper", {
     title = L["SUMMONHELPER_TITLE"],
@@ -128,7 +128,7 @@ end
 local function createRosterFrame(self)
     if (rosterFrame) then return; end
 
-    local T = LanternUX and LanternUX.Theme;
+    local T = UX and UX.Theme;
 
     rosterFrame = CreateFrame("Frame", "Lantern_SummonRoster", UIParent, "BackdropTemplate");
     rosterFrame:SetSize(230, 40);
@@ -185,8 +185,8 @@ local function createRosterFrame(self)
         GameTooltip:Hide();
     end);
 
-    if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(rosterFrame, {
+    if (UX and UX.MakeDraggable) then
+        UX.MakeDraggable(rosterFrame, {
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
@@ -460,7 +460,7 @@ local ROSTER_BACKDROP = {
 
 local function restoreBackdrop()
     if (not rosterFrame) then return; end
-    local T = LanternUX and LanternUX.Theme;
+    local T = UX and UX.Theme;
     rosterFrame:SetBackdrop(ROSTER_BACKDROP);
     if (T) then
         rosterFrame:SetBackdropColor(T.bg[1], T.bg[2], T.bg[3], 0.92);

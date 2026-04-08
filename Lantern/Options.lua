@@ -1,9 +1,9 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
-local LanternUX = _G.LanternUX;
-if (not LanternUX or not LanternUX.CreatePanel) then return; end
+local UX = Lantern.UX;
+if (not UX or not UX.CreatePanel) then return; end
 
-local T = LanternUX.Theme;
+local T = UX.Theme;
 if (not T) then return; end
 
 local L = Lantern.L;
@@ -12,7 +12,7 @@ local L = Lantern.L;
 -- Create panel
 -------------------------------------------------------------------------------
 
-local panel = LanternUX:CreatePanel({
+local panel = UX:CreatePanel({
     name    = "LanternSettingsPanel",
     title   = "Lantern",
     icon    = "Interface\\AddOns\\Lantern\\Media\\Images\\Icons\\lantern-core-icon64.blp",
@@ -1083,7 +1083,7 @@ local function PopulateSplashModules()
 end
 
 local function CreateSplashContent(parent)
-    local scroll = LanternUX.CreateScrollContainer(parent);
+    local scroll = UX.CreateScrollContainer(parent);
     local f = scroll.scrollChild;
 
     scroll.scrollFrame:SetScript("OnSizeChanged", function(_, w)

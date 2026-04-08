@@ -1,8 +1,8 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
-local LanternUX = _G.LanternUX;
-if (not LanternUX) then return; end
+local UX = Lantern.UX;
+if (not UX) then return; end
 
 local module = Lantern.modules["SummonHelper"];
 if (not module) then return; end
