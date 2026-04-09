@@ -151,19 +151,31 @@ local function CreateRange(parent)
     dragFrame:SetFrameLevel(trackFrame:GetFrameLevel() + 3);
     dragFrame:EnableMouse(true);
 
+    dragFrame:RegisterForClicks("AnyUp", "AnyDown");
+
     dragFrame:SetScript("OnMouseDown", function(self, button)
-        if (button ~= "LeftButton" or w._disabled) then return; end
-        w._dragging = true;
-        SetValueFromX(GetTrackRelativeX());
-        -- Track on the main frame so dragging works even when cursor leaves the track
-        frame:SetScript("OnUpdate", function()
-            if (not w._dragging or not IsMouseButtonDown("LeftButton")) then
-                w._dragging = false;
-                frame:SetScript("OnUpdate", nil);
-                return;
-            end
+        if (w._disabled) then return; end
+        if (button == "LeftButton") then
+            w._dragging = true;
             SetValueFromX(GetTrackRelativeX());
-        end);
+            -- Track on the main frame so dragging works even when cursor leaves the track
+            frame:SetScript("OnUpdate", function()
+                if (not w._dragging or not IsMouseButtonDown("LeftButton")) then
+                    w._dragging = false;
+                    frame:SetScript("OnUpdate", nil);
+                    return;
+                end
+                SetValueFromX(GetTrackRelativeX());
+            end);
+        elseif (button == "RightButton" and w._default ~= nil) then
+            local clamped = ClampValue(w._default, w._min, w._max, w._step);
+            if (clamped ~= w._value) then
+                w._value = clamped;
+                UpdateThumbPosition();
+                if (w._onSet) then w._onSet(clamped); end
+                C_Timer.After(0, RefreshActiveWidgets);
+            end
+        end
     end);
 
     dragFrame:SetScript("OnMouseUp", function(self, button)

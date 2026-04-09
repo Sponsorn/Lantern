@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.0
+- Add: Right-click slider thumb to reset to default value
 - Change: Missing Pet and Gateway Ready preview is now a toggle instead of a button
 - Fix: Summon Helper outside roster starts collapsed by default — click to expand, shows player count in title bar
 - Fix: Gateway Ready alert now stays visible while the gateway is usable instead of fading out — removed fade duration setting
