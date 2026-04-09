@@ -200,6 +200,7 @@ local function createFrame(self)
     castBarFrame:SetSize(DEFAULTS.width + DEFAULTS.iconSize, DEFAULTS.height);
     castBarFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
     castBarFrame:SetFrameStrata("MEDIUM");
+    castBarFrame:SetClampedToScreen(true);
     castBarFrame:Hide();
 
     -- Background
@@ -403,6 +404,7 @@ end
 
 local function StartCast(self)
     local db = self.db or DEFAULTS;
+    if (previewMode) then return; end
     if (not instanceAllowed) then return; end
     if (not castBarFrame) then createFrame(self); end
 
@@ -418,7 +420,7 @@ local function StartCast(self)
 
     isCasting = true;
     isChanneling = false;
-    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
+    isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;
@@ -459,6 +461,7 @@ end
 
 local function StartChannel(self)
     local db = self.db or DEFAULTS;
+    if (previewMode) then return; end
     if (not instanceAllowed) then return; end
     if (not castBarFrame) then createFrame(self); end
 
@@ -474,7 +477,7 @@ local function StartChannel(self)
 
     isCasting = false;
     isChanneling = true;
-    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
+    isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;

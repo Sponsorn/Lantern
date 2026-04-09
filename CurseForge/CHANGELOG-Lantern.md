@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.7.0
+- Fix: Focus Cast Bar can no longer be dragged off-screen
+- Fix: Focus Cast Bar preview mode now blocks real cast events from overriding the preview
+- Fix: Focus Cast Bar guards spellId with issecretvalue before calling IsSpellImportant
 - Add: Slider nudge buttons (-/+) for precise 1-step adjustments
 - Add: Right-click slider thumb to reset to default value
 - Change: Missing Pet and Gateway Ready preview is now a toggle instead of a button
