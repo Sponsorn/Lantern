@@ -215,6 +215,13 @@ local function createFrame(self)
     progressBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar");
     progressBar:SetStatusBarColor(0.18, 0.54, 0.18);
 
+    -- Non-interruptible overlay (separate texture so it doesn't lock the bar color)
+    local nonIntOverlay = progressBar:CreateTexture("Lantern_FocusCastBar_NonInt", "OVERLAY");
+    nonIntOverlay:SetAllPoints(progressBar:GetStatusBarTexture());
+    nonIntOverlay:SetColorTexture(1, 1, 1, 1);
+    nonIntOverlay:SetAlpha(0);
+    castBarFrame._nonIntOverlay = nonIntOverlay;
+
     -- Interrupt bar (invisible, used for tick positioning)
     interruptBar = CreateFrame("StatusBar", "Lantern_FocusCastBar_Interrupt", castBarFrame);
     interruptBar:SetMinMaxValues(0, 1);
@@ -451,9 +458,12 @@ local function StartCast(self)
         shieldIcon:SetAlpha(0);
     end
 
-    if (db.colorNonInterrupt) then
+    if (db.colorNonInterrupt and castBarFrame._nonIntOverlay) then
         local nR, nG, nB = getColor(db, "nonIntColor");
-        progressBar:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible, nR, nG, nB, 1);
+        castBarFrame._nonIntOverlay:SetVertexColor(nR, nG, nB, 1);
+        castBarFrame._nonIntOverlay:SetAlphaFromBoolean(notInterruptible);
+    elseif (castBarFrame._nonIntOverlay) then
+        castBarFrame._nonIntOverlay:SetAlpha(0);
     end
 
     castBarFrame:Show();
@@ -507,9 +517,12 @@ local function StartChannel(self)
         shieldIcon:SetAlpha(0);
     end
 
-    if (db.colorNonInterrupt) then
+    if (db.colorNonInterrupt and castBarFrame._nonIntOverlay) then
         local nR, nG, nB = getColor(db, "nonIntColor");
-        progressBar:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible, nR, nG, nB, 1);
+        castBarFrame._nonIntOverlay:SetVertexColor(nR, nG, nB, 1);
+        castBarFrame._nonIntOverlay:SetAlphaFromBoolean(notInterruptible);
+    elseif (castBarFrame._nonIntOverlay) then
+        castBarFrame._nonIntOverlay:SetAlpha(0);
     end
 
     castBarFrame:Show();
@@ -526,6 +539,9 @@ local function StopCast()
         castBarFrame:Hide();
         if (castBarFrame._importantGlow) then
             castBarFrame._importantGlow:Hide();
+        end
+        if (castBarFrame._nonIntOverlay) then
+            castBarFrame._nonIntOverlay:SetAlpha(0);
         end
     end
     if (shieldIcon) then
