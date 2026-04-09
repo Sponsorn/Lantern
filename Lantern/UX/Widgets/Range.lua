@@ -21,7 +21,7 @@ local TRACK_HEIGHT    = 6;
 local THUMB_SIZE      = 18;
 local RANGE_LABEL_H   = 18;
 local RANGE_TRACK_PAD = 4;
-local NUDGE_SIZE      = 16;
+local NUDGE_SIZE      = 20;
 
 -------------------------------------------------------------------------------
 -- Create / Setup
@@ -114,7 +114,7 @@ local function CreateRange(parent)
         btn:SetSize(NUDGE_SIZE, NUDGE_SIZE);
         btn:SetPoint(anchor, trackFrame, relPoint, xOff, 0);
 
-        local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontSmallBold);
+        local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontBody);
         btnText:SetPoint("CENTER", 0, 0);
         btnText:SetText(text);
         btnText:SetTextColor(unpack(T.textDim));
