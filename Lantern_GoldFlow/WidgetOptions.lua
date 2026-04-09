@@ -2,11 +2,11 @@ local ADDON_NAME, ns = ...;
 local Lantern = _G.Lantern;
 if (not Lantern or not Lantern.modules or not Lantern.modules.GoldFlow) then return; end
 
-local LanternUX = _G.LanternUX;
-if (not LanternUX or not LanternUX.Theme) then return; end
+local UX = Lantern and Lantern.UX;
+if (not UX or not UX.Theme) then return; end
 
 local module = Lantern.modules.GoldFlow;
-local T = LanternUX.Theme;
+local T = UX.Theme;
 
 local refreshPage = Lantern.refreshPage;
 

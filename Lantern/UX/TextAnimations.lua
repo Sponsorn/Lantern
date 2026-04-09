@@ -1,8 +1,9 @@
-local ADDON_NAME, addon = ...;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
 
-addon.textAnimations = addon.textAnimations or {};
+UX.textAnimations = UX.textAnimations or {};
 
-local TextAnimations = addon.textAnimations;
+local TextAnimations = UX.textAnimations;
 
 -- Registry of available animation styles
 local animations = {};
@@ -15,12 +16,12 @@ local pi = math.pi;
 -- Animation Registration
 -------------------------------------------------------------------------------
 
-function addon:RegisterTextAnimation(name, setupFn)
+function Lantern:RegisterTextAnimation(name, setupFn)
     if (not name or type(setupFn) ~= "function") then return; end
     animations[name] = setupFn;
 end
 
-function addon:GetTextAnimationList()
+function Lantern:GetTextAnimationList()
     local list = {};
     for name in pairs(animations) do
         table.insert(list, name);
@@ -29,7 +30,7 @@ function addon:GetTextAnimationList()
     return list;
 end
 
-function addon:ApplyTextAnimation(fontString, animationName)
+function Lantern:ApplyTextAnimation(fontString, animationName)
     if (not fontString) then return; end
 
     -- Stop any existing animation first
@@ -50,7 +51,7 @@ function addon:ApplyTextAnimation(fontString, animationName)
     end
 end
 
-function addon:StopTextAnimation(fontString)
+function Lantern:StopTextAnimation(fontString)
     if (not fontString) then return; end
     if (fontString._lanternAnimGroup) then
         local anim = fontString._lanternAnimGroup;
@@ -77,12 +78,12 @@ end
 -------------------------------------------------------------------------------
 
 -- None - static text, no animation
-addon:RegisterTextAnimation("none", function(fontString)
+Lantern:RegisterTextAnimation("none", function(fontString)
     return nil;
 end);
 
 -- Bounce - vertical bouncing motion
-addon:RegisterTextAnimation("bounce", function(fontString)
+Lantern:RegisterTextAnimation("bounce", function(fontString)
     local parent = fontString:GetParent();
     if (not parent) then return nil; end
 
@@ -105,7 +106,7 @@ addon:RegisterTextAnimation("bounce", function(fontString)
 end);
 
 -- Pulse - smooth scale up/down using OnUpdate for 60fps interpolation
-addon:RegisterTextAnimation("pulse", function(fontString)
+Lantern:RegisterTextAnimation("pulse", function(fontString)
     local frame = CreateFrame("Frame");
     local elapsed = 0;
     local duration = 1.5; -- Full cycle duration
@@ -124,7 +125,7 @@ addon:RegisterTextAnimation("pulse", function(fontString)
 end);
 
 -- Fade - fade in/out
-addon:RegisterTextAnimation("fade", function(fontString)
+Lantern:RegisterTextAnimation("fade", function(fontString)
     local frame = CreateFrame("Frame");
     local elapsed = 0;
     local duration = 1.6; -- Full cycle duration
@@ -142,7 +143,7 @@ addon:RegisterTextAnimation("fade", function(fontString)
 end);
 
 -- Shake - horizontal shake
-addon:RegisterTextAnimation("shake", function(fontString)
+Lantern:RegisterTextAnimation("shake", function(fontString)
     local animGroup = fontString:CreateAnimationGroup();
     animGroup:SetLooping("REPEAT");
 
@@ -170,7 +171,7 @@ addon:RegisterTextAnimation("shake", function(fontString)
 end);
 
 -- Glow - smooth pulse with alpha using OnUpdate for 60fps interpolation
-addon:RegisterTextAnimation("glow", function(fontString)
+Lantern:RegisterTextAnimation("glow", function(fontString)
     local frame = CreateFrame("Frame");
     local elapsed = 0;
     local duration = 1.8; -- Full cycle duration
@@ -192,7 +193,7 @@ addon:RegisterTextAnimation("glow", function(fontString)
 end);
 
 -- Heartbeat - double pulse like a heartbeat
-addon:RegisterTextAnimation("heartbeat", function(fontString)
+Lantern:RegisterTextAnimation("heartbeat", function(fontString)
     local frame = CreateFrame("Frame");
     local elapsed = 0;
     local cycleDuration = 1.2;

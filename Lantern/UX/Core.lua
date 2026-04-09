@@ -1,6 +1,7 @@
-local ADDON_NAME = ...;
+local ADDON_NAME, Lantern = ...;
 
-_G.LanternUX = _G.LanternUX or {};
+Lantern.UX = Lantern.UX or {};
+local UX = Lantern.UX;
 
 -------------------------------------------------------------------------------
 -- Theme
@@ -73,13 +74,13 @@ local T = {
     dangerText   = { 1.0,  0.40, 0.40, 1.0 },
 };
 
-LanternUX.Theme = T;
+UX.Theme = T;
 
 -------------------------------------------------------------------------------
 -- Fonts
 -------------------------------------------------------------------------------
 
-local FONT_DIR = "Interface\\AddOns\\LanternUX\\Fonts\\";
+local FONT_DIR = "Interface\\AddOns\\Lantern\\UX\\Fonts\\";
 
 -- CJK locales need system fonts since Roboto has no CJK glyphs
 local CJK_FONTS = {
@@ -122,7 +123,7 @@ T.fontSmallBold = "LanternUX_BodySmallBold";
 -------------------------------------------------------------------------------
 
 local _W = {};
-LanternUX._W = _W;
+UX._W = _W;
 
 _W.T = T;
 
@@ -213,7 +214,7 @@ local descClearTimer;
 
 local function ShowDescription(label, desc)
     if (descClearTimer) then descClearTimer:Cancel(); descClearTimer = nil; end
-    local dp = _G.LanternUX and _G.LanternUX.descPanel;
+    local dp = UX and UX.descPanel;
     if (not dp or not desc or desc == "") then return; end
     dp._title:SetText(label or "");
     dp._text:SetText(desc);
@@ -224,7 +225,7 @@ local function ClearDescription()
     if (descClearTimer) then descClearTimer:Cancel(); end
     descClearTimer = C_Timer.NewTimer(0, function()
         descClearTimer = nil;
-        local dp = _G.LanternUX and _G.LanternUX.descPanel;
+        local dp = UX and UX.descPanel;
         if (not dp) then return; end
         dp._title:SetText(dp._defaultTitle or "");
         dp._text:SetText(dp._defaultDesc or "");
@@ -233,7 +234,7 @@ end
 _W.ClearDescription = ClearDescription;
 
 local function SetDefaultDescription(title, desc)
-    local dp = _G.LanternUX and _G.LanternUX.descPanel;
+    local dp = UX and UX.descPanel;
     if (not dp) then return; end
     dp._defaultTitle = title or "";
     dp._defaultDesc = desc or "";
@@ -303,7 +304,7 @@ StaticPopupDialogs["LANTERNUX_RELOAD_PROMPT"] = {
     preferredIndex = 3,
 };
 
-function LanternUX.ShowReloadPrompt(message)
+function UX.ShowReloadPrompt(message)
     StaticPopupDialogs["LANTERNUX_RELOAD_PROMPT"].text = message or "Reload required to apply changes.";
     StaticPopup_Show("LANTERNUX_RELOAD_PROMPT");
 end

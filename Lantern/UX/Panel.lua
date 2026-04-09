@@ -1,7 +1,6 @@
-local ADDON_NAME = ...;
-
-local LanternUX = _G.LanternUX;
-local T = LanternUX and LanternUX.Theme;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
+local T = UX and UX.Theme;
 if (not T) then return; end
 
 -------------------------------------------------------------------------------
@@ -365,7 +364,7 @@ function PanelMixin:_HideAllContent()
     end
     if (self._customScroll) then
         self._customScroll.scrollFrame:Hide();
-        LanternUX.ReleaseAll();
+        UX.ReleaseAll();
     end
     if (self._descPanel) then self._descPanel:Hide(); end
 end
@@ -393,7 +392,7 @@ function PanelMixin:_ShowContent(key)
     if (page.widgets and self._customScroll) then
         if (self._descPanel) then
             self._descPanel:Show();
-            LanternUX.descPanel = self._descPanel;
+            UX.descPanel = self._descPanel;
         end
         self._customScroll.scrollFrame:Show();
         self._customScroll:Reset();
@@ -402,7 +401,7 @@ function PanelMixin:_ShowContent(key)
         if (page.title) then
             headerInfo = { title = page.title, description = page.description };
         end
-        LanternUX.RenderContent(self._customScroll, options, headerInfo, key);
+        UX.RenderContent(self._customScroll, options, headerInfo, key);
         self:_FadeInContent(self._customScroll.scrollFrame);
 
         -- Search: scroll to widget if requested
@@ -673,7 +672,7 @@ function PanelMixin:_Build()
             if (self_._sidebar) then self_._sidebar:Hide(); end
             if (self_._content) then self_._content:Hide(); end
             if (self_._customScroll) then
-                LanternUX.ReleaseAll();
+                UX.ReleaseAll();
             end
             if (self_._descPanel) then self_._descPanel:Hide(); end
         else
@@ -745,7 +744,7 @@ function PanelMixin:_Build()
     sidebarScrollArea:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 0, -(self._sidebarTopOffset or 0));
     sidebarScrollArea:SetPoint("BOTTOMRIGHT", sidebar, "BOTTOMRIGHT", -1, 0);
 
-    local sidebarScroll = LanternUX.CreateScrollContainer(sidebarScrollArea);
+    local sidebarScroll = UX.CreateScrollContainer(sidebarScrollArea);
     self._sidebarScroll = sidebarScroll;
     self._sidebarScrollChild = sidebarScroll.scrollChild;
 
@@ -858,8 +857,8 @@ function PanelMixin:_Build()
     self._descPanel = descPanel;
 
     -- Custom scroll container for widget-based pages
-    if (LanternUX and LanternUX.CreateScrollContainer) then
-        local customScroll = LanternUX.CreateScrollContainer(content);
+    if (UX and UX.CreateScrollContainer) then
+        local customScroll = UX.CreateScrollContainer(content);
         -- Re-anchor to leave space for description panel
         customScroll.scrollFrame:ClearAllPoints();
         customScroll.scrollFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0);
@@ -881,7 +880,7 @@ function PanelMixin:_Build()
 
     frame:SetScript("OnShow", function()
         PlaySound(SOUNDKIT.IG_MAINMENU_OPEN or 850);
-        LanternUX.descPanel = self_._descPanel;
+        UX.descPanel = self_._descPanel;
         -- Always expand on show
         if (self_._SetCollapsed and collapsed) then
             self_._SetCollapsed(false);
@@ -899,11 +898,11 @@ function PanelMixin:_Build()
 
     frame:SetScript("OnHide", function()
         if (self_._customScroll) then
-            LanternUX.ReleaseAll();
+            UX.ReleaseAll();
             self_._customScroll.scrollFrame:Hide();
         end
-        if (LanternUX.ResetGroupStates) then
-            LanternUX.ResetGroupStates();
+        if (UX.ResetGroupStates) then
+            UX.ResetGroupStates();
         end
         if (self_._descPanel) then self_._descPanel:Hide(); end
         -- Hook: reset search state (added by Search.lua)
@@ -915,8 +914,8 @@ function PanelMixin:_Build()
             if (page and page.onHide) then page.onHide(); end
         end
         -- Auto-lock any unlocked draggable frames
-        if (LanternUX.LockAllDraggables) then
-            LanternUX.LockAllDraggables();
+        if (UX.LockAllDraggables) then
+            UX.LockAllDraggables();
         end
     end);
 
@@ -930,9 +929,9 @@ end
 -- Factory
 -------------------------------------------------------------------------------
 
-LanternUX._PanelMixin = PanelMixin;
+UX._PanelMixin = PanelMixin;
 
-function LanternUX:CreatePanel(config)
+function UX:CreatePanel(config)
     local panel = setmetatable({
         _config           = config,
         _pages            = {},

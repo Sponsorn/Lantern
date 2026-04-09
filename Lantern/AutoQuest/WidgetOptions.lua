@@ -1,8 +1,8 @@
 local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 
-local LanternUX = _G.LanternUX;
-local T = LanternUX and LanternUX.Theme;
+local UX = Lantern.UX;
+local T = UX and UX.Theme;
 if (not T) then return; end
 
 local module = Lantern.modules["AutoQuest"];

@@ -1,8 +1,5 @@
 package-as: Lantern
 
-required-dependencies:
-  - lanternux
-
 move-folders:
   Lantern/Lantern: Lantern
 
@@ -11,7 +8,6 @@ manual-changelog:
   markup-type: markdown
 
 ignore:
-  - LanternUX
   - Lantern_Warband
   - Lantern_CraftingOrders
   - Lantern_GoldFlow

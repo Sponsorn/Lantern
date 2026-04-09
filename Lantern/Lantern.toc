@@ -5,7 +5,6 @@
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
 ## SavedVariables: LanternDB
-## Dependencies: LanternUX
 ## X-Curse-Project-ID: 1405411
 ## DefaultState: enabled
 
@@ -16,6 +15,8 @@ Libs\LibDBIcon-1.0.lua
 Libs\LibSink-2.0\LibSink-2.0\LibSink-2.0.lua
 Libs\LibSharedMedia-3.0\lib.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
+
+UX\UX.xml
 
 Locales\Locale.lua
 Locales\enUS.lua
@@ -32,7 +33,6 @@ Locales\zhTW.lua
 
 Utils\Utils.lua
 Utils\LibRangeCheckPatch.lua
-Utils\TextAnimations.lua
 Libs\InterruptSpells.lua
 core.lua
 Utils\WidgetHelpers.lua

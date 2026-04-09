@@ -5,7 +5,7 @@
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
 ## Dependencies: Lantern
-## OptionalDeps: LanternUX, Auctionator
+## OptionalDeps: Auctionator
 ## SavedVariables: GoldFlowDB
 ## DefaultState: enabled
 

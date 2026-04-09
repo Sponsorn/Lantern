@@ -4,7 +4,7 @@
 ## Author: Dede in-game / Sponsorn on curseforge & github
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\Lantern\Media\Images\Icons\lantern-core-icon64.blp
-## Dependencies: Lantern, LanternUX
+## Dependencies: Lantern
 ## SavedVariables: LanternWarbandDB
 ## X-Curse-Project-ID: 1420516
 ## DefaultState: enabled

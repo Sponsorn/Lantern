@@ -4,7 +4,7 @@
 ## Author: Dede in-game / Sponsorn on curseforge & github
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\Lantern_CraftingOrders\Media\Images\Icons\lantern-co-icon64.blp
-## Dependencies: Lantern, LanternUX
+## Dependencies: Lantern
 ## X-Curse-Project-ID: 1410314
 ## DefaultState: enabled
 ## SavedVariables: LanternCraftingOrdersDB

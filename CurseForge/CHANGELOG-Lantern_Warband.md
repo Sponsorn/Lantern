@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.4.8
+- Chore: No longer requires separate LanternUX addon (now built into Lantern core)
 - Fix: Module now defaults to enabled on fresh installs via defaultEnabled flag
 
 ## 0.4.7 - 2026-03-19

@@ -6,7 +6,8 @@ if (not Lantern) then return; end
 local CraftingOrders = Lantern.modules and Lantern.modules.CraftingOrders;
 if (not CraftingOrders) then return; end
 
-local T = _G.LanternUX and _G.LanternUX.Theme;
+local UX = _G.Lantern and _G.Lantern.UX;
+local T = UX and UX.Theme;
 if (not T) then return; end
 
 -------------------------------------------------------------------------------
@@ -1041,7 +1042,7 @@ local function PopulateDashboard()
         y = y - 18;
 
         -- Chart widget
-        local chartFactory = LanternUX._W.factories.barchart;
+        local chartFactory = UX._W.factories.barchart;
         if (chartFactory) then
             chartFactory.setup(dashChart, f, {
                 bars = chartData.buckets,
@@ -1150,7 +1151,7 @@ local function PopulateDashboard()
 end
 
 local function CreateDashboardContent(parent)
-    local scroll = LanternUX.CreateScrollContainer(parent);
+    local scroll = UX.CreateScrollContainer(parent);
     dashScroll = scroll;
 
     local f = scroll.scrollChild;
@@ -1176,7 +1177,7 @@ local function CreateDashboardContent(parent)
     dashChartSubtitle:SetTextColor(unpack(T.textDim));
     dashChartSubtitle:Hide();
 
-    local chartFactory = LanternUX._W.factories.barchart;
+    local chartFactory = UX._W.factories.barchart;
     if (chartFactory) then
         dashChart = chartFactory.create(f);
         dashChart.frame:Hide();
@@ -1328,7 +1329,7 @@ local function CreateCustomersContent(parent)
     table.insert(custChildColumns, { key = "orderType", label = L["CO_COL_TYPE"],  width = 60 });
     table.insert(custChildColumns, { key = "timestamp", label = L["CO_COL_DATE"],  width = 88,  format = function(v) return FormatTimeAgo(v); end });
 
-    customersTable = LanternUX.CreateDataTable(tableFrame, {
+    customersTable = UX.CreateDataTable(tableFrame, {
         columns = custColumns,
         rowHeight = 24,
         defaultSort = { key = "count", ascending = false },
@@ -1426,7 +1427,7 @@ local function CreateItemsContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
-    itemsTable = LanternUX.CreateDataTable(tableFrame, {
+    itemsTable = UX.CreateDataTable(tableFrame, {
         columns = {
             { key = "itemLink",        label = L["CO_COL_ITEM"],      width = 200, align = "LEFT", isLink = true,
                 format = function(v, entry)
@@ -1503,7 +1504,7 @@ local function CreateOrdersContent(parent)
     tableFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -42);
     tableFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0);
 
-    ordersTable = LanternUX.CreateDataTable(tableFrame, {
+    ordersTable = UX.CreateDataTable(tableFrame, {
         columns = {
             { key = "timestamp", label = L["CO_COL_DATE"],     width = 88,  format = function(v) return FormatTimeAgo(v); end },
             { key = "customer",  label = L["CO_COL_CUSTOMER"], width = 128 },
@@ -1621,7 +1622,7 @@ local function PopulateHeatMaps()
 
     -- Update or create order grid
     if (heatmapOrdersGrid) then
-        local setupFn = LanternUX._W.factories.heatmap.setup;
+        local setupFn = UX._W.factories.heatmap.setup;
         setupFn(heatmapOrdersGrid, f, {
             data = hmData.orders,
             maxVal = hmData.maxOrders,
@@ -1631,7 +1632,7 @@ local function PopulateHeatMaps()
 
     -- Update or create gold grid
     if (heatmapGoldGrid) then
-        local setupFn = LanternUX._W.factories.heatmap.setup;
+        local setupFn = UX._W.factories.heatmap.setup;
         setupFn(heatmapGoldGrid, f, {
             data = hmData.gold,
             maxVal = hmData.maxGold,
@@ -1645,7 +1646,7 @@ local function PopulateHeatMaps()
         local tradeData = CraftingOrders:GetTradeChatHeatMapData(since);
         if (heatmapTradeGrid) then
             heatmapTradeGrid.frame:Show();
-            local setupFn = LanternUX._W.factories.heatmap.setup;
+            local setupFn = UX._W.factories.heatmap.setup;
             setupFn(heatmapTradeGrid, f, {
                 data = tradeData.grid,
                 maxVal = tradeData.maxTotal,
@@ -1662,7 +1663,7 @@ local function PopulateHeatMaps()
 end
 
 local function CreateHeatMapsContent(parent)
-    local scroll = LanternUX.CreateScrollContainer(parent);
+    local scroll = UX.CreateScrollContainer(parent);
     heatmapScroll = scroll;
 
     local f = scroll.scrollChild;
@@ -1697,8 +1698,6 @@ local function CreateHeatMapsContent(parent)
     end);
 
     local y = -12;
-    local LUX = _G.LanternUX;
-
     -- Section 1: Orders heat map
     local ordersHeader = f:CreateFontString("LanternCO_HM_OrdersH", "OVERLAY");
     ordersHeader:SetFontObject(T.fontBodyBold);
@@ -1707,7 +1706,7 @@ local function CreateHeatMapsContent(parent)
     ordersHeader:SetTextColor(unpack(T.accent));
     y = y - 24;
 
-    heatmapOrdersGrid = LUX.CreateStandaloneWidget("heatmap", f, {
+    heatmapOrdersGrid = UX.CreateStandaloneWidget("heatmap", f, {
         data = {},
         tooltipFn = HeatMapOrderTooltip,
     });
@@ -1723,7 +1722,7 @@ local function CreateHeatMapsContent(parent)
     goldHeader:SetTextColor(unpack(T.accent));
     y = y - 24;
 
-    heatmapGoldGrid = LUX.CreateStandaloneWidget("heatmap", f, {
+    heatmapGoldGrid = UX.CreateStandaloneWidget("heatmap", f, {
         data = {},
         tooltipFn = HeatMapGoldTooltip,
         formatFn = function(v) return v > 0 and FormatMoneyCompact(v) or ""; end,
@@ -1774,7 +1773,7 @@ local function CreateHeatMapsContent(parent)
     scroll._enableBtn = enableBtn;
 
     -- Trade chat grid
-    heatmapTradeGrid = LUX.CreateStandaloneWidget("heatmap", f, {
+    heatmapTradeGrid = UX.CreateStandaloneWidget("heatmap", f, {
         data = {},
         tooltipFn = HeatMapTradeTooltip({}),
     });
@@ -1933,7 +1932,7 @@ local function GetSettingsWidgets()
                     ns.CustomerCache.BuildCache();
                 end
                 refreshPage();
-                LanternUX.ShowReloadPrompt("Reload required to apply tipper rating changes.");
+                UX.ShowReloadPrompt("Reload required to apply tipper rating changes.");
             end,
         },
     };
@@ -1996,7 +1995,7 @@ local function GetSettingsWidgets()
             get = function() return db.customerGrouping or "individual"; end,
             set = function(val)
                 db.customerGrouping = val;
-                LanternUX.ShowReloadPrompt("Reload required to apply customer grouping changes.");
+                UX.ShowReloadPrompt("Reload required to apply customer grouping changes.");
             end,
             values = {
                 individual = L["CO_CUSTOMER_GROUPING_INDIVIDUAL"],
@@ -2242,7 +2241,7 @@ end
 local function EnsurePanel()
     if (panel) then return panel; end
 
-    panel = LanternUX:CreatePanel({
+    panel = UX:CreatePanel({
         name   = "LanternCO_Analytics",
         title  = L["CO_ANALYTICS_TITLE"],
         width  = 960,

@@ -1,6 +1,6 @@
-local ADDON_NAME = ...;
-
-local _W = LanternUX._W;
+local ADDON_NAME, Lantern = ...;
+local UX = Lantern.UX;
+local _W = UX._W;
 local T = _W.T;
 local ReleaseAll = _W.ReleaseAll;
 local SetDefaultDescription = _W.SetDefaultDescription;
@@ -185,13 +185,13 @@ end
 -- Public API
 -------------------------------------------------------------------------------
 
-LanternUX.RenderContent = RenderContent;
-LanternUX.ReleaseAll = ReleaseAll;
-LanternUX.ResetGroupStates = ResetGroupStates;
-LanternUX.ExpandGroups = ExpandGroups;
-LanternUX.widgetPositionMap = _W.widgetPositionMap;
+UX.RenderContent = RenderContent;
+UX.ReleaseAll = ReleaseAll;
+UX.ResetGroupStates = ResetGroupStates;
+UX.ExpandGroups = ExpandGroups;
+UX.widgetPositionMap = _W.widgetPositionMap;
 
-function LanternUX.CreateStandaloneWidget(widgetType, parent, data, width)
+function UX.CreateStandaloneWidget(widgetType, parent, data, width)
     local factory = _W.factories[widgetType];
     if (not factory) then return nil; end
     local w = factory.create(parent);

@@ -5,13 +5,13 @@ local module = Lantern.modules["UIAnchors"];
 if (not module) then return; end
 
 local L = Lantern.L;
-local T = _G.LanternUX and _G.LanternUX.Theme;
+local T = Lantern.UX and Lantern.UX.Theme;
 
 local ANCHOR_DEFS = Lantern.UI_ANCHORS;
 
 local PREVIEW_ALPHA = 0.25;
 local ACCENT_COLOR = T and T.accent or { 0.88, 0.56, 0.18, 1.0 };
-local LABEL_FONT = T and T.fontPathRegular or "Interface\\AddOns\\LanternUX\\Fonts\\Roboto-Regular.ttf";
+local LABEL_FONT = T and T.fontPathRegular or "Interface\\AddOns\\Lantern\\UX\\Fonts\\Roboto-Regular.ttf";
 local LABEL_SIZE = 10;
 
 -- Placeholder icon textures for icon previews

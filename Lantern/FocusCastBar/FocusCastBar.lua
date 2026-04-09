@@ -2,7 +2,7 @@ local ADDON_NAME, Lantern = ...;
 if (not Lantern) then return; end
 local L = Lantern.L;
 
-local LanternUX = _G.LanternUX;
+local UX = Lantern.UX;
 local GetFontPath = Lantern.utils.GetFontPath;
 local SafeSetFont = Lantern.utils.SafeSetFont;
 
@@ -270,8 +270,8 @@ local function createFrame(self)
     SafeSetFont(timeText, GetFontPath(DEFAULT_FONT), DEFAULTS.fontSize, "OUTLINE");
 
     -- MakeDraggable
-    if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(castBarFrame, {
+    if (UX and UX.MakeDraggable) then
+        UX.MakeDraggable(castBarFrame, {
             getPos    = function() return self.db and self.db.pos; end,
             setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
             getLocked = function() return self.db and self.db.locked; end,
@@ -316,13 +316,8 @@ local function createFrame(self)
 
         -- Update time remaining text
         if (db.showTimeRemaining ~= false) then
-            local remaining;
-            if (isCasting) then
-                remaining = castEndTime - now;
-            elseif (isChanneling) then
-                remaining = castEndTime - now;
-            end
-            if (remaining and remaining > 0) then
+            local remaining = castEndTime - now;
+            if (remaining > 0) then
                 timeText:SetText(string.format("%.1f", remaining));
             else
                 timeText:SetText("");
@@ -339,35 +334,31 @@ local function createFrame(self)
         end
 
         -- Update bar color based on important cast / interrupt cooldown
+        local interruptSpellId = GetInterruptSpellId();
         if (isImportantCast and db.highlightImportant) then
             local iR, iG, iB = getColor(db, "importantColor");
             progressBar:SetStatusBarColor(iR, iG, iB);
-        else
-            local spellId = GetInterruptSpellId();
-            if (spellId) then
-                local cdDuration = C_Spell.GetSpellCooldownDuration(spellId);
-                if (cdDuration) then
-                    local isReady = cdDuration:IsZero();
-                    local rR, rG, rB = getColor(db, "barReadyColor");
-                    local cR, cG, cB = getColor(db, "barCdColor");
-                    if (isReady) then
-                        progressBar:SetStatusBarColor(rR, rG, rB);
-                    else
-                        progressBar:SetStatusBarColor(cR, cG, cB);
-                    end
+        elseif (interruptSpellId) then
+            local cdDuration = C_Spell.GetSpellCooldownDuration(interruptSpellId);
+            if (cdDuration) then
+                local isReady = cdDuration:IsZero();
+                if (isReady) then
+                    progressBar:SetStatusBarColor(getColor(db, "barReadyColor"));
+                else
+                    progressBar:SetStatusBarColor(getColor(db, "barCdColor"));
+                end
 
-                    -- Hide on CD option
-                    if (db.hideOnCooldown and not isReady) then
-                        castBarFrame:Hide();
-                        return;
-                    end
+                -- Hide on CD option
+                if (db.hideOnCooldown and not isReady) then
+                    castBarFrame:Hide();
+                    return;
                 end
             end
         end
 
         -- Update interrupt tick
-        if (db.showInterruptTick ~= false and spellId) then
-            local cdDuration = C_Spell.GetSpellCooldownDuration(spellId);
+        if (db.showInterruptTick ~= false and interruptSpellId) then
+            local cdDuration = C_Spell.GetSpellCooldownDuration(interruptSpellId);
             if (cdDuration and not cdDuration:IsZero()) then
                 local cdRemaining = cdDuration:GetSeconds();
                 if (castDuration > 0 and cdRemaining > 0 and cdRemaining < castDuration) then
@@ -396,19 +387,18 @@ local function StartCast(self)
     if (not castBarFrame) then createFrame(self); end
 
     local name, text, texture, startTimeMs, endTimeMs, isTradeSkill, castID, notInterruptible, spellId = UnitCastingInfo("focus");
-    if (not name) then return; end
+    if (not name or issecretvalue(name)) then return; end
 
     -- Hide for friendly targets if option set
     if (db.hideFriendlyCasts and UnitIsFriend("player", "focus")) then return; end
 
     local durationMs = UnitCastingDuration("focus");
-    if (not durationMs or issecretvalue(durationMs) or durationMs <= 0) then return; end
-    if (issecretvalue(startTimeMs) or issecretvalue(endTimeMs)) then return; end
+    if (not durationMs or durationMs <= 0) then return; end
     local duration = durationMs / 1000;
 
     isCasting = true;
     isChanneling = false;
-    isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
+    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;
@@ -453,19 +443,18 @@ local function StartChannel(self)
     if (not castBarFrame) then createFrame(self); end
 
     local name, text, texture, startTimeMs, endTimeMs, isTradeSkill, notInterruptible, spellId, _, numStages = UnitChannelInfo("focus");
-    if (not name) then return; end
+    if (not name or issecretvalue(name)) then return; end
 
     -- Hide for friendly targets if option set
     if (db.hideFriendlyCasts and UnitIsFriend("player", "focus")) then return; end
 
     local durationMs = UnitChannelDuration("focus");
-    if (not durationMs or issecretvalue(durationMs) or durationMs <= 0) then return; end
-    if (issecretvalue(startTimeMs) or issecretvalue(endTimeMs)) then return; end
+    if (not durationMs or durationMs <= 0) then return; end
     local duration = durationMs / 1000;
 
     isCasting = false;
     isChanneling = true;
-    isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
+    isImportantCast = spellId and C_Spell.IsSpellImportant(spellId) or false;
     castStartTime = startTimeMs / 1000;
     castEndTime = endTimeMs / 1000;
     castDuration = duration;
@@ -527,13 +516,13 @@ local function CheckFocusCast(self)
 
     -- Check for active cast first, then channel
     local name = UnitCastingInfo("focus");
-    if (name) then
+    if (name and not issecretvalue(name)) then
         StartCast(self);
         return;
     end
 
     name = UnitChannelInfo("focus");
-    if (name) then
+    if (name and not issecretvalue(name)) then
         StartChannel(self);
     end
 end

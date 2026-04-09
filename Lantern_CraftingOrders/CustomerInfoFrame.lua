@@ -1,7 +1,8 @@
 local ADDON_NAME, ns = ...;
 local L = ns.L;
 
-local T = _G.LanternUX and _G.LanternUX.Theme;
+local UX = _G.Lantern and _G.Lantern.UX;
+local T = UX and UX.Theme;
 if (not T) then return; end
 
 local frame;

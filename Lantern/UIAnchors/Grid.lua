@@ -4,7 +4,7 @@ if (not Lantern) then return; end
 local module = Lantern.modules["UIAnchors"];
 if (not module) then return; end
 
-local T = _G.LanternUX and _G.LanternUX.Theme;
+local T = Lantern.UX and Lantern.UX.Theme;
 
 local LINE_COLOR     = { 1, 1, 1, 0.08 };
 local CENTER_COLOR   = { 1, 1, 1, 1.0 };

@@ -1,0 +1,29 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Theme, pools, helpers -->
+    <Script file="Core.lua"/>
+    <Script file="Scroll.lua"/>
+
+    <!-- Widget factories -->
+    <Script file="Widgets\Toggle.lua"/>
+    <Script file="Widgets\Display.lua"/>
+    <Script file="Widgets\Range.lua"/>
+    <Script file="Widgets\Select.lua"/>
+    <Script file="Widgets\Execute.lua"/>
+    <Script file="Widgets\LabelAction.lua"/>
+    <Script file="Widgets\ItemRow.lua"/>
+    <Script file="Widgets\Input.lua"/>
+    <Script file="Widgets\Color.lua"/>
+    <Script file="Widgets\Group.lua"/>
+    <Script file="Widgets\HeatMap.lua"/>
+    <Script file="Widgets\BarChart.lua"/>
+    <Script file="Widgets\SearchResult.lua"/>
+    <Script file="Widgets\DropSlot.lua"/>
+
+    <!-- Rendering & components -->
+    <Script file="Renderer.lua"/>
+    <Script file="DataTable.lua"/>
+    <Script file="Panel.lua"/>
+    <Script file="Search.lua"/>
+    <Script file="Draggable.lua"/>
+    <Script file="TextAnimations.lua"/>
+</Ui>

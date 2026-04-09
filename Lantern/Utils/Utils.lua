@@ -122,7 +122,7 @@ end
 -------------------------------------------------------------------------------
 
 local _LSM = LibStub and LibStub("LibSharedMedia-3.0", true);
-local _DEFAULT_FONT_PATH = (_G.LanternUX and _G.LanternUX.Theme and _G.LanternUX.Theme.fontPathLight)
+local _DEFAULT_FONT_PATH = (addon.UX and addon.UX.Theme and addon.UX.Theme.fontPathLight)
     or "Fonts\\FRIZQT__.TTF";
 
 function utils.GetFontPath(fontName)

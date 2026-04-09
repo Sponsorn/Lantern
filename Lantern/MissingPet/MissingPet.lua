@@ -208,7 +208,7 @@ local function UpdateWarningFont()
     SafeSetFont(warningText, fontPath, fontSize, fontOutline);
 end
 
-local LanternUX = _G.LanternUX;
+local UX = Lantern.UX;
 
 local function CreateWarningFrame()
     if (warningFrame) then return; end
@@ -229,8 +229,8 @@ local function CreateWarningFrame()
     -- Apply font settings
     UpdateWarningFont();
 
-    if (LanternUX and LanternUX.MakeDraggable) then
-        LanternUX.MakeDraggable(warningFrame, {
+    if (UX and UX.MakeDraggable) then
+        UX.MakeDraggable(warningFrame, {
             getPos    = function()
                 local db = getDB();
                 return db and db.pos;
