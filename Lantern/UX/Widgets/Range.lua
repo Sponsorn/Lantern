@@ -195,8 +195,6 @@ local function CreateRange(parent)
     dragFrame:SetFrameLevel(trackFrame:GetFrameLevel() + 3);
     dragFrame:EnableMouse(true);
 
-    dragFrame:RegisterForClicks("AnyUp", "AnyDown");
-
     dragFrame:SetScript("OnMouseDown", function(self, button)
         if (w._disabled) then return; end
         if (button == "LeftButton") then
