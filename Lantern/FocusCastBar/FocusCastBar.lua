@@ -252,6 +252,18 @@ local function createFrame(self)
     });
     borderFrame:SetBackdropBorderColor(0, 0, 0, 1);
 
+    -- Important cast glow (colored border, hidden by default)
+    local importantGlow = CreateFrame("Frame", "Lantern_FocusCastBar_ImportantGlow", castBarFrame, "BackdropTemplate");
+    importantGlow:SetPoint("TOPLEFT", -2, 2);
+    importantGlow:SetPoint("BOTTOMRIGHT", 2, -2);
+    importantGlow:SetBackdrop({
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 2,
+    });
+    importantGlow:SetFrameLevel(borderFrame:GetFrameLevel() - 1);
+    importantGlow:Hide();
+    castBarFrame._importantGlow = importantGlow;
+
     -- Text frame (overlay on progress bar)
     textFrame = CreateFrame("Frame", "Lantern_FocusCastBar_Text", progressBar);
     textFrame:SetAllPoints();
@@ -333,12 +345,20 @@ local function createFrame(self)
             progressBar:SetValue(math.max(progress, 0));
         end
 
-        -- Update bar color based on important cast / interrupt cooldown
+        -- Update important cast glow
+        if (castBarFrame._importantGlow) then
+            if (isImportantCast and db.highlightImportant) then
+                local iR, iG, iB = getColor(db, "importantColor");
+                castBarFrame._importantGlow:SetBackdropBorderColor(iR, iG, iB, 1);
+                castBarFrame._importantGlow:Show();
+            else
+                castBarFrame._importantGlow:Hide();
+            end
+        end
+
+        -- Update bar color based on interrupt cooldown
         local interruptSpellId = GetInterruptSpellId();
-        if (isImportantCast and db.highlightImportant) then
-            local iR, iG, iB = getColor(db, "importantColor");
-            progressBar:SetStatusBarColor(iR, iG, iB);
-        elseif (interruptSpellId) then
+        if (interruptSpellId) then
             local cdDuration = C_Spell.GetSpellCooldownDuration(interruptSpellId);
             if (cdDuration) then
                 local isReady = cdDuration:IsZero();
@@ -501,6 +521,9 @@ local function StopCast()
     castDuration = 0;
     if (castBarFrame) then
         castBarFrame:Hide();
+        if (castBarFrame._importantGlow) then
+            castBarFrame._importantGlow:Hide();
+        end
     end
     if (shieldIcon) then
         shieldIcon:SetAlpha(0);

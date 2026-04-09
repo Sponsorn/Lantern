@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.0
+- Fix: Focus Cast Bar important cast highlight no longer overrides the interrupt ready/cooldown bar color — now shows as a colored border glow instead
 - Chore: LanternUX settings framework is now built into Lantern core — LanternUX standalone addon is no longer needed
 - Add: UI Anchors module — opt-in named anchor frames for WeakAuras and other addons with draggable positioning, nudge buttons, grid overlay, and collapsible drawer panel
 - Add: Anchor positioning support for CombatTimer, CombatAlert, FocusCastBar, GatewayReady, and MissingPet — attach module frames to UI Anchors with optional X/Y offset
