@@ -21,7 +21,6 @@ local DEFAULTS = {
     fontSize = 28,
     fontOutline = "OUTLINE",
     color = { r = 0.61, g = 0.35, b = 0.71 }, -- purple
-    fadeDuration = 2.0,
     soundEnabled = false,
     soundName = "RaidWarning",
     locked = true,
@@ -29,9 +28,9 @@ local DEFAULTS = {
 };
 
 local banner, label;
-local flashAt, flashLength;
 local ticker = nil;
 local lastUsable = false;
+local soundPlayed = false;
 
 local function ensureDB(self)
     self.db = Lantern.utils.InitModuleDB(self.addon, "gatewayReady", DEFAULTS);
@@ -66,33 +65,9 @@ local function createFrame(self)
         });
     end
 
-    banner:SetScript("OnUpdate", function()
-        if (previewMode) then return; end
-        if (not flashAt) then return; end
-
-        local elapsed = GetTime() - flashAt;
-        local dur = flashLength or DEFAULTS.fadeDuration;
-
-        if (elapsed >= dur) then
-            banner:Hide();
-            flashAt = nil;
-            return;
-        end
-
-        -- Hold for first 40%, then fade out
-        local holdPortion = 0.4;
-        local holdTime = dur * holdPortion;
-
-        if (elapsed <= holdTime) then
-            banner:SetAlpha(1);
-        else
-            local fadeProgress = (elapsed - holdTime) / (dur - holdTime);
-            banner:SetAlpha(1 - fadeProgress);
-        end
-    end);
 end
 
-local function flash(self)
+local function showAlert(self)
     if (not banner) then createFrame(self); end
 
     local db = self.db or DEFAULTS;
@@ -105,12 +80,10 @@ local function flash(self)
     local color = db.color or DEFAULTS.color;
     label:SetTextColor(color.r, color.g, color.b, 1);
 
-    flashLength = db.fadeDuration or DEFAULTS.fadeDuration;
-    flashAt = GetTime();
     banner:SetAlpha(1);
     banner:Show();
 
-    if (db.soundEnabled) then
+    if (not soundPlayed and db.soundEnabled) then
         local media = LibStub and LibStub("LibSharedMedia-3.0", true);
         if (media) then
             local sound = media:Fetch("sound", db.soundName or "RaidWarning");
@@ -118,7 +91,15 @@ local function flash(self)
                 pcall(PlaySoundFile, sound, "Master");
             end
         end
+        soundPlayed = true;
     end
+end
+
+local function hideAlert()
+    if (banner) then
+        banner:Hide();
+    end
+    soundPlayed = false;
 end
 
 local function checkGateway(self)
@@ -126,20 +107,24 @@ local function checkGateway(self)
 
     local count = C_Item.GetItemCount(GATEWAY_ITEM_ID);
     if (count == 0) then
+        if (lastUsable) then hideAlert(); end
         lastUsable = false;
         return;
     end
 
     local db = self.db or DEFAULTS;
     if (db.combatOnly and not InCombatLockdown()) then
+        if (lastUsable) then hideAlert(); end
         lastUsable = false;
         return;
     end
 
     local isUsable = C_Item.IsUsableItem(GATEWAY_ITEM_ID);
 
-    if (isUsable and not lastUsable) then
-        flash(self);
+    if (isUsable) then
+        showAlert(self);
+    elseif (lastUsable) then
+        hideAlert();
     end
 
     lastUsable = isUsable;
@@ -179,7 +164,6 @@ function module:SetPreviewMode(enabled)
         label:SetText(L["GATEWAYREADY_TEXT"]);
         local color = db.color or DEFAULTS.color;
         label:SetTextColor(color.r, color.g, color.b, 1);
-        flashAt = nil; -- stop any active flash
         banner:SetAlpha(1);
         banner:Show();
         -- Auto-disable preview when settings panel closes
@@ -209,7 +193,7 @@ end
 function module:UpdateLock()
     if (not banner) then return; end
     banner:UpdateLock();
-    if (self.db and self.db.locked and not flashAt) then
+    if (self.db and self.db.locked and not lastUsable and not previewMode) then
         banner:Hide();
     end
 end
@@ -260,8 +244,7 @@ end
 
 function module:OnDisable()
     stopPolling();
-    if (banner) then banner:Hide(); end
-    flashAt = nil;
+    hideAlert();
 end
 
 Lantern:RegisterModule(module);

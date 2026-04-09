@@ -21,7 +21,6 @@ module.widgetOptions = function()
             combatOnly = true,
             font = "Roboto Light", fontSize = 28, fontOutline = "OUTLINE",
             color = { r = 0.61, g = 0.35, b = 0.71 },
-            fadeDuration = 2.0,
             soundEnabled = false, soundName = "RaidWarning",
             locked = true,
         };
@@ -159,15 +158,6 @@ module.widgetOptions = function()
                         db().fontOutline = val;
                         if (module.RefreshFont) then module:RefreshFont(); end
                     end,
-                },
-                {
-                    type = "range",
-                    label = L["COMBATALERT_FADE_DURATION"],
-                    desc = L["COMBATALERT_FADE_DURATION_DESC"],
-                    min = 0.5, max = 5, step = 0.5, default = 2.0,
-                    disabled = isDisabled,
-                    get = function() return db().fadeDuration; end,
-                    set = function(val) db().fadeDuration = val; end,
                 },
             },
         },
