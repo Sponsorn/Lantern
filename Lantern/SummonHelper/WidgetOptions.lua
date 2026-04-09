@@ -229,7 +229,6 @@ module.widgetOptions = function()
         {
             type = "group",
             text = L["SUMMONHELPER_GROUP_ROSTER"],
-            expanded = true,
             children = {
                 {
                     type = "toggle",
