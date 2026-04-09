@@ -113,9 +113,10 @@ local function showNotification(text, r, g, b)
 end
 
 -- Roster frame
-local rosterFrame, titleText, portalText;
+local rosterFrame, titleText, portalText, collapseIndicator;
 local rows = {};
 local MAX_ROWS = 40;
+local rosterCollapsed = true;
 
 local function hideRoster()
     if (rosterFrame and not InCombatLockdown()) then rosterFrame:Hide(); end
@@ -160,14 +161,29 @@ local function createRosterFrame(self)
         titleText:SetTextColor(0.88, 0.56, 0.18);
     end
 
+    -- Collapse/expand indicator (right side of title)
+    collapseIndicator = rosterFrame:CreateFontString("Lantern_SummonRoster_Collapse", "OVERLAY");
+    SafeSetFont(collapseIndicator, GetFontPath(rosterFontName), rosterFontSize, "");
+    collapseIndicator:SetPoint("RIGHT", rosterFrame, "RIGHT", -8, 0);
+    collapseIndicator:SetPoint("TOP", 0, -6);
+    if (T) then
+        collapseIndicator:SetTextColor(T.textDim[1], T.textDim[2], T.textDim[3]);
+    else
+        collapseIndicator:SetTextColor(0.52, 0.52, 0.54);
+    end
+    collapseIndicator:SetText("+");
+
     portalText = rosterFrame:CreateFontString("Lantern_SummonRoster_Portal", "OVERLAY");
     SafeSetFont(portalText, GetFontPath(rosterFontName), rosterFontSize, "");
     portalText:SetTextColor(0.6, 0.2, 1);
     portalText:Hide();
 
-    -- Right-click to dismiss
+    -- Left-click title to toggle collapse, right-click to dismiss
     rosterFrame:SetScript("OnMouseUp", function(_, button)
-        if (button == "RightButton" and module.db and module.db.locked) then
+        if (button == "LeftButton" and module.db and module.db.locked) then
+            rosterCollapsed = not rosterCollapsed;
+            updateRosterDisplay(lastOutside);
+        elseif (button == "RightButton" and module.db and module.db.locked) then
             dismissedByUser = true;
             hideRoster();
         end
@@ -177,6 +193,7 @@ local function createRosterFrame(self)
     rosterFrame:SetScript("OnEnter", function(self)
         if (module.db and module.db.locked) then
             GameTooltip:SetOwner(self, "ANCHOR_BOTTOM");
+            GameTooltip:AddLine("Left-click to expand/collapse", 0.7, 0.7, 0.7);
             GameTooltip:AddLine("Right-click to close", 0.7, 0.7, 0.7);
             GameTooltip:Show();
         end
@@ -245,41 +262,53 @@ local function updateRosterDisplay(outside)
 
     titleText:SetText(L["RAIDROSTER_HEADER"] .. " (" .. #outside .. ")");
 
-    for i, info in ipairs(outside) do
-        if (i > MAX_ROWS) then break; end
-        local color = info.class and C_ClassColor.GetClassColor(info.class);
-        local nameText = color and color:WrapTextInColorCode(info.name) or info.name;
+    -- Update collapse indicator
+    if (collapseIndicator) then
+        collapseIndicator:SetText(rosterCollapsed and "+" or "-");
+    end
 
-        -- Append status indicator
-        if (info.offline) then
-            nameText = nameText .. "  |cff666666Offline|r";
-        elseif (info.summonStatus == Enum.SummonStatus.Pending) then
-            nameText = nameText .. "  |cffffcc00Summoning...|r";
-        elseif (info.summonStatus == Enum.SummonStatus.Accepted) then
-            nameText = nameText .. "  |cff00ff00Accepted|r";
-        elseif (info.summonStatus == Enum.SummonStatus.Declined) then
-            nameText = nameText .. "  |cffff2020Declined|r";
-        end
-
-        rows[i].text:SetText(nameText);
+    -- When collapsed, only show the title bar
+    if (rosterCollapsed) then
         if (not locked) then
-            rows[i]:SetAttribute("unit", info.unit);
-            rows[i]:Show();
+            rosterFrame:SetHeight(22);
         end
-    end
+    else
+        for i, info in ipairs(outside) do
+            if (i > MAX_ROWS) then break; end
+            local color = info.class and C_ClassColor.GetClassColor(info.class);
+            local nameText = color and color:WrapTextInColorCode(info.name) or info.name;
 
-    local rowCount = math.min(#outside, MAX_ROWS);
-    local height = 28 + rowCount * 16;
+            -- Append status indicator
+            if (info.offline) then
+                nameText = nameText .. "  |cff666666Offline|r";
+            elseif (info.summonStatus == Enum.SummonStatus.Pending) then
+                nameText = nameText .. "  |cffffcc00Summoning...|r";
+            elseif (info.summonStatus == Enum.SummonStatus.Accepted) then
+                nameText = nameText .. "  |cff00ff00Accepted|r";
+            elseif (info.summonStatus == Enum.SummonStatus.Declined) then
+                nameText = nameText .. "  |cffff2020Declined|r";
+            end
 
-    if (GetTime() < portalExpiry) then
-        portalText:SetText(L["RAIDROSTER_PORTAL_UP"]);
-        portalText:SetPoint("TOPLEFT", 8, -22 - rowCount * 16);
-        portalText:Show();
-        height = height + 18;
-    end
+            rows[i].text:SetText(nameText);
+            if (not locked) then
+                rows[i]:SetAttribute("unit", info.unit);
+                rows[i]:Show();
+            end
+        end
 
-    if (not locked) then
-        rosterFrame:SetHeight(height);
+        local rowCount = math.min(#outside, MAX_ROWS);
+        local height = 28 + rowCount * 16;
+
+        if (GetTime() < portalExpiry) then
+            portalText:SetText(L["RAIDROSTER_PORTAL_UP"]);
+            portalText:SetPoint("TOPLEFT", 8, -22 - rowCount * 16);
+            portalText:Show();
+            height = height + 18;
+        end
+
+        if (not locked) then
+            rosterFrame:SetHeight(height);
+        end
     end
     if (not dismissedByUser and not locked) then
         rosterFrame:Show();
