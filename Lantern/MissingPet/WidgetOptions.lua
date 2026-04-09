@@ -138,15 +138,14 @@ module.widgetOptions = function()
 
         -- Preview
         {
-            type = "execute",
-            label = isPreviewActive() and L["SHARED_PREVIEW"] .. " (Stop)" or L["SHARED_PREVIEW"],
+            type = "toggle",
+            label = L["SHARED_PREVIEW"],
             disabled = isDisabled,
-            func = function()
+            get = function() return isPreviewActive(); end,
+            set = function(val)
                 local m = mpModule();
                 if (m and m.SetPreviewMode) then
-                    m:SetPreviewMode(not isPreviewActive());
-                    local panel = Lantern._uxPanel;
-                    if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
+                    m:SetPreviewMode(val);
                 end
             end,
         },

@@ -87,14 +87,13 @@ module.widgetOptions = function()
     return {
         moduleToggle("GatewayReady", L["ENABLE"], L["GATEWAYREADY_ENABLE_DESC"]),
         {
-            type = "execute",
-            label = isPreviewActive() and L["SHARED_PREVIEW"] .. " (Stop)" or L["SHARED_PREVIEW"],
+            type = "toggle",
+            label = L["SHARED_PREVIEW"],
             disabled = isDisabled,
-            func = function()
+            get = function() return isPreviewActive(); end,
+            set = function(val)
                 if (module and module.SetPreviewMode) then
-                    module:SetPreviewMode(not isPreviewActive());
-                    local panel = Lantern._uxPanel;
-                    if (panel and panel.RefreshCurrentPage) then panel:RefreshCurrentPage(); end
+                    module:SetPreviewMode(val);
                 end
             end,
         },
