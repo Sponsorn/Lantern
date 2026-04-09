@@ -21,6 +21,7 @@ local TRACK_HEIGHT    = 6;
 local THUMB_SIZE      = 18;
 local RANGE_LABEL_H   = 18;
 local RANGE_TRACK_PAD = 4;
+local NUDGE_SIZE      = 16;
 
 -------------------------------------------------------------------------------
 -- Create / Setup
@@ -56,11 +57,11 @@ local function CreateRange(parent)
     end);
     frame:SetScript("OnLeave", ClearDescription);
 
-    -- Track background
+    -- Track background (inset to leave room for nudge buttons)
     local trackFrame = CreateFrame("Frame", NextName("LUX_RangeTrack_"), frame);
     trackFrame:SetHeight(TRACK_HEIGHT);
-    trackFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -(RANGE_LABEL_H + RANGE_TRACK_PAD));
-    trackFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -(RANGE_LABEL_H + RANGE_TRACK_PAD));
+    trackFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", NUDGE_SIZE + 4, -(RANGE_LABEL_H + RANGE_TRACK_PAD));
+    trackFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -(NUDGE_SIZE + 4), -(RANGE_LABEL_H + RANGE_TRACK_PAD));
     w._trackFrame = trackFrame;
 
     local trackBg = trackFrame:CreateTexture(nil, "BACKGROUND");
@@ -93,6 +94,49 @@ local function CreateRange(parent)
     defaultMark:SetAlpha(0.5);
     defaultMark:Hide();
     w._defaultMark = defaultMark;
+
+    -- Nudge helper (applied after w._step is set in Setup)
+    local function Nudge(delta)
+        if (w._disabled) then return; end
+        local step = w._step or 0.01;
+        local newVal = ClampValue(w._value + delta * step, w._min, w._max, step);
+        if (newVal ~= w._value) then
+            w._value = newVal;
+            w._updateThumb();
+            if (w._onSet) then w._onSet(newVal); end
+            C_Timer.After(0, RefreshActiveWidgets);
+        end
+    end
+
+    -- Nudge button factory
+    local function CreateNudgeButton(name, text, anchor, relPoint, xOff)
+        local btn = CreateFrame("Button", NextName("LUX_RangeNudge_"), frame);
+        btn:SetSize(NUDGE_SIZE, NUDGE_SIZE);
+        btn:SetPoint(anchor, trackFrame, relPoint, xOff, 0);
+
+        local btnText = btn:CreateFontString(nil, "ARTWORK", T.fontSmallBold);
+        btnText:SetPoint("CENTER", 0, 0);
+        btnText:SetText(text);
+        btnText:SetTextColor(unpack(T.textDim));
+
+        btn:SetScript("OnEnter", function()
+            if (not w._disabled) then btnText:SetTextColor(unpack(T.textBright)); end
+        end);
+        btn:SetScript("OnLeave", function()
+            btnText:SetTextColor(unpack(w._disabled and T.disabled or T.textDim));
+        end);
+
+        btn._text = btnText;
+        return btn;
+    end
+
+    local minusBtn = CreateNudgeButton("minus", "-", "RIGHT", "LEFT", -4);
+    minusBtn:SetScript("OnClick", function() Nudge(-1); end);
+    w._minusBtn = minusBtn;
+
+    local plusBtn = CreateNudgeButton("plus", "+", "LEFT", "RIGHT", 4);
+    plusBtn:SetScript("OnClick", function() Nudge(1); end);
+    w._plusBtn = plusBtn;
 
     -- State
     w._value = 0;
@@ -146,8 +190,8 @@ local function CreateRange(parent)
 
     -- Drag handling on the track frame (covers both thumb and track clicks)
     local dragFrame = CreateFrame("Frame", NextName("LUX_RangeDrag_"), trackFrame);
-    dragFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -RANGE_LABEL_H);
-    dragFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0);
+    dragFrame:SetPoint("TOPLEFT", trackFrame, "TOPLEFT", 0, THUMB_SIZE / 2);
+    dragFrame:SetPoint("BOTTOMRIGHT", trackFrame, "BOTTOMRIGHT", 0, -THUMB_SIZE / 2);
     dragFrame:SetFrameLevel(trackFrame:GetFrameLevel() + 3);
     dragFrame:EnableMouse(true);
 
@@ -244,12 +288,16 @@ local function SetupRange(w, parent, data, contentWidth)
         w._trackBg:SetColorTexture(unpack(T.disabled));
         w._fill:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
         w._thumbBg:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
+        w._minusBtn._text:SetTextColor(unpack(T.disabled));
+        w._plusBtn._text:SetTextColor(unpack(T.disabled));
     else
         w._label:SetTextColor(unpack(T.text));
         w._valueText:SetTextColor(unpack(T.textDim));
         w._trackBg:SetColorTexture(unpack(T.trackBg));
         w._fill:SetColorTexture(unpack(T.accent));
         w._thumbBg:SetColorTexture(unpack(T.thumbBg));
+        w._minusBtn._text:SetTextColor(unpack(T.textDim));
+        w._plusBtn._text:SetTextColor(unpack(T.textDim));
     end
 
     -- Defer thumb + default marker position to next frame so width is resolved
@@ -295,11 +343,15 @@ _W.refreshers.range = function(w)
         w._trackBg:SetColorTexture(unpack(T.disabled));
         w._fill:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
         w._thumbBg:SetColorTexture(T.accent[1] * 0.45, T.accent[2] * 0.45, T.accent[3] * 0.45, 1.0);
+        w._minusBtn._text:SetTextColor(unpack(T.disabled));
+        w._plusBtn._text:SetTextColor(unpack(T.disabled));
     else
         w._label:SetTextColor(unpack(T.text));
         w._valueText:SetTextColor(unpack(T.textDim));
         w._trackBg:SetColorTexture(unpack(T.trackBg));
         w._fill:SetColorTexture(unpack(T.accent));
         w._thumbBg:SetColorTexture(unpack(T.thumbBg));
+        w._minusBtn._text:SetTextColor(unpack(T.textDim));
+        w._plusBtn._text:SetTextColor(unpack(T.textDim));
     end
 end;

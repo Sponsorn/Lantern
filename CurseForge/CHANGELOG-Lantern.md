@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.0
+- Add: Slider nudge buttons (-/+) for precise 1-step adjustments
 - Add: Right-click slider thumb to reset to default value
 - Change: Missing Pet and Gateway Ready preview is now a toggle instead of a button
 - Fix: Summon Helper outside roster starts collapsed by default — click to expand, shows player count in title bar
