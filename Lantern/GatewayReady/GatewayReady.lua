@@ -105,6 +105,12 @@ end
 local function checkGateway(self)
     if (not self.enabled) then return; end
 
+    if (UnitIsDeadOrGhost("player")) then
+        if (lastUsable) then hideAlert(); end
+        lastUsable = false;
+        return;
+    end
+
     local count = C_Item.GetItemCount(GATEWAY_ITEM_ID);
     if (count == 0) then
         if (lastUsable) then hideAlert(); end
@@ -143,6 +149,7 @@ local function stopPolling()
         ticker = nil;
     end
     lastUsable = false;
+    hideAlert();
 end
 
 function module:RefreshFont()
