@@ -178,8 +178,32 @@ local function createRosterFrame(self)
     portalText:SetTextColor(0.6, 0.2, 1);
     portalText:Hide();
 
+    -- Title-bar drag handle (only the title area is draggable)
+    local dragHandle = CreateFrame("Frame", "Lantern_SummonRoster_DragHandle", rosterFrame);
+    dragHandle:SetPoint("TOPLEFT", rosterFrame, "TOPLEFT", 0, 0);
+    dragHandle:SetPoint("TOPRIGHT", rosterFrame, "TOPRIGHT", 0, 0);
+    dragHandle:SetHeight(22);
+
+    rosterFrame:SetMovable(true);
+    rosterFrame:SetClampedToScreen(true);
+
+    dragHandle:EnableMouse(true);
+    dragHandle:RegisterForDrag("LeftButton");
+    dragHandle:SetScript("OnDragStart", function()
+        if (module.db and not module.db.locked) then
+            rosterFrame:StartMoving();
+        end
+    end);
+    dragHandle:SetScript("OnDragStop", function()
+        rosterFrame:StopMovingOrSizing();
+        local point, _, relPoint, x, y = rosterFrame:GetPoint();
+        if (module.db) then
+            module.db.pos = { point = point, relPoint = relPoint, x = x, y = y };
+        end
+    end);
+
     -- Left-click title to toggle collapse, right-click to dismiss
-    rosterFrame:SetScript("OnMouseUp", function(_, button)
+    dragHandle:SetScript("OnMouseUp", function(_, button)
         if (button == "LeftButton" and module.db and module.db.locked) then
             rosterCollapsed = not rosterCollapsed;
             updateRosterDisplay(lastOutside);
@@ -190,28 +214,49 @@ local function createRosterFrame(self)
     end);
 
     -- Tooltip hint
-    rosterFrame:SetScript("OnEnter", function(self)
+    dragHandle:SetScript("OnEnter", function(f)
         if (module.db and module.db.locked) then
-            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM");
+            GameTooltip:SetOwner(f, "ANCHOR_BOTTOM");
             GameTooltip:AddLine("Left-click to expand/collapse", 0.7, 0.7, 0.7);
             GameTooltip:AddLine("Right-click to close", 0.7, 0.7, 0.7);
             GameTooltip:Show();
         end
     end);
-    rosterFrame:SetScript("OnLeave", function()
+    dragHandle:SetScript("OnLeave", function()
         GameTooltip:Hide();
     end);
 
-    if (UX and UX.MakeDraggable) then
-        UX.MakeDraggable(rosterFrame, {
-            getPos    = function() return self.db and self.db.pos; end,
-            setPos    = function(pos) if (self.db) then self.db.pos = pos; end end,
-            getLocked = function() return self.db and self.db.locked; end,
-            setLocked = function(val) if (self.db) then self.db.locked = val; end end,
-            defaultPoint = { "TOPRIGHT", UIParent, "TOPRIGHT", -200, -200 },
-            text = titleText,
-            placeholder = L["RAIDROSTER_HEADER"],
-        });
+    -- "Unlocked" label (shown above frame when unlocked)
+    local unlockLabel = rosterFrame:CreateFontString("Lantern_SummonRoster_UnlockLabel", "OVERLAY");
+    if (T) then
+        unlockLabel:SetFont(T.fontPathRegular, 10, "OUTLINE");
+        unlockLabel:SetTextColor(T.accent[1], T.accent[2], T.accent[3], 0.8);
+    else
+        unlockLabel:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE");
+        unlockLabel:SetTextColor(0.88, 0.56, 0.18, 0.8);
+    end
+    unlockLabel:SetPoint("BOTTOM", rosterFrame, "TOP", 0, 4);
+    unlockLabel:SetText("Unlocked - drag to move");
+    unlockLabel:Hide();
+
+    -- Position/lock helpers (match MakeDraggable API used by WidgetOptions)
+    function rosterFrame:UpdateLock()
+        local locked = module.db and module.db.locked;
+        rosterFrame:SetMovable(not locked);
+        unlockLabel:SetShown(not locked);
+    end
+
+    function rosterFrame:RestorePosition()
+        local pos = module.db and module.db.pos;
+        if (not pos) then return; end
+        self:ClearAllPoints();
+        self:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y);
+    end
+
+    function rosterFrame:ResetPosition()
+        self:ClearAllPoints();
+        self:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -200, -200);
+        if (module.db) then module.db.pos = nil; end
     end
 
     for i = 1, MAX_ROWS do
@@ -481,24 +526,6 @@ local function hidePreview()
     updateRosterDisplay(lastOutside);
 end
 
-local ROSTER_BACKDROP = {
-    bgFile   = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 1,
-};
-
-local function restoreBackdrop()
-    if (not rosterFrame) then return; end
-    local T = UX and UX.Theme;
-    rosterFrame:SetBackdrop(ROSTER_BACKDROP);
-    if (T) then
-        rosterFrame:SetBackdropColor(T.bg[1], T.bg[2], T.bg[3], 0.92);
-        rosterFrame:SetBackdropBorderColor(T.border[1], T.border[2], T.border[3], 1);
-    else
-        rosterFrame:SetBackdropColor(0.06, 0.06, 0.07, 0.92);
-        rosterFrame:SetBackdropBorderColor(0.18, 0.18, 0.20, 1);
-    end
-end
 
 -- Public methods for settings
 function module:RefreshNotifFont()
@@ -559,8 +586,6 @@ end
 function module:UpdateLock()
     if (not rosterFrame) then return; end
     rosterFrame:UpdateLock();
-    -- MakeDraggable removes backdrop on lock — restore ours
-    restoreBackdrop();
     if (self.db and not self.db.locked) then
         showPreview();
     else
@@ -587,7 +612,6 @@ function module:OnEnable()
         rosterFrame:ResetPosition();
     end
     rosterFrame:UpdateLock();
-    restoreBackdrop();
 
     -- Detect Ritual of Summoning cast
     self.addon:ModuleRegisterEvent(self, "UNIT_SPELLCAST_SUCCEEDED", function(_, event, unit, _, spellID)
