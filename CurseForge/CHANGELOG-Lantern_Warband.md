@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.4.8
+- Fix: Treatise take button no longer fails with "can't split those items" — waits for server confirmation between each item instead of using a fixed delay
 - Chore: No longer requires separate LanternUX addon (now built into Lantern core)
 - Fix: Module now defaults to enabled on fresh installs via defaultEnabled flag
 

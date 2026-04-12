@@ -1,6 +1,10 @@
 # Changelog
 
 ## 0.7.0
+- Fix: Gateway Ready alert no longer persists after combat ends — properly hides when polling stops
+- Fix: Gateway Ready alert hides when the player is dead, preventing overlap with the release spirit button
+- Fix: Range Check now correctly handles Marksmanship Hunter's extended range from Mastery: Sniper Training — uses Aimed Shot spell check instead of a fixed 40yd threshold
+- Add: Consumable Alerts — notifies when a group member places a feast, cauldron, or soulwell in dungeons and raids
 - Fix: Focus Cast Bar can no longer be dragged off-screen
 - Fix: Focus Cast Bar preview mode now blocks real cast events from overriding the preview
 - Fix: Focus Cast Bar guards spellId with issecretvalue before calling IsSpellImportant
