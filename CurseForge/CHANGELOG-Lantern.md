@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.0
+- Fix: Summon Helper roster hides when combat starts to prevent stale data from showing during encounters
 - Fix: Gateway Ready alert no longer persists after combat ends — properly hides when polling stops
 - Fix: Gateway Ready alert hides when the player is dead, preventing overlap with the release spirit button
 - Fix: Range Check now correctly handles Marksmanship Hunter's extended range from Mastery: Sniper Training — uses Aimed Shot spell check instead of a fixed 40yd threshold

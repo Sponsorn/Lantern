@@ -667,6 +667,7 @@ function module:OnEnable()
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_DISABLED", function()
         stopTicker();
+        hideRoster();
     end);
 
     self.addon:ModuleRegisterEvent(self, "PLAYER_REGEN_ENABLED", function()
