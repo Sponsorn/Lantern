@@ -49,9 +49,6 @@ local borderFrame;
 local isCasting = false;
 local isChanneling = false;
 local isImportantCast = false;
-local castEndTime = 0;
-local castStartTime = 0;
-local castDuration = 0;
 local instanceAllowed = false;
 
 local cachedInterruptSpellId = nil;
@@ -332,26 +329,26 @@ local function createFrame(self)
         if (not isCasting and not isChanneling) then return; end
 
         local db = self.db or DEFAULTS;
-        local now = GetTime();
+
+        -- Get fresh duration object for time display and tick calc
+        local dur;
+        if (isCasting) then
+            dur = UnitCastingDuration("focus");
+        elseif (isChanneling) then
+            dur = UnitChannelDuration("focus");
+        end
 
         -- Update time remaining text
         if (db.showTimeRemaining ~= false) then
-            local remaining = castEndTime - now;
-            if (remaining > 0) then
-                timeText:SetText(string.format("%.1f", remaining));
+            if (dur) then
+                local remaining = dur:GetRemainingDuration();
+                timeText:SetFormattedText("%.1f", remaining);
             else
                 timeText:SetText("");
             end
         end
 
-        -- Update progress bar value
-        if (isCasting) then
-            local progress = (now - castStartTime) / castDuration;
-            progressBar:SetValue(math.min(progress, 1));
-        elseif (isChanneling) then
-            local progress = (castEndTime - now) / castDuration;
-            progressBar:SetValue(math.max(progress, 0));
-        end
+        -- Progress bar is driven by SetTimerDuration — no manual update needed
 
         -- Update important cast glow
         if (castBarFrame._importantGlow) then
@@ -388,9 +385,10 @@ local function createFrame(self)
         if (db.showInterruptTick ~= false and interruptSpellId) then
             local cdDuration = C_Spell.GetSpellCooldownDuration(interruptSpellId);
             if (cdDuration and not cdDuration:IsZero()) then
-                local cdRemaining = cdDuration:GetSeconds();
-                if (castDuration > 0 and cdRemaining > 0 and cdRemaining < castDuration) then
-                    local tickProgress = cdRemaining / castDuration;
+                local cdRemaining = cdDuration:GetRemainingDuration();
+                local totalDuration = dur and dur:GetTotalDuration() or 0;
+                if (totalDuration > 0 and cdRemaining > 0 and cdRemaining < totalDuration) then
+                    local tickProgress = cdRemaining / totalDuration;
                     interruptBar:SetValue(tickProgress);
                     tickTexture:Show();
                 else
@@ -413,27 +411,24 @@ local function StartCast(self)
     local db = self.db or DEFAULTS;
     if (previewMode) then return; end
     if (not instanceAllowed) then return; end
+    if (C_Secrets and C_Secrets.ShouldUnitSpellCastingBeSecret("focus")) then return; end
     if (not castBarFrame) then createFrame(self); end
 
     local name, text, texture, startTimeMs, endTimeMs, isTradeSkill, castID, notInterruptible, spellId = UnitCastingInfo("focus");
-    if (not name or issecretvalue(name)) then return; end
+    if (not name) then return; end
 
     -- Hide for friendly targets if option set
     if (db.hideFriendlyCasts and UnitIsFriend("player", "focus")) then return; end
 
-    local durationMs = UnitCastingDuration("focus");
-    if (not durationMs or durationMs <= 0) then return; end
-    local duration = durationMs / 1000;
+    local duration = UnitCastingDuration("focus");
+    if (not duration) then return; end
 
     isCasting = true;
     isChanneling = false;
     isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
-    castStartTime = startTimeMs / 1000;
-    castEndTime = endTimeMs / 1000;
-    castDuration = duration;
 
     progressBar:SetMinMaxValues(0, 1);
-    progressBar:SetValue(0);
+    progressBar:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.ElapsedTime);
     interruptBar:SetMinMaxValues(0, 1);
     interruptBar:SetValue(0);
 
@@ -473,27 +468,24 @@ local function StartChannel(self)
     local db = self.db or DEFAULTS;
     if (previewMode) then return; end
     if (not instanceAllowed) then return; end
+    if (C_Secrets and C_Secrets.ShouldUnitSpellCastingBeSecret("focus")) then return; end
     if (not castBarFrame) then createFrame(self); end
 
     local name, text, texture, startTimeMs, endTimeMs, isTradeSkill, notInterruptible, spellId, _, numStages = UnitChannelInfo("focus");
-    if (not name or issecretvalue(name)) then return; end
+    if (not name) then return; end
 
     -- Hide for friendly targets if option set
     if (db.hideFriendlyCasts and UnitIsFriend("player", "focus")) then return; end
 
-    local durationMs = UnitChannelDuration("focus");
-    if (not durationMs or durationMs <= 0) then return; end
-    local duration = durationMs / 1000;
+    local duration = UnitChannelDuration("focus");
+    if (not duration) then return; end
 
     isCasting = false;
     isChanneling = true;
     isImportantCast = spellId and not issecretvalue(spellId) and C_Spell.IsSpellImportant(spellId) or false;
-    castStartTime = startTimeMs / 1000;
-    castEndTime = endTimeMs / 1000;
-    castDuration = duration;
 
     progressBar:SetMinMaxValues(0, 1);
-    progressBar:SetValue(1);
+    progressBar:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime);
     interruptBar:SetMinMaxValues(0, 1);
     interruptBar:SetValue(0);
 
@@ -532,9 +524,6 @@ local function StopCast()
     isCasting = false;
     isChanneling = false;
     isImportantCast = false;
-    castEndTime = 0;
-    castStartTime = 0;
-    castDuration = 0;
     if (castBarFrame) then
         castBarFrame:Hide();
         if (castBarFrame._importantGlow) then
@@ -555,6 +544,7 @@ end
 local function CheckFocusCast(self)
     StopCast();
     if (not UnitExists("focus")) then return; end
+    if (C_Secrets and C_Secrets.ShouldUnitSpellCastingBeSecret("focus")) then return; end
 
     -- Check for active cast first, then channel
     local name = UnitCastingInfo("focus");
