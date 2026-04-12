@@ -33,6 +33,7 @@ local function finishTake(message)
     isTaking = false;
     if (bankButton) then bankButton:SetEnabled(true); end
     takeEventFrame:UnregisterEvent("ITEM_LOCK_CHANGED");
+    takeEventFrame:UnregisterEvent("BAG_UPDATE_DELAYED");
     if (takeState and takeState.timeoutTicker) then
         takeState.timeoutTicker:Cancel();
     end
@@ -139,26 +140,35 @@ takeNext = function()
 end
 
 takeEventFrame:SetScript("OnEvent", function(_, event)
-    if (event ~= "ITEM_LOCK_CHANGED" or not takeState or not isTaking) then return; end
+    if (not takeState or not isTaking) then return; end
 
-    if (takeState.phase == "picking") then
-        -- Only act when cursor actually has the item (ignore stale events)
-        if (GetCursorInfo() ~= "item") then return; end
-        takeState.phase = "placing";
-        C_Container.PickupContainerItem(takeState.dstBag, takeState.dstSlot);
-        local entry = takeState.toTake[takeState.index];
-        table.insert(takeState.taken, entry.name);
-        -- Wait for cursor to clear confirming placement
-    elseif (takeState.phase == "placing") then
-        -- Only advance when cursor is clear (item actually placed)
-        if (GetCursorInfo() ~= nil) then return; end
-        if (takeState.timeoutTicker) then
-            takeState.timeoutTicker:Cancel();
+    if (event == "ITEM_LOCK_CHANGED") then
+        if (takeState.phase == "picking") then
+            -- Only act when cursor actually has the item (ignore stale events)
+            if (GetCursorInfo() ~= "item") then return; end
+            takeState.phase = "placing";
+            C_Container.PickupContainerItem(takeState.dstBag, takeState.dstSlot);
+            local entry = takeState.toTake[takeState.index];
+            table.insert(takeState.taken, entry.name);
+            -- Wait for cursor to clear confirming placement
+        elseif (takeState.phase == "placing") then
+            -- Only advance when cursor is clear (item actually placed)
+            if (GetCursorInfo() ~= nil) then return; end
+            if (takeState.timeoutTicker) then
+                takeState.timeoutTicker:Cancel();
+            end
+            -- Wait for BAG_UPDATE_DELAYED to confirm the server has settled
+            takeState.phase = "settling";
+            takeEventFrame:RegisterEvent("BAG_UPDATE_DELAYED");
         end
-        takeState.index = takeState.index + 1;
-        takeState.phase = "idle";
-        -- Small delay to let the UI settle
-        C_Timer.After(0.1, takeNext);
+    elseif (event == "BAG_UPDATE_DELAYED") then
+        if (takeState.phase == "settling") then
+            takeEventFrame:UnregisterEvent("BAG_UPDATE_DELAYED");
+            takeState.index = takeState.index + 1;
+            takeState.phase = "idle";
+            -- Small safety buffer after server confirmation
+            C_Timer.After(0.05, takeNext);
+        end
     end
 end);
 
