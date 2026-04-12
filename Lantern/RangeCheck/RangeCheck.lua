@@ -48,6 +48,8 @@ local SPEC_SPELLS = {
     [577] = 162794, [581] = 344859,
     -- Hunter (Survival)
     [255] = 186270,
+    -- Hunter (Marksmanship) — Aimed Shot; must use spell check because mastery extends range beyond 40yd
+    [254] = 19434,
     -- Druid (Feral, Guardian)
     [103] = 5221, [104] = 5221,
     -- Monk (Brewmaster, Windwalker)
@@ -74,8 +76,8 @@ local SPEC_RANGE = {
     [270] = 40,
     -- Shaman (Elemental, Restoration)
     [262] = 40, [264] = 40,
-    -- Hunter (Beast Mastery, Marksmanship)
-    [253] = 40, [254] = 40,
+    -- Hunter (Beast Mastery)
+    [253] = 40,
     -- Mage (all specs)
     [62] = 40, [63] = 40, [64] = 40,
     -- Warlock (all specs)
