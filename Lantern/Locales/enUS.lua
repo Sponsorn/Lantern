@@ -296,6 +296,24 @@ Lantern:RegisterLocale("enUS", {
     SUMMONHELPER_REQUIRE_WARLOCK            = "Only with Warlock",
     SUMMONHELPER_REQUIRE_WARLOCK_DESC       = "Only show the roster when a Warlock is in the group.",
 
+    -- Consumable Alerts
+    CONSUMABLEALERTS_TITLE              = "Consumable Alerts",
+    CONSUMABLEALERTS_DESC               = "Shows a notification when a group member places a feast, cauldron, or soulwell.",
+    CONSUMABLEALERTS_ENABLE_DESC        = "Enable or disable Consumable Alerts.",
+    CONSUMABLEALERTS_PREVIEW_DESC       = "Show a preview of the notification.",
+    CONSUMABLEALERTS_GROUP_FONT         = "Font & Duration",
+    CONSUMABLEALERTS_FONT_DESC          = "Font used for notification text.",
+    CONSUMABLEALERTS_FONT_SIZE_DESC     = "Size of the notification text.",
+    CONSUMABLEALERTS_FONT_OUTLINE_DESC  = "Outline style for the notification text.",
+    CONSUMABLEALERTS_FADE_DURATION      = "Fade Duration",
+    CONSUMABLEALERTS_FADE_DURATION_DESC = "How long each notification stays visible before fading.",
+    CONSUMABLEALERTS_COLOR_DESC         = "Color of the notification text.",
+    CONSUMABLEALERTS_PLAY_SOUND_DESC    = "Play a sound when a consumable is placed.",
+    CONSUMABLEALERTS_SOUND_SELECT_DESC  = "Choose which sound to play.",
+    CONSUMABLEALERTS_LOCK_POSITION_DESC = "Lock the notification position.",
+    CONSUMABLEALERTS_RESET_POSITION_DESC = "Reset the notification to its default position.",
+    CONSUMABLEALERTS_PLACED             = "%s placed %s",
+
     -- Gateway Ready
     GATEWAYREADY_TITLE                      = "Gateway Ready",
     GATEWAYREADY_DESC                       = "Alert when a Warlock Demonic Gateway is nearby and usable.",

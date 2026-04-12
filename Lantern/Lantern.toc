@@ -64,6 +64,8 @@ CombatTimer\CombatTimer.lua
 CombatTimer\WidgetOptions.lua
 CombatAlert\CombatAlert.lua
 CombatAlert\WidgetOptions.lua
+ConsumableAlerts\ConsumableAlerts.lua
+ConsumableAlerts\WidgetOptions.lua
 FocusCastBar\FocusCastBar.lua
 FocusCastBar\WidgetOptions.lua
 GatewayReady\GatewayReady.lua

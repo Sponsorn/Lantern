@@ -41,6 +41,7 @@ local CORE_KEY = {
     ReleaseProtection    = "releaseProtection",
     CombatTimer          = "combatTimer",
     CombatAlert          = "combatAlert",
+    ConsumableAlerts     = "consumableAlerts",
     FocusCastBar         = "focusCastBar",
     GatewayReady         = "gatewayReady",
     SummonHelper         = "summonHelper",
@@ -69,7 +70,7 @@ local MODULE_CATEGORIES = {
         label = L["CATEGORY_DUNGEONS"],
         modules = {
             "AutoKeystone", "AutoPlaystyle", "AutoQueue",
-            "CombatAlert", "CombatTimer", "FocusCastBar", "GatewayReady", "MissingPet", "RangeCheck", "ReleaseProtection", "SummonHelper",
+            "CombatAlert", "CombatTimer", "ConsumableAlerts", "FocusCastBar", "GatewayReady", "MissingPet", "RangeCheck", "ReleaseProtection", "SummonHelper",
         },
         combinedPages = {
             {
