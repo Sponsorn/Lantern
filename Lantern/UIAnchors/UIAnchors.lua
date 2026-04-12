@@ -272,6 +272,16 @@ function Lantern:ApplyAnchorBinding(config)
             frame:EnableMouse(false);
             return;
         end
+
+        -- Anchor not available yet (module load order) — defer once
+        local anchorMod = self.modules["UIAnchors"];
+        if (anchorMod and anchorMod.enabled) then
+            C_Timer.After(0, function()
+                Lantern:ApplyAnchorBinding(config);
+            end);
+            return;
+        end
+        -- Anchor module disabled — fall through to free positioning
     end
 
     -- No anchor or anchor not available — restore free positioning
