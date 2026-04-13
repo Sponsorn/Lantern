@@ -32,6 +32,9 @@ local CONSUMABLE_SPELLS = {
     [1240225] = { label = "Voidlight Potion Cauldron",      category = "cauldron" },
     -- Warlock
     [29893]   = { label = "Soulwell",                       category = "warlock" },
+    -- Repair
+    [199109]  = { label = "Auto-Hammer",                    category = "repair" },
+    [67826]   = { label = "Jeeves",                         category = "repair" },
 };
 
 local DEFAULTS = {
@@ -44,6 +47,15 @@ local DEFAULTS = {
     soundName = "RaidWarning",
     locked = true,
     pos = nil,
+    suppress = {
+        combat   = true,
+        feast    = false,
+        feastMinMinutes = 10,
+        warlock  = false,
+        warlockMinStones = 3,
+        repair   = false,
+        repairMinDurability = 90,
+    },
 };
 
 -------------------------------------------------------------------------------
@@ -199,22 +211,96 @@ local function pushNotification(self, text)
 end
 
 -------------------------------------------------------------------------------
--- Event Handler
+-- Suppression
+-------------------------------------------------------------------------------
+
+local function shouldSuppress(db, category)
+    local s = db.suppress;
+    if (not s) then return false; end
+
+    if (s.combat and C_InstanceEncounter and C_InstanceEncounter.IsEncounterInProgress()) then
+        return true;
+    end
+
+    if (category == "feast" and s.feast) then
+        for i = 1, 40 do
+            local aura = C_UnitAuras.GetBuffDataByIndex("player", i);
+            if (not aura) then break; end
+            if (not issecretvalue(aura.name) and aura.name == "Well Fed" and aura.expirationTime) then
+                local remaining = aura.expirationTime - GetTime();
+                if (remaining > (s.feastMinMinutes or 10) * 60) then
+                    return true;
+                end
+            end
+        end
+    elseif (category == "warlock" and s.warlock) then
+        local count = C_Item.GetItemCount(5512, false, true); -- Healthstone
+        if (count >= (s.warlockMinStones or 3)) then
+            return true;
+        end
+    elseif (category == "repair" and s.repair) then
+        local minDurability = 1;
+        for i = 1, 18 do
+            local cur, mx = GetInventoryItemDurability(i);
+            if (cur and mx and mx > 0) then
+                minDurability = min(minDurability, cur / mx);
+            end
+        end
+        if (minDurability >= (s.repairMinDurability or 90) / 100) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+-------------------------------------------------------------------------------
+-- Addon Communication
+-------------------------------------------------------------------------------
+
+local COMM_PREFIX = "LanternCA";
+local COMM_VERSION = 1;
+
+local function broadcastConsumable(spellID)
+    if (not IsInGroup()) then return; end
+    local channel = IsInRaid() and "RAID" or "PARTY";
+    C_ChatInfo.SendAddonMessage(COMM_PREFIX, tostring(COMM_VERSION) .. ":" .. tostring(spellID), channel);
+end
+
+-------------------------------------------------------------------------------
+-- Event Handlers
 -------------------------------------------------------------------------------
 
 local function OnSpellCastSucceeded(self, unit, castGUID, spellID)
     if (not spellID) then return; end
-    if (C_Secrets and C_Secrets.ShouldUnitSpellCastingBeSecret(unit)) then return; end
-    if (InCombatLockdown()) then return; end
+    if (unit ~= "player") then return; end
 
-    local _, instanceType = GetInstanceInfo();
-    if (instanceType ~= "party" and instanceType ~= "raid") then return; end
+    local info = CONSUMABLE_SPELLS[spellID];
+    if (not info) then return; end
+    if (not IsInGroup()) then return; end
+
+    broadcastConsumable(spellID);
+end
+
+local function OnAddonMessage(self, prefix, message, channel, sender)
+    if (prefix ~= COMM_PREFIX) then return; end
+
+    -- Parse message: "version:spellID"
+    local version, spellIDStr = strsplit(":", message, 2);
+    if (not version or not spellIDStr) then return; end
+    if (tonumber(version) ~= COMM_VERSION) then return; end
+
+    local spellID = tonumber(spellIDStr);
+    if (not spellID) then return; end
 
     local info = CONSUMABLE_SPELLS[spellID];
     if (not info) then return; end
 
-    local caster = UnitName(unit);
-    if (not caster) then return; end
+    -- Strip realm from sender name for display
+    local caster = Ambiguate(sender, "short");
+
+    local db = self.db or DEFAULTS;
+    if (shouldSuppress(db, info.category)) then return; end
 
     pushNotification(self, string.format(L["CONSUMABLEALERTS_PLACED"], caster, info.label));
 end
@@ -322,9 +408,19 @@ function module:OnEnable()
         });
     end
 
+    -- Register addon message prefix (safe to call multiple times)
+    C_ChatInfo.RegisterAddonMessagePrefix(COMM_PREFIX);
+
+    -- Watch only our own casts, then broadcast to group
     self.addon:ModuleRegisterEvent(self, "UNIT_SPELLCAST_SUCCEEDED", function(_, event, unit, castGUID, spellID)
         if (not self.enabled) then return; end
         OnSpellCastSucceeded(self, unit, castGUID, spellID);
+    end);
+
+    -- Listen for broadcasts from other group members
+    self.addon:ModuleRegisterEvent(self, "CHAT_MSG_ADDON", function(_, event, prefix, message, channel, sender)
+        if (not self.enabled) then return; end
+        OnAddonMessage(self, prefix, message, channel, sender);
     end);
 end
 

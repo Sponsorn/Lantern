@@ -117,6 +117,7 @@ local rosterFrame, titleText, portalText, collapseIndicator;
 local rows = {};
 local MAX_ROWS = 40;
 local rosterCollapsed = true;
+local updateRosterDisplay; -- forward declaration
 
 local function hideRoster()
     if (rosterFrame and not InCombatLockdown()) then rosterFrame:Hide(); end
@@ -284,7 +285,7 @@ local function createRosterFrame(self)
     end
 end
 
-local function updateRosterDisplay(outside)
+updateRosterDisplay = function(outside)
     if (not rosterFrame) then return; end
 
     local locked = InCombatLockdown();

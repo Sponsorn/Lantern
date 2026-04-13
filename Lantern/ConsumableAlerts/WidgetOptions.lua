@@ -23,13 +23,25 @@ module.widgetOptions = function()
             fadeDuration = 4,
             soundEnabled = false, soundName = "RaidWarning",
             locked = true,
+            suppress = {
+                combat = true,
+                feast = false, feastMinMinutes = 10,
+                warlock = false, warlockMinStones = 3,
+                repair = false, repairMinDurability = 90,
+            },
         };
         for k, v in pairs(defaults) do
             if (d[k] == nil) then
                 if (type(v) == "table") then
-                    d[k] = { r = v.r, g = v.g, b = v.b };
+                    local copy = {};
+                    for tk, tv in pairs(v) do copy[tk] = tv; end
+                    d[k] = copy;
                 else
                     d[k] = v;
+                end
+            elseif (type(v) == "table" and type(d[k]) == "table") then
+                for tk, tv in pairs(v) do
+                    if (d[k][tk] == nil) then d[k][tk] = tv; end
                 end
             end
         end
@@ -86,6 +98,10 @@ module.widgetOptions = function()
 
     return {
         moduleToggle("ConsumableAlerts", L["ENABLE"], L["CONSUMABLEALERTS_ENABLE_DESC"]),
+        {
+            type = "description",
+            text = L["CONSUMABLEALERTS_COMM_NOTE"],
+        },
         {
             type = "toggle",
             label = L["SHARED_PREVIEW"],
@@ -188,6 +204,71 @@ module.widgetOptions = function()
                         local sound = LSM:Fetch("sound", key);
                         if (sound) then pcall(PlaySoundFile, sound, "Master"); end
                     end,
+                },
+            },
+        },
+        {
+            type = "group",
+            text = L["CONSUMABLEALERTS_GROUP_SUPPRESS"],
+            children = {
+                {
+                    type = "toggle",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_COMBAT"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_COMBAT_DESC"],
+                    disabled = isDisabled,
+                    get = function() return db().suppress.combat; end,
+                    set = function(val) db().suppress.combat = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_FEAST"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_FEAST_DESC"],
+                    disabled = isDisabled,
+                    get = function() return db().suppress.feast; end,
+                    set = function(val) db().suppress.feast = val; end,
+                },
+                {
+                    type = "range",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_FEAST_MIN"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_FEAST_MIN_DESC"],
+                    min = 1, max = 30, step = 1, default = 10,
+                    disabled = function() return isDisabled() or not db().suppress.feast; end,
+                    get = function() return db().suppress.feastMinMinutes; end,
+                    set = function(val) db().suppress.feastMinMinutes = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_SOULWELL"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_SOULWELL_DESC"],
+                    disabled = isDisabled,
+                    get = function() return db().suppress.warlock; end,
+                    set = function(val) db().suppress.warlock = val; end,
+                },
+                {
+                    type = "range",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_SOULWELL_MIN"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_SOULWELL_MIN_DESC"],
+                    min = 1, max = 3, step = 1, default = 3,
+                    disabled = function() return isDisabled() or not db().suppress.warlock; end,
+                    get = function() return db().suppress.warlockMinStones; end,
+                    set = function(val) db().suppress.warlockMinStones = val; end,
+                },
+                {
+                    type = "toggle",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_REPAIR"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_REPAIR_DESC"],
+                    disabled = isDisabled,
+                    get = function() return db().suppress.repair; end,
+                    set = function(val) db().suppress.repair = val; end,
+                },
+                {
+                    type = "range",
+                    label = L["CONSUMABLEALERTS_SUPPRESS_REPAIR_MIN"],
+                    desc = L["CONSUMABLEALERTS_SUPPRESS_REPAIR_MIN_DESC"],
+                    min = 50, max = 100, step = 5, default = 90,
+                    disabled = function() return isDisabled() or not db().suppress.repair; end,
+                    get = function() return db().suppress.repairMinDurability; end,
+                    set = function(val) db().suppress.repairMinDurability = val; end,
                 },
             },
         },

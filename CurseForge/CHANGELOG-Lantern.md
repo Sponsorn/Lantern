@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.7.0
+- Change: Consumable Alerts now uses addon communication — each player broadcasts their own consumable placements to the group, replacing the unreliable spell event detection. All group members need Lantern installed for full coverage.
+- Add: Consumable Alerts now tracks repair bots (Auto-Hammer, Jeeves)
+- Add: Consumable Alerts smart suppression — optionally hide notifications when you already have the buff or item (feast with Well Fed remaining, soulwell with enough healthstones, repair with high durability, or during boss encounters)
 - Fix: Summon Helper roster hides when combat starts to prevent stale data from showing during encounters
 - Fix: Gateway Ready alert no longer persists after combat ends — properly hides when polling stops
 - Fix: Gateway Ready alert hides when the player is dead, preventing overlap with the release spirit button

@@ -298,7 +298,7 @@ Lantern:RegisterLocale("enUS", {
 
     -- Consumable Alerts
     CONSUMABLEALERTS_TITLE              = "Consumable Alerts",
-    CONSUMABLEALERTS_DESC               = "Shows a notification when a group member places a feast, cauldron, or soulwell.",
+    CONSUMABLEALERTS_DESC               = "Shows a notification when a group member places a feast, cauldron, soulwell, or repair bot.",
     CONSUMABLEALERTS_ENABLE_DESC        = "Enable or disable Consumable Alerts.",
     CONSUMABLEALERTS_PREVIEW_DESC       = "Show a preview of the notification.",
     CONSUMABLEALERTS_GROUP_FONT         = "Font & Duration",
@@ -313,6 +313,22 @@ Lantern:RegisterLocale("enUS", {
     CONSUMABLEALERTS_LOCK_POSITION_DESC = "Lock the notification position.",
     CONSUMABLEALERTS_RESET_POSITION_DESC = "Reset the notification to its default position.",
     CONSUMABLEALERTS_PLACED             = "%s placed %s",
+    CONSUMABLEALERTS_GROUP_SUPPRESS          = "Smart Suppress",
+    CONSUMABLEALERTS_SUPPRESS_COMBAT         = "During Encounters",
+    CONSUMABLEALERTS_SUPPRESS_COMBAT_DESC    = "Suppress all notifications during active boss encounters.",
+    CONSUMABLEALERTS_SUPPRESS_FEAST          = "Feast (Well Fed)",
+    CONSUMABLEALERTS_SUPPRESS_FEAST_DESC     = "Suppress feast notifications when your Well Fed buff has enough time remaining.",
+    CONSUMABLEALERTS_SUPPRESS_FEAST_MIN      = "Min. Minutes Remaining",
+    CONSUMABLEALERTS_SUPPRESS_FEAST_MIN_DESC = "Suppress the feast notification if your Well Fed buff has more than this many minutes left.",
+    CONSUMABLEALERTS_SUPPRESS_SOULWELL          = "Soulwell (Healthstones)",
+    CONSUMABLEALERTS_SUPPRESS_SOULWELL_DESC     = "Suppress soulwell notifications when you already have enough healthstones.",
+    CONSUMABLEALERTS_SUPPRESS_SOULWELL_MIN      = "Min. Healthstones",
+    CONSUMABLEALERTS_SUPPRESS_SOULWELL_MIN_DESC = "Suppress the soulwell notification if you have at least this many healthstones.",
+    CONSUMABLEALERTS_SUPPRESS_REPAIR             = "Repair (Durability)",
+    CONSUMABLEALERTS_SUPPRESS_REPAIR_DESC        = "Suppress repair bot notifications when your gear durability is high enough.",
+    CONSUMABLEALERTS_SUPPRESS_REPAIR_MIN         = "Min. Durability %",
+    CONSUMABLEALERTS_SUPPRESS_REPAIR_MIN_DESC    = "Suppress the repair notification if your lowest equipment durability is above this percentage.",
+    CONSUMABLEALERTS_COMM_NOTE                   = "This feature uses addon communication. All group members need Lantern installed with Consumable Alerts enabled to see each other's notifications.",
 
     -- Gateway Ready
     GATEWAYREADY_TITLE                      = "Gateway Ready",
