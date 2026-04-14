@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.4.8
-- Fix: Treatise take button no longer fails with "can't split those items" — waits for server confirmation between each item instead of using a fixed delay
+- Fix: Treatise take now uses the Warehousing Engine for reliable warbank item moves — fixes items getting stuck when splitting multiple treatises
 - Chore: No longer requires separate LanternUX addon (now built into Lantern core)
 - Fix: Module now defaults to enabled on fresh installs via defaultEnabled flag
 
