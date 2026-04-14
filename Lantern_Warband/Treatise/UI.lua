@@ -20,173 +20,40 @@ local function IsEnabled()
 end
 
 -------------------------------------------------------------------------------
--- Take treatises
+-- Take treatises (delegates to Warehousing Engine for reliable moves)
 -------------------------------------------------------------------------------
-
-local TAKE_TIMEOUT = 5;   -- seconds before giving up on a single item
-local MAX_RETRIES = 3;    -- max retries per item if locked
-
-local takeState = nil;    -- current take operation state
-local takeEventFrame = CreateFrame("Frame", "LanternTreatise_TakeFrame");
-
-local function finishTake(message)
-    isTaking = false;
-    if (bankButton) then bankButton:SetEnabled(true); end
-    takeEventFrame:UnregisterEvent("ITEM_LOCK_CHANGED");
-    takeEventFrame:UnregisterEvent("BAG_UPDATE_DELAYED");
-    if (takeState and takeState.timeoutTicker) then
-        takeState.timeoutTicker:Cancel();
-    end
-    if (message) then
-        Lantern:Print(message);
-    end
-    takeState = nil;
-end
-
-local function reportTaken(taken)
-    if (#taken > 0) then
-        local count = #taken;
-        local names = table.concat(taken, ", ");
-        Lantern:Print(string.format(L["WARBAND_TREATISE_MSG_TOOK"], count, count == 1 and "" or "s", names));
-    end
-end
-
-local takeNext;  -- forward declaration
-
-local function attemptPickup()
-    if (not takeState or not isTaking) then return; end
-
-    local entry = takeState.toTake[takeState.index];
-    local firstSlot = entry.slots[1];
-
-    -- Check if item is locked (still mid-operation)
-    local info = C_Container.GetContainerItemInfo(firstSlot.bag, firstSlot.slot);
-    if (not info) then
-        -- Item gone (already moved), skip to next
-        takeState.index = takeState.index + 1;
-        takeNext();
-        return;
-    end
-    if (info.isLocked) then
-        takeState.retries = takeState.retries + 1;
-        if (takeState.retries > MAX_RETRIES) then
-            -- Skip this item, move on
-            takeState.index = takeState.index + 1;
-            takeNext();
-        end
-        -- Otherwise wait for ITEM_LOCK_CHANGED to retry
-        return;
-    end
-
-    -- Find free bag slot
-    local freeBag, freeSlot = Treatise:FindFreeBagSlot();
-    if (not freeBag) then
-        finishTake(L["WARBAND_TREATISE_UI_NO_BAG_SPACE"]);
-        reportTaken(takeState.taken);
-        return;
-    end
-
-    -- Set up state to wait for completion
-    takeState.phase = "picking";
-    takeState.srcBag = firstSlot.bag;
-    takeState.srcSlot = firstSlot.slot;
-    takeState.dstBag = freeBag;
-    takeState.dstSlot = freeSlot;
-
-    -- Pick up or split
-    if (info.stackCount > 1) then
-        C_Container.SplitContainerItem(firstSlot.bag, firstSlot.slot, 1);
-    else
-        C_Container.PickupContainerItem(firstSlot.bag, firstSlot.slot);
-    end
-
-    -- For single stacks, the cursor may be ready immediately
-    if (GetCursorInfo() == "item") then
-        takeState.phase = "placing";
-        C_Container.PickupContainerItem(freeBag, freeSlot);
-        table.insert(takeState.taken, entry.name);
-        -- Wait for ITEM_LOCK_CHANGED to confirm placement before next
-        return;
-    end
-    -- Otherwise wait for ITEM_LOCK_CHANGED (split is async for warbank)
-end
-
-takeNext = function()
-    if (not takeState or not isTaking) then return; end
-
-    if (takeState.index > #takeState.toTake) then
-        local taken = takeState.taken;
-        finishTake(nil);
-        reportTaken(taken);
-        return;
-    end
-
-    takeState.retries = 0;
-    takeState.phase = "idle";
-
-    -- Reset timeout for this item
-    if (takeState.timeoutTicker) then
-        takeState.timeoutTicker:Cancel();
-    end
-    takeState.timeoutTicker = C_Timer.NewTimer(TAKE_TIMEOUT, function()
-        if (not takeState or not isTaking) then return; end
-        -- Timed out on this item, skip it
-        ClearCursor();
-        takeState.index = takeState.index + 1;
-        takeNext();
-    end);
-
-    attemptPickup();
-end
-
-takeEventFrame:SetScript("OnEvent", function(_, event)
-    if (not takeState or not isTaking) then return; end
-
-    if (event == "ITEM_LOCK_CHANGED") then
-        if (takeState.phase == "picking") then
-            -- Only act when cursor actually has the item (ignore stale events)
-            if (GetCursorInfo() ~= "item") then return; end
-            takeState.phase = "placing";
-            C_Container.PickupContainerItem(takeState.dstBag, takeState.dstSlot);
-            local entry = takeState.toTake[takeState.index];
-            table.insert(takeState.taken, entry.name);
-            -- Wait for cursor to clear confirming placement
-        elseif (takeState.phase == "placing") then
-            -- Only advance when cursor is clear (item actually placed)
-            if (GetCursorInfo() ~= nil) then return; end
-            if (takeState.timeoutTicker) then
-                takeState.timeoutTicker:Cancel();
-            end
-            -- Wait for BAG_UPDATE_DELAYED to confirm the server has settled
-            takeState.phase = "settling";
-            takeEventFrame:RegisterEvent("BAG_UPDATE_DELAYED");
-        end
-    elseif (event == "BAG_UPDATE_DELAYED") then
-        if (takeState.phase == "settling") then
-            takeEventFrame:UnregisterEvent("BAG_UPDATE_DELAYED");
-            takeState.index = takeState.index + 1;
-            takeState.phase = "idle";
-            -- Small safety buffer after server confirmation
-            C_Timer.After(0.05, takeNext);
-        end
-    end
-end);
 
 local function TakeAll()
     if (isTaking) then return; end
 
+    local Engine = Warband.WarehousingEngine;
+    if (not Engine) then
+        Lantern:Print("Warehousing engine not available.");
+        return;
+    end
+
     local status = Treatise:GetTreatiseStatus();
     local inBags = Treatise:GetInventoryTreatises();
 
-    -- Build list of items to take
-    local toTake = {};
+    -- Build withdraw operations for the engine
+    local operations = {};
     for _, entry in ipairs(status) do
         if (entry.playerHas and not entry.completedThisWeek and not inBags[entry.itemID] and entry.count > 0 and #entry.slots > 0) then
-            table.insert(toTake, entry);
+            local sourceSlots = {};
+            for _, s in ipairs(entry.slots) do
+                table.insert(sourceSlots, { bag = s.bag, slot = s.slot, count = entry.count });
+            end
+            table.insert(operations, {
+                itemID = entry.itemID,
+                itemName = entry.name,
+                mode = "withdraw",
+                amount = 1,
+                sourceSlots = sourceSlots,
+            });
         end
     end
 
-    if (#toTake == 0) then
+    if (#operations == 0) then
         local allDone = true;
         for _, entry in ipairs(status) do
             if (entry.playerHas and not entry.completedThisWeek) then
@@ -201,17 +68,34 @@ local function TakeAll()
     isTaking = true;
     if (bankButton) then bankButton:SetEnabled(false); end
 
-    takeState = {
-        toTake = toTake,
-        taken = {},
-        index = 1,
-        retries = 0,
-        phase = "idle",
-        timeoutTicker = nil,
-    };
+    local started = Engine:Start(operations, {
+        onStop = function(reason, doneCount, totalCount, results)
+            isTaking = false;
+            if (bankButton) then bankButton:SetEnabled(true); end
 
-    takeEventFrame:RegisterEvent("ITEM_LOCK_CHANGED");
-    takeNext();
+            -- Collect names of successfully moved items
+            local taken = {};
+            for i, op in ipairs(operations) do
+                if (results and results[i] == true) then
+                    table.insert(taken, op.itemName);
+                end
+            end
+
+            if (#taken > 0) then
+                local count = #taken;
+                local nameStr = table.concat(taken, ", ");
+                Lantern:Print(string.format(L["WARBAND_TREATISE_MSG_TOOK"], count, count == 1 and "" or "s", nameStr));
+            elseif (reason) then
+                Lantern:Print(reason);
+            end
+        end,
+    });
+
+    if (not started) then
+        isTaking = false;
+        if (bankButton) then bankButton:SetEnabled(true); end
+        Lantern:Print("Could not start — warehousing engine may be busy.");
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -293,11 +177,11 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         if (bankButton) then
             bankButton:Hide();
         end
+        -- Engine handles its own BANKFRAME_CLOSED cleanup;
+        -- just reset our button state
         if (isTaking) then
-            ClearCursor();
-            local taken = takeState and takeState.taken or {};
-            finishTake(nil);
-            reportTaken(taken);
+            isTaking = false;
+            if (bankButton) then bankButton:SetEnabled(true); end
         end
     end
 end);

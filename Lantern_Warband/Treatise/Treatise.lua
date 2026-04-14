@@ -147,16 +147,3 @@ function Treatise:GetInventoryTreatises()
     return found;
 end
 
--- Find first empty bag slot (bags 0-4)
-function Treatise:FindFreeBagSlot()
-    for bag = INVENTORY_START, INVENTORY_END do
-        local numSlots = C_Container.GetContainerNumSlots(bag);
-        for slot = 1, numSlots do
-            local info = C_Container.GetContainerItemInfo(bag, slot);
-            if (not info) then
-                return bag, slot;
-            end
-        end
-    end
-    return nil, nil;
-end
