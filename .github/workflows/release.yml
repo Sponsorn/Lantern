@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "lantern/v*"
+      - "lanternux/v*"
       - "warband/v*"
       - "crafting/v*"
 
@@ -29,6 +30,10 @@ jobs:
             lantern)
               echo "pkgmeta=.pkgmeta-lantern" >> "$GITHUB_OUTPUT"
               echo "toc=Lantern/Lantern.toc" >> "$GITHUB_OUTPUT"
+              ;;
+            lanternux)
+              echo "pkgmeta=.pkgmeta-lanternux" >> "$GITHUB_OUTPUT"
+              echo "toc=LanternUX/LanternUX.toc" >> "$GITHUB_OUTPUT"
               ;;
             warband)
               echo "pkgmeta=.pkgmeta-warband" >> "$GITHUB_OUTPUT"
