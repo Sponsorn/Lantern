@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 - 2026-04-16
+## 1.0.1 - 2026-04-16
 - Remove: All functionality moved into Lantern core. This addon is now a stub — please uninstall it and update Lantern. This is the final release of LanternUX as a standalone addon.
 
 ## 0.2.10 - 2026-03-21
