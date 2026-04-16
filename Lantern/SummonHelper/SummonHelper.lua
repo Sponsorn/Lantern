@@ -563,9 +563,9 @@ function module:UpdateNotifLock()
         notifFrame:SetScript("OnDragStart", function(f) f:StartMoving(); end);
         notifFrame:SetScript("OnDragStop", function(f)
             f:StopMovingOrSizing();
-            local point, _, _, x, y = f:GetPoint();
+            local point, _, relPoint, x, y = f:GetPoint();
             if (module.db) then
-                module.db.notifPos = { point, point, x, y };
+                module.db.notifPos = { point, relPoint, x, y };
             end
         end);
         -- Show preview text for positioning

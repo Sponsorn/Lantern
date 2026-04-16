@@ -411,11 +411,15 @@ function module:OnEnable()
     -- Register addon message prefix (safe to call multiple times)
     C_ChatInfo.RegisterAddonMessagePrefix(COMM_PREFIX);
 
-    -- Watch only our own casts, then broadcast to group
-    self.addon:ModuleRegisterEvent(self, "UNIT_SPELLCAST_SUCCEEDED", function(_, event, unit, castGUID, spellID)
-        if (not self.enabled) then return; end
-        OnSpellCastSucceeded(self, unit, castGUID, spellID);
-    end);
+    -- Watch only our own casts via RegisterUnitEvent, then broadcast to group
+    if (not self._unitEventFrame) then
+        self._unitEventFrame = CreateFrame("Frame", "Lantern_ConsumableAlerts_UnitEvents");
+        self._unitEventFrame:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
+            if (not self.enabled) then return; end
+            OnSpellCastSucceeded(self, unit, castGUID, spellID);
+        end);
+    end
+    self._unitEventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player");
 
     -- Listen for broadcasts from other group members
     self.addon:ModuleRegisterEvent(self, "CHAT_MSG_ADDON", function(_, event, prefix, message, channel, sender)
@@ -425,6 +429,10 @@ function module:OnEnable()
 end
 
 function module:OnDisable()
+    -- Unregister unit event frame
+    if (self._unitEventFrame) then
+        self._unitEventFrame:UnregisterAllEvents();
+    end
     -- Clear active lines
     for i = #activeLines, 1, -1 do
         releaseLine(activeLines[i].fontString);

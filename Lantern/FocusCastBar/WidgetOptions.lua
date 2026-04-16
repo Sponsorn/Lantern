@@ -61,10 +61,8 @@ module.widgetOptions = function()
     local iconPositionValues = {
         ["LEFT"]   = L["FOCUSCASTBAR_ICON_POSITION_LEFT"],
         ["RIGHT"]  = L["FOCUSCASTBAR_ICON_POSITION_RIGHT"],
-        ["TOP"]    = L["FOCUSCASTBAR_ICON_POSITION_TOP"],
-        ["BOTTOM"] = L["FOCUSCASTBAR_ICON_POSITION_BOTTOM"],
     };
-    local iconPositionSorting = { "LEFT", "RIGHT", "TOP", "BOTTOM" };
+    local iconPositionSorting = { "LEFT", "RIGHT" };
 
     return {
         moduleToggle("FocusCastBar", L["ENABLE"], L["FOCUSCASTBAR_ENABLE_DESC"]),
