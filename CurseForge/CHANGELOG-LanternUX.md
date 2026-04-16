@@ -1,10 +1,7 @@
 # Changelog
 
-## [FINAL] - 2026-04-08
-- Remove: All functionality moved into Lantern core. This addon is now a stub — please uninstall it and update Lantern.
-
-## 0.2.11
-- Add: Roboto SemiBold font added to theme font paths
+## 1.0.0 - 2026-04-16
+- Remove: All functionality moved into Lantern core. This addon is now a stub — please uninstall it and update Lantern. This is the final release of LanternUX as a standalone addon.
 
 ## 0.2.10 - 2026-03-21
 - Fix: Korean, Simplified Chinese, and Traditional Chinese text now renders correctly (falls back to system CJK fonts instead of Roboto)

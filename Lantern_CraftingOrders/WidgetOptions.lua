@@ -13,8 +13,6 @@ local T = UX.Theme;
 -------------------------------------------------------------------------------
 
 local refreshPage = Lantern.refreshPage;
-local moduleEnabled = Lantern.moduleEnabled;
-local moduleToggle = Lantern.moduleToggle;
 
 -------------------------------------------------------------------------------
 -- Guild Orders page

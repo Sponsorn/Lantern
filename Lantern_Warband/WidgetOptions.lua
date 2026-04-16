@@ -18,26 +18,19 @@ local function getUtils()
 end
 
 local refreshPage = Lantern.refreshPage;
-local moduleEnabled = Lantern.moduleEnabled;
-local moduleToggle = Lantern.moduleToggle;
 
 -------------------------------------------------------------------------------
 -- General Tab
 -------------------------------------------------------------------------------
 
 local function generalWidgets()
-    local widgets = {
-        moduleToggle("Warband"),
-    };
-
-    if (not moduleEnabled("Warband")) then return widgets; end
+    local widgets = {};
 
     local utils = getUtils();
     local formatGoldThousands = utils.formatGoldThousands;
     local parseGold = utils.parseGold;
 
     local rest = {
-        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_GENERAL_DESCRIPTION"],
@@ -126,10 +119,6 @@ end
 -------------------------------------------------------------------------------
 
 local function groupsWidgets()
-    if (not moduleEnabled("Warband")) then
-        return { moduleToggle("Warband") };
-    end
-
     local utils = getUtils();
     local formatGoldThousands = utils.formatGoldThousands;
     local parseGold = utils.parseGold;
@@ -145,10 +134,7 @@ local function groupsWidgets()
         };
     end
 
-    local widgets = {
-        moduleToggle("Warband"),
-        { type = "divider" },
-    };
+    local widgets = {};
 
     ---------------------------------------------------------------------------
     -- Create New Group section
@@ -457,16 +443,10 @@ end
 -------------------------------------------------------------------------------
 
 local function charactersWidgets()
-    if (not moduleEnabled("Warband")) then
-        return { moduleToggle("Warband") };
-    end
-
     local utils = getUtils();
     local formatGoldThousands = utils.formatGoldThousands;
 
     local widgets = {
-        moduleToggle("Warband"),
-        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_CHARS_DESCRIPTION"],
@@ -565,10 +545,6 @@ end
 -------------------------------------------------------------------------------
 
 local function warehousingWidgets()
-    if (not moduleEnabled("Warband")) then
-        return { moduleToggle("Warband") };
-    end
-
     local Warehousing = Warband.Warehousing;
     local WarehousingUI = Warband.WarehousingUI;
 
@@ -597,8 +573,6 @@ local function warehousingWidgets()
     end
 
     local widgets = {
-        moduleToggle("Warband"),
-        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_WH_DESCRIPTION"],
@@ -1015,13 +989,7 @@ end
 -------------------------------------------------------------------------------
 
 local function treatiseWidgets()
-    if (not moduleEnabled("Warband")) then
-        return { moduleToggle("Warband") };
-    end
-
     local widgets = {
-        moduleToggle("Warband"),
-        { type = "divider" },
         {
             type = "description",
             text = L["WARBAND_TREATISE_DESCRIPTION"],

@@ -4,6 +4,8 @@
 - Fix: Treatise take now uses the Warehousing Engine for reliable warbank item moves — fixes items getting stuck when splitting multiple treatises
 - Chore: No longer requires separate LanternUX addon (now built into Lantern core)
 - Fix: Module now defaults to enabled on fresh installs via defaultEnabled flag
+- Change: Master enable/disable toggle removed entirely — if you installed the addon, you want it on. Sub-features (Auto Balance, Treatise) keep their own per-feature toggles. Anyone who had Warband disabled in saved variables will be re-enabled on next login.
+- Fix: Warehousing button and panel could still appear on the bank window after disabling the Warband module (resolved by removing the disable path)
 
 ## 0.4.7 - 2026-03-19
 - Fix: Warehousing not scanning or moving items from the reagent bag
