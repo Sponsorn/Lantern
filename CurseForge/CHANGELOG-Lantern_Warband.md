@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.4.8
+## 0.4.9
+- Chore: Update interface version
+
+## 0.4.8 - 2026-04-16
 - Fix: Treatise take now uses the Warehousing Engine for reliable warbank item moves — fixes items getting stuck when splitting multiple treatises
 - Chore: No longer requires separate LanternUX addon (now built into Lantern core)
 - Fix: Module now defaults to enabled on fresh installs via defaultEnabled flag

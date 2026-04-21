@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.6.9
+## 0.6.10
+- Chore: Update interface version
+
+## 0.6.9 - 2026-04-16
 - Chore: No longer requires separate LanternUX addon (now built into Lantern core)
 - Fix: Remove confusing master toggle from Guild Orders, Personal Orders, and Order History pages — toggling one would disable all three since they share the same module
 - Fix: Module now defaults to enabled on fresh installs (if you installed it, you want it on)

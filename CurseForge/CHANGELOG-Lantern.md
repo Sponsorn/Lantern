@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.7.0
+## 0.7.1
+- Chore: Update interface version
+
+## 0.7.0 - 2026-04-16
 - Change: Consumable Alerts now uses addon communication — each player broadcasts their own consumable placements to the group, replacing the unreliable spell event detection. All group members need Lantern installed for full coverage.
 - Add: Consumable Alerts now tracks repair bots (Auto-Hammer, Jeeves)
 - Add: Consumable Alerts smart suppression — optionally hide notifications when you already have the buff or item (feast with Well Fed remaining, soulwell with enough healthstones, repair with high durability, or during boss encounters)
