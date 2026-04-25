@@ -25,6 +25,7 @@ Locales\zhTW.lua
 Warband.lua
 Options.lua
 WidgetOptions.lua
+BankAnchor.lua
 Warehousing\Data.lua
 Warehousing\Engine.lua
 Warehousing\UI.lua
