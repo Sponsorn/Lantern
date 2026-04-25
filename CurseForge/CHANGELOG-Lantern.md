@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.1
+## 0.7.1 - 2026-04-21
 - Chore: Update interface version
 
 ## 0.7.0 - 2026-04-16
