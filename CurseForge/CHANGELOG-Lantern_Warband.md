@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.4.9
+## 0.4.10
+- Add: Treatise and Warehousing bank buttons now appear on Baganator's bank window when Baganator is installed
+
+## 0.4.9 - 2026-04-21
 - Chore: Update interface version
 
 ## 0.4.8 - 2026-04-16

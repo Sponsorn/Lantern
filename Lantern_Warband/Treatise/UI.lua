@@ -5,8 +5,9 @@ if (not Enum or not Enum.BagIndex or not Enum.BagIndex.AccountBankTab_1) then re
 
 local Warband = Lantern.modules.Warband;
 local Treatise = Warband.Treatise;
+local BankAnchor = Warband.BankAnchor;
 
-if (not Treatise) then return; end
+if (not Treatise or not BankAnchor) then return; end
 
 -------------------------------------------------------------------------------
 -- State
@@ -102,39 +103,47 @@ end
 -- Bank button & event handling
 -------------------------------------------------------------------------------
 
-local function IsAccountBankActive()
-    if (not BankFrame or not BankFrame.GetActiveBankType) then return false; end
-    return BankFrame:GetActiveBankType() == Enum.BankType.Account;
-end
-
 local function UpdateButtonVisibility()
     if (not bankButton) then return; end
     if (not Warband.enabled or not IsEnabled()) then
         bankButton:Hide();
         return;
     end
-    if (Warband.bankOpen and IsAccountBankActive()) then
+    if (Warband.bankOpen and BankAnchor:IsAccountBankActive()) then
         bankButton:Show();
     else
         bankButton:Hide();
     end
 end
 
-local function CreateBankButton()
-    if (bankButton) then return; end
-    if (not BankFrame) then return; end
-
-    bankButton = CreateFrame("Button", "LanternTreatiseBankButton", BankFrame, "UIPanelButtonTemplate");
-    bankButton:SetSize(80, 22);
-    bankButton:SetFrameStrata("MEDIUM");
-    bankButton:SetFrameLevel(510);
-    -- Position to the left of the Warehousing button
+local function ApplyButtonAnchor()
+    if (not bankButton) then return; end
+    bankButton:ClearAllPoints();
+    -- Prefer to anchor left of the Warehousing button if it exists; falls back to BankAnchor's target.
+    -- Safe because Warehousing's anchor listener registers first (TOC load order), so its button is reparented before this runs.
     local warehousingBtn = _G["LanternWarehousingBankButton"];
     if (warehousingBtn) then
         bankButton:SetPoint("RIGHT", warehousingBtn, "LEFT", -4, 0);
-    else
-        bankButton:SetPoint("TOPRIGHT", BankFrame, "TOPRIGHT", -60, 0);
+        return;
     end
+    local anchorTarget = BankAnchor:GetButtonAnchorTarget();
+    if (anchorTarget) then
+        bankButton:SetPoint("RIGHT", anchorTarget, "LEFT", -4, 0);
+    else
+        bankButton:SetPoint("TOPRIGHT", BankAnchor:GetBankParent(), "TOPRIGHT", -60, 0);
+    end
+end
+
+local function CreateBankButton()
+    if (bankButton) then return; end
+    local parent = BankAnchor:GetBankParent();
+    if (not parent) then return; end
+
+    bankButton = CreateFrame("Button", "LanternTreatiseBankButton", parent, "UIPanelButtonTemplate");
+    bankButton:SetSize(80, 22);
+    bankButton:SetFrameStrata("MEDIUM");
+    bankButton:SetFrameLevel(510);
+    ApplyButtonAnchor();
     bankButton:SetText(L["WARBAND_TREATISE_UI_BANK_BTN"]);
     bankButton:SetScript("OnClick", function()
         TakeAll();
@@ -151,15 +160,17 @@ local function CreateBankButton()
     bankButton:Hide();
 end
 
-local function HookBankPanel()
-    if (not BankFrame or not BankFrame.BankPanel) then return; end
-    if (BankFrame.BankPanel._lanternTreatiseHooked) then return; end
-
-    hooksecurefunc(BankFrame.BankPanel, "SetBankType", function()
-        UpdateButtonVisibility();
-    end);
-    BankFrame.BankPanel._lanternTreatiseHooked = true;
+local function OnAnchorChanged()
+    if (not bankButton) then return; end
+    local newParent = BankAnchor:GetBankParent();
+    if (bankButton:GetParent() ~= newParent) then
+        bankButton:SetParent(newParent);
+    end
+    ApplyButtonAnchor();
 end
+
+BankAnchor:RegisterAnchorChangedListener(OnAnchorChanged);
+BankAnchor:RegisterTabChangedListener(UpdateButtonVisibility);
 
 local bankEventFrame = CreateFrame("Frame", "LanternTreatise_EventFrame");
 bankEventFrame:RegisterEvent("BANKFRAME_OPENED");
@@ -169,8 +180,8 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         -- Slightly longer delay than Warehousing (0.1s) to ensure its button exists for anchoring
         C_Timer.After(0.2, function()
             if (not Warband.enabled or not IsEnabled()) then return; end
+            BankAnchor:EnsureBankPanelHook();
             CreateBankButton();
-            HookBankPanel();
             UpdateButtonVisibility();
         end);
     elseif (event == "BANKFRAME_CLOSED") then
