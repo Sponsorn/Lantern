@@ -1,9 +1,0 @@
-## Interface: 120000, 120001
-## Title: LanternUX |cffff4444(Deprecated)|r
-## Notes: This addon has been merged into Lantern core. Please uninstall LanternUX and update Lantern.
-## Author: Dede in-game / Sponsorn on curseforge & github
-## Version: @project-version@
-## X-Curse-Project-ID: 1465572
-## DefaultState: enabled
-
-Deprecated.lua
