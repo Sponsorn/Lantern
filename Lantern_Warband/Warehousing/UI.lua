@@ -6,8 +6,9 @@ if (not Enum or not Enum.BagIndex or not Enum.BagIndex.AccountBankTab_1) then re
 local Warband = Lantern.modules.Warband;
 local Warehousing = Warband.Warehousing;
 local Engine = Warband.WarehousingEngine;
+local BankAnchor = Warband.BankAnchor;
 
-if (not Warehousing or not Engine) then return; end
+if (not Warehousing or not Engine or not BankAnchor) then return; end
 
 local WarehousingUI = {};
 Warband.WarehousingUI = WarehousingUI;
@@ -341,7 +342,7 @@ end
 
 local function ResetPanelPosition(frame)
     frame:ClearAllPoints();
-    frame:SetPoint("TOPRIGHT", BankFrame, "TOPRIGHT", 345, 0);
+    frame:SetPoint("TOPRIGHT", BankAnchor:GetPanelAnchorTarget(), "TOPRIGHT", 345, 0);
     if (Warband.db and Warband.db.warehousing) then
         Warband.db.warehousing.panelPosition = nil;
     end
@@ -373,7 +374,7 @@ local function CreatePanel()
     if (saved and saved.point) then
         frame:SetPoint(saved.point, UIParent, saved.relativePoint, saved.x, saved.y);
     else
-        frame:SetPoint("TOPRIGHT", BankFrame, "TOPRIGHT", 345, 0);
+        frame:SetPoint("TOPRIGHT", BankAnchor:GetPanelAnchorTarget(), "TOPRIGHT", 345, 0);
     end
 
     -- Hook close button to stop engine and save state
@@ -612,33 +613,40 @@ function WarehousingUI:Toggle()
 end
 
 -- Bank button creation and visibility
-local function IsAccountBankActive()
-    if (not BankFrame or not BankFrame.GetActiveBankType) then return false; end
-    return BankFrame:GetActiveBankType() == Enum.BankType.Account;
-end
-
 local function UpdateButtonVisibility()
     if (not bankButton) then return; end
     if (not Warband.enabled) then
         bankButton:Hide();
         return;
     end
-    if (Warband.bankOpen and IsAccountBankActive()) then
+    if (Warband.bankOpen and BankAnchor:IsAccountBankActive()) then
         bankButton:Show();
     else
         bankButton:Hide();
     end
 end
 
+local function ApplyButtonAnchor()
+    if (not bankButton) then return; end
+    bankButton:ClearAllPoints();
+    local anchorTarget = BankAnchor:GetButtonAnchorTarget();
+    if (anchorTarget) then
+        bankButton:SetPoint("RIGHT", anchorTarget, "LEFT", -4, 0);
+    else
+        bankButton:SetPoint("TOPRIGHT", BankAnchor:GetBankParent(), "TOPRIGHT", -60, 0);
+    end
+end
+
 local function CreateBankButton()
     if (bankButton) then return; end
-    if (not BankFrame) then return; end
+    local parent = BankAnchor:GetBankParent();
+    if (not parent) then return; end
 
-    bankButton = CreateFrame("Button", "LanternWarehousingBankButton", BankFrame, "UIPanelButtonTemplate");
+    bankButton = CreateFrame("Button", "LanternWarehousingBankButton", parent, "UIPanelButtonTemplate");
     bankButton:SetSize(100, 22);
     bankButton:SetFrameStrata("MEDIUM");
     bankButton:SetFrameLevel(510);
-    bankButton:SetPoint("TOPRIGHT", BankFrame, "TOPRIGHT", -60, 0);
+    ApplyButtonAnchor();
     bankButton:SetText(L["WARBAND_WH_UI_BANK_BTN"]);
     bankButton:SetScript("OnClick", function()
         WarehousingUI:Toggle();
@@ -655,22 +663,31 @@ local function CreateBankButton()
     bankButton:Hide();
 end
 
--- Hook BankFrame.BankPanel:SetBankType to detect tab switches
-local function HookBankPanel()
-    if (not BankFrame or not BankFrame.BankPanel) then return; end
-    if (BankFrame.BankPanel._lanternHooked) then return; end
-
-    hooksecurefunc(BankFrame.BankPanel, "SetBankType", function()
-        UpdateButtonVisibility();
-        -- Show/hide panel based on tab and saved state
-        if (IsAccountBankActive() and IsPanelOpenSaved()) then
-            WarehousingUI:ShowPanel();
-        elseif (not IsAccountBankActive() and panel and panel:IsShown()) then
-            panel:Hide();
-        end
-    end);
-    BankFrame.BankPanel._lanternHooked = true;
+local function OnTabChanged()
+    UpdateButtonVisibility();
+    if (BankAnchor:IsAccountBankActive() and IsPanelOpenSaved()) then
+        WarehousingUI:ShowPanel();
+    elseif (not BankAnchor:IsAccountBankActive() and panel and panel:IsShown()) then
+        panel:Hide();
+    end
 end
+
+local function OnAnchorChanged()
+    if (not bankButton) then return; end
+    local newParent = BankAnchor:GetBankParent();
+    if (bankButton:GetParent() ~= newParent) then
+        bankButton:SetParent(newParent);
+    end
+    ApplyButtonAnchor();
+
+    if (panel and not (Warband.db and Warband.db.warehousing and Warband.db.warehousing.panelPosition)) then
+        panel:ClearAllPoints();
+        panel:SetPoint("TOPRIGHT", BankAnchor:GetPanelAnchorTarget(), "TOPRIGHT", 345, 0);
+    end
+end
+
+BankAnchor:RegisterTabChangedListener(OnTabChanged);
+BankAnchor:RegisterAnchorChangedListener(OnAnchorChanged);
 
 -- Hook into bank frame events
 local bankEventFrame = CreateFrame("Frame");
@@ -680,11 +697,10 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
     if (event == "BANKFRAME_OPENED") then
         C_Timer.After(0.1, function()
             if (not Warband.enabled) then return; end
+            BankAnchor:EnsureBankPanelHook();
             CreateBankButton();
-            HookBankPanel();
             UpdateButtonVisibility();
-            -- Restore panel if it was open last time
-            if (IsAccountBankActive() and IsPanelOpenSaved()) then
+            if (BankAnchor:IsAccountBankActive() and IsPanelOpenSaved()) then
                 WarehousingUI:ShowPanel();
             end
         end);
@@ -692,11 +708,9 @@ bankEventFrame:SetScript("OnEvent", function(_, event)
         if (bankButton) then
             bankButton:Hide();
         end
-        -- Stop engine if running
         if (Engine:IsRunning()) then
             Engine:Stop(L["WARBAND_WH_UI_REASON_BANK_CLOSED"]);
         end
-        -- Hide panel (without changing saved state)
         if (panel) then
             panel:Hide();
         end
