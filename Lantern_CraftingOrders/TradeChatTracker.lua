@@ -172,6 +172,10 @@ end
 local listenerFrame;
 
 local function OnChatMsgChannel(_, _, msg, _, _, channelName, _, _, _, _, channelBaseName)
+    -- In arena environments, chat args can arrive as "secret" values that
+    -- cannot be indexed without throwing a taint error. Bail before touching them.
+    if (issecretvalue(msg) or issecretvalue(channelBaseName)) then return; end
+
     -- channelBaseName is "Trade - City" or "Trade (Services) - City"
     -- Match anything starting with "Trade"
     if (not channelBaseName or channelBaseName:sub(1, 5) ~= "Trade") then return; end

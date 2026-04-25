@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.6.10
+## 0.6.11
+- Fix: Trade chat tracker no longer errors when entering arenas (chat messages can arrive as protected values that can't be read by addons)
+
+## 0.6.10 - 2026-04-21
 - Chore: Update interface version
 
 ## 0.6.9 - 2026-04-16
